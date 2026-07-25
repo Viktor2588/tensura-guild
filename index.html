@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tensura Guild</title>
+<meta name="description" content="Roguelite-Truppenbau im Universum von That Time I Got Reincarnated as a Slime.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header id="hud">
+  <div class="hud-links">
+    <strong>Tensura&nbsp;Guild</strong>
+    <span id="hud-ort">Akt 1 · Knoten 1</span>
+  </div>
+  <div class="hud-werte">
+    <span title="Gold">🪙 <b id="hud-gold">0</b></span>
+    <span title="Magicule">✦ <b id="hud-mag">0</b></span>
+    <span title="Verbleibende Niederlagen">❤ <b id="hud-leben">3</b></span>
+    <button id="btn-menu" type="button">Menü</button>
+  </div>
+</header>
+
+<main id="view"></main>
+
+<section id="unten">
+  <div id="wahl"></div>
+  <div id="synergien"></div>
+  <div id="team"></div>
+  <div id="beutel"></div>
+  <div id="reliktliste"></div>
+</section>
+
+<dialog id="menu">
+  <h2>Menü</h2>
+  <p id="menu-info"></p>
+  <div class="reihe">
+    <button type="button" data-a="speichern">Speichern</button>
+    <button type="button" data-a="neu">Neuer Run</button>
+    <button type="button" data-a="menu-zu">Zurück</button>
+  </div>
+  <h3>Glossar</h3>
+  <div id="menu-glossar"></div>
+  <h3>Chronik</h3>
+  <ol id="menu-chronik"></ol>
+</dialog>
+
+<script src="js/rng.js"></script>
+<script src="js/abilities.js"></script>
+<script src="js/data.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/enemies.js"></script>
+<script src="js/run.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
