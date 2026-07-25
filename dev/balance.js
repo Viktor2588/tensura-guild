@@ -12,9 +12,12 @@ var GD = globalThis.GameData, EN = globalThis.Enemies, R = globalThis.Run, AB = 
 
 var N = parseInt(process.argv[2] || '600', 10);
 var VOLL = process.argv.indexOf('--voll') > 0;   // alles freigeschaltet = Veteranen-Sicht
+var STUFE = 0;                                  // --stufe N: Bedrohungsstufe mitmessen
+process.argv.forEach(function (a, i) { if (a === '--stufe') STUFE = parseInt(process.argv[i + 1] || '0', 10); });
 
 function vollMeta() {
   var m = R.newMeta();
+  m.threat = STUFE; m.threatGewaehlt = STUFE;
   m.unlockedUnits = GD.units.filter(function (u) { return !u.hero; }).map(function (u) { return u.id; });
   m.unlockedRelics = GD.relics.map(function (r) { return r.id; });
   return m;
@@ -62,7 +65,9 @@ function route(run, rng) {
 
 function play(seed, voll) {
   var rng = globalThis.RNG(seed ^ 0x9e3779b9);
-  var run = R.create(seed, voll ? vollMeta() : R.newMeta());
+  var basis = R.newMeta();
+  basis.threat = STUFE; basis.threatGewaehlt = STUFE;
+  var run = R.create(seed, voll ? vollMeta() : basis);
   var schritte = 0;
 
   function haushalten() {
@@ -210,7 +215,8 @@ function tabelle(titel, map, nameFn, minN) {
   return rows;
 }
 
-console.log('=== ' + N + ' Runs' + (VOLL ? ', volle Freischaltung' : ', frischer Spieler') + ' ===');
+console.log('=== ' + N + ' Runs' + (VOLL ? ', volle Freischaltung' : ', frischer Spieler') +
+  (STUFE ? ', Bedrohungsstufe ' + STUFE : '') + ' ===');
 console.log('Siege: ' + siege + ' (' + Math.round(siege / N * 100) + '%)');
 console.log('Ø erreichte Knoten: ' + (schritteSum / N).toFixed(1) + ' von 24');
 console.log('Ø Trupp: ' + (teamSum / N).toFixed(1) + ' Einheiten, Ø Rangstufen gesamt: ' + (rangSum / N).toFixed(1));

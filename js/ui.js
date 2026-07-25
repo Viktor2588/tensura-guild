@@ -90,8 +90,9 @@
   }
 
   function zeichneHud() {
-    $('hud-ort').textContent = run.over ? 'Run beendet'
-      : 'Akt ' + run.act + ' · Knoten ' + (run.step + 1) + '/' + R.STEPS.length;
+    $('hud-ort').textContent = (run.over ? 'Run beendet'
+      : 'Akt ' + run.act + ' · Knoten ' + (run.step + 1) + '/' + R.STEPS.length) +
+      (run.threat ? ' · Stufe ' + run.threat : '');
     $('hud-gold').textContent = run.gold;
     $('hud-mag').textContent = run.magicules;
     $('hud-leben').textContent = run.lives;
@@ -129,7 +130,7 @@
   }
 
   function zeichneKarte() {
-    var html = '<h2>Wohin?</h2><div class="karten">';
+    var html = bossVorschau(run.act) + '<h2>Wohin?</h2><div class="karten">';
     run.options.forEach(function (o, i) {
       var klasse = o.type === 'boss' ? 'karte boss' : o.type === 'elite' ? 'karte elite' : 'karte';
       var unter = o.encounter ? gegnerVorschau(o.encounter)
@@ -155,9 +156,33 @@
 
   /* -------------------------------------------------------- Startdraft */
 
+  /* Wer den Boss des Akts kennt, kann darauf hinbauen — deshalb steht er von
+     Anfang an da, samt Fähigkeiten. */
+  function bossVorschau(akt) {
+    var b = EN.boss(akt);
+    if (!b) return '';
+    return '<p class="hinweis">Am Ende von Akt ' + akt + ' wartet <b' +
+      tip('BOSS: ' + b.name, gegnerDetails(b)) + '>' + esc(b.name) + '</b>.</p>';
+  }
+
+  function stufenHtml() {
+    var meta = run.meta;
+    if (!meta.threat) return '';
+    var html = '<h3' + tip('Bedrohungsstufe',
+      'Nach jedem Sieg geht die nächste Stufe auf. Jede verschärft eine andere Schraube, ' +
+      'nicht nur die Gegnerwerte.') + '>Bedrohungsstufe</h3><div class="reihe">';
+    R.BEDROHUNG.forEach(function (b) {
+      if (b.stufe > meta.threat) return;
+      html += '<button class="' + (b.stufe === run.threat ? 'haupt' : '') + '" data-a="stufe" data-i="' +
+        b.stufe + '"' + tip(b.stufe + ' · ' + b.name, b.text) + '>' + b.stufe + '</button>';
+    });
+    return html + '</div><p class="hinweis">' + esc(R.bedrohung(run.threat).name) + ' — ' +
+      esc(R.bedrohung(run.threat).text) + '</p>';
+  }
+
   function zeichneStart() {
     var w = run.startwahl;
-    var html = '<h2>Wer zieht mit dir los?</h2>' +
+    var html = stufenHtml() + bossVorschau(1) + '<h2>Wer zieht mit dir los?</h2>' +
       '<p class="hinweis">Noch ' + w.verbleibend + ' Wahl' + (w.verbleibend === 1 ? '' : 'en') +
       '. Rimuru ist gesetzt — der Rest des Trupps ist deine Entscheidung. ' +
       'Von jeder Art kommt nur eine Einheit mit.</p><div class="karten">';
@@ -445,6 +470,10 @@
     if (run.unlocked && run.unlocked.length) {
       html += '<p>Neu freigeschaltet: <b>' + esc(run.unlocked.join(', ')) + '</b></p>';
     }
+    if (run.neueStufe) {
+      html += '<p class="gut">Bedrohungsstufe ' + run.neueStufe.stufe + ' offen: <b>' +
+        esc(run.neueStufe.name) + '</b> — ' + esc(run.neueStufe.text) + '</p>';
+    }
     html += '<div class="reihe"><button class="haupt" data-a="neu">Neuer Run</button></div>';
     $('view').innerHTML = html;
   }
@@ -501,7 +530,7 @@
   function einheitHtml(m, aufBank) {
     var d = R.resolve(m);
     var basis = GD.unit(m.id);
-    var kosten = R.rankCost(m);
+    var kosten = R.rankCost(m, run);
     var kannAufsteigen = m.rank < 3 && run.magicules >= kosten && !run.wahl;
     var abs = R.abilities(m);
     var aktive = abs.filter(function (a) { return a.art === 'aktiv'; });
@@ -683,6 +712,14 @@
       render(); speichern();
     },
     weiter: function () { R.advance(run); replay = null; render(); speichern(); },
+    stufe: function (d) {
+      var neu = Math.min(+d.i, run.meta.threat || 0);
+      run.meta.threatGewaehlt = neu;
+      R.saveMeta(run.meta);
+      /* Die Stufe greift beim Start — also den Run neu aufsetzen. */
+      run = R.create(Math.floor(Math.random() * 0xffffffff), run.meta);
+      render(); speichern();
+    },
     start: function (d) { R.chooseStart(run, +d.i); render(); speichern(); },
     kaufen: function (d) {
       var ziel = $('rang-ziel');

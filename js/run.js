@@ -43,10 +43,38 @@
     'giftdorn', 'blutkelch', 'rachegeist_relikt', 'erstschlag_relikt', 'turmschild',
     'magiestein', 'heilsegen', 'barriere_stein', 'dornenhaut_relikt', 'schwerer_stand'];
 
+  /* ---- Bedrohungsstufen ---------------------------------------------------
+     Der Grund, nach dem ersten Sieg weiterzuspielen: jede Stufe verschärft eine
+     andere Schraube, nicht nur die Gegnerwerte. Freigeschaltet wird sie, indem
+     man auf der aktuellen Stufe gewinnt.                                      */
+
+  var BEDROHUNG = [
+    { stufe: 0, name: 'Jura-Wald', text: 'Der normale Weg.' },
+    { stufe: 1, name: 'Unruhige Grenze', text: 'Alle Gegner +2,5 % Leben und Angriff.' },
+    { stufe: 2, name: 'Aufmarsch', text: 'Gegner +5 % und 20 Gold weniger zum Start.' },
+    { stufe: 3, name: 'Krieg', text: 'Gegner +7,5 %, dazu kosten Rangaufstiege 12 % mehr Magicule.' },
+    { stufe: 4, name: 'Untergang', text: 'Gegner +10 % — der letzte Akt wird zur Wand.' },
+    { stufe: 5, name: 'Sturmgott', text: 'Gegner +12,5 %, Elite und Bosse zusätzlich, und nur zwei Leben.' }
+  ];
+  function bedrohung(i) { return BEDROHUNG[Math.max(0, Math.min(BEDROHUNG.length - 1, i || 0))]; }
+
+  /* Gegnerhärte je Stufe — greift auf denselben mult wie die Begegnung selbst. */
+  function bedrohungsFaktor(run, node) {
+    var t = run.threat || 0;
+    if (!t) return 1;
+    /* Klein halten: die Kurve ist steil, 20 % mehr Gegnerwerte kippen fast jeden
+       Run. Gemessen mit `node dev/balance.js 500 --stufe N`. */
+    var f = 1 + 0.025 * Math.min(t, 5);
+    if (t >= 5 && node.type === 'boss') f *= 1.05;
+    if (t >= 5 && node.type === 'elite') f *= 1.07;
+    return f;
+  }
+
   /* ---- Meta (überlebt den Tod) ------------------------------------------- */
 
   function newMeta() {
-    return { unlockedUnits: START_UNITS.slice(), unlockedRelics: START_RELICS.slice(), runs: 0, wins: 0, best: 0 };
+    return { unlockedUnits: START_UNITS.slice(), unlockedRelics: START_RELICS.slice(),
+             runs: 0, wins: 0, best: 0, threat: 0, threatGewaehlt: 0 };
   }
 
   function unlock(meta, rng) {
@@ -74,7 +102,12 @@
   function passivSlots(m) { return PASSIV_SLOTS[m.rank]; }
   function praedatorSlots(m) { return PRAEDATOR_SLOTS[m.rank]; }
   function rankName(m) { return RANK_NAME[m.rank]; }
-  function rankCost(m) { return m.rank < 3 ? RANK_COST[m.rank] : 0; }
+  function rankCost(m, run) {
+    if (m.rank >= 3) return 0;
+    var k = RANK_COST[m.rank];
+    if (run && (run.threat || 0) >= 3) k = Math.round(k * 1.12);   // Stufe 3: teurere Ränge
+    return k;
+  }
 
   /* Baut aus dem Mitglied die Kampfdefinition: Werte, aktive und passive
      Fähigkeiten, Ausrüstung, verschlungene Gegnerfähigkeiten. */
@@ -163,10 +196,11 @@
 
   function create(seed, meta) {
     meta = meta || newMeta();
+    var t = Math.min(meta.threatGewaehlt || 0, meta.threat || 0);
     var run = {
-      seed: seed >>> 0, rngState: seed >>> 0, meta: meta,
+      seed: seed >>> 0, rngState: seed >>> 0, meta: meta, threat: t,
       act: 1, step: 0, phase: 'karte', over: false, won: false,
-      gold: 60, magicules: 0, lives: 3,
+      gold: t >= 2 ? 40 : 60, magicules: 0, lives: t >= 5 ? 2 : 3,
       team: [member('rimuru')], bank: [], relics: [],
       options: null, node: null, pending: null, wahl: null, chronik: []
     };
@@ -259,6 +293,8 @@
 
   function roll(run) {
     var rng = rngOf(run);
+    /* Nach dem letzten Akt gibt es keine Begegnungen mehr — dann nicht würfeln. */
+    if (!EN.forAct(run.act).length) { run.options = []; return; }
     var types = STEPS[run.step];
     run.options = types.map(function (type) {
       if (type === 'kampf' || type === 'elite') {
@@ -296,7 +332,7 @@
     var rng = rngOf(run);
     var seed = Math.floor(rng() * 0xffffffff);
     commit(run, rng);
-    var foes = EN.build(node.encounter);
+    var foes = EN.build(node.encounter, bedrohungsFaktor(run, node));
     var res = C.simulate(run.team.map(resolve), foes, seed, { relics: run.relics.map(GD.relic) });
     run.phase = 'kampf';
     run.pending = { result: res, node: node, rewards: null, devour: null };
@@ -426,7 +462,7 @@
   function rankUp(run, uid, gratis) {
     var m = find(run, uid);
     if (!m || m.rank >= 3 || run.wahl) return false;
-    var cost = gratis ? 0 : rankCost(m);
+    var cost = gratis ? 0 : rankCost(m, run);
     if (run.magicules < cost) return false;
     run.magicules -= cost;
     m.rank++;
@@ -644,7 +680,15 @@
     run.phase = 'ende';
     var rng = rngOf(run);
     run.meta.runs++;
-    if (won) run.meta.wins++;
+    if (won) {
+      run.meta.wins++;
+      /* Gewonnen auf der höchsten offenen Stufe: die nächste geht auf. */
+      if ((run.threat || 0) >= (run.meta.threat || 0) && run.meta.threat < 5) {
+        run.meta.threat = (run.meta.threat || 0) + 1;
+        run.meta.threatGewaehlt = run.meta.threat;
+        run.neueStufe = bedrohung(run.meta.threat);
+      }
+    }
     var score = (run.act - 1) * 8 + run.step;
     run.meta.best = Math.max(run.meta.best || 0, won ? 24 : score);
     run.unlocked = unlock(run.meta, rng);
@@ -669,7 +713,7 @@
 
   function serialize(run) {
     return JSON.stringify({
-      seed: run.seed, rngState: run.rngState, act: run.act, step: run.step,
+      seed: run.seed, rngState: run.rngState, act: run.act, step: run.step, threat: run.threat,
       gold: run.gold, magicules: run.magicules, lives: run.lives, relics: run.relics,
       bag: run.bag || [], chronik: run.chronik, meta: run.meta,
       team: run.team, bank: run.bank, uidSeq: uidSeq, startwahl: run.startwahl,
@@ -680,7 +724,7 @@
     var d = JSON.parse(raw);
     var run = create(d.seed, d.meta);
     run.team = []; run.bank = [];
-    ['rngState', 'act', 'step', 'gold', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank']
+    ['rngState', 'act', 'step', 'threat', 'gold', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank']
       .forEach(function (k) { if (d[k] !== undefined) run[k] = d[k]; });
     uidSeq = Math.max(uidSeq, d.uidSeq || 0);
     run.pending = null; run.wahl = null;
@@ -723,6 +767,7 @@
     rankUp: rankUp, chooseActive: chooseActive, skipActive: skipActive,
     chooseStart: chooseStart,
     rankName: rankName, rankCost: rankCost,
+    BEDROHUNG: BEDROHUNG, bedrohung: bedrohung, bedrohungsFaktor: bedrohungsFaktor,
     itemSlots: itemSlots, aktivSlots: aktivSlots, passivSlots: passivSlots, praedatorSlots: praedatorSlots,
     buy: buy, eventChoose: eventChoose, camp: camp,
     equip: equip, unequip: unequip, move: move, bench: bench, deploy: deploy, entlassen: entlassen,

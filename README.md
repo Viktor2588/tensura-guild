@@ -39,7 +39,7 @@ js/enemies.js    48 Gegner (mit eigenen Aktiven), 3 Bosse, 50 Begegnungen, 26 Er
 js/run.js        Karte, Ränge, Belohnungen, Shop, Prädator, Speicherstand
 js/ui.js         Darstellung; ändert Zustand nur über Run.*
 js/main.js       Start
-dev/sim.js       166 Selbsttests
+dev/sim.js       181 Selbsttests
 dev/uitest.js    UI-Test in jsdom: klickt einen Run durch (46 Prüfungen)
 dev/balance.js   spielt N komplette Runs headless und misst die Builds
 ```
@@ -48,9 +48,10 @@ dev/balance.js   spielt N komplette Runs headless und misst die Builds
 
 ```bash
 npm install                  # nur für den UI-Test (jsdom); das Spiel selbst hat keine Abhängigkeiten
-node dev/sim.js              # Logik-Selbsttests, muss 166/166 sein
+node dev/sim.js              # Logik-Selbsttests, muss 181/181 sein
 node dev/uitest.js           # UI-Test, muss 46/46 sein
 node dev/balance.js 600      # Balance, frischer Spieler
+node dev/balance.js 400 --stufe 3   # Balance auf Bedrohungsstufe 3
 node dev/balance.js 600 --voll   # Balance, alles freigeschaltet
 ```
 
@@ -78,6 +79,24 @@ Härte der Karte statt die des Spiels.
 
 Schwierigkeit wird nicht an 33 Statblöcken gedreht, sondern am `mult` jeder
 Begegnung in `js/enemies.js` — ein Knopf pro Begegnung.
+
+## Bedrohungsstufen
+
+Nach dem ersten Sieg geht Stufe 1 auf, danach jeweils die nächste. Jede zieht
+eine andere Schraube an, nicht nur die Gegnerwerte:
+
+| Stufe | Name | Was sich ändert | Siegquote des Bots |
+|---|---|---|---|
+| 0 | Jura-Wald | – | 54 % |
+| 1 | Unruhige Grenze | Gegner +2,5 % | 47 % |
+| 2 | Aufmarsch | +5 %, 20 Gold weniger zum Start | 39 % |
+| 3 | Krieg | +7,5 %, Ränge kosten 12 % mehr | 28 % |
+| 4 | Untergang | +10 % | 20 % |
+| 5 | Sturmgott | +12,5 %, Elite und Boss zusätzlich, nur zwei Leben | 10 % |
+
+Die Schritte sind absichtlich klein: die Kurve ist steil genug, dass 20 % mehr
+Gegnerwerte fast jeden Run kippen. Der Bot spielt zudem nur mittelmäßig — für
+einen Menschen liegt jede Stufe höher.
 
 ## Was fehlt
 

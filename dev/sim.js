@@ -391,6 +391,54 @@ if (mitKampf) {
   }), 'jede angezeigte Gegnerfähigkeit hat einen Beschreibungstext');
 }
 
+head('Bedrohungsstufen');
+ok(R.BEDROHUNG.length === 6, 'sechs Stufen von 0 bis 5');
+ok(R.BEDROHUNG.every(function (b) { return b.name && b.text; }), 'jede Stufe hat Namen und Erklärung');
+var metaNeu = R.newMeta();
+ok(metaNeu.threat === 0, 'ein frischer Speicherstand startet auf Stufe 0');
+
+/* Stufen wirken erst, wenn sie freigeschaltet sind. */
+metaNeu.threatGewaehlt = 4;
+var zuHoch = R.create(1, metaNeu);
+ok(zuHoch.threat === 0, 'eine nicht freigeschaltete Stufe greift nicht');
+
+var meta4 = R.newMeta(); meta4.threat = 5; meta4.threatGewaehlt = 5;
+var hart = R.create(1, meta4);
+ok(hart.threat === 5, 'eine freigeschaltete Stufe wird übernommen');
+ok(hart.lives === 2, 'Stufe 4 nimmt ein Leben');
+ok(hart.gold < 60, 'Stufe 2 kürzt das Startgold');
+while (hart.phase === 'start') R.chooseStart(hart, 0);
+ok(R.rankCost(hart.team[0], hart) > R.rankCost(hart.team[0]), 'Stufe 3 verteuert die Ränge');
+
+/* Gegner müssen auf höherer Stufe messbar härter sein. */
+var enc0 = EN.forAct(1)[0];
+var leicht = EN.build(enc0, R.bedrohungsFaktor({ threat: 0 }, { type: 'kampf' }));
+var schwer = EN.build(enc0, R.bedrohungsFaktor({ threat: 5 }, { type: 'kampf' }));
+ok(schwer[0].hp > leicht[0].hp && schwer[0].atk > leicht[0].atk,
+   'Stufe 5 macht Gegner stärker (' + leicht[0].hp + ' -> ' + schwer[0].hp + ' Leben)');
+ok(R.bedrohungsFaktor({ threat: 5 }, { type: 'elite' }) >
+   R.bedrohungsFaktor({ threat: 5 }, { type: 'kampf' }), 'Stufe 5 trifft Elite härter');
+ok(R.bedrohungsFaktor({ threat: 0 }, { type: 'boss' }) === 1, 'Stufe 0 ändert nichts');
+
+/* Sieg auf der höchsten Stufe schaltet die nächste frei. */
+var metaAuf = R.newMeta();
+var sieger = R.create(7, metaAuf);
+while (sieger.phase === 'start') R.chooseStart(sieger, 0);
+sieger.act = 3; sieger.step = R.STEPS.length - 1;   // letzter Knoten des letzten Akts
+R.advance(sieger);
+ok(sieger.won && metaAuf.threat === 1, 'ein Sieg öffnet die nächste Bedrohungsstufe');
+ok(sieger.neueStufe && sieger.neueStufe.stufe === 1, 'die neue Stufe wird gemeldet');
+var metaMax = R.newMeta(); metaMax.threat = 5; metaMax.threatGewaehlt = 5;
+var maxRun = R.create(8, metaMax);
+while (maxRun.phase === 'start') R.chooseStart(maxRun, 0);
+maxRun.act = 3; maxRun.step = R.STEPS.length - 1; R.advance(maxRun);
+ok(metaMax.threat === 5, 'über Stufe 5 hinaus geht es nicht');
+
+/* Die Stufe überlebt das Speichern. */
+var sRun3 = R.create(9, meta4);
+while (sRun3.phase === 'start') R.chooseStart(sRun3, 0);
+ok(R.deserialize(R.serialize(sRun3)).threat === 5, 'die Bedrohungsstufe überlebt das Speichern');
+
 /* ------------------------------------------------------------- Kampf */
 head('Kampf');
 var team = ['rimuru', 'gobta', 'skelettritter'].map(function (id) { return def(id); });

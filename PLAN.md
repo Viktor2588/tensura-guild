@@ -209,6 +209,13 @@ keine aktive Fähigkeit; ein Test fängt das jetzt ab. Im Bot ersetzt eine
 Wegwahl-Heuristik das Würfeln, sonst maß er die Härte der Karte statt die des
 Spiels.
 
+Fünfter Durchgang (2026-07-26): **Bedrohungsstufen 0–5** als Langzeitschicht —
+freigeschaltet durch Siege, jede zieht eine andere Schraube an (Gegnerwerte,
+Startgold, Rangkosten, Leben). Der Boss des Akts steht ab dem ersten Knoten mit
+Fähigkeiten in der Vorschau. `dev/balance.js --stufe N` misst jede Stufe:
+54/47/39/28/20/10 % Siegquote. Dabei zeigte sich, wie schmal der Grat ist —
+die erste Fassung mit 10 % Schritten ließ Stufe 2 auf 3 % einbrechen.
+
 Weitere offene Punkte:
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.

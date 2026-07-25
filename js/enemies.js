@@ -470,10 +470,10 @@
   }
 
   /* Begegnung -> fertige Kampfdefinitionen, mit mult skaliert. */
-  function build(e) {
+  function build(e, zusatz) {
     return e.units.map(function (id) {
       var d = byId(enemies, id);
-      var m = e.mult || 1;
+      var m = (e.mult || 1) * (zusatz || 1);
       return {
         id: d.id, name: d.name, tags: d.tags, effects: d.effects, actives: aktiveVon(id),
         resistenz: d.resistenz || 0,

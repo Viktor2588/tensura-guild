@@ -1,5 +1,11 @@
 # Tensura Guild — Spielanleitung
 
+## Bedrohungsstufen
+
+Gewinnst du einen Run, geht die nächste Bedrohungsstufe auf — bis Stufe 5. Die
+Wahl triffst du auf dem Startbildschirm. Jede Stufe zieht eine andere Schraube
+an: härtere Gegner, weniger Startgold, teurere Ränge, am Ende ein Leben weniger.
+
 ## Der Start
 
 Rimuru ist gesetzt. Den Rest des Trupps wählst du: zweimal eine Einheit aus drei
@@ -7,6 +13,10 @@ Angeboten. Achte schon hier auf die Signaturen — sie bestimmen, welcher Build
 überhaupt möglich wird.
 
 ## Der Run
+
+Den Boss des laufenden Akts siehst du von Anfang an — mit allen Fähigkeiten im
+Tooltip. Wer weiß, dass Charybdis Flächenschaden austeilt und Gift streut, baut
+anders als jemand, der es erst am achten Knoten erfährt.
 
 3 Akte à 8 Knoten. An jedem Knoten wählst du zwischen **drei Wegen** — und die
 Vorschau zeigt dir vorher, welche Gegner dort stehen, welche Werte sie haben und
