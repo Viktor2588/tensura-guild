@@ -264,6 +264,11 @@
   /* Zwei von drei Angeboten bleiben im Thema des Trupps. Ohne diese Neigung
      kommt ein Build rechnerisch fast nie zustande — gemessen mit dev/balance.js. */
   function themenWahl(run, rng, pool, akt, n) {
+    /* Was gerade nichts tun kann, gehört nicht ins Angebot: ein Relikt mit
+       unerfüllter Bedingung ist für den Spieler ein toter Slot. Je mehr
+       freigeschaltet ist, desto häufiger passierte genau das. */
+    var brauchbar = pool.filter(function (x) { return !x.bedingung || x.bedingung(run); });
+    if (brauchbar.length >= n) pool = brauchbar;
     if (rng() < 0.35) return waehle(rng, pool, akt, n);
     var kw = {};
     buildTeile(run).forEach(function (t) {
@@ -501,7 +506,7 @@
     var rng = rngOf(run);
     var offers = [];
     themenWahl(run, rng, unitPool(run), run.act, 3).forEach(function (u) {
-      offers.push({ kind: 'unit', id: u.id, name: u.name, price: 40 + u.cost * 28,
+      offers.push({ kind: 'unit', id: u.id, name: u.name, price: 70 + u.cost * 8,
                     text: unitText(u), rarity: u.rarity });
     });
     themenWahl(run, rng, GD.items, run.act, 2).forEach(function (it) {
@@ -511,7 +516,11 @@
     var rels = relicPool(run);
     if (rels.length) {
       var r = themenWahl(run, rng, rels, run.act, 1)[0];
-      offers.push({ kind: 'relic', id: r.id, name: r.name, price: 60 + r.rarity * 40,
+      /* Fester Preis. Die Seltenheit sagt, wie stark etwas ist, nicht wie teuer:
+         sonst wird jede Freischaltung zur Geldstrafe — gemessen kaufte ein
+         Veteran ein Achtel weniger Relikte als ein Anfänger und verlor dadurch
+         15 Punkte Siegquote. */
+      offers.push({ kind: 'relic', id: r.id, name: r.name, price: 120,
                     text: r.text, rarity: r.rarity });
     }
     /* Dritte Goldsenke neben Einheit und Ausrüstung: ein Rang, sonst nur für

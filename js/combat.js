@@ -59,6 +59,18 @@
       opt = opt || {};
       var v = target.status.verderbnis || 0;
       amount = amount * (1 + v * 0.1);
+
+      /* Deckung: wer hinten steht, gibt ein Drittel des Schadens an die vorderste
+         lebende Einheit ab. Damit ist die Frontlinie mehr als Reihenfolge —
+         ein zäher Körper vorn schützt die Reihe dahinter wirklich. */
+      if (!opt.umgeleitet && !opt.pure && target.pos >= 2) {
+        var vorn = living(target.side)[0];
+        if (vorn && vorn !== target) {
+          var abgabe = amount / 3;
+          amount -= abgabe;
+          deal(vorn, abgabe, 'Deckung', { umgeleitet: true });
+        }
+      }
       if (!opt.pure && target.status.schild > 0) {
         var absorbed = Math.min(target.status.schild, amount);
         target.status.schild -= absorbed;

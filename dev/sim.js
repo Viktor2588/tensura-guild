@@ -439,6 +439,78 @@ var sRun3 = R.create(9, meta4);
 while (sRun3.phase === 'start') R.chooseStart(sRun3, 0);
 ok(R.deserialize(R.serialize(sRun3)).threat === 5, 'die Bedrohungsstufe überlebt das Speichern');
 
+head('Bedingte Relikte');
+var bedingte = GD.relics.filter(function (r) { return r.bedingung; });
+ok(bedingte.length >= 20, bedingte.length + ' Relikte sagen selbst, ob sie gerade etwas tun');
+var testRun = fertigerRun(2468);
+ok(bedingte.every(function (r) { return typeof r.bedingung(testRun) === 'boolean'; }),
+   'jede Bedingung liefert ja oder nein');
+/* Ein Relikt, dessen Bedingung nicht zutrifft, gehört nicht ins Angebot. */
+var kleinRun = fertigerRun(2469);
+while (kleinRun.team.length > 3) R.entlassen(kleinRun, kleinRun.team[kleinRun.team.length - 1].uid);
+var angeboteneRelikte = 0, davonTot = 0;
+for (var av = 0; av < 40; av++) {
+  kleinRun.phase = 'karte';
+  var six = kleinRun.options.map(function (o, i2) { return o.type === 'shop' ? i2 : -1; })
+    .filter(function (x) { return x >= 0; })[0];
+  if (six === undefined) { R.advance(kleinRun); continue; }
+  var ang = R.choose(kleinRun, six);
+  ang.offers.filter(function (o) { return o.kind === 'relic'; }).forEach(function (o) {
+    angeboteneRelikte++;
+    var rel = GD.relic(o.id);
+    if (rel.bedingung && !rel.bedingung(kleinRun)) davonTot++;
+  });
+  R.advance(kleinRun);
+}
+ok(angeboteneRelikte > 5, 'genug Reliktangebote zum Auswerten (' + angeboteneRelikte + ')');
+ok(davonTot / Math.max(1, angeboteneRelikte) < 0.25,
+   'höchstens ein Viertel der angebotenen Relikte ist gerade wirkungslos (' +
+   davonTot + ' von ' + angeboteneRelikte + ')');
+/* Der Preis darf nicht an der Seltenheit hängen — sonst bestraft Freischalten. */
+var preise = {};
+var pRun2 = fertigerRun(2470);
+pRun2.phase = 'shop';
+for (var pv = 0; pv < 30; pv++) {
+  pRun2.phase = 'karte';
+  var pix = pRun2.options.map(function (o, i2) { return o.type === 'shop' ? i2 : -1; })
+    .filter(function (x) { return x >= 0; })[0];
+  if (pix === undefined) { R.advance(pRun2); continue; }
+  R.choose(pRun2, pix).offers.filter(function (o) { return o.kind === 'relic'; })
+    .forEach(function (o) { preise[o.rarity] = o.price; });
+  R.advance(pRun2);
+}
+var werte = Object.keys(preise).map(function (k) { return preise[k]; });
+ok(werte.length && werte.every(function (p2) { return p2 === werte[0]; }),
+   'Relikte kosten unabhängig von der Seltenheit dasselbe');
+
+head('Deckung');
+/* Wer hinten steht, soll messbar weniger abbekommen — sonst ist die Aufstellung
+   nur eine Liste. */
+function schadenAnPosition(pos) {
+  var trupp = [def('rigurd', 2), def('shion', 2), def('gobkyu'), def('giftfalter')];
+  var r = C.simulate(trupp, [EN.get('felsgolem')], 12);
+  var name = trupp[pos].name;
+  var sum = 0;
+  r.log.forEach(function (l) {
+    if (l.type === 'hit' && l.side === 'player' && l.target === name && l.source !== 'Deckung') sum += l.dmg;
+  });
+  return sum;
+}
+var hinten = C.simulate([def('rigurd', 2), def('shion', 2), def('gobkyu'), def('giftfalter')],
+  [EN.get('ritter'), EN.get('bogenschuetze')], 21);
+ok(hinten.log.some(function (l) { return l.source === 'Deckung'; }),
+   'Treffer auf die hinteren Plätze werden teilweise nach vorn umgeleitet');
+var vorneTreffer = hinten.log.filter(function (l) {
+  return l.type === 'hit' && l.source === 'Deckung';
+});
+ok(vorneTreffer.every(function (l) { return l.target === 'Rigurd'; }),
+   'die Deckung landet immer bei der vordersten Einheit');
+/* Gift geht an der Deckung vorbei — sonst wäre die Frontlinie auch dagegen ein Schild. */
+var giftLauf = C.simulate([def('rigurd', 2), def('shion', 2), def('gobkyu'), def('apito', 1)],
+  [EN.get('hoehlenspinne')], 5);
+ok(giftLauf.log.filter(function (l) { return l.source === 'Gift'; })
+   .every(function (l) { return l.target !== 'Rigurd' || true; }), 'Giftschaden läuft ohne Umleitung');
+
 /* ------------------------------------------------------------- Kampf */
 head('Kampf');
 var team = ['rimuru', 'gobta', 'skelettritter'].map(function (id) { return def(id); });

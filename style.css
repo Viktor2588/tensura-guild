@@ -248,3 +248,12 @@ dialog { max-height: 85vh; overflow-y: auto; }
 .rar-rand-5 { border-color: #8a6320; background: #241d10; }
 
 .karte .rar { vertical-align: top; }
+
+.bed {
+  display: inline-block; margin: 0 0 .25rem .3rem;
+  font-size: .64rem; letter-spacing: .04em; text-transform: uppercase;
+  padding: .05rem .3rem; border-radius: 4px; border: 1px solid currentColor;
+}
+.bed.an { color: var(--gruen); }
+.bed.aus { color: var(--rot); }
+.chip.schlaeft { opacity: .55; }

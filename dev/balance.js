@@ -11,15 +11,24 @@ require('../js/run.js');
 var GD = globalThis.GameData, EN = globalThis.Enemies, R = globalThis.Run, AB = globalThis.Abilities;
 
 var N = parseInt(process.argv[2] || '600', 10);
-var VOLL = process.argv.indexOf('--voll') > 0;   // alles freigeschaltet = Veteranen-Sicht
+var VOLL = process.argv.indexOf('--voll') > 0 || process.argv.indexOf('--nur-einheiten') > 0 || process.argv.indexOf('--nur-relikte') > 0;   // alles freigeschaltet = Veteranen-Sicht
 var STUFE = 0;                                  // --stufe N: Bedrohungsstufe mitmessen
+/* Standard: der Bot stellt sinnvoll auf. Wer nicht aufstellt, verliert 15 Punkte —
+   das zu messen wäre nicht mehr kompetentes Spiel. --chaos schaltet es ab. */
+var STELLEN = process.argv.indexOf('--chaos') < 0;
 process.argv.forEach(function (a, i) { if (a === '--stufe') STUFE = parseInt(process.argv[i + 1] || '0', 10); });
 
+/* --voll = alles frei. --nur-einheiten / --nur-relikte trennen die beiden
+   Freischaltungen, um zu sehen, welche die Siegquote bewegt. */
 function vollMeta() {
   var m = R.newMeta();
   m.threat = STUFE; m.threatGewaehlt = STUFE;
-  m.unlockedUnits = GD.units.filter(function (u) { return !u.hero; }).map(function (u) { return u.id; });
-  m.unlockedRelics = GD.relics.map(function (r) { return r.id; });
+  if (process.argv.indexOf('--nur-relikte') < 0) {
+    m.unlockedUnits = GD.units.filter(function (u) { return !u.hero; }).map(function (u) { return u.id; });
+  }
+  if (process.argv.indexOf('--nur-einheiten') < 0) {
+    m.unlockedRelics = GD.relics.map(function (r) { return r.id; });
+  }
   return m;
 }
 
@@ -63,12 +72,34 @@ function route(run, rng) {
   return beste;
 }
 
+/* Ein Relikt mit unerfüllter Bedingung ist gerade wertlos — der Bot soll es
+   genauso wenig nehmen wie ein Spieler, der den Hinweis liest. */
+function reliktWert(run, id) {
+  var r = GD.relic(id);
+  if (!r) return 0;
+  if (r.bedingung && !r.bedingung(run)) return 4;
+  return 18;
+}
+
 function play(seed, voll) {
   var rng = globalThis.RNG(seed ^ 0x9e3779b9);
   var basis = R.newMeta();
   basis.threat = STUFE; basis.threatGewaehlt = STUFE;
   var run = R.create(seed, voll ? vollMeta() : basis);
   var schritte = 0;
+
+  /* Zähe nach vorn, Fernkampf und Magier nach hinten. Genau das, was ein Spieler
+     als Erstes tut — und was der Bot bisher nie getan hat. */
+  function aufstellen() {
+    var wert = { front: 0, verstaerker: 1, unterstuetzer: 2, fernkampf: 3, magier: 4 };
+    run.team.sort(function (a, b) {
+      var da = R.resolve(a), db = R.resolve(b);
+      var ra = wert[da.tags[1]] !== undefined ? wert[da.tags[1]] : 2;
+      var rb = wert[db.tags[1]] !== undefined ? wert[db.tags[1]] : 2;
+      if (ra !== rb) return ra - rb;
+      return (db.hp + db.def * 8) - (da.hp + da.def * 8);
+    });
+  }
 
   function haushalten() {
     (run.bag || []).slice().forEach(function (iid) {
@@ -110,6 +141,7 @@ function play(seed, voll) {
     }
     if (run.phase === 'karte') {
       haushalten();
+      if (STELLEN) aufstellen();
       if (run.wahl) continue;
       R.choose(run, route(run, rng));
       continue;
@@ -126,7 +158,7 @@ function play(seed, voll) {
         var b2 = 0, s2 = -1;
         p.rewards.forEach(function (rw, i) {
           var sc = rw.kind === 'unit' ? 10 + passt(rw.id, kw2)
-            : rw.kind === 'relic' ? 18
+            : rw.kind === 'relic' ? (reliktWert(run, rw.id))
             : rw.kind === 'item' ? 6 : 8;
           if (sc > s2) { s2 = sc; b2 = i; }
         });
@@ -137,10 +169,22 @@ function play(seed, voll) {
     }
     if (run.phase === 'shop') {
       var kw3 = teamKeywords(run);
-      run.pending.offers.forEach(function (o, i) {
+      /* Nach Wert je Gold kaufen statt in Angebotsreihenfolge. Ohne das gibt der
+         Bot sein Gold für die erstbeste teure Einheit aus und lässt Relikte
+         liegen — genau daran hing der Unterschied zwischen Anfänger und Veteran. */
+      var reihenfolge = run.pending.offers.map(function (o, i) {
+        var wert = o.kind === 'relic' ? reliktWert(run, o.id)
+          : o.kind === 'item' ? 12
+          : o.kind === 'rang' ? 14
+          : Math.max(0, passt(o.id, kw3)) + (run.team.length < 4 ? 14 : 0);
+        return { i: i, o: o, punkte: wert / Math.max(1, o.price) };
+      }).sort(function (a2, b2) { return b2.punkte - a2.punkte; });
+      reihenfolge.forEach(function (e) {
+        var o = e.o;
         if (o.price > run.gold) { unbezahlbar++; return; }
         if (o.kind === 'unit' && passt(o.id, kw3) < 4) return;
-        if (R.buy(run, i)) kaeufe[o.kind] = (kaeufe[o.kind] || 0) + 1;
+        if (o.kind === 'relic' && reliktWert(run, o.id) < 10) return;
+        if (R.buy(run, e.i)) kaeufe[o.kind] = (kaeufe[o.kind] || 0) + 1;
       });
       haushalten();
       R.advance(run);
@@ -165,7 +209,8 @@ function play(seed, voll) {
 /* ---- Läufe ------------------------------------------------------------- */
 
 var siege = 0, akte = [0, 0, 0, 0], schritteSum = 0, rangSum = 0, teamSum = 0;
-var kaeufe = {}, unbezahlbar = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
+var kaeufe = {}, unbezahlbar = 0, kostenSum = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
+var ohneFront = 0, ohneStuetze = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
 var proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {};
 
 function bump(map, key, won) {
@@ -181,6 +226,14 @@ for (var s = 0; s < N; s++) {
   schritteSum += (run.act - 1) * 8 + run.step;
   teamSum += run.team.length;
 
+  var rollen2 = run.team.map(function (m) { return GD.unit(m.id).tags[1]; });
+  if (rollen2.indexOf('front') < 0) ohneFront++;
+  if (rollen2.indexOf('unterstuetzer') < 0 && rollen2.indexOf('verstaerker') < 0) ohneStuetze++;
+  reliktSum += run.relics.length;
+  itemSum += run.team.reduce(function (a2, m) { return a2 + m.items.length; }, 0);
+  kostenSum += run.team.reduce(function (a2, m) { return a2 + GD.unit(m.id).cost; }, 0);
+  var werte = run.team.reduce(function (a2, m) { var d = R.resolve(m); return a2 + d.hp + d.atk * 6; }, 0);
+  werteSum += werte;
   var abs = R.buildTeile(run);
   var hoechster = 0;
   run.team.forEach(function (m) {
@@ -216,12 +269,15 @@ function tabelle(titel, map, nameFn, minN) {
 }
 
 console.log('=== ' + N + ' Runs' + (VOLL ? ', volle Freischaltung' : ', frischer Spieler') +
-  (STUFE ? ', Bedrohungsstufe ' + STUFE : '') + ' ===');
+  (STUFE ? ', Bedrohungsstufe ' + STUFE : '') + (STELLEN ? '' : ', ohne Aufstellung') + ' ===');
 console.log('Siege: ' + siege + ' (' + Math.round(siege / N * 100) + '%)');
 console.log('Ø erreichte Knoten: ' + (schritteSum / N).toFixed(1) + ' von 24');
 console.log('Ø Trupp: ' + (teamSum / N).toFixed(1) + ' Einheiten, Ø Rangstufen gesamt: ' + (rangSum / N).toFixed(1));
 console.log('gescheitert in Akt 1/2/3: ' + akte[1] + ' / ' + akte[2] + ' / ' + akte[3]);
 console.log('nicht bezahlbare Angebote: ' + unbezahlbar + ' (je Run ' + (unbezahlbar / N).toFixed(1) + ')');
+console.log('Trupps ohne Frontlinie: ' + ohneFront + ' · ohne Unterstützung: ' + ohneStuetze);
+console.log('Ø Relikte: ' + (reliktSum / N).toFixed(1) + ' · Ø angelegte Ausrüstung: ' + (itemSum / N).toFixed(1));
+console.log('Ø Truppkosten: ' + (kostenSum / N).toFixed(1) + ' · Ø Truppstärke (hp+6·atk): ' + Math.round(werteSum / N));
 console.log('Käufe im Laden: ' + Object.keys(kaeufe).map(function (k) {
   return k + ' ' + kaeufe[k];
 }).join(' · '));

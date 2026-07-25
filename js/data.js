@@ -102,7 +102,8 @@
       verstaerker: 'Eine Fähigkeit, die diesen Zustand ausnutzt — mehr Schaden gegen Ziele, die ihn tragen.',
       art: 'Volk der Einheit. Gibt KEINE Boni: Arten regeln nur, dass von jeder genau eine Einheit im Trupp stehen darf.',
       rolle: 'Bestimmt, wen die Einheit im Kampf angreift.',
-      aufstellung: 'Die Reihenfolge ist die Frontlinie: vorn steht, wer von gegnerischen Nahkämpfern zuerst getroffen wird.',
+      aufstellung: 'Die Reihenfolge ist die Frontlinie: vorn steht, wer von gegnerischen Nahkämpfern zuerst getroffen wird. Ab Platz 3 greift zusätzlich die Deckung — ein Drittel des erlittenen Schadens übernimmt die vorderste lebende Einheit. Ein zäher Körper vorn schützt die Reihe dahinter also wirklich.',
+      deckung: 'Einheiten ab Platz 3 geben ein Drittel jedes Treffers an die vorderste lebende Einheit ab. Gift und Brand gehen daran vorbei.',
       bank: 'Abgestellte Einheiten. Sie kämpfen nicht, belegen ihre Art aber weiterhin.',
       raritaet: 'Üblich → ungewöhnlich → selten → episch → legendär. Die Stufe steuert nicht nur die Farbe, sondern wie wahrscheinlich etwas überhaupt angeboten wird: In Akt 1 dominiert Übliches, in Akt 3 tauchen Episches und Legendäres deutlich öfter auf. Elite- und Bosskämpfe würfeln eine Stufe besser, und je höher der Rang einer Einheit, desto besser das Angebot beim Aufstieg.'
     }
@@ -215,10 +216,25 @@
 
   /* kw = was das Relikt erzeugt, amp = was es verstärkt. Ohne diese Angabe
      taucht der halbe Build in der Synergie-Anzeige gar nicht auf. */
-  function relic(id, name, rar, text, apply, kw, amp) {
+  function relic(id, name, rar, text, apply, kw, amp, bedingung) {
     return { id: id, name: name, rarity: rar, text: text, apply: apply,
-             keywords: kw || [], amplifies: amp || [] };
+             keywords: kw || [], amplifies: amp || [], bedingung: bedingung || null };
   }
+  /* Bedingte Relikte sagen jetzt selbst, ob sie im aktuellen Trupp überhaupt
+     etwas tun. Ohne das ist ein legendäres Relikt mit unerfüllter Bedingung eine
+     unsichtbare Falle — und in der Messung der Grund, warum ein Veteran mit mehr
+     freigeschalteten Relikten schwächer war als ein Anfänger. */
+  function hatKeyword(run, kw) {
+    return (root.Run ? root.Run.buildTeile(run) : []).some(function (t) {
+      return (t.keywords || []).concat(t.amplifies || []).indexOf(kw) >= 0;
+    });
+  }
+  function R_resolve(m) { return root.Run.resolve(m); }
+  function rollen(run) {
+    return run.team.map(function (m) { return GD_rolle(m); });
+  }
+  function GD_rolle(m) { return byId(units, m.id).tags[1]; }
+  function raenge(run) { return run.team.map(function (m) { return m.rank || 0; }); }
   function jeder(fn) { return function (m) { m.forEach(fn); }; }
   /* Zählt, wie oft ein Schlüsselwort im Trupp vorkommt — daran hängen die
      Relikte, die einen Build belohnen statt eines Volkes. */
@@ -250,33 +266,37 @@
     relic('giftdorn', 'Giftdorn', 2, 'Jeder Treffer legt 1 Gift an',
       anhaengen('onHit', 'Giftdorn', function (c) { c.applyStatus(c.target, 'gift', 1); }), ['gift']),
     relic('gifttraeger', 'Giftträger', 3, '+30 % Schaden gegen vergiftete Ziele',
-      anhaengen('onHit', 'Giftträger', function (c) { if (c.target.status.gift > 0) c.dmg *= 1.3; }), [], ['gift']),
+      anhaengen('onHit', 'Giftträger', function (c) { if (c.target.status.gift > 0) c.dmg *= 1.3; }), [], ['gift'],
+      function (run) { return hatKeyword(run, 'gift'); }),
     relic('brandmal', 'Brandmal', 2, '20 % Chance auf 2 Brand je Treffer',
       anhaengen('onHit', 'Brandmal', chance(0.2, inflict('brand', 2))), ['brand']),
     relic('aschewind', 'Aschewind', 3, '+40 % Schaden gegen brennende Ziele',
-      anhaengen('onHit', 'Aschewind', function (c) { if (c.target.status.brand > 0) c.dmg *= 1.4; }), [], ['brand']),
+      anhaengen('onHit', 'Aschewind', function (c) { if (c.target.status.brand > 0) c.dmg *= 1.4; }), [], ['brand'],
+      function (run) { return hatKeyword(run, 'brand'); }),
     relic('frostsiegel', 'Frostsiegel', 2, '12 % Chance, das Ziel erstarren zu lassen',
       anhaengen('onHit', 'Frostsiegel', chance(0.12, inflict('erstarrung', 1))), ['frost']),
     relic('frostbrecher', 'Frostbrecher', 4, '+35 % Schaden gegen erstarrte Ziele',
-      anhaengen('onHit', 'Frostbrecher', function (c) { if (c.target.status.erstarrung > 0) c.dmg *= 1.35; }), [], ['frost']),
+      anhaengen('onHit', 'Frostbrecher', function (c) { if (c.target.status.erstarrung > 0) c.dmg *= 1.35; }), [], ['frost'],
+      function (run) { return hatKeyword(run, 'frost'); }),
     relic('verderbnismal', 'Verderbnismal', 3, 'Jeder Treffer legt 1 Verderbnis an',
       anhaengen('onHit', 'Verderbnismal', inflict('verderbnis', 1)), ['verderbnis']),
     relic('fluchspiegel', 'Fluchspiegel', 4, '+25 % Schaden gegen verderbte Ziele',
-      anhaengen('onHit', 'Fluchspiegel', function (c) { if (c.target.status.verderbnis > 0) c.dmg *= 1.25; }), [], ['verderbnis']),
+      anhaengen('onHit', 'Fluchspiegel', function (c) { if (c.target.status.verderbnis > 0) c.dmg *= 1.25; }), [], ['verderbnis'],
+      function (run) { return hatKeyword(run, 'verderbnis'); }),
 
     relic('giftmeister', 'Zeichen der Brutmutter', 4, 'Je Gift-Fähigkeit im Trupp erhalten alle +7 % Angriff',
-      proKeyword('gift', 0.07), [], ['gift']),
+      proKeyword('gift', 0.07, [], ['gift'], function (run) { return hatKeyword(run, 'gift'); }), [], ['gift']),
     relic('brandmeister', 'Zeichen der Flamme', 4, 'Je Brand-Fähigkeit im Trupp erhalten alle +7 % Angriff',
-      proKeyword('brand', 0.07), [], ['brand']),
+      proKeyword('brand', 0.07, [], ['brand'], function (run) { return hatKeyword(run, 'brand'); }), [], ['brand']),
     relic('frostmeister', 'Zeichen des Frosts', 4, 'Je Frost-Fähigkeit im Trupp erhalten alle +8 % Angriff',
-      proKeyword('frost', 0.08), [], ['frost']),
+      proKeyword('frost', 0.08, [], ['frost'], function (run) { return hatKeyword(run, 'frost'); }), [], ['frost']),
     relic('kontermeister', 'Zeichen der Dornen', 4, 'Je Konter-Fähigkeit im Trupp erhalten alle +8 % Angriff',
-      proKeyword('konter', 0.08), [], ['konter']),
+      proKeyword('konter', 0.08, [], ['konter'], function (run) { return hatKeyword(run, 'konter'); }), [], ['konter']),
     relic('heilmeister', 'Zeichen der Quelle', 4, 'Je Heilungs-Fähigkeit im Trupp erhalten alle +6 % Leben',
       function (m) {
         var n = zaehle(m, 'heilung');
         if (n) m.forEach(function (x) { scale(x, { hp: n * 0.06 }); });
-      }),
+      }, [], ['heilung'], function (run) { return hatKeyword(run, 'heilung'); }),
 
     relic('barriere_stein', 'Barrierestein', 2, 'Alle starten mit Schild 25',
       anhaengen('onStart', 'Barriere', function (c) { c.applyStatus(c.self, 'schild', 25); }), ['schild']),
@@ -302,46 +322,58 @@
       }), [], ['exekution']),
 
     relic('turmschild', 'Turmschild', 2, 'Frontlinie +30 % Leben',
-      jeder(function (x) { if (x.role === 'front') scale(x, { hp: 0.3 }); })),
+      jeder(function (x) { if (x.role === 'front') scale(x, { hp: 0.3 }); }), [], [],
+      function (run) { return rollen(run).indexOf('front') >= 0; }),
     relic('magiestein', 'Magiestein', 2, 'Magier und Fernkämpfer +20 % Angriff',
-      jeder(function (x) { if (x.role === 'magier' || x.role === 'fernkampf') scale(x, { atk: 0.2 }); })),
+      jeder(function (x) { if (x.role === 'magier' || x.role === 'fernkampf') scale(x, { atk: 0.2 }); }), [], [],
+      function (run) { var r = rollen(run); return r.indexOf('magier') >= 0 || r.indexOf('fernkampf') >= 0; }),
     relic('taktstock', 'Taktstock', 2, 'Unterstützer und Verstärker +25 % Angriff und Tempo',
       jeder(function (x) {
         if (x.role === 'unterstuetzer' || x.role === 'verstaerker') scale(x, { atk: 0.25, spd: 0.25 });
-      })),
+      }), [], [],
+      function (run) { var r = rollen(run); return r.indexOf('unterstuetzer') >= 0 || r.indexOf('verstaerker') >= 0; }),
 
     relic('namenlose_macht', 'Namenlose Macht', 4, 'Einheiten ab Rang A: +30 % Angriff',
-      jeder(function (x) { if ((x.rank || 0) >= 2) scale(x, { atk: 0.3 }); })),
+      jeder(function (x) { if ((x.rank || 0) >= 2) scale(x, { atk: 0.3 }); }), [], [],
+      function (run) { return raenge(run).some(function (r) { return r >= 2; }); }),
     relic('siegel_des_aufstiegs', 'Siegel des Aufstiegs', 3, 'Je Rangstufe im Trupp erhalten alle +4 % Leben',
       function (m) {
         var n = 0;
         m.forEach(function (x) { n += x.rank || 0; });
         if (n) m.forEach(function (x) { scale(x, { hp: n * 0.04 }); });
-      }),
+      }, [], [],
+      function (run) { return raenge(run).some(function (r) { return r > 0; }); }),
     relic('praedator_zahn', 'Prädatorzahn', 5, 'Rimuru erhält +50 % Angriff und Leben',
       jeder(function (x) { if (x.id === 'rimuru') scale(x, { hp: 0.5, atk: 0.5 }); })),
     relic('kleines_team', 'Einsamer Pfad', 5, 'Bei höchstens 3 Einheiten: +45 % auf alle Werte',
       function (m) {
         if (m.length <= 3) m.forEach(function (x) { scale(x, { hp: 0.45, atk: 0.45, def: 0.45, spd: 0.45 }); });
-      }),
+      }, [], [],
+      function (run) { return run.team.length <= 3; }),
     relic('grosses_team', 'Heerschar', 4, 'Ab 6 Einheiten: +25 % Angriff und Leben',
       function (m) {
         if (m.length >= 6) m.forEach(function (x) { scale(x, { hp: 0.25, atk: 0.25 }); });
-      }),
+      }, [], [],
+      function (run) { return run.team.length >= 6; }),
     relic('anfuehrerkrone', 'Anführerkrone', 5, 'Die vorderste Einheit erhält +60 % auf alle Werte',
       function (m) { if (m[0]) scale(m[0], { hp: 0.6, atk: 0.6, def: 0.6, spd: 0.6 }); }),
     relic('sturmauge', 'Sturmauge', 3, 'Einheiten über 30 Tempo erhalten +25 % Angriff',
-      jeder(function (x) { if (x.spd > 30) scale(x, { atk: 0.25 }); })),
+      jeder(function (x) { if (x.spd > 30) scale(x, { atk: 0.25 }); }), [], [],
+      function (run) { return run.team.some(function (m) { return R_resolve(m).spd > 30; }); }),
     relic('schwerer_stand', 'Schwerer Stand', 2, 'Einheiten unter 22 Tempo: +35 % Leben, +4 Rüstung',
-      jeder(function (x) { if (x.spd < 22) { scale(x, { hp: 0.35 }); buff(x, { def: 4 }); } })),
+      jeder(function (x) { if (x.spd < 22) { scale(x, { hp: 0.35 }); buff(x, { def: 4 }); } }), [], [],
+      function (run) { return run.team.some(function (m) { return R_resolve(m).spd < 22; }); }),
     relic('quell_der_lebenskraft', 'Quell der Lebenskraft', 4,
       'Jede Heilung im Trupp wirkt um 40 % stärker',
-      jeder(function (x) { x.heilfaktor += 0.4; }), [], ['heilung']),
+      jeder(function (x) { x.heilfaktor += 0.4; }), [], ['heilung'],
+      function (run) { return hatKeyword(run, 'heilung'); }),
     relic('bollwerk_banner', 'Bollwerkbanner', 4, 'Alle Schilde im Trupp sind um 30 % stärker',
-      jeder(function (x) { x.schildfaktor += 0.3; }), [], ['schild']),
+      jeder(function (x) { x.schildfaktor += 0.3; }), [], ['schild'],
+      function (run) { return hatKeyword(run, 'schild'); }),
     relic('sturmtakt', 'Sturmtakt', 4,
       'Einheiten über 30 Tempo verursachen +30 % Schaden',
-      jeder(function (x) { if (x.spd > 30) scale(x, { atk: 0.3 }); }), [], ['tempo']),
+      jeder(function (x) { if (x.spd > 30) scale(x, { atk: 0.3 }); }), [], ['tempo'],
+      function (run) { return run.team.some(function (m) { return R_resolve(m).spd > 30; }); }),
     relic('brandopfer', 'Massengrab', 4,
       'Alle verursachen +6 % Schaden je lebendem Gegner',
       anhaengen('onHit', 'Massengrab', function (c) {
@@ -358,21 +390,27 @@
         var n = 0, s2 = c.target.status;
         ['gift', 'brand', 'erstarrung', 'verderbnis'].forEach(function (k) { if (s2[k] > 0) n++; });
         if (n >= 2) c.dmg *= 1.35;
-      }), [], ['gift', 'brand', 'frost', 'verderbnis']),
+      }), [], ['gift', 'brand', 'frost', 'verderbnis'],
+      function (run) {
+        return ['gift', 'brand', 'frost', 'verderbnis'].filter(function (k) { return hatKeyword(run, k); }).length >= 2;
+      }),
     relic('kodex_passiv', 'Kodex der Stillen Künste', 4, 'Einheiten mit mindestens zwei Passiven +18 % Angriff',
       function (m) {
         m.forEach(function (x) {
           var passive = x.effects.filter(function (e) { return e.art === 'passiv'; }).length;
           if (passive >= 2) scale(x, { atk: 0.18 });
         });
-      }),
+      }, [], [],
+      function (run) { return raenge(run).some(function (r) { return r >= 2; }); }),
     relic('zwillingsseele', 'Zwillingsseele', 4, 'Einheiten mit zwei oder mehr aktiven Fähigkeiten +22 % Angriff',
-      jeder(function (x) { if ((x.actives || []).length >= 2) scale(x, { atk: 0.22 }); })),
+      jeder(function (x) { if ((x.actives || []).length >= 2) scale(x, { atk: 0.22 }); }), [], [],
+      function (run) { return raenge(run).some(function (r) { return r >= 1; }); }),
     relic('rangbanner', 'Rangbanner', 4, 'Je Einheit ab Rang A erhalten alle +8 % Leben',
       function (m) {
         var n = m.filter(function (x) { return (x.rank || 0) >= 2; }).length;
         if (n) m.forEach(function (x) { scale(x, { hp: n * 0.08 }); });
-      }),
+      }, [], [],
+      function (run) { return raenge(run).some(function (r) { return r >= 2; }); }),
     relic('sammlerstueck', 'Sammlung des Weisen', 5,
       'Je verschiedenem Schlüsselwort im Trupp erhalten alle +3 % Angriff und Leben',
       function (m) {
@@ -393,7 +431,8 @@
         scale(best, { hp: 0.45, atk: 0.45, def: 0.45, spd: 0.45 });
       }),
     relic('lehrmeister', 'Lehrmeister', 3, 'Einheiten auf Rang C erhalten +35 % Leben und Angriff',
-      jeder(function (x) { if (!(x.rank || 0)) scale(x, { hp: 0.35, atk: 0.35 }); })),
+      jeder(function (x) { if (!(x.rank || 0)) scale(x, { hp: 0.35, atk: 0.35 }); }), [], [],
+      function (run) { return raenge(run).some(function (r) { return r === 0; }); }),
 
     relic('taktgeber', 'Taktgeber', 5, 'Alle aktiven Fähigkeiten kühlen einen Zug schneller ab',
       jeder(function (x) {

@@ -39,7 +39,7 @@ js/enemies.js    48 Gegner (mit eigenen Aktiven), 3 Bosse, 50 Begegnungen, 26 Er
 js/run.js        Karte, Ränge, Belohnungen, Shop, Prädator, Speicherstand
 js/ui.js         Darstellung; ändert Zustand nur über Run.*
 js/main.js       Start
-dev/sim.js       181 Selbsttests
+dev/sim.js       189 Selbsttests
 dev/uitest.js    UI-Test in jsdom: klickt einen Run durch (46 Prüfungen)
 dev/balance.js   spielt N komplette Runs headless und misst die Builds
 ```
@@ -48,7 +48,7 @@ dev/balance.js   spielt N komplette Runs headless und misst die Builds
 
 ```bash
 npm install                  # nur für den UI-Test (jsdom); das Spiel selbst hat keine Abhängigkeiten
-node dev/sim.js              # Logik-Selbsttests, muss 181/181 sein
+node dev/sim.js              # Logik-Selbsttests, muss 189/189 sein
 node dev/uitest.js           # UI-Test, muss 46/46 sein
 node dev/balance.js 600      # Balance, frischer Spieler
 node dev/balance.js 400 --stufe 3   # Balance auf Bedrohungsstufe 3
@@ -64,18 +64,14 @@ das der einzige Weg, tote und dominante Builds zu finden.
 800 Runs mit dem Bot aus `dev/balance.js`. Ein Trupp gilt erst als *Build*, wenn
 ein Schlüsselwort zwei Quellen und einen Verstärker hat:
 
-| | Siege | Schild | Gift | Brand | Frost | Heilung | Exekution | Konter | ohne Build |
-|---|---|---|---|---|---|---|---|---|---|
-| frischer Spieler | 47 % | 60 % | 56 % | – | – | 46 % | 48 % | 38 % | 2 % |
-| alles freigeschaltet | 53 % | 54 % | 69 % | 69 % | 52 % | 56 % | 51 % | – | 0 % |
+800 Runs, frischer Spieler, Bedrohungsstufe 0: **53 % Siege**. Nach Build:
+Heilung 62 %, Schild 59 %, Gift 59 %, Konter 45 %, Exekution 30 %, **ohne Build
+0 %**.
 
-Sieben Builds entstehen regelmäßig, alle im Zielband 25–75 %; ein Trupp ohne
-Build gewinnt praktisch nie. Je Run bleiben rund 7 Ladenangebote unbezahlbar —
-Gold reicht nie für alles.
-
-Der Bot wählt seinen Weg über die Karte nach einer einfachen Heuristik (kein
-Elite-Kampf mit einem Leben, Händler bei vollem Beutel). Ohne die maß er die
-Härte der Karte statt die des Spiels.
+Der Bot stellt seinen Trupp sinnvoll auf (zäh nach vorn) und kauft nach Wert je
+Gold. Beides ist nötig, damit die Zahlen kompetentes Spiel abbilden: ohne
+Aufstellung verliert derselbe Bot 15 Punkte, ohne Kaufreihenfolge etwa 5.
+`--chaos` schaltet die Aufstellung zum Vergleich ab.
 
 Schwierigkeit wird nicht an 33 Statblöcken gedreht, sondern am `mult` jeder
 Begegnung in `js/enemies.js` — ein Knopf pro Begegnung.
@@ -100,8 +96,13 @@ einen Menschen liegt jede Stufe höher.
 
 ## Was fehlt
 
+- **Freischalten macht den Bot schwächer**: mit allem Freigeschalteten fällt die
+  Siegquote von 53 auf 41 %. Ursache teilweise gefunden und behoben (enge
+  Relikte tragen jetzt eine Bedingung und fallen aus dem Angebot, Reliktpreise
+  hängen nicht mehr an der Seltenheit) — der Rest ist offen. Truppstärke und
+  Ränge sind in beiden Fällen gleich; der Unterschied liegt in Relikten und
+  Ausrüstung (7,4 statt 8,0 bzw. 5,6 statt 6,0 je Run).
 - Verderbnis-, Tempo- und Flächen-Builds entstehen zu selten für belastbare Zahlen.
-- Der Bot stellt nie um: Aufstellung und Ausrüstungsverteilung bleiben ungemessen.
 - Der Bot in `dev/balance.js` spielt Aufstellung und Ausrüstung stur; wie viel
   ein guter Spieler mehr herausholt, misst er nicht.
 - Keine Grafik — Textkarten und Balken.

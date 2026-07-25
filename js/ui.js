@@ -290,6 +290,17 @@
 
   /* Volle Beschreibung eines Angebots — bei Einheiten die Signatur und die
      drei Passiven, die mit den Rängen aufgehen. */
+  /* Ein Relikt, dessen Bedingung gerade nicht zutrifft, sieht sonst aus wie jedes
+     andere — und ist doch nichts wert. */
+  function bedingungHtml(r) {
+    if (r.kind !== 'relic') return '';
+    var rel = GD.relic(r.id);
+    if (!rel || !rel.bedingung) return '';
+    return rel.bedingung(run)
+      ? '<span class="bed an">Bedingung erfüllt</span>'
+      : '<span class="bed aus">derzeit wirkungslos</span>';
+  }
+
   function belohnungTip(r) {
     if (r.kind === 'unit') {
       var u = GD.unit(r.id), sig = AB.get(u.signature);
@@ -304,7 +315,10 @@
     if (r.kind === 'relic') {
       var rel = GD.relic(r.id);
       return tip(rel.name, rarZeile(rel.rarity, 'Relikt') +
-        'Wirkt auf den ganzen Trupp, den ganzen Run.\n' + rel.text);
+        'Wirkt auf den ganzen Trupp, den ganzen Run.\n' + rel.text +
+        (rel.bedingung ? '\n\n' + (rel.bedingung(run)
+          ? '✓ Bedingung ist mit deinem jetzigen Trupp erfüllt.'
+          : '✗ Mit deinem jetzigen Trupp wirkungslos — erst sinnvoll, wenn die Bedingung zutrifft.') : ''));
     }
     if (r.kind === 'item') {
       var it = GD.item(r.id);
@@ -360,7 +374,7 @@
           var geht = r.kind !== 'unit' || R.freieArt(run, GD.unit(r.id).art);
           html += '<button class="karte" data-a="belohnung" data-i="' + i + '"' + (geht ? '' : ' disabled') +
             belohnungTip(r) + '>' +
-            artHtml(r.kind) + (r.kind === 'unit' ? '' : rarHtml(r.rarity)) + '<span class="titel">' + esc(r.name) + '</span>' +
+            artHtml(r.kind) + (r.kind === 'unit' ? '' : rarHtml(r.rarity)) + bedingungHtml(r) + '<span class="titel">' + esc(r.name) + '</span>' +
             '<span class="unter">' + esc(r.text || '') + (geht ? '' : ' — Art schon besetzt') + '</span></button>';
         });
         html += '</div>';
@@ -410,7 +424,7 @@
       var geht = !o.sold && run.gold >= o.price && frei;
       html += '<button class="karte' + (o.sold ? ' gewaehlt' : '') + '" data-a="kaufen" data-i="' + i + '"' +
         (geht ? '' : ' disabled') + belohnungTip(o) + '>' + artHtml(o.kind) +
-        (o.kind === 'unit' ? '' : rarHtml(o.rarity)) +
+        (o.kind === 'unit' ? '' : rarHtml(o.rarity)) + bedingungHtml(o) +
         '<span class="titel">' + esc(o.name) + ' — ' + o.price + ' 🪙' + (o.sold ? ' (gekauft)' : '') + '</span>' +
         '<span class="unter">' + esc(o.text || '') + (frei ? '' : ' — Art schon besetzt') + '</span></button>';
     });
@@ -669,10 +683,13 @@
     $('reliktliste').innerHTML = !run.relics.length ? '' :
       '<h3>Relikte</h3><div class="liste">' + run.relics.map(function (id) {
         var r = GD.relic(id);
-        return '<span class="chip rar-rand-' + r.rarity + '"' +
+        var wirkt = !r.bedingung || r.bedingung(run);
+        return '<span class="chip rar-rand-' + r.rarity + (wirkt ? '' : ' schlaeft') + '"' +
           tip(r.name, rarZeile(r.rarity, 'Relikt') +
-            'Wirkt auf den ganzen Trupp, den ganzen Run.\n' + r.text) + '>' +
-          esc(r.name) + '</span>';
+            'Wirkt auf den ganzen Trupp, den ganzen Run.\n' + r.text +
+            (r.bedingung ? '\n\n' + (wirkt ? '✓ Bedingung erfüllt.'
+              : '✗ Schläft gerade — die Bedingung trifft auf deinen Trupp nicht zu.') : '')) + '>' +
+          esc(r.name) + (wirkt ? '' : ' 💤') + '</span>';
       }).join('') + '</div>';
   }
 

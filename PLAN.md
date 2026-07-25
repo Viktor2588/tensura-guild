@@ -216,6 +216,19 @@ Fähigkeiten in der Vorschau. `dev/balance.js --stufe N` misst jede Stufe:
 54/47/39/28/20/10 % Siegquote. Dabei zeigte sich, wie schmal der Grat ist —
 die erste Fassung mit 10 % Schritten ließ Stufe 2 auf 3 % einbrechen.
 
+Sechster Durchgang (2026-07-26): **Deckung** — ab Platz 3 geht ein Drittel jedes
+Treffers an die vorderste lebende Einheit. Damit ist die Aufstellung messbar
+15 Punkte Siegquote wert statt 4; sie war vorher fast Dekoration. Außerdem:
+Relikte mit enger Wirkung tragen jetzt eine `bedingung(run)`, werden in der UI
+als „derzeit wirkungslos" markiert und bevorzugt dann angeboten, wenn sie
+passen; Reliktpreise hängen nicht mehr an der Seltenheit.
+
+Dabei ist ein Befund offen geblieben, der es wert ist, notiert zu werden: **mit
+allem Freigeschalteten gewinnt der Bot seltener** (41 statt 53 %). Truppstärke
+und Rangsumme sind gleich, der Unterschied liegt in Relikten und Ausrüstung.
+Die Bedingungen und die flache Preisstaffel haben fünf der ursprünglich
+sechzehn Punkte zurückgeholt, der Rest ist ungeklärt.
+
 Weitere offene Punkte:
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.

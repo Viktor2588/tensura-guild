@@ -86,6 +86,22 @@ wird.** Wen ein Angreifer trifft, hängt an seiner Rolle:
 | Unterstützer | heilt den am stärksten verwundeten Verbündeten, wenn keine Fähigkeit bereit ist |
 | Verstärker | normaler Angriff |
 
+## Deckung
+
+Ab Platz 3 gibt eine Einheit **ein Drittel jedes Treffers an die vorderste
+lebende Einheit ab**. Ein zäher Körper vorn schützt die Reihe dahinter also
+wirklich — Gift und Brand gehen daran allerdings vorbei. Wer seinen Trupp
+sinnvoll aufstellt statt ihn zu lassen, wie er kam, gewinnt messbar öfter.
+
+## Relikte mit Bedingung
+
+Manche Relikte wirken nur unter einer Voraussetzung — *Einsamer Pfad* braucht
+höchstens drei Einheiten, *Zeichen der Brutmutter* mindestens eine
+Gift-Fähigkeit. Auf der Karte steht deshalb **Bedingung erfüllt** oder **derzeit
+wirkungslos**, und in deiner Reliktliste schläft ein Relikt sichtbar (💤), wenn
+sein Fall gerade nicht eintritt. Der Händler bietet solche Relikte bevorzugt
+dann an, wenn sie zu deinem Trupp passen.
+
 ## Schlüsselwörter — hier liegen die Kombos
 
 Jede Fähigkeit trägt Schlüsselwörter: was sie **erzeugt** (Quelle) und was sie
