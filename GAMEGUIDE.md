@@ -8,7 +8,10 @@ Angeboten. Achte schon hier auf die Signaturen — sie bestimmen, welcher Build
 
 ## Der Run
 
-3 Akte à 8 Knoten. An jedem Knoten wählst du zwischen zwei Wegen. Am Ende jedes
+3 Akte à 8 Knoten. An jedem Knoten wählst du zwischen **drei Wegen** — und die
+Vorschau zeigt dir vorher, welche Gegner dort stehen, welche Werte sie haben und
+welche Fähigkeiten sie einsetzen. Ein Heiler in der gegnerischen Reihe ist ein
+Grund für Brand, ein einzelner harter Gegner ein Grund für Frost. Am Ende jedes
 Akts steht ein Boss. Drei verlorene Kämpfe beenden den Run — danach werden zwei
 neue Karten dauerhaft freigeschaltet.
 
@@ -80,7 +83,7 @@ Jede Fähigkeit trägt Schlüsselwörter: was sie **erzeugt** (Quelle) und was s
 
 | Schlüsselwort | Wirkung | Grenze |
 |---|---|---|
-| Gift | 2 Schaden je Stapel pro eigenem Zug | 12 |
+| Gift | knapp 2 Schaden je Stapel pro eigenem Zug | 12 |
 | Brand | 2 Schaden je Stapel pro Zug, halbiert Heilung | 8 |
 | Frost | Zug fällt aus | 1, Bosse widerstehen zu 60 % |
 | Verderbnis | Ziel nimmt +10 % Schaden je Stapel | 5 |

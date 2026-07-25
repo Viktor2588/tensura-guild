@@ -202,6 +202,13 @@ Konter-Builds, damit die nicht erst mit teuren Einheiten anlaufen. Und der
 Belohnungsbildschirm übersteht jetzt ein Neuladen: `serialize` legt ein
 schlankes `pending` ab (Belohnungen, Prädator-Angebot, Ergebnis — nicht das Log).
 
+Vierter Durchgang (2026-07-26): Die Wegwahl bietet drei Knoten statt zwei, und
+die Vorschau zeigt vor dem Betreten die Gegner mit Werten und Fähigkeiten —
+vorher stand dort nur eine Namensliste. Die 15 zuletzt ergänzten Gegner hatten
+keine aktive Fähigkeit; ein Test fängt das jetzt ab. Im Bot ersetzt eine
+Wegwahl-Heuristik das Würfeln, sonst maß er die Härte der Karte statt die des
+Spiels.
+
 Weitere offene Punkte:
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.

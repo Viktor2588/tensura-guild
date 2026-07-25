@@ -204,7 +204,7 @@
       fire(u, 'onTurnStart', ctx(u, {}));
       if (!alive(u)) return;
 
-      if (u.status.gift > 0) { deal(u, u.status.gift * 2, 'Gift', { pure: true }); u.status.gift--; if (!alive(u)) return; }
+      if (u.status.gift > 0) { deal(u, u.status.gift * 1.7, 'Gift', { pure: true }); u.status.gift--; if (!alive(u)) return; }
       if (u.status.brand > 0) { deal(u, u.status.brand * 2, 'Brand', { pure: true }); u.status.brand--; if (!alive(u)) return; }
       if (u.status.verderbnis > 0) u.status.verderbnis--;
       if (u.regen > 0) heal(u, u.regen, 'Regeneration');

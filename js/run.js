@@ -12,14 +12,17 @@
 (function (root) {
   var GD = root.GameData, EN = root.Enemies, C = root.Combat, AB = root.Abilities;
 
-  var STEPS = [                                   // Knotenangebot je Schritt eines Akts
-    ['kampf', 'kampf'],
-    ['kampf', 'event'],
-    ['shop', 'event'],
-    ['kampf', 'elite'],
-    ['lager', 'event'],
-    ['kampf', 'shop'],
-    ['elite', 'kampf'],
+  /* Knotenangebot je Schritt eines Akts. Drei Wege statt zwei: die Wahl
+     zwischen sicherem Kampf, Elite mit besserer Beute und Laden ist die
+     eigentliche Routenplanung. */
+  var STEPS = [
+    ['kampf', 'kampf', 'event'],
+    ['kampf', 'event', 'shop'],
+    ['shop', 'event', 'kampf'],
+    ['kampf', 'elite', 'lager'],
+    ['lager', 'event', 'kampf'],
+    ['kampf', 'shop', 'elite'],
+    ['elite', 'kampf', 'lager'],
     ['boss']
   ];
   var TEAM_MAX = 6, BANK_MAX = 3;

@@ -110,6 +110,24 @@
     }).join(', ');
   }
 
+  /* Was dich dort erwartet, mit Fähigkeiten — ohne das ist die Wegwahl blind.
+     Die Werte kommen aus EN.build, also inklusive der Härte dieser Begegnung. */
+  function gegnerDetails(enc) {
+    var defs = EN.build(enc), gesehen = {}, zeilen = [];
+    defs.forEach(function (d) {
+      if (gesehen[d.id]) return;
+      gesehen[d.id] = 1;
+      var anzahl = enc.units.filter(function (x) { return x === d.id; }).length;
+      var kopf = (anzahl > 1 ? anzahl + '× ' : '') + d.name +
+        ' (' + d.hp + '❤ ' + d.atk + '⚔ ' + d.def + '🛡 ' + d.spd + '⚡, ' +
+        GD.rolleName(C.roleOf(d)) + ')';
+      var koennen = (d.actives || []).map(function (a) { return '⚡ ' + a.name + ': ' + a.text; })
+        .concat((d.effects || []).map(function (e) { return '◈ ' + e.name + (e.text ? ': ' + e.text : ''); }));
+      zeilen.push(kopf + (koennen.length ? '\n   ' + koennen.join('\n   ') : ''));
+    });
+    return zeilen.join('\n');
+  }
+
   function zeichneKarte() {
     var html = '<h2>Wohin?</h2><div class="karten">';
     run.options.forEach(function (o, i) {
@@ -119,9 +137,9 @@
         : o.type === 'lager' ? 'Gold, Magicule oder eine Einheit stärken'
         : 'Unbekannter Ausgang';
       var tipText = o.encounter
-        ? 'Gegner: ' + gegnerVorschau(o.encounter) +
-          (o.type === 'elite' ? '\n\nElite: härter, aber deutlich mehr Gold und ein Relikt in der Auswahl.' : '') +
-          (o.type === 'boss' ? '\n\nBoss: Abschluss des Akts.' : '') +
+        ? gegnerDetails(o.encounter) +
+          (o.type === 'elite' ? '\n\nElite: härter, würfelt Belohnungen aber eine Stufe besser.' : '') +
+          (o.type === 'boss' ? '\n\nBoss: Abschluss des Akts. Widersteht Erstarrung zu 60 %.' : '') +
           '\n\nVerlierst du, kostet das ein Leben und der Knoten wird neu ausgewürfelt.'
         : o.type === 'shop' ? 'Kaufen mit Gold: Einheiten, Ausrüstung, meist ein Relikt.'
         : o.type === 'lager' ? 'Ein Bonus zur Wahl: Gold, Magicule oder dauerhafte Werte für eine zufällige Einheit.'

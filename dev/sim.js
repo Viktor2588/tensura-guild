@@ -56,6 +56,20 @@ ok(AB.alle.every(function (a) { return a.id && a.name && a.text && typeof a.fn =
 ok(EN.encounters.concat(EN.bosses).every(function (e) {
   return e.units.every(function (id) { return !!EN.get(id); });
 }), 'jede Begegnung referenziert existierende Gegner');
+/* Ein Gegner ohne aktive Fähigkeit schlägt nur zu, während der Spieler zaubert —
+   genau die Asymmetrie, die die Siegquote einmal auf 94 % getrieben hat. */
+var stumm = [];
+EN.encounters.concat(EN.bosses).forEach(function (e) {
+  EN.build(e).forEach(function (d) {
+    if (!(d.actives || []).length && stumm.indexOf(d.name) < 0) stumm.push(d.name);
+  });
+});
+ok(!stumm.length, 'jeder eingesetzte Gegner hat eine aktive Fähigkeit' +
+   (stumm.length ? ': ' + stumm.join(', ') : ''));
+ok([1, 2, 3].every(function (a) { return EN.forAct(a).length >= 12 && EN.elitesForAct(a).length >= 4; }),
+   'jeder Akt hat mindestens 12 normale und 4 Elite-Begegnungen');
+ok([1, 2, 3].every(function (a) { return EN.events.filter(function (e) { return e.act === a; }).length >= 3; }),
+   'jeder Akt hat eigene Story-Ereignisse');
 
 /* Jede Art muss auch spielbar sein, sonst blockiert die Regel "eine je Art". */
 var proArt = {};
@@ -354,6 +368,28 @@ var vorAtk = C.simulate([jd], EN.build(EN.forAct(1)[0]), 2).roster[0].atk;
 var mitKills = C.simulate([jd], EN.build(EN.forAct(1)[0]), 2);
 var toteGegner = mitKills.log.filter(function (l) { return l.type === 'death' && l.side === 'enemy'; }).length;
 ok(toteGegner === 0 || vorAtk > 0, 'Kämpfe mit Blutrausch laufen fehlerfrei');
+
+head('Karte');
+ok(R.STEPS.filter(function (st) { return st.length >= 3; }).length >= 6,
+   'die meisten Knoten bieten drei Wege');
+ok(R.STEPS[R.STEPS.length - 1].length === 1 && R.STEPS[R.STEPS.length - 1][0] === 'boss',
+   'am Ende des Akts steht nur der Boss');
+var kRun2 = fertigerRun(555);
+ok(kRun2.options.length === R.STEPS[0].length, 'die Karte bietet so viele Knoten an wie vorgesehen');
+ok(kRun2.options.every(function (o) { return o.name && (o.encounter || o.event || o.type); }),
+   'jeder Knoten ist beschriftet');
+/* Die Vorschau muss die Fähigkeiten der Gegner kennen, sonst ist die Wahl blind. */
+var mitKampf = kRun2.options.filter(function (o) { return o.encounter; })[0];
+if (mitKampf) {
+  var defs = EN.build(mitKampf.encounter);
+  ok(defs.every(function (d) { return d.name && d.hp > 0; }), 'die Vorschau kennt Namen und Werte');
+  ok(defs.some(function (d) { return (d.actives || []).length; }),
+     'mindestens ein Gegner der Begegnung hat eine aktive Fähigkeit zum Anzeigen');
+  ok(defs.every(function (d) {
+    return (d.actives || []).every(function (a) { return a.text; }) &&
+           (d.effects || []).every(function (e) { return e.text; });
+  }), 'jede angezeigte Gegnerfähigkeit hat einen Beschreibungstext');
+}
 
 /* ------------------------------------------------------------- Kampf */
 head('Kampf');

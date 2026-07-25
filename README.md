@@ -39,7 +39,7 @@ js/enemies.js    48 Gegner (mit eigenen Aktiven), 3 Bosse, 50 Begegnungen, 26 Er
 js/run.js        Karte, Ränge, Belohnungen, Shop, Prädator, Speicherstand
 js/ui.js         Darstellung; ändert Zustand nur über Run.*
 js/main.js       Start
-dev/sim.js       156 Selbsttests
+dev/sim.js       166 Selbsttests
 dev/uitest.js    UI-Test in jsdom: klickt einen Run durch (46 Prüfungen)
 dev/balance.js   spielt N komplette Runs headless und misst die Builds
 ```
@@ -48,7 +48,7 @@ dev/balance.js   spielt N komplette Runs headless und misst die Builds
 
 ```bash
 npm install                  # nur für den UI-Test (jsdom); das Spiel selbst hat keine Abhängigkeiten
-node dev/sim.js              # Logik-Selbsttests, muss 156/156 sein
+node dev/sim.js              # Logik-Selbsttests, muss 166/166 sein
 node dev/uitest.js           # UI-Test, muss 46/46 sein
 node dev/balance.js 600      # Balance, frischer Spieler
 node dev/balance.js 600 --voll   # Balance, alles freigeschaltet
@@ -63,23 +63,26 @@ das der einzige Weg, tote und dominante Builds zu finden.
 800 Runs mit dem Bot aus `dev/balance.js`. Ein Trupp gilt erst als *Build*, wenn
 ein Schlüsselwort zwei Quellen und einen Verstärker hat:
 
-| | Siege | Schild | Gift | Frost | Brand | Heilung | Exekution | Konter | ohne Build |
+| | Siege | Schild | Gift | Brand | Frost | Heilung | Exekution | Konter | ohne Build |
 |---|---|---|---|---|---|---|---|---|---|
-| frischer Spieler | 54 % | 74 % | 69 % | – | – | 55 % | 51 % | 37 % | 0 % |
-| alles freigeschaltet | 49 % | 57 % | 64 % | 76 % | 76 % | 50 % | 40 % | – | 0 % |
+| frischer Spieler | 47 % | 60 % | 56 % | – | – | 46 % | 48 % | 38 % | 2 % |
+| alles freigeschaltet | 53 % | 54 % | 69 % | 69 % | 52 % | 56 % | 51 % | – | 0 % |
 
-Sieben Builds entstehen regelmäßig, fast alle im Zielband 25–75 %; ein Trupp
-ohne Build gewinnt praktisch nie. Je Run bleiben rund 8 Ladenangebote
-unbezahlbar — Gold reicht nie für alles.
+Sieben Builds entstehen regelmäßig, alle im Zielband 25–75 %; ein Trupp ohne
+Build gewinnt praktisch nie. Je Run bleiben rund 7 Ladenangebote unbezahlbar —
+Gold reicht nie für alles.
+
+Der Bot wählt seinen Weg über die Karte nach einer einfachen Heuristik (kein
+Elite-Kampf mit einem Leben, Händler bei vollem Beutel). Ohne die maß er die
+Härte der Karte statt die des Spiels.
 
 Schwierigkeit wird nicht an 33 Statblöcken gedreht, sondern am `mult` jeder
 Begegnung in `js/enemies.js` — ein Knopf pro Begegnung.
 
 ## Was fehlt
 
-- Frost und Brand liegen bei voller Freischaltung mit je 76 % knapp über dem Band
-  (kleine Stichprobe).
-- Verderbnis- und Tempo-Builds entstehen zu selten für belastbare Zahlen.
+- Verderbnis-, Tempo- und Flächen-Builds entstehen zu selten für belastbare Zahlen.
+- Der Bot stellt nie um: Aufstellung und Ausrüstungsverteilung bleiben ungemessen.
 - Der Bot in `dev/balance.js` spielt Aufstellung und Ausrüstung stur; wie viel
   ein guter Spieler mehr herausholt, misst er nicht.
 - Keine Grafik — Textkarten und Balken.

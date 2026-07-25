@@ -41,6 +41,25 @@ function passt(id, kw) {
   return score;
 }
 
+/* Wegwahl wie ein Mensch, nicht per Würfel: mit einem Leben in der Tasche geht
+   man keinem Elite-Kampf entgegen, und volle Beutel wollen zum Händler.
+   Ohne diese Heuristik misst der Bot die Härte der Karte statt die des Spiels. */
+function route(run, rng) {
+  var beste = 0, bestwert = -1e9;
+  run.options.forEach(function (o, i) {
+    var wert = 0;
+    if (o.type === 'kampf') wert = 10;
+    if (o.type === 'elite') wert = run.lives >= 3 ? 12 : run.lives === 2 ? 4 : -20;
+    if (o.type === 'boss') wert = 100;                       // führt kein Weg vorbei
+    if (o.type === 'shop') wert = run.gold >= 120 ? 16 : 6;
+    if (o.type === 'lager') wert = 9;
+    if (o.type === 'event') wert = 11;
+    wert += rng() * 3;                                       // etwas Streuung
+    if (wert > bestwert) { bestwert = wert; beste = i; }
+  });
+  return beste;
+}
+
 function play(seed, voll) {
   var rng = globalThis.RNG(seed ^ 0x9e3779b9);
   var run = R.create(seed, voll ? vollMeta() : R.newMeta());
@@ -87,7 +106,7 @@ function play(seed, voll) {
     if (run.phase === 'karte') {
       haushalten();
       if (run.wahl) continue;
-      R.choose(run, Math.floor(rng() * run.options.length));
+      R.choose(run, route(run, rng));
       continue;
     }
     if (run.phase === 'kampf') {

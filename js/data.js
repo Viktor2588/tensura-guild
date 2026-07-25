@@ -62,7 +62,7 @@
       verstaerker: 'Kämpft normal, bringt seine Stärke über Fähigkeiten ins Team statt über die Zielwahl.'
     },
     zustaende: {
-      gift: 'Verursacht 2 Schaden je Stapel, jedes Mal wenn das Ziel am Zug ist, und baut sich dabei um 1 ab. Geht durch Schilde. Höchstens 12 Stapel.',
+      gift: 'Verursacht knapp 2 Schaden je Stapel, jedes Mal wenn das Ziel am Zug ist, und baut sich dabei um 1 ab. Geht durch Schilde. Höchstens 12 Stapel.',
       brand: 'Verursacht 2 Schaden je Stapel pro Zug des Ziels und HALBIERT jede Heilung an ihm. Baut sich um 1 pro Zug ab. Höchstens 8 Stapel.',
       erstarrung: 'Das Ziel setzt seinen nächsten Zug komplett aus. Stapelt nicht: ein Zug, mehr nicht. Bosse schütteln Erstarrung zu 60 % ab.',
       verderbnis: 'Der Fluch: das Ziel erleidet +10 % Schaden je Stapel, aus jeder Quelle. Baut sich um 1 pro Zug ab. Höchstens 5 Stapel (also +50 %).',
