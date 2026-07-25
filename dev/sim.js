@@ -435,8 +435,8 @@ ok(tritt_auf('schattenwolf', 0, function (l) { return l.type === 'skip'; }), 'Er
 ok(tritt_auf('diablo', 0, function (l) { return l.status === 'verderbnis'; }), 'Verderbnis wird angelegt');
 ok(tritt_auf('rigurd', 0, function (l) { return l.type === 'schild'; }), 'Schild fängt Schaden ab');
 ok(tritt_auf('quellenpriesterin', 0, function (l) { return l.source === 'Regeneration'; }), 'Regeneration heilt');
-ok(tritt_auf('skelettritter', 1, function (l) { return l.type === 'revive'; }, 'milim_boss'),
-   'Wiederkehr belebt wieder');
+ok(tritt_auf('skelettritter', 2, function (l) { return l.type === 'revive'; }, 'milim_boss'),
+   'Wiederkehr belebt wieder');   // beim Skelettritter die zweite Passive
 
 var gifted = C.simulate([def('apito', 3)], [EN.get('felsgolem')], 4);
 var maxGift = 0;
@@ -617,6 +617,30 @@ ok(wieder.gold === 321 && wieder.relics.length === 1, 'Gold und Relikte überleb
 ok(wieder.team.length === save.team.length, 'der Trupp überlebt das Speichern');
 ok(wieder.team[0].rank === 1 && wieder.team[0].actives.length === 1, 'Rang und gewählte Fähigkeit überleben');
 ok(R.resolve(wieder.team[0]).actives.length === 2, 'geladene Mitglieder lösen ihre Fähigkeiten korrekt auf');
+
+/* Ein Neuladen im Belohnungsbildschirm darf die Belohnung nicht verschlucken. */
+var bRun2 = fertigerRun(4711);
+var beute2 = null;
+for (var bb = 0; bb < 16 && !beute2; bb++) {
+  var bi = bRun2.options.map(function (o, i2) { return o.type === 'kampf' ? i2 : -1; })
+    .filter(function (x) { return x >= 0; })[0];
+  if (bi === undefined) { R.advance(bRun2); continue; }
+  var bp = R.choose(bRun2, bi);
+  if (bp.result.winner === 'player' && bp.rewards) beute2 = bp;
+  else { bRun2.lives = 3; R.advance(bRun2); }
+}
+ok(!!beute2, 'ein Kampf mit offener Belohnung ist erreichbar');
+if (beute2) {
+  var wieder2 = R.deserialize(R.serialize(bRun2));
+  ok(wieder2.phase === 'kampf' && wieder2.pending && wieder2.pending.rewards,
+     'nach dem Laden steht die Belohnung noch zur Wahl');
+  ok(wieder2.pending.rewards.length === beute2.rewards.length,
+     'es sind dieselben Belohnungen wie vorher');
+  ok(R.takeReward(wieder2, wieder2.pending.rewards.length - 1),
+     'die Belohnung lässt sich nach dem Laden noch nehmen');
+  ok(R.advance(wieder2) && wieder2.phase === 'karte' && wieder2.options,
+     'danach geht es normal auf der Karte weiter');
+}
 
 /* Kompletter Run */
 head('Durchspiel');

@@ -651,12 +651,26 @@
   /* ---- Speichern ----------------------------------------------------------- */
 
   var KEY = 'tensura-guild-v2';
+
+  /* Der Belohnungsbildschirm muss ein Neuladen überleben — sonst ist die
+     Belohnung weg, obwohl das Gold schon gutgeschrieben war. Vom Kampf wird
+     nur das Nötige gespeichert, nicht das ganze Log. */
+  function schlankesPending(run) {
+    var p = run.pending;
+    if (run.phase !== 'kampf' || !p || !p.rewards) return null;
+    return {
+      rewards: p.rewards, devour: p.devour, gold: p.gold,
+      node: { name: p.node.name }, result: { winner: p.result.winner }
+    };
+  }
+
   function serialize(run) {
     return JSON.stringify({
       seed: run.seed, rngState: run.rngState, act: run.act, step: run.step,
       gold: run.gold, magicules: run.magicules, lives: run.lives, relics: run.relics,
       bag: run.bag || [], chronik: run.chronik, meta: run.meta,
-      team: run.team, bank: run.bank, uidSeq: uidSeq, startwahl: run.startwahl
+      team: run.team, bank: run.bank, uidSeq: uidSeq, startwahl: run.startwahl,
+      pending: schlankesPending(run)
     });
   }
   function deserialize(raw) {
@@ -668,8 +682,16 @@
     uidSeq = Math.max(uidSeq, d.uidSeq || 0);
     run.pending = null; run.wahl = null;
     run.startwahl = d.startwahl || null;
-    run.phase = run.startwahl ? 'start' : 'karte';
-    if (!run.startwahl) roll(run);
+    if (run.startwahl) { run.phase = 'start'; return run; }
+    if (d.pending) {
+      /* Offene Belohnung: zurück in den Ergebnisbildschirm, ohne Kampfwiederholung.
+         Gewürfelt wird erst wieder in advance(). */
+      run.phase = 'kampf';
+      run.pending = d.pending;
+      return run;
+    }
+    run.phase = 'karte';
+    roll(run);
     return run;
   }
   function save(run) {

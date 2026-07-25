@@ -74,6 +74,17 @@
       effects: [faehigkeit('onHit', 'Würgefaden', 'Jeder Treffer legt 3 Gift an.', ['gift'],
         inflict('gift', 3))] },
 
+    { id: 'orkschamane', name: 'Orkschamane', tags: ['ork', 'magier'], hp: 85, atk: 22, def: 2, spd: 26,
+      effects: [faehigkeit('onStart', 'Schlachtgesang', 'Gibt allen Verbündeten zu Kampfbeginn +3 Rüstung.', ['schild'],
+        function (c) { c.allies().forEach(function (u) { u.def += 3; }); })] },
+    { id: 'grubenwurm', name: 'Grubenwurm', tags: ['bestie', 'front'], hp: 175, atk: 19, def: 6, spd: 12,
+      effects: [faehigkeit('onDamaged', 'Häutung', '15 % Chance, bei einem Treffer 25 Leben zurückzugewinnen.', ['heilung'],
+        chance(0.15, function (c) { c.heal(c.self, 25, 'Häutung'); }))] },
+    { id: 'minenaufseher', name: 'Minenaufseher', tags: ['goblin', 'verstaerker'], hp: 95, atk: 19, def: 3, spd: 24 },
+    { id: 'gruftfledermaus', name: 'Gruftfledermaus', tags: ['untot', 'fernkampf'], hp: 70, atk: 19, def: 1, spd: 32,
+      effects: [faehigkeit('onStart', 'Blutdurst', 'Heilt 25 % des verursachten Schadens.', ['heilung'],
+        function (c) { c.self.lifesteal += 0.25; })] },
+
     /* --- Akt 3: Falmuth & die Dämonen --- */
     { id: 'ritter', name: 'Ritter von Falmuth', tags: ['mensch', 'front'], hp: 150, atk: 24, def: 8, spd: 24 },
     { id: 'bogenschuetze', name: 'Bogenschütze', tags: ['mensch', 'fernkampf'], hp: 110, atk: 26, def: 4, spd: 30 },
@@ -95,6 +106,14 @@
       effects: [faehigkeit('onStart', 'Blutdurst', 'Heilt 30 % des verursachten Schadens.', ['heilung'],
         function (c) { c.self.lifesteal += 0.3; })] },
     { id: 'erzdaemon', name: 'Erzdämon', tags: ['daemon', 'magier'], hp: 130, atk: 34, def: 5, spd: 30 },
+
+    { id: 'kreuzritter', name: 'Kreuzritter', tags: ['mensch', 'front'], hp: 165, atk: 27, def: 9, spd: 26 },
+    { id: 'inquisitor', name: 'Inquisitor', tags: ['mensch', 'magier'], hp: 115, atk: 32, def: 4, spd: 28,
+      effects: [faehigkeit('onHit', 'Bannspruch', 'Jeder Treffer legt 2 Verderbnis an.', ['verderbnis'],
+        inflict('verderbnis', 2))] },
+    { id: 'gefallener_engel', name: 'Gefallener Engel', tags: ['daemon', 'verstaerker'], hp: 150, atk: 30, def: 6, spd: 30,
+      effects: [faehigkeit('onAllyDeath', 'Schwarze Schwingen', 'Stirbt ein Verbündeter, erhält er dauerhaft +8 Angriff.', [],
+        function (c) { c.self.atk += 8; })] },
 
     /* --- Bosse --- */
     { id: 'charybdis', name: 'Charybdis', tags: ['drache', 'front'], boss: true, resistenz: 0.6, hp: 400, atk: 24, def: 6, spd: 26,
@@ -142,41 +161,59 @@
   }
 
   var encounters = [
-    enc(1, 'Wolfsrudel', ['wolfsjunges', 'wolfsjunges', 'rudelfuehrer'], 18, false, 1.1),
-    enc(1, 'Spinnennest', ['giftspinne', 'riesenspinne', 'giftspinne'], 18, false, 1.1),
-    enc(1, 'Räuberbande', ['goblinraeuber', 'goblinraeuber', 'goblinschamane'], 16, false, 1.1),
-    enc(1, 'Lichtung', ['hornhase', 'hornhase', 'waldschlange'], 16, false, 1.1),
-    enc(1, 'Dickicht', ['waldschlange', 'tollwuetiger_baer', 'dryade'], 19, false, 1.1),
-    enc(1, 'Alter Hain', ['dryade', 'riesenspinne', 'hornhase', 'goblinraeuber'], 19, false, 1.1),
-    enc(1, 'Überfall auf das Goblindorf', ['wolfsjunges', 'wolfsjunges', 'wolfsjunges', 'rudelfuehrer'], 19, false, 1.1),
-    enc(1, 'Hornhasen-Lichtung', ['hornhase', 'hornhase', 'hornhase', 'klingentiger'], 18, false, 1.1),
-    enc(1, 'Fledermausschlucht', ['riesenfledermaus', 'riesenfledermaus', 'irrlicht'], 18, false, 1.1),
-    enc(1, 'Tausendfüßler-Bau', ['tausendfuessler', 'giftspinne', 'tausendfuessler'], 19, false, 1.1),
-    enc(1, 'Späher am Waldrand', ['orkspaeher', 'orkspaeher', 'goblinjaeger'], 19, false, 1.1),
-    enc(1, 'Der schlammige Pfad', ['sumpfkriecher', 'sumpfkriecher', 'eberrammler'], 19, false, 1.1),
-    enc(1, 'Irrlichter im Nebel', ['irrlicht', 'irrlicht', 'waldschlange', 'hornhase'], 19, false, 1.1),
-    enc(1, 'Jagdrevier des Klingentigers', ['klingentiger', 'klingentiger', 'dryade'], 21, false, 1.1),
+    enc(1, 'Wolfsrudel', ['wolfsjunges', 'wolfsjunges', 'rudelfuehrer'], 18, false, 1.15),
+    enc(1, 'Spinnennest', ['giftspinne', 'riesenspinne', 'giftspinne'], 18, false, 1.15),
+    enc(1, 'Räuberbande', ['goblinraeuber', 'goblinraeuber', 'goblinschamane'], 16, false, 1.15),
+    enc(1, 'Lichtung', ['hornhase', 'hornhase', 'waldschlange'], 16, false, 1.15),
+    enc(1, 'Dickicht', ['waldschlange', 'tollwuetiger_baer', 'dryade'], 19, false, 1.15),
+    enc(1, 'Alter Hain', ['dryade', 'riesenspinne', 'hornhase', 'goblinraeuber'], 19, false, 1.15),
+    enc(1, 'Überfall auf das Goblindorf', ['wolfsjunges', 'wolfsjunges', 'wolfsjunges', 'rudelfuehrer'], 19, false, 1.15),
+    enc(1, 'Hornhasen-Lichtung', ['hornhase', 'hornhase', 'hornhase', 'klingentiger'], 18, false, 1.15),
+    enc(1, 'Fledermausschlucht', ['riesenfledermaus', 'riesenfledermaus', 'irrlicht'], 18, false, 1.15),
+    enc(1, 'Tausendfüßler-Bau', ['tausendfuessler', 'giftspinne', 'tausendfuessler'], 19, false, 1.15),
+    enc(1, 'Späher am Waldrand', ['orkspaeher', 'orkspaeher', 'goblinjaeger'], 19, false, 1.15),
+    enc(1, 'Der schlammige Pfad', ['sumpfkriecher', 'sumpfkriecher', 'eberrammler'], 19, false, 1.15),
+    enc(1, 'Irrlichter im Nebel', ['irrlicht', 'irrlicht', 'waldschlange', 'hornhase'], 19, false, 1.15),
+    enc(1, 'Jagdrevier des Klingentigers', ['klingentiger', 'klingentiger', 'dryade'], 21, false, 1.15),
 
     enc(1, 'Elite: Der Bärenkönig', ['tollwuetiger_baer', 'tollwuetiger_baer', 'rudelfuehrer', 'wolfsjunges'], 36, true, 1.45),
     enc(1, 'Elite: Brutmutter', ['giftspinne', 'giftspinne', 'riesenspinne', 'riesenspinne'], 36, true, 1.45),
     enc(1, 'Elite: Das gestreifte Paar', ['klingentiger', 'klingentiger', 'eberrammler', 'klingentiger'], 38, true, 1.45),
     enc(1, 'Elite: Orkvorhut', ['orkspaeher', 'orkspaeher', 'orkspaeher', 'eberrammler'], 38, true, 1.45),
 
-    enc(2, 'Knochenkammer', ['skelett', 'skelett', 'knochenmagier'], 27, false, 1.65),
-    enc(2, 'Einsturzstollen', ['minenkobold', 'minenkobold', 'hoehlentroll'], 27, false, 1.65),
-    enc(2, 'Orkvorhut', ['orkkrieger', 'orkkrieger', 'orkhaeuptling'], 29, false, 1.65),
-    enc(2, 'Tiefe Nische', ['hoehlenspinne', 'schattenfalter', 'hoehlenspinne'], 27, false, 1.65),
-    enc(2, 'Wächterhalle', ['felsgolem', 'skelett', 'knochenmagier'], 29, false, 1.65),
-    enc(2, 'Gruft', ['gruftghul', 'gruftghul', 'knochenmagier', 'skelett'], 30, false, 1.65),
+    enc(2, 'Knochenkammer', ['skelett', 'skelett', 'knochenmagier'], 27, false, 1.72),
+    enc(2, 'Einsturzstollen', ['minenkobold', 'minenkobold', 'hoehlentroll'], 27, false, 1.72),
+    enc(2, 'Orkvorhut', ['orkkrieger', 'orkkrieger', 'orkhaeuptling'], 29, false, 1.72),
+    enc(2, 'Tiefe Nische', ['hoehlenspinne', 'schattenfalter', 'hoehlenspinne'], 27, false, 1.72),
+    enc(2, 'Wächterhalle', ['felsgolem', 'skelett', 'knochenmagier'], 29, false, 1.72),
+    enc(2, 'Gruft', ['gruftghul', 'gruftghul', 'knochenmagier', 'skelett'], 30, false, 1.72),
+    enc(2, 'Die Orkstraße', ['orkkrieger', 'orkkrieger', 'orkschamane', 'orkspaeher'], 29, false, 1.72),
+    enc(2, 'Die Grube', ['grubenwurm', 'hoehlenspinne', 'hoehlenspinne'], 29, false, 1.72),
+    enc(2, 'Verlassene Zwergenmine', ['minenkobold', 'minenaufseher', 'felsgolem'], 29, false, 1.72),
+    enc(2, 'Der brennende Weiler', ['orkkrieger', 'orkschamane', 'orkspaeher'], 27, false, 1.72),
+    enc(2, 'Gruft der Bergkönige', ['gruftfledermaus', 'gruftghul', 'knochenmagier', 'skelett'], 30, false, 1.72),
+    enc(2, 'Späher des Orklords', ['orkspaeher', 'orkspaeher', 'orkhaeuptling'], 29, false, 1.72),
+
+    enc(2, 'Elite: Vorhut des Orklords', ['orkhaeuptling', 'orkkrieger', 'orkkrieger', 'orkschamane'], 52, true, 1.9),
+    enc(2, 'Elite: Der Grubenwurm', ['grubenwurm', 'grubenwurm', 'hoehlentroll'], 52, true, 1.9),
     enc(2, 'Elite: Trollpaar', ['hoehlentroll', 'hoehlentroll', 'felsgolem'], 52, true, 1.9),
     enc(2, 'Elite: Orkhorde', ['orkkrieger', 'orkkrieger', 'orkkrieger', 'orkhaeuptling'], 52, true, 1.9),
 
-    enc(3, 'Vorhut Falmuths', ['ritter', 'ritter', 'bogenschuetze'], 40, false, 1.85),
-    enc(3, 'Hofstaat', ['hofmagier', 'hofmagier', 'ritter'], 40, false, 1.85),
-    enc(3, 'Heilige Kompanie', ['paladin', 'bogenschuetze', 'heilige_klinge'], 44, false, 1.85),
-    enc(3, 'Dämonenpforte', ['daemonenbrut', 'hoellenhund', 'erzdaemon'], 44, false, 1.85),
-    enc(3, 'Verfluchtes Feld', ['verderbte_seele', 'blutritter', 'verderbte_seele'], 42, false, 1.85),
-    enc(3, 'Letzte Bastion', ['paladin', 'ritter', 'hofmagier', 'bogenschuetze'], 46, false, 1.85),
+    enc(3, 'Vorhut Falmuths', ['ritter', 'ritter', 'bogenschuetze'], 40, false, 1.95),
+    enc(3, 'Hofstaat', ['hofmagier', 'hofmagier', 'ritter'], 40, false, 1.95),
+    enc(3, 'Heilige Kompanie', ['paladin', 'bogenschuetze', 'heilige_klinge'], 44, false, 1.95),
+    enc(3, 'Dämonenpforte', ['daemonenbrut', 'hoellenhund', 'erzdaemon'], 44, false, 1.95),
+    enc(3, 'Verfluchtes Feld', ['verderbte_seele', 'blutritter', 'verderbte_seele'], 42, false, 1.95),
+    enc(3, 'Letzte Bastion', ['paladin', 'ritter', 'hofmagier', 'bogenschuetze'], 46, false, 1.95),
+    enc(3, 'Der Zug der Kreuzritter', ['kreuzritter', 'kreuzritter', 'inquisitor'], 42, false, 1.95),
+    enc(3, 'Vor den Toren Falmuths', ['ritter', 'ritter', 'bogenschuetze', 'hofmagier'], 44, false, 1.95),
+    enc(3, 'Die weiße Kapelle', ['paladin', 'inquisitor', 'kreuzritter'], 44, false, 1.95),
+    enc(3, 'Blutmond', ['gefallener_engel', 'daemonenbrut', 'hoellenhund'], 44, false, 1.95),
+    enc(3, 'Das Feld der Verräter', ['verderbte_seele', 'gefallener_engel', 'blutritter'], 42, false, 1.95),
+    enc(3, 'Dämonenpakt', ['erzdaemon', 'daemonenbrut', 'gefallener_engel'], 44, false, 1.95),
+
+    enc(3, 'Elite: Heilige Inquisition', ['inquisitor', 'inquisitor', 'paladin', 'kreuzritter'], 72, true, 1.95),
+    enc(3, 'Elite: Der gefallene Chor', ['gefallener_engel', 'gefallener_engel', 'erzdaemon', 'blutritter'], 72, true, 1.95),
     enc(3, 'Elite: Kreuzzug', ['paladin', 'paladin', 'heilige_klinge', 'hofmagier'], 72, true, 1.95),
     enc(3, 'Elite: Dämonenrat', ['erzdaemon', 'erzdaemon', 'blutritter', 'hoellenhund'], 72, true, 1.95)
   ];
@@ -333,6 +370,56 @@
           can: function (r) { return r.gold >= 80; },
           fn: function (r, api) { r.gold -= 80; api.freierRang(); } },
         { text: 'Nur zuhören: zufällige Ausrüstung', fn: function (r, api) { api.grantItem(); } }
+      ] },
+
+    /* --- Akt 2: die Orkarmee --- */
+    { id: 'orkarmee', act: 2, name: 'Zehntausend Schritte',
+      text: 'Vom Höhenzug aus seht ihr sie: eine Orkarmee ohne Ende, die alles frisst, was ihr begegnet. Ihr Anführer trägt eine Krone aus Knochen.',
+      options: [
+        { text: 'Der Armee ausweichen: +140 Gold für den Umweg', fn: function (r) { r.gold += 140; } },
+        { text: 'Die Nachhut abfangen: +180 Magicule, eine zufällige Einheit verliert dauerhaft 25 Leben',
+          fn: function (r, api) { r.magicules += 180; api.buffRandom({ hp: -25 }); } }
+      ] },
+    { id: 'zwergenmine', act: 2, name: 'Die stillgelegte Mine',
+      text: 'Dwargons alte Stollen. In der Tiefe glimmt Erz, das noch nie ein Hammer berührt hat.',
+      options: [
+        { text: 'Tief graben: zufällige Ausrüstung und +60 Magicule',
+          fn: function (r, api) { api.grantItem(); r.magicules += 60; } },
+        { text: 'Nur die Oberfläche abtragen: +130 Gold', fn: function (r) { r.gold += 130; } }
+      ] },
+    { id: 'gefangener', act: 2, name: 'Ein Gefangener der Orks',
+      text: 'In einem umgestürzten Käfig hockt jemand, der seit Tagen nichts getrunken hat — und trotzdem grinst.',
+      options: [
+        { text: 'Befreien: eine zufällige Einheit einer freien Art schließt sich an',
+          fn: function (r, api) { api.grantUnit(); } },
+        { text: 'Ausfragen und weiterziehen: +110 Magicule', fn: function (r) { r.magicules += 110; } }
+      ] },
+
+    /* --- Akt 3: Falmuth und die Dämonen --- */
+    { id: 'daemonenangebot', act: 3, name: 'Ein Angebot aus dem Schatten',
+      text: 'Eine Gestalt im Frack verbeugt sich tief. „Ich diene dem Stärkeren. Zeigt mir, dass Ihr das seid — oder nehmt einfach, was ich biete."',
+      options: [
+        { text: 'Den Pakt annehmen: die schwächste Einheit steigt gratis einen Rang auf, der Trupp verliert 60 Gold',
+          can: function (r) { return r.gold >= 60; },
+          fn: function (r, api) { r.gold -= 60; api.freierRang(); } },
+        { text: 'Ablehnen und die Klinge nehmen: zufällige Ausrüstung', fn: function (r, api) { api.grantItem(); } },
+        { text: 'Ihn fortschicken: +200 Magicule', fn: function (r) { r.magicules += 200; } }
+      ] },
+    { id: 'botschafterin', act: 3, name: 'Die Botschafterin',
+      text: 'Eine Frau in weißer Rüstung wartet allein auf der Straße. Sie zieht nicht. Sie sagt nur: „Kehrt um."',
+      options: [
+        { text: 'Umkehren und einen Umweg nehmen: +150 Gold', fn: function (r) { r.gold += 150; } },
+        { text: 'An ihr vorbeigehen: +100 Magicule und ein zufälliges Relikt',
+          fn: function (r, api) { r.magicules += 100; api.grantRelic(); } }
+      ] },
+    { id: 'nachtlager', act: 3, name: 'Nachtlager vor der Hauptstadt',
+      text: 'Morgen fällt die Entscheidung. Heute Nacht kann noch geschliffen, geschmiedet oder geschlafen werden.',
+      options: [
+        { text: 'Schleifen: eine zufällige Einheit erhält dauerhaft +8 Angriff',
+          fn: function (r, api) { api.buffRandom({ atk: 8 }); } },
+        { text: 'Schmieden: zufällige Ausrüstung', fn: function (r, api) { api.grantItem(); } },
+        { text: 'Schlafen: dauerhaft +25 Leben für den ganzen Trupp',
+          fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { hp: 25 }); }); } }
       ] },
 
     { id: 'alter_baum', name: 'Baum der Namen',

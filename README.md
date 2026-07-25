@@ -33,13 +33,13 @@ Doppelklick über `file://`.
 index.html  style.css
 js/rng.js        deterministischer RNG (mulberry32), Seed = ganzer Run
 js/abilities.js  40 Signaturen, 16 Pool-Aktive, 34 Passive
-js/data.js       40 Einheiten, 48 Relikte, 26 Ausrüstungen, GLOSSAR (Tooltip-Texte)
+js/data.js       40 Einheiten, 49 Relikte, 27 Ausrüstungen, GLOSSAR (Tooltip-Texte)
 js/combat.js     simulate(teamA, teamB, seed, opts) — reine Funktion, kein DOM
-js/enemies.js    41 Gegner (mit eigenen Aktiven), 3 Bosse, 36 Begegnungen, 20 Ereignisse
+js/enemies.js    48 Gegner (mit eigenen Aktiven), 3 Bosse, 50 Begegnungen, 26 Ereignisse
 js/run.js        Karte, Ränge, Belohnungen, Shop, Prädator, Speicherstand
 js/ui.js         Darstellung; ändert Zustand nur über Run.*
 js/main.js       Start
-dev/sim.js       151 Selbsttests
+dev/sim.js       156 Selbsttests
 dev/uitest.js    UI-Test in jsdom: klickt einen Run durch (46 Prüfungen)
 dev/balance.js   spielt N komplette Runs headless und misst die Builds
 ```
@@ -48,7 +48,7 @@ dev/balance.js   spielt N komplette Runs headless und misst die Builds
 
 ```bash
 npm install                  # nur für den UI-Test (jsdom); das Spiel selbst hat keine Abhängigkeiten
-node dev/sim.js              # Logik-Selbsttests, muss 151/151 sein
+node dev/sim.js              # Logik-Selbsttests, muss 156/156 sein
 node dev/uitest.js           # UI-Test, muss 46/46 sein
 node dev/balance.js 600      # Balance, frischer Spieler
 node dev/balance.js 600 --voll   # Balance, alles freigeschaltet
@@ -63,20 +63,23 @@ das der einzige Weg, tote und dominante Builds zu finden.
 800 Runs mit dem Bot aus `dev/balance.js`. Ein Trupp gilt erst als *Build*, wenn
 ein Schlüsselwort zwei Quellen und einen Verstärker hat:
 
-| | Siege | Gift | Frost | Brand | Heilung | Schild | Exekution | ohne Build |
-|---|---|---|---|---|---|---|---|---|
-| frischer Spieler | 43 % | 68 % | – | – | 43 % | 66 % | 41 % | 0 % |
-| alles freigeschaltet | 50 % | 72 % | 71 % | 70 % | 54 % | 50 % | 43 % | 0 % |
+| | Siege | Schild | Gift | Frost | Brand | Heilung | Exekution | Konter | ohne Build |
+|---|---|---|---|---|---|---|---|---|---|
+| frischer Spieler | 54 % | 74 % | 69 % | – | – | 55 % | 51 % | 37 % | 0 % |
+| alles freigeschaltet | 49 % | 57 % | 64 % | 76 % | 76 % | 50 % | 40 % | – | 0 % |
 
-Alle Builds liegen im Zielband 25–75 %; ein Trupp ohne Build gewinnt praktisch
-nie. Je Run bleiben rund 8 Ladenangebote unbezahlbar — Gold reicht nie für alles.
+Sieben Builds entstehen regelmäßig, fast alle im Zielband 25–75 %; ein Trupp
+ohne Build gewinnt praktisch nie. Je Run bleiben rund 8 Ladenangebote
+unbezahlbar — Gold reicht nie für alles.
 
 Schwierigkeit wird nicht an 33 Statblöcken gedreht, sondern am `mult` jeder
 Begegnung in `js/enemies.js` — ein Knopf pro Begegnung.
 
 ## Was fehlt
 
-- Verderbnis-, Konter- und Tempo-Builds entstehen zu selten für belastbare Zahlen.
+- Frost und Brand liegen bei voller Freischaltung mit je 76 % knapp über dem Band
+  (kleine Stichprobe).
+- Verderbnis- und Tempo-Builds entstehen zu selten für belastbare Zahlen.
 - Der Bot in `dev/balance.js` spielt Aufstellung und Ausrüstung stur; wie viel
   ein guter Spieler mehr herausholt, misst er nicht.
 - Keine Grafik — Textkarten und Balken.

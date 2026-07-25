@@ -195,9 +195,14 @@ Alle Builds liegen im Zielband 25–75 %, und ein Trupp ohne Build gewinnt prakt
 nie. Ein Test in `dev/sim.js` schlägt jetzt fehl, sobald ein Schlüsselwort Quellen
 ohne Verstärker hat — genau die Lücke, die an den Siegquoten allein unsichtbar war.
 
+Dritter Durchgang (2026-07-26): Akt 2 und 3 auf Akt-1-Dichte gebracht (je 12
+normale und 4 Elite-Begegnungen, je drei eigene Story-Ereignisse, 7 neue
+Gegner aus dem Orklord- und Falmuth-Bogen). Billige Träger für Verderbnis- und
+Konter-Builds, damit die nicht erst mit teuren Einheiten anlaufen. Und der
+Belohnungsbildschirm übersteht jetzt ein Neuladen: `serialize` legt ein
+schlankes `pending` ab (Belohnungen, Prädator-Angebot, Ergebnis — nicht das Log).
+
 Weitere offene Punkte:
-- Ein Neuladen während des Belohnungsbildschirms verwirft die Belohnung
-  (gespeichert wird der Kartenzustand, nicht `pending`).
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
 
