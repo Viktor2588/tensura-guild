@@ -51,10 +51,11 @@
       function (c) { c.self.lifesteal += 0.2; }),
     passiv('quelle', 'Quelle des Waldes', 'onStart', ['heilung'], [], 'Gibt allen Verbündeten Regeneration 3',
       function (c) { c.allies().forEach(function (u) { u.regen += 3; }); }),
-    passiv('dornenhaut', 'Stachelhaut', 'onDamaged', ['konter'], [], 'Angreifer erleiden 10 Schaden',
-      function (c) { var f = c.foes()[0]; if (f) c.deal(f, 10, 'Dornen'); }),
-    passiv('konterstoss', 'Reflexkonter', 'onDamaged', ['konter'], [], '30 % Chance auf einen Gegenangriff',
-      chance(0.3, function (c) { var f = c.foes()[0]; if (f) c.deal(f, c.self.atk * 0.7, 'Konterstoß'); })),
+    passiv('dornenhaut', 'Stachelhaut', 'onDamaged', ['konter'], [],
+      'Angreifer erleiden 10 Schaden plus ein Drittel des eigenen Angriffs zurück',
+      function (c) { var f = c.foes()[0]; if (f) c.deal(f, 10 + c.self.atk * 0.35, 'Dornen'); }),
+    passiv('konterstoss', 'Reflexkonter', 'onDamaged', ['konter'], [], '40 % Chance auf einen Gegenangriff',
+      chance(0.4, function (c) { var f = c.foes()[0]; if (f) c.deal(f, c.self.atk * 0.7, 'Konterstoß'); })),
     passiv('windschritt', 'Gedankenbeschleunigung', 'onStart', ['tempo'], [], '+15 % Tempo',
       function (c) { c.self.spd = Math.round(c.self.spd * 1.15); }),
     passiv('jagdruf', 'Jagdruf', 'onStart', ['tempo'], [], 'Gibt allen Verbündeten +10 % Tempo',
@@ -87,6 +88,32 @@
         c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.4);
         c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
       }),
+    /* Verstärker für die Schlüsselwörter, die bisher nur Quellen hatten —
+       ohne sie konnten Heilungs-, Schild-, Flächen- und Tempo-Builds nach der
+       Definition (zwei Quellen + ein Verstärker) nie zustande kommen. */
+    passiv('lebenskraft', 'Lebenskraft', 'onStart', [], ['heilung'],
+      'Jede Heilung an dieser Einheit wirkt um 45 % stärker',
+      function (c) { c.self.heilfaktor += 0.45; }),
+    passiv('bollwerkmeister', 'Bollwerkmeister', 'onStart', [], ['schild'],
+      'Jeder Schild auf dieser Einheit ist um 35 % stärker',
+      function (c) { c.self.schildfaktor += 0.35; }),
+    passiv('massenschlaechter', 'Massenschlächter', 'onHit', [], ['flaeche'],
+      '+10 % Schaden je lebendem Gegner — lohnt sich, solange die Reihen voll sind',
+      function (c) { c.dmg *= 1 + 0.1 * c.foes().length; }),
+    passiv('schwungmeister', 'Schwungmeister', 'onHit', [], ['tempo'],
+      '+3 % Schaden je Punkt Tempo über 26',
+      function (c) { c.dmg *= 1 + Math.max(0, c.self.spd - 26) * 0.03; }),
+    passiv('rachsucht', 'Rachsucht', 'onHit', [], ['konter'],
+      '+50 % Schaden, sobald die Einheit in diesem Kampf selbst getroffen wurde',
+      function (c) { if (c.self.dmgTaken > 0) c.dmg *= 1.5; }),
+
+    passiv('blutrausch', 'Blutrausch', 'onKill', ['exekution'], [],
+      'Jeder erlegte Gegner gibt dauerhaft +14 % Angriff',
+      function (c) { c.self.atk = Math.round(c.self.atk * 1.14); }),
+    passiv('trophaenjaeger', 'Trophäenjäger', 'onKill', ['exekution'], [],
+      'Jeder erlegte Gegner heilt die Einheit um 20 % ihres maximalen Lebens',
+      function (c) { c.heal(c.self, c.self.maxHp * 0.2, 'Trophäenjäger'); }),
+
     passiv('kriegsherz', 'Kampfgeist', 'onStart', [], [], '+5 Angriff, +3 Rüstung',
       function (c) { c.self.atk += 5; c.self.def += 3; })
   ];
@@ -459,6 +486,8 @@
     ansporn: 5,
     /* Passive */
     kriegsherz: 1, windschritt: 1, erstschlag: 1, giftbrut: 1, glutkern: 1, schildwall: 1,
+    lebenskraft: 3, bollwerkmeister: 3, massenschlaechter: 4, schwungmeister: 3, rachsucht: 3,
+    blutrausch: 4, trophaenjaeger: 3,
     dornenhaut: 2, regenerator: 2, rachegeist: 2, henkersblick: 2, frostkern: 2,
     verderber: 2, quelle: 2,
     giftzahn: 3, aschehaut: 3, konterstoss: 3, lebensraub: 3, bannerherz: 3,

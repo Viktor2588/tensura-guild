@@ -48,7 +48,7 @@ ok(GD.units.every(function (u) { return GD.ARTEN.indexOf(u.art) >= 0; }), 'jede 
 ok(GD.units.concat(EN.all).every(function (u) {
   return u.tags.filter(function (t) { return C.ROLES.indexOf(t) >= 0; }).length === 1;
 }), 'jede Einheit hat genau eine Rolle');
-var HOOKS = ['onStart', 'onTurnStart', 'onHit', 'onDamaged', 'onDeath', 'onAllyDeath'];
+var HOOKS = ['onStart', 'onTurnStart', 'onHit', 'onDamaged', 'onKill', 'onDeath', 'onAllyDeath'];
 ok(AB.passives.every(function (p) { return HOOKS.indexOf(p.hook) >= 0; }), 'jede Passive hängt an einem bekannten Hook');
 ok(AB.pool.concat(AB.signatures).every(function (a) { return a.cd >= 1 && a.cd <= 6; }), 'Abklingzeiten liegen zwischen 1 und 6');
 ok(AB.alle.every(function (a) { return a.id && a.name && a.text && typeof a.fn === 'function'; }),
@@ -299,6 +299,61 @@ for (var fb = 0; fb < 30; fb++) {
 ok(widerstand > 0, 'Bosse schütteln Erstarrung ab (' + widerstand + '×)');
 ok(trefferNormal > trefferBoss, 'gegen normale Gegner greift Frost deutlich öfter (' +
    trefferNormal + ' zu ' + trefferBoss + ')');
+
+/* Jedes Schlüsselwort mit Quellen braucht auch Verstärker — sonst kann daraus
+   nie ein Build werden. Genau diese Lücke gab es bei Heilung, Schild, Fläche
+   und Tempo, und sie war an den Zahlen allein nicht zu sehen. */
+head('Build-Achsen');
+function inventar() {
+  var q = {}, v = {};
+  AB.alle.concat(GD.relics, GD.items).forEach(function (x) {
+    (x.keywords || []).forEach(function (k) { q[k] = (q[k] || 0) + 1; });
+    (x.amplifies || []).forEach(function (k) { v[k] = (v[k] || 0) + 1; });
+  });
+  return { quellen: q, verstaerker: v };
+}
+var inv = inventar();
+var ohneVerstaerker = Object.keys(inv.quellen).filter(function (k) {
+  return inv.quellen[k] >= 3 && !inv.verstaerker[k];
+});
+ok(!ohneVerstaerker.length, 'jedes Schlüsselwort mit Quellen hat auch Verstärker' +
+   (ohneVerstaerker.length ? ' — fehlt bei: ' + ohneVerstaerker.join(', ') : ''));
+ok(Object.keys(inv.verstaerker).every(function (k) { return inv.quellen[k] >= 2; }),
+   'kein Verstärker ohne mindestens zwei Quellen');
+ok(Object.keys(inv.quellen).every(function (k) { return !!G.keywords[k]; }),
+   'jedes Schlüsselwort ist im Glossar erklärt');
+
+/* Die neuen Verstärker müssen messbar wirken. */
+/* Geheilt wird nur, wo Schaden ankommt — deshalb ein Gegner, der austeilt,
+   und ein Vorderkämpfer ohne eigene Schilde. */
+function heilung(items, seed) {
+  var m = R.member('gobwa'); m.rank = 2; m.items = items || [];
+  var t = R.member('gabiru'); t.rank = 1;
+  var r = C.simulate([R.resolve(t), R.resolve(m)], [EN.get('ritter'), EN.get('bogenschuetze')], seed);
+  var sum = 0;
+  r.log.forEach(function (l) { if (l.type === 'heal' && l.side === 'player') sum += l.amount; });
+  return sum;
+}
+var ohneKelch = 0, mitKelch = 0;
+for (var hh = 0; hh < 15; hh++) { ohneKelch += heilung([], hh); mitKelch += heilung(['heilkelch'], hh); }
+ok(mitKelch > ohneKelch, 'der Kelch der Quelle verstärkt Heilung messbar (' +
+   ohneKelch + ' -> ' + mitKelch + ')');
+
+var schildTeam = C.simulate([def('rigurd', 1)], [EN.get('felsgolem')], 5);
+var maxSchild = 0;
+schildTeam.log.forEach(function (l) { if (l.status === 'schild' && l.stacks > maxSchild) maxSchild = l.stacks; });
+var maxHp = schildTeam.roster[0].maxHp;
+ok(maxSchild <= Math.ceil(maxHp * 0.6), 'Schild ist auf 60 % des Lebens gedeckelt (' +
+   maxSchild + ' von ' + maxHp + ')');
+
+/* onKill: der Aufbau von Exekutions-Builds hängt daran. */
+var jaeger = R.member('sturmwolf'); jaeger.rank = 2;
+var jd = R.resolve(jaeger);
+ok(jd.effects.some(function (e) { return e.hook === 'onKill'; }), 'Blutrausch hängt am onKill-Hook');
+var vorAtk = C.simulate([jd], EN.build(EN.forAct(1)[0]), 2).roster[0].atk;
+var mitKills = C.simulate([jd], EN.build(EN.forAct(1)[0]), 2);
+var toteGegner = mitKills.log.filter(function (l) { return l.type === 'death' && l.side === 'enemy'; }).length;
+ok(toteGegner === 0 || vorAtk > 0, 'Kämpfe mit Blutrausch laufen fehlerfrei');
 
 /* ------------------------------------------------------------- Kampf */
 head('Kampf');

@@ -176,14 +176,24 @@ Dazu zwei universelle Verstärker (Auge für Schwächen, Kalte Berechnung) und
 Bosse, die Erstarrung zu 60 % abschütteln — sonst gewinnt Frost jeden
 Einzelkampf, indem er dem Gegner die Züge nimmt.
 
-Stand nach 800 Runs:
+Zweiter Durchgang (2026-07-26): eine Bestandsaufnahme je Schlüsselwort zeigte,
+dass Heilung 21 Quellen und **null** Verstärker hatte, Schild 11/0, Fläche 8/0,
+Tempo 5/0 — diese Builds konnten definitionsgemäß nie entstehen. Fünf
+Verstärker-Passive, vier Relikte und zwei Ausrüstungen füllen die Lücken; dazu
+`heilfaktor`/`schildfaktor` im Kampf und ein `onKill`-Hook, an dem der Aufbau von
+Exekutions-Builds hängt. Gegengewichte: Schild ist auf 60 % des Lebens gedeckelt,
+Erstarrung stapelt nicht mehr.
 
-| | Siege | Frost | Gift | Brand | Exekution | ohne Build |
-|---|---|---|---|---|---|---|
-| frischer Spieler | 46 % | 66 % | 62 % | – | 49 % | 27 % |
-| alles freigeschaltet | 52 % | 76 % | 66 % | 69 % | 35 % | 2 % |
+Stand nach je 800 Runs:
 
-Einen Build zu haben ist damit der stärkste einzelne Faktor im Spiel.
+| | Siege | Gift | Frost | Brand | Heilung | Schild | Exekution | ohne Build |
+|---|---|---|---|---|---|---|---|---|
+| frischer Spieler | 43 % | 68 % | – | – | 43 % | 66 % | 41 % | 0 % |
+| alles freigeschaltet | 50 % | 72 % | 71 % | 70 % | 54 % | 50 % | 43 % | 0 % |
+
+Alle Builds liegen im Zielband 25–75 %, und ein Trupp ohne Build gewinnt praktisch
+nie. Ein Test in `dev/sim.js` schlägt jetzt fehl, sobald ein Schlüsselwort Quellen
+ohne Verstärker hat — genau die Lücke, die an den Siegquoten allein unsichtbar war.
 
 Weitere offene Punkte:
 - Ein Neuladen während des Belohnungsbildschirms verwirft die Belohnung

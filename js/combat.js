@@ -8,13 +8,13 @@
    run.js schon eingerechnet):
      { id, name, tags, hp, atk, def, spd, actives:[], effects:[], keywords:[] }
 
-   Hooks der Passiven: onStart onTurnStart onHit onDamaged onDeath onAllyDeath  */
+   Hooks der Passiven: onStart onTurnStart onHit onDamaged onKill onDeath onAllyDeath */
 'use strict';
 (function (root) {
 
   var TICK_CAP = 3000;                                   // Patt-Bremse
   /* Ohne Obergrenzen läuft alles davon, was pro Treffer stapelt. */
-  var STATUS_CAP = { verderbnis: 5, gift: 12, brand: 8, erstarrung: 2 };
+  var STATUS_CAP = { verderbnis: 5, gift: 12, brand: 8, erstarrung: 1 };
   var ROLES = ['front', 'fernkampf', 'magier', 'unterstuetzer', 'verstaerker'];
 
   function roleOf(u) {
@@ -34,6 +34,7 @@
       }),
       keywords: (def.keywords || []).slice(), resistenz: def.resistenz || 0,
       side: side, pos: pos, gauge: 0, status: {}, regen: 0, lifesteal: 0,
+      heilfaktor: 0, schildfaktor: 0,
       dmgTaken: 0, dmgDealt: 0
     };
   }
@@ -89,6 +90,7 @@
 
     function heal(u, amount, source) {
       if (!u || !alive(u)) return 0;
+      amount *= 1 + (u.heilfaktor || 0);                 // Verstärker für Heilungs-Builds
       if (u.status.brand > 0) amount *= 0.5;             // Brand halbiert Heilung
       amount = Math.max(0, Math.min(Math.round(amount), u.maxHp - u.hp));
       if (!amount) return 0;
@@ -107,8 +109,12 @@
                    side: target.side, status: key });
         return;
       }
+      if (key === 'schild') stacks *= 1 + (target.schildfaktor || 0);
       target.status[key] = (target.status[key] || 0) + stacks;
       if (STATUS_CAP[key]) target.status[key] = Math.min(target.status[key], STATUS_CAP[key]);
+      /* Schild verfällt nicht — ohne Deckel stapelt ein Schild-Trupp sich eine
+         zweite Lebensleiste an und wird unkaputtbar. */
+      if (key === 'schild') target.status.schild = Math.min(target.status.schild, target.maxHp * 0.6);
       log.push({ t: t, type: 'status', key: target.key, target: target.name, side: target.side,
                  status: key, stacks: Math.round(target.status[key]) });
     }
@@ -143,6 +149,9 @@
       var done = deal(target, c.dmg, quelle || u.name, { pure: !!u.durchschlag || !!opt.pure });
       u.dmgDealt += done;
       if (u.lifesteal > 0 && done) heal(u, done * u.lifesteal, 'Lebensraub');
+      /* Wer den Gegner umlegt, darf das merken — Grundlage für Exekutions-Builds,
+         die sich über den Kampf hinweg aufschaukeln. */
+      if (target.hp <= 0) fire(u, 'onKill', ctx(u, { getoetet: target }));
       return done;
     }
 

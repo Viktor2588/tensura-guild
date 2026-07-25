@@ -64,9 +64,9 @@
     zustaende: {
       gift: 'Verursacht 2 Schaden je Stapel, jedes Mal wenn das Ziel am Zug ist, und baut sich dabei um 1 ab. Geht durch Schilde. Höchstens 12 Stapel.',
       brand: 'Verursacht 2 Schaden je Stapel pro Zug des Ziels und HALBIERT jede Heilung an ihm. Baut sich um 1 pro Zug ab. Höchstens 8 Stapel.',
-      erstarrung: 'Das Ziel setzt seinen nächsten Zug komplett aus. Höchstens 2 Stapel — mehr wäre eine Dauersperre. Bosse schütteln Erstarrung zu 60 % ab.',
+      erstarrung: 'Das Ziel setzt seinen nächsten Zug komplett aus. Stapelt nicht: ein Zug, mehr nicht. Bosse schütteln Erstarrung zu 60 % ab.',
       verderbnis: 'Der Fluch: das Ziel erleidet +10 % Schaden je Stapel, aus jeder Quelle. Baut sich um 1 pro Zug ab. Höchstens 5 Stapel (also +50 %).',
-      schild: 'Fängt Schaden ab, bevor Leben verloren geht, und baut sich NICHT von selbst ab. Gift und Brand gehen hindurch.'
+      schild: 'Fängt Schaden ab, bevor Leben verloren geht, und baut sich NICHT von selbst ab. Höchstens 60 % des maximalen Lebens. Gift und Brand gehen hindurch.'
     },
     keywords: {
       gift: 'Schaden über Zeit, der sich stapelt. Stark gegen Gegner mit viel Leben und Rüstung.',
@@ -122,67 +122,67 @@
 
   var units = [
     u('rimuru', 'Rimuru', 'slime', 'magier', 0, 100, 16, 4, 28,
-      'sig_rimuru', ['panzerbrecher', 'zaeh', 'kettenschlag'], { hero: true }),
+      'sig_rimuru', ['trophaenjaeger', 'panzerbrecher', 'zaeh'], { hero: true }),
 
     u('gobta', 'Gobta', 'goblin', 'front', 1, 65, 8, 3, 24,
       'sig_gobta', ['zaeh', 'windschritt', 'konterstoss']),
     u('gobkyu', 'Gobkyu', 'goblin', 'fernkampf', 1, 50, 11, 1, 28,
       'sig_gobkyu', ['erstschlag', 'windschritt', 'henkersblick']),
     u('rigurd', 'Rigurd', 'goblin', 'front', 2, 100, 10, 5, 18,
-      'sig_rigurd', ['schildwall', 'bannerherz', 'kriegsherz']),
+      'sig_rigurd', ['bollwerkmeister', 'schildwall', 'bannerherz']),
     u('rigur', 'Rigur', 'goblin', 'verstaerker', 2, 75, 13, 3, 26,
       'sig_rigur', ['rachegeist', 'konterstoss', 'kriegsherz']),
     u('gobwa', 'Gobwa', 'goblin', 'unterstuetzer', 2, 70, 9, 2, 25,
-      'sig_gobwa', ['quelle', 'seelenband', 'regenerator']),
+      'sig_gobwa', ['lebenskraft', 'quelle', 'seelenband']),
 
     u('benimaru', 'Benimaru', 'oger', 'verstaerker', 4, 120, 22, 5, 28,
       'sig_benimaru', ['aschehaut', 'glutkern', 'kriegsherz']),
     u('shion', 'Shion', 'oger', 'front', 3, 130, 18, 6, 16,
-      'sig_shion', ['zaeh', 'kriegsherz', 'konterstoss']),
+      'sig_shion', ['rachsucht', 'zaeh', 'konterstoss']),
     u('souei', 'Souei', 'oger', 'fernkampf', 3, 80, 19, 2, 34,
       'sig_souei', ['windschritt', 'erstschlag', 'henkersblick']),
     u('shuna', 'Shuna', 'oger', 'unterstuetzer', 3, 85, 14, 3, 26,
-      'sig_shuna', ['bannerherz', 'seelenband', 'quelle']),
+      'sig_shuna', ['bollwerkmeister', 'bannerherz', 'quelle']),
     u('hakuro', 'Hakuro', 'oger', 'front', 4, 110, 21, 6, 30,
-      'sig_hakuro', ['panzerbrecher', 'erstschlag', 'scharfrichter']),
+      'sig_hakuro', ['scharfrichter', 'blutrausch', 'panzerbrecher']),
     u('kurobe', 'Kurobe', 'oger', 'verstaerker', 2, 90, 13, 4, 22,
       'sig_kurobe', ['kriegsherz', 'schildwall', 'rachegeist']),
 
     u('ranga', 'Ranga', 'direwolf', 'fernkampf', 3, 85, 17, 3, 36,
-      'sig_ranga', ['windschritt', 'jagdruf', 'erstschlag']),
+      'sig_ranga', ['schwungmeister', 'windschritt', 'jagdruf']),
     u('sturmwolf', 'Sturmwolf', 'direwolf', 'front', 1, 60, 9, 2, 30,
-      'sig_sturmwolf', ['henkersblick', 'scharfrichter', 'windschritt']),
+      'sig_sturmwolf', ['henkersblick', 'blutrausch', 'scharfrichter']),
     u('schattenwolf', 'Schattenwolf', 'direwolf', 'magier', 2, 60, 14, 1, 30,
       'sig_schattenwolf', ['frostschneide', 'frostkern', 'windschritt']),
     u('rudelalpha', 'Rudelalpha', 'direwolf', 'verstaerker', 3, 100, 15, 4, 28,
-      'sig_rudelalpha', ['jagdruf', 'kriegsherz', 'rachegeist']),
+      'sig_rudelalpha', ['schwungmeister', 'jagdruf', 'rachegeist']),
 
     u('gabiru', 'Gabiru', 'echsenmensch', 'front', 3, 120, 16, 6, 22,
-      'sig_gabiru', ['kriegsherz', 'zaeh', 'kettenschlag']),
+      'sig_gabiru', ['massenschlaechter', 'kettenschlag', 'zaeh']),
     u('souka', 'Souka', 'echsenmensch', 'fernkampf', 2, 70, 13, 2, 30,
       'sig_souka', ['windschritt', 'henkersblick', 'erstschlag']),
     u('echsenfuerst', 'Echsenfürst', 'echsenmensch', 'front', 4, 145, 18, 8, 18,
       'sig_echsenfuerst', ['regenerator', 'schildwall', 'zaeh']),
     u('drachenknecht', 'Drachenknecht', 'echsenmensch', 'verstaerker', 2, 85, 12, 4, 24,
-      'sig_drachenknecht', ['dornenhaut', 'konterstoss', 'kriegsherz']),
+      'sig_drachenknecht', ['rachsucht', 'dornenhaut', 'konterstoss']),
     u('quellenpriesterin', 'Quellenpriesterin', 'echsenmensch', 'unterstuetzer', 2, 75, 11, 3, 26,
-      'sig_quellenpriesterin', ['quelle', 'regenerator', 'seelenband']),
+      'sig_quellenpriesterin', ['lebenskraft', 'quelle', 'regenerator']),
 
     u('zegion', 'Zegion', 'insektoid', 'front', 5, 150, 26, 8, 30,
-      'sig_zegion', ['konterstoss', 'dornenhaut', 'panzerbrecher']),
+      'sig_zegion', ['rachsucht', 'konterstoss', 'dornenhaut']),
     u('apito', 'Apito', 'insektoid', 'fernkampf', 4, 90, 21, 3, 34,
       'sig_apito', ['giftzahn', 'giftbrut', 'windschritt']),
     u('riesenameise', 'Riesenameise', 'insektoid', 'front', 1, 70, 7, 4, 20,
       'sig_riesenameise', ['schildwall', 'dornenhaut', 'zaeh']),
     u('kaefergarde', 'Käfergarde', 'insektoid', 'front', 2, 95, 11, 6, 20,
-      'sig_kaefergarde', ['schildwall', 'dornenhaut', 'kriegsherz']),
+      'sig_kaefergarde', ['bollwerkmeister', 'schildwall', 'dornenhaut']),
     u('giftfalter', 'Giftfalter', 'insektoid', 'magier', 2, 55, 15, 1, 28,
       'sig_giftfalter', ['giftzahn', 'giftbrut', 'kettenschlag']),
 
     u('diablo', 'Diablo', 'daemon', 'magier', 5, 110, 30, 4, 32,
       'sig_diablo', ['fluchweber', 'verderber', 'panzerbrecher']),
     u('testarossa', 'Testarossa', 'daemon', 'magier', 4, 95, 24, 3, 30,
-      'sig_testarossa', ['henkersblick', 'scharfrichter', 'panzerbrecher']),
+      'sig_testarossa', ['henkersblick', 'blutrausch', 'scharfrichter']),
     u('ultima', 'Ultima', 'daemon', 'fernkampf', 4, 90, 23, 3, 32,
       'sig_ultima', ['fluchweber', 'giftbrut', 'verderber']),
     u('carrera', 'Carrera', 'daemon', 'verstaerker', 4, 105, 22, 4, 28,
@@ -191,24 +191,24 @@
       'sig_daemonengarde', ['panzerbrecher', 'kriegsherz', 'dornenhaut']),
 
     u('veldora', 'Veldora', 'drache', 'magier', 5, 140, 32, 6, 28,
-      'sig_veldora', ['kettenschlag', 'kriegsherz', 'panzerbrecher']),
+      'sig_veldora', ['massenschlaechter', 'kettenschlag', 'panzerbrecher']),
     u('milim', 'Milim', 'drache', 'verstaerker', 5, 145, 34, 6, 34,
-      'sig_milim', ['erstschlag', 'panzerbrecher', 'kriegsherz']),
+      'sig_milim', ['blutrausch', 'erstschlag', 'panzerbrecher']),
     u('drachenwelpe', 'Drachenwelpe', 'drache', 'front', 3, 110, 16, 6, 22,
       'sig_drachenwelpe', ['aschehaut', 'glutkern', 'zaeh']),
     u('windrache', 'Windrache', 'drache', 'fernkampf', 4, 100, 22, 4, 32,
-      'sig_windrache', ['windschritt', 'kettenschlag', 'erstschlag']),
+      'sig_windrache', ['schwungmeister', 'windschritt', 'kettenschlag']),
 
     u('adalmann', 'Adalmann', 'untot', 'magier', 4, 100, 22, 4, 26,
       'sig_adalmann', ['fluchweber', 'verderber', 'wiederkehr']),
     u('wightkoenig', 'Wight-König', 'untot', 'front', 3, 115, 15, 6, 20,
-      'sig_wightkoenig', ['lebensraub', 'wiederkehr', 'kriegsherz']),
+      'sig_wightkoenig', ['lebenskraft', 'lebensraub', 'wiederkehr']),
     u('skelettritter', 'Skelettritter', 'untot', 'front', 1, 65, 8, 4, 22,
       'sig_skelettritter', ['wiederkehr', 'dornenhaut', 'erstschlag']),
     u('gruftwaechter', 'Gruftwächter', 'untot', 'verstaerker', 2, 85, 12, 4, 22,
-      'sig_gruftwaechter', ['schildwall', 'wiederkehr', 'bannerherz']),
+      'sig_gruftwaechter', ['bollwerkmeister', 'schildwall', 'bannerherz']),
     u('seelenhexe', 'Seelenhexe', 'untot', 'unterstuetzer', 3, 80, 14, 2, 28,
-      'sig_seelenhexe', ['seelenband', 'quelle', 'wiederkehr'])
+      'sig_seelenhexe', ['lebenskraft', 'seelenband', 'wiederkehr'])
   ];
 
   /* ---- Relikte: greifen an Schlüsselwörtern, Rollen und Rängen an --------- */
@@ -284,8 +284,10 @@
       jeder(function (x) { x.lifesteal += 0.15; }), ['heilung']),
     relic('heilsegen', 'Heilsegen', 2, 'Alle Einheiten +4 Regeneration',
       jeder(function (x) { x.regen += 4; }), ['heilung']),
-    relic('dornenhaut_relikt', 'Dornenkranz', 2, 'Angreifer erleiden 8 Schaden zurück',
-      anhaengen('onDamaged', 'Dornen', function (c) { var f = c.foes()[0]; if (f) c.deal(f, 8, 'Dornen'); }), ['konter']),
+    relic('dornenhaut_relikt', 'Dornenkranz', 2, 'Angreifer erleiden 8 Schaden plus 20 % des eigenen Angriffs zurück',
+      anhaengen('onDamaged', 'Dornen', function (c) {
+        var f = c.foes()[0]; if (f) c.deal(f, 8 + c.self.atk * 0.2, 'Dornen');
+      }), ['konter']),
     relic('rachegeist_relikt', 'Rachegeist', 2, 'Stirbt ein Verbündeter: alle +4 Angriff',
       anhaengen('onAllyDeath', 'Rachegeist', function (c) { c.self.atk += 4; })),
     relic('letzter_wille', 'Letzter Wille', 3, 'Stirbt ein Verbündeter: alle heilen 25 Leben',
@@ -332,6 +334,24 @@
       jeder(function (x) { if (x.spd > 30) scale(x, { atk: 0.25 }); })),
     relic('schwerer_stand', 'Schwerer Stand', 2, 'Einheiten unter 22 Tempo: +35 % Leben, +4 Rüstung',
       jeder(function (x) { if (x.spd < 22) { scale(x, { hp: 0.35 }); buff(x, { def: 4 }); } })),
+    relic('quell_der_lebenskraft', 'Quell der Lebenskraft', 4,
+      'Jede Heilung im Trupp wirkt um 40 % stärker',
+      jeder(function (x) { x.heilfaktor += 0.4; }), [], ['heilung']),
+    relic('bollwerk_banner', 'Bollwerkbanner', 4, 'Alle Schilde im Trupp sind um 30 % stärker',
+      jeder(function (x) { x.schildfaktor += 0.3; }), [], ['schild']),
+    relic('sturmtakt', 'Sturmtakt', 4,
+      'Einheiten über 30 Tempo verursachen +30 % Schaden',
+      jeder(function (x) { if (x.spd > 30) scale(x, { atk: 0.3 }); }), [], ['tempo']),
+    relic('brandopfer', 'Massengrab', 4,
+      'Alle verursachen +6 % Schaden je lebendem Gegner',
+      anhaengen('onHit', 'Massengrab', function (c) {
+        c.dmg *= 1 + 0.06 * c.foes().length;
+      }), [], ['flaeche']),
+    relic('trophaensammler', 'Trophäensammler', 4,
+      'Jeder erlegte Gegner gibt dem ganzen Trupp dauerhaft +5 Angriff',
+      anhaengen('onKill', 'Trophäensammler', function (c) {
+        c.allies().forEach(function (u) { u.atk += 5; });
+      }), ['exekution']),
     relic('kalte_berechnung', 'Kalte Berechnung', 4,
       'Trägt ein Ziel zwei verschiedene Zustände, verursachen alle +35 % Schaden gegen es',
       anhaengen('onHit', 'Kalte Berechnung', function (c) {
@@ -450,10 +470,10 @@
       })] },
     { id: 'spiegelpanzer', rarity: 4, name: 'Spiegelpanzer', cost: 80, stats: { hp: 30, def: 2 },
       keywords: ['konter'],
-      text: '+30 Leben, +2 Rüstung. Hat die Trägerin eine Konter-Fähigkeit, schlägt sie zusätzlich 14 Schaden zurück.',
+      text: '+30 Leben, +2 Rüstung. Hat die Trägerin eine Konter-Fähigkeit, schlägt sie zusätzlich 10 Schaden plus 20 % ihres Angriffs zurück.',
       effects: [eff('onDamaged', 'Spiegelpanzer', function (c) {
         if (c.self.keywords.indexOf('konter') < 0) return;
-        var f = c.foes()[0]; if (f) c.deal(f, 14, 'Spiegelpanzer');
+        var f = c.foes()[0]; if (f) c.deal(f, 10 + c.self.atk * 0.2, 'Spiegelpanzer');
       })] },
     { id: 'lebensrune', rarity: 3, name: 'Lebensrune', cost: 60, stats: {},
       text: 'Heilt die Trägerin bereits selbst, gibt die Rune +8 Regeneration — sonst +35 Leben.',
@@ -476,6 +496,14 @@
         c.self.atk += 6 * n;
         c.self.spd += 2 * n;
       })] },
+    { id: 'heilkelch', rarity: 3, name: 'Kelch der Quelle', cost: 55, stats: { hp: 20 },
+      amplifies: ['heilung'],
+      text: '+20 Leben. Jede Heilung an der Trägerin wirkt um 50 % stärker.',
+      effects: [eff('onStart', 'Kelch', function (c) { c.self.heilfaktor += 0.5; })] },
+    { id: 'bollwerkstein', rarity: 3, name: 'Bollwerkstein', cost: 55, stats: { def: 2 },
+      amplifies: ['schild'],
+      text: '+2 Rüstung. Jeder Schild auf der Trägerin ist um 40 % stärker.',
+      effects: [eff('onStart', 'Bollwerk', function (c) { c.self.schildfaktor += 0.4; })] },
     { id: 'schwaechenfinder', rarity: 4, name: 'Auge für Schwächen', cost: 65, stats: { atk: 3 },
       amplifies: ['gift', 'brand', 'frost', 'verderbnis'],
       text: '+3 Angriff. +25 % Schaden gegen jedes Ziel, das irgendeinen Zustand trägt — passt zu jedem Zustands-Build.',

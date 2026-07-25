@@ -82,9 +82,9 @@ Jede Fähigkeit trägt Schlüsselwörter: was sie **erzeugt** (Quelle) und was s
 |---|---|---|
 | Gift | 2 Schaden je Stapel pro eigenem Zug | 12 |
 | Brand | 2 Schaden je Stapel pro Zug, halbiert Heilung | 8 |
-| Frost | Zug fällt aus | 2 |
+| Frost | Zug fällt aus | 1, Bosse widerstehen zu 60 % |
 | Verderbnis | Ziel nimmt +10 % Schaden je Stapel | 5 |
-| Schild | fängt Schaden ab, baut sich nicht ab | – |
+| Schild | fängt Schaden ab, baut sich nicht ab | 60 % des Lebens |
 | Heilung | Regeneration, Lebensraub, Wiederbelebung | – |
 | Konter | Schaden zurück an den Angreifer | – |
 | Exekution | mehr Schaden gegen angeschlagene Ziele | – |
