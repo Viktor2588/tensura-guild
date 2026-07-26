@@ -124,6 +124,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 10 | Eine Aktive je Einheit, keine Abklingzeiten, Passive als einziger Fortschritt | Der Aufstieg ist eine Passiv-Entscheidung, die Signatur bleibt die Handschrift | ✅ |
 | 11 | Aufbau statt Ausrüstung: ein Anfang aus vier Paaren, eine Währung, Tags statt Textwänden | Der erste Kampf ist ein Duell, und jeder Kauf ist ein verzichteter Aufstieg | ✅ |
 | 12 | Unbegrenzte Stapel, Knoten als Arten statt Gegnerlisten, Kampfherausforderung | Die Wahl auf der Karte ist ein Risiko, keine Vorabinformation | ✅ |
+| 13 | Belohnung ist nur noch Magicule; nach jedem Kampf öffnet der Markt samt Verkauf per Ziehen | Was der Kampf einbringt, wird sofort zu einer Entscheidung | ✅ |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -568,8 +569,39 @@ Ergebnis `dev/balance.js 500`: 52 % frisch, 53 % voll freigeschaltet. Zu
 beobachten: Konter-Builds messen 81 % (n=47, also dünn) — das ist über dem
 Zielband und hängt vermutlich an den jetzt unbegrenzten Stapeln.
 
+### Phase 13 (2026-07-26): Markt statt Belohnungskarte
+
+- **Kämpfe zahlen nur noch Magicule.** `rollRewards` und `takeReward` sind weg.
+- **Nach jedem gewonnenen Kampf öffnet der Markt** — im selben Bildschirm wie die
+  Truppenverwaltung. Jeder Posten steht ausführlich da statt in einem Tooltip:
+  Signatur, erste Passive und Werte bei Einheiten; Wirkung und erfüllte Bedingung
+  bei Relikten; und wie viele Magicule fehlen, wenn es nicht reicht.
+- **Der Händler-Knoten ist raus** — er wäre doppelt. Seine drei Slots in `STEPS`
+  sind Kämpfe und Herausforderungen geworden.
+- **Verkaufen durch Ziehen.** Einheit, Ausrüstung oder Relikt auf die
+  Verkaufsfläche, ein Viertel des Einsatzes zurück.
+- Die gehaltene Auflage einer Herausforderung gibt jetzt **mehr Magicule
+  (+60 %) und einen Posten mehr** statt eines zweiten Belohnungsangebots.
+
+Zwei Entscheidungen, die begründet sein wollen:
+
+1. **Pointer Events statt HTML5-Drag.** Letzteres feuert auf Touch überhaupt
+   nicht, und das Projekt ist mobile-first. Ein Zeiger, eine Bahn — Maus wie
+   Finger, mit einem Geist am Cursor und Trefferprüfung gegen die Fläche.
+2. **`darfEntlassen` musste weicher werden.** Es sperrte Verkaufen für die ganze
+   Phase `kampf` — und genau darin liegt jetzt der Markt. Jetzt sperrt es die
+   Kampfauflösung, nicht den Markt danach.
+
+Kalibriert: der Markt nach jedem Kampf bringt spürbar mehr Ausrüstung und
+Relikte ins Spiel (Ø 8,3 Relikte und 8,4 Ausrüstungen gegen vorher 6,3 und 5,6),
+also stieg `GRUNDHAERTE` von 1.02 auf 1.08. Ergebnis `dev/balance.js 500`:
+**48 % frisch, 60 % voll freigeschaltet**, 59 % der Auflagen gehalten.
+
 Weitere offene Punkte:
-- Konter liegt bei 81 % Siegquote über dem Zielband 25–75 %.
+- Der Abstand zwischen Anfänger und Veteran ist auf 12 Punkte gewachsen
+  (48 gegen 60 %) — der Markt nach jedem Kampf belohnt einen großen Reliktpool
+  stärker als früher der einzelne Händler-Knoten.
+- Konter liegt bei 76 % Siegquote knapp über dem Zielband 25–75 %.
 - Der Aufstiegs-Pool aus 34 Aktiven wird vom Spieler nicht mehr gezogen und lebt
   nur noch als Gegner-Repertoire. Entweder in Passive umbauen oder bewusst als
   Gegnerinhalt führen.

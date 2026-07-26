@@ -506,34 +506,13 @@
         html += '<p class="' + (p.bestanden ? 'gut' : 'hinweis') + '">' +
           (p.bestanden ? '✓ Auflage gehalten' : '✗ Auflage verfehlt') +
           (pr ? ' — ' + esc(pr.name) + ': ' + esc(pr.text) : '') +
-          (p.bestanden ? ' Doppelte Beute und ein zweites Angebot.' : '') + '</p>';
+          (p.bestanden ? ' Mehr Magicule und ein Posten mehr im Markt.' : '') + '</p>';
       }
-      if (p.rewards) {
-        html += '<h3>Belohnung wählen</h3><div class="karten">';
-        p.rewards.forEach(function (r, i) {
-          var geht = r.kind !== 'unit' || R.freieArt(run, GD.unit(r.id).art);
-          html += '<button class="karte" data-a="belohnung" data-i="' + i + '"' + (geht ? '' : ' disabled') + '>' +
-            artHtml(r.kind) + '<span class="titel">' + esc(r.name) + '</span>' +
-            '<div class="kw-leiste">' + belohnungTags(r) + '</div>' +
-            (geht ? '' : '<span class="unter">Art schon besetzt</span>') + '</button>';
-        });
-        html += '</div>';
-      }
-      if (p.extra) {
-        html += '<h3>Zusatzbelohnung der Auflage</h3><div class="karten">';
-        p.extra.forEach(function (r, i) {
-          var geht = r.kind !== 'unit' || R.freieArt(run, GD.unit(r.id).art);
-          html += '<button class="karte" data-a="extra" data-i="' + i + '"' + (geht ? '' : ' disabled') + '>' +
-            artHtml(r.kind) + '<span class="titel">' + esc(r.name) + '</span>' +
-            '<div class="kw-leiste">' + belohnungTags(r) + '</div>' +
-            (geht ? '' : '<span class="unter">Art schon besetzt</span>') + '</button>';
-        });
-        html += '</div>';
-      }
+      if (p.markt) html += marktHtml(p.markt);
     } else {
       html += '<p class="schlecht">Niederlage. Ein Leben verloren — ' + run.lives + ' übrig.</p>';
     }
-    if (!p.rewards && !p.extra) html += '<div class="reihe"><button class="haupt" data-a="weiter">Weiter</button></div>';
+    html += '<div class="reihe"><button class="haupt" data-a="weiter">Weiterziehen</button></div>';
     return html;
   }
 
@@ -558,9 +537,46 @@
 
   /* --------------------------------------------------------------- Shop */
 
-  function zeichneShop() {
-    var html = '<h2>Händler</h2><p class="hinweis">Magicule: ' + run.magicules + '</p>';
-    if (run.pending.offers.some(function (o) { return o.kind === 'rang' && !o.sold; })) {
+  /* ------------------------------------------------------------- Markt */
+
+  /* Was ein Posten wirklich tut — ausführlich, nicht als Kurzzeile. Der Markt
+     ist die Stelle, an der entschieden wird; hier gehört die volle Beschreibung
+     hin, nicht in einen Tooltip. */
+  function marktText(o) {
+    if (o.kind === 'unit') {
+      var u = GD.unit(o.id), sig = AB.get(u.signature);
+      var zeilen = ['<b>' + esc(sig.name) + '</b> — ' + esc(sig.text)];
+      if (AB.linien[u.id]) {
+        zeilen.push('Wählt bei jedem Aufstieg aus <b>vier</b> eigenen Passiven.');
+      } else {
+        zeilen.push('Erste Passive: ' + (u.passives || []).slice(0, 1).map(function (id) {
+          var pp = AB.get(id); return '<b>' + esc(pp.name) + '</b> — ' + esc(pp.text);
+        }).join(''));
+      }
+      var d = R.resolve(R.member(o.id));
+      zeilen.push('Werte auf Rang C: ' + d.hp + '❤ ' + d.atk + '⚔ ' + d.def + '🛡 ' + d.spd + '⚡');
+      return zeilen.join('<br>');
+    }
+    if (o.kind === 'relic') {
+      var rel = GD.relic(o.id);
+      var an = !rel.bedingung || rel.bedingung(run);
+      return '<b>' + esc(rel.text) + '</b><br>Wirkt auf den ganzen Trupp, den ganzen Run.' +
+        (rel.bedingung ? '<br>' + (an ? '✓ Bedingung mit deinem Trupp erfüllt.'
+          : '✗ Mit deinem jetzigen Trupp wirkungslos.') : '');
+    }
+    if (o.kind === 'item') {
+      var it = GD.item(o.id);
+      return esc(it.text || '') + '<br>Landet im Beutel; anlegen kannst du es unten am Trupp.';
+    }
+    if (o.kind === 'rang') return esc(o.text) + '<br>Billiger als der reguläre Aufstieg.';
+    return esc(o.text || '');
+  }
+
+  function marktHtml(offers) {
+    var html = '<h3>Markt — ' + run.magicules + ' ✦</h3>' +
+      '<p class="hinweis">Was der Kampf eingebracht hat, gibst du hier aus. ' +
+      'Verkaufen: Gegenstand, Relikt oder Einheit auf die Fläche unten ziehen.</p>';
+    if (offers.some(function (o) { return o.kind === 'rang' && !o.sold; })) {
       var kandidaten = run.team.filter(function (m) { return m.rank < 3; });
       html += '<div class="reihe"><span class="hinweis">Namensweihe für:</span>' +
         '<select id="rang-ziel">' + kandidaten.map(function (m) {
@@ -568,8 +584,8 @@
             R.rankName(m) + ' → ' + R.RANK_NAME[m.rank + 1] + ')</option>';
         }).join('') + '</select></div>';
     }
-    html += '<div class="karten">';
-    run.pending.offers.forEach(function (o, i) {
+    html += '<div class="karten markt">';
+    offers.forEach(function (o, i) {
       var frei = o.kind !== 'unit' || R.freieArt(run, GD.unit(o.id).art);
       if (o.kind === 'rang') frei = run.team.some(function (m) { return m.rank < 3; }) && !R.passivWahl(run);
       var geht = !o.sold && run.magicules >= o.price && frei;
@@ -577,10 +593,22 @@
         (geht ? '' : ' disabled') + '>' + artHtml(o.kind) +
         '<span class="titel">' + esc(o.name) + ' — ' + o.price + ' ✦' + (o.sold ? ' (gekauft)' : '') + '</span>' +
         '<div class="kw-leiste">' + belohnungTags(o) + '</div>' +
-        (frei ? '' : '<span class="unter">Art schon besetzt</span>') + '</button>';
+        '<span class="beschreibung">' + marktText(o) + '</span>' +
+        (frei ? '' : '<span class="unter">Art schon besetzt</span>') +
+        (!o.sold && frei && run.magicules < o.price
+          ? '<span class="unter">' + (o.price - run.magicules) + ' ✦ fehlen</span>' : '') +
+        '</button>';
     });
-    html += '</div><div class="reihe"><button class="haupt" data-a="weiter">Weiterziehen</button></div>';
-    $('view').innerHTML = html;
+    return html + '</div>';
+  }
+
+  /* Die Fläche steht immer da, wo auch der Trupp steht — nicht nur im Markt.
+     Verkaufen ist Truppenpflege, kein Ladengeschäft. */
+  function verkaufsflaeche() {
+    if (!R.darfEntlassen(run)) return '';
+    return '<div id="verkauf" class="verkauf"><b>Verkaufen</b>' +
+      '<span class="unter">Einheit, Ausrüstung oder Relikt hierher ziehen — ' +
+      'es gibt ein Viertel des Einsatzes zurück.</span></div>';
   }
 
   /* ----------------------------------------------------------- Ereignis */
@@ -742,7 +770,8 @@
     var aktive = abs.filter(function (a) { return a.art === 'aktiv'; });
     var passive = abs.filter(function (a) { return a.art === 'passiv'; });
 
-    var html = '<div class="einheit' + (aufBank ? ' bank' : '') + '" data-uid="' + m.uid + '">' +
+    var html = '<div class="einheit' + (aufBank ? ' bank' : '') + '" data-uid="' + m.uid + '"' +
+      ' data-verkauf="einheit" data-name="' + esc(d.name) + '">' +
       '<div class="kopf"><span class="name"><span class="rang rang-' + R.rankName(m) + '"' +
       tip('Rang ' + R.rankName(m), G.begriffe.rang + '\n\nJetzt: ' + R.itemSlots(m) + ' Item-Slots, ' +
         R.aktivSlots(m) + ' aktive, ' + R.passivSlots(m) + ' passive, ' +
@@ -830,15 +859,11 @@
     } else {
       html += '<button data-a="einsetzen" data-uid="' + m.uid + '">Einsetzen</button>';
     }
-    var zurueck = R.entlassenWert(m);
-    html += '<button data-a="entlassen" data-uid="' + m.uid + '"' +
-      (R.darfEntlassen(run) ? '' : ' disabled') +
-      tip('Entlassen', R.darfEntlassen(run)
-        ? 'Gibt ' + zurueck + ' Magicule zurück — ein Viertel dessen, was in dieser Einheit ' +
-          'steckt (Anwerbung und Rangaufstiege). Ausrüstung wandert zurück in den Beutel, ' +
-          'die Art wird wieder frei.'
-        : 'Während eines Kampfes lässt sich niemand entlassen.') +
-      '>Entlassen — +' + zurueck + '✦</button>';
+    html += '<span class="chip leer ziehhinweis"' +
+      tip('Entlassen', 'Diese Karte auf die Verkaufsfläche im Markt ziehen. Gibt ' +
+        R.entlassenWert(m) + ' Magicule zurück — ein Viertel dessen, was in dieser Einheit ' +
+        'steckt (Anwerbung und Rangaufstiege). Ausrüstung wandert zurück in den Beutel, ' +
+        'die Art wird wieder frei.') + '>ziehen: +' + R.entlassenWert(m) + '✦</span>';
     html += '<button class="' + (kannAufsteigen ? 'haupt' : '') + '" data-a="aufstieg" data-uid="' + m.uid + '"' +
       (kannAufsteigen ? '' : ' disabled') +
       tip(m.rank >= 3 ? 'Höchster Rang' : 'Aufstieg auf Rang ' + R.RANK_NAME[m.rank + 1],
@@ -978,7 +1003,7 @@
         'Ausrüstung, und was Relikte, Resonanz und Passive im Kampf daraus machen.') +
       '>🔬 Debug</button></h3>' +
       debugHtml() +
-      aufstellungHtml() +
+      verkaufsflaeche() + aufstellungHtml() +
       '<p class="hinweis">Freie Arten: ' + (frei.length
         ? frei.map(function (a2) {
             return '<span class="frei-art"' + tip(GD.artName(a2), G.arten[a2]) + '>' +
@@ -1005,8 +1030,11 @@
       }).join('') + '</select></div>' +
       '<div class="liste">' + bag.map(function (id) {
         var it = GD.item(id);
-        return '<span class="chip rar-rand-' + it.rarity + '"' +
-          tip(it.name, rarZeile(it.rarity, 'Ausrüstung') + (it.text || '')) + '>' + esc(it.name) +
+        return '<span class="chip rar-rand-' + it.rarity + '" data-verkauf="item" data-id="' + id +
+          '" data-name="' + esc(it.name) + '"' +
+          tip(it.name, rarZeile(it.rarity, 'Ausrüstung') + (it.text || '') +
+            '\n\nZum Verkaufen auf die Verkaufsfläche ziehen: +' + R.itemWert(id) + ' Magicule.') +
+          '>' + esc(it.name) +
           ' <button data-a="anlegen" data-id="' + id + '">anlegen</button></span>';
       }).join('') + '</div>';
 
@@ -1015,10 +1043,12 @@
         var r = GD.relic(id);
         var wirkt = !r.bedingung || r.bedingung(run);
         return '<span class="chip rar-rand-' + r.rarity + (wirkt ? '' : ' schlaeft') + '"' +
+          ' data-verkauf="relikt" data-id="' + id + '" data-name="' + esc(r.name) + '"' +
           tip(r.name, rarZeile(r.rarity, 'Relikt') +
             'Wirkt auf den ganzen Trupp, den ganzen Run.\n' + r.text +
             (r.bedingung ? '\n\n' + (wirkt ? '✓ Bedingung erfüllt.'
-              : '✗ Schläft gerade — die Bedingung trifft auf deinen Trupp nicht zu.') : '')) + '>' +
+              : '✗ Schläft gerade — die Bedingung trifft auf deinen Trupp nicht zu.') : '') +
+            '\n\nZum Verkaufen auf die Verkaufsfläche ziehen: +' + R.reliktWert(id) + ' Magicule.') + '>' +
           esc(r.name) + (wirkt ? '' : ' 💤') + '</span>';
       }).join('') + '</div>';
   }
@@ -1031,7 +1061,6 @@
     if (run.phase === 'start') zeichneStart();
     else if (run.phase === 'karte') zeichneKarte();
     else if (run.phase === 'kampf') zeichneKampf();
-    else if (run.phase === 'shop') zeichneShop();
     else if (run.phase === 'event') zeichneEvent();
     else if (run.phase === 'lager') zeichneLager();
     else zeichneEnde();
@@ -1052,8 +1081,6 @@
       else { render(); speichern(); }
     },
     ueberspringen: function () { ueberspringen(); },
-    belohnung: function (d) { R.takeReward(run, +d.i); render(); speichern(); },
-    extra: function (d) { R.takeReward(run, +d.i, true); render(); speichern(); },
     devour: function (d) {
       var ziel = $('devour-ziel');
       R.devour(run, d.id, ziel ? ziel.value : run.team[0].uid);
@@ -1087,13 +1114,6 @@
     zurueck: function (d) { R.move(run, d.uid, 1); render(); speichern(); },
     bank: function (d) { R.bench(run, d.uid); render(); speichern(); },
     einsetzen: function (d) { R.deploy(run, d.uid); render(); speichern(); },
-    entlassen: function (d) {
-      var m = R.find(run, d.uid);
-      if (m && confirm(GD.unit(m.id).name + ' entlassen? Gibt ' + R.entlassenWert(m) +
-          ' Magicule zurück, die Art wird wieder frei.')) {
-        R.entlassen(run, d.uid); render(); speichern();
-      }
-    },
     anlegen: function (d) {
       var ziel = $('item-ziel');
       R.equip(run, ziel ? ziel.value : run.team[0].uid, d.id);
@@ -1142,6 +1162,66 @@
     speichern();
   }
 
+  /* ---- Verkaufen per Ziehen -----------------------------------------------
+     Pointer Events statt HTML5-Drag: Letzteres feuert auf Touch gar nicht, und
+     das Spiel ist mobile-first. Ein Zeiger, eine Bahn — Maus wie Finger.      */
+
+  var zieht = null;
+
+  function ziehbar(el) {
+    var q = el.closest && el.closest('[data-verkauf]');
+    return q && R.darfEntlassen(run) ? q : null;
+  }
+
+  function verkaufsWert(d) {
+    if (d.verkauf === 'item') return R.itemWert(d.id);
+    if (d.verkauf === 'relikt') return R.reliktWert(d.id);
+    var m = R.find(run, d.uid);
+    return m ? R.entlassenWert(m) : 0;
+  }
+
+  function zieheStart(ev) {
+    var el = ziehbar(ev.target);
+    if (!el) return;
+    ev.preventDefault();
+    var geist = el.cloneNode(true);
+    geist.className = 'zieh-geist';
+    geist.textContent = el.dataset.name + '  +' + verkaufsWert(el.dataset) + '✦';
+    document.body.appendChild(geist);
+    zieht = { el: el, geist: geist, daten: el.dataset };
+    el.classList.add('wird-gezogen');
+    $('verkauf') && $('verkauf').classList.add('bereit');
+    bewege(ev);
+  }
+
+  function bewege(ev) {
+    if (!zieht) return;
+    zieht.geist.style.left = ev.clientX + 'px';
+    zieht.geist.style.top = ev.clientY + 'px';
+    var ziel = $('verkauf');
+    if (!ziel) return;
+    var r = ziel.getBoundingClientRect();
+    var drin = ev.clientX >= r.left && ev.clientX <= r.right &&
+               ev.clientY >= r.top && ev.clientY <= r.bottom;
+    ziel.classList.toggle('drueber', drin);
+    zieht.drin = drin;
+  }
+
+  function zieheEnde() {
+    if (!zieht) return;
+    var d = zieht.daten, drin = zieht.drin;
+    zieht.geist.remove();
+    zieht.el.classList.remove('wird-gezogen');
+    var ziel = $('verkauf');
+    if (ziel) { ziel.classList.remove('bereit'); ziel.classList.remove('drueber'); }
+    zieht = null;
+    if (!drin) return;
+    var ok = d.verkauf === 'item' ? R.verkaufeItem(run, d.id)
+      : d.verkauf === 'relikt' ? R.verkaufeRelikt(run, d.id)
+      : R.entlassen(run, d.uid);
+    if (ok) { render(); speichern(); }
+  }
+
   function klick(ev) {
     var el = ev.target.closest('[data-a]');
     if (!el) return;
@@ -1155,6 +1235,10 @@
     run = R.load();
     if (!run) run = R.create(Math.floor(Math.random() * 0xffffffff), R.loadMeta());
     document.addEventListener('click', klick);
+    document.addEventListener('pointerdown', zieheStart);
+    document.addEventListener('pointermove', bewege);
+    document.addEventListener('pointerup', zieheEnde);
+    document.addEventListener('pointercancel', zieheEnde);
     /* Tooltips: Hover am Rechner, Tippen am Handy. */
     document.addEventListener('mouseover', function (ev) {
       var el = ev.target.closest && ev.target.closest('[data-tip]');

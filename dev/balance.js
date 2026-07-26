@@ -164,54 +164,31 @@ function play(seed, voll) {
           if (R.devour(run, p.devour[0].id, run.team[k2].uid)) break;
         }
       }
-      if (p.rewards) {
-        var kw2 = teamKeywords(run);
-        var b2 = 0, s2 = -1;
-        p.rewards.forEach(function (rw, i) {
-          var sc = rw.kind === 'unit' ? 10 + passt(rw.id, kw2)
-            : rw.kind === 'relic' ? (reliktWert(run, rw.id))
-            : rw.kind === 'item' ? 6 : 8;
-          if (sc > s2) { s2 = sc; b2 = i; }
-        });
-        R.takeReward(run, b2);
-      }
+      /* Der Markt nach dem Kampf: nach Wert je Magicule kaufen, solange es
+         reicht. Genau die Entscheidung, die das Spiel jetzt vom Spieler will. */
       if (p.bestanden !== undefined) {
         run._pruefN = (run._pruefN || 0) + 1;
         if (p.bestanden) run._pruefOk = (run._pruefOk || 0) + 1;
       }
-      if (p.extra) {
-        var kwX = teamKeywords(run), bX = 0, sX = -1;
-        p.extra.forEach(function (rw, i) {
-          var sc = rw.kind === 'unit' ? 10 + passt(rw.id, kwX)
-            : rw.kind === 'relic' ? reliktWert(run, rw.id)
-            : rw.kind === 'item' ? 6 : 8;
-          if (sc > sX) { sX = sc; bX = i; }
+      if (p.markt) {
+        var kw2 = teamKeywords(run);
+        var posten = p.markt.map(function (o, i) {
+          var sc = o.kind === 'unit' ? 12 + passt(o.id, kw2)
+            : o.kind === 'relic' ? reliktWert(run, o.id)
+            : o.kind === 'item' ? 7
+            : o.kind === 'rang' ? 14 : 5;
+          return { i: i, wert: sc / Math.max(1, o.price) * 100 };
+        }).sort(function (a, b) { return b.wert - a.wert; });
+        posten.forEach(function (x) {
+          var o = p.markt[x.i];
+          if (o.sold) return;
+          if (run.magicules < o.price) { unbezahlbar++; return; }
+          /* Rang und Aufstieg konkurrieren um dieselben Magicule — etwas
+             Reserve für den nächsten Aufstieg bleibt stehen. */
+          if (run.magicules - o.price < 140 && o.kind !== 'rang') return;
+          if (R.buy(run, x.i, run.team[0] && run.team[0].uid)) kaeufe[o.kind] = (kaeufe[o.kind] || 0) + 1;
         });
-        R.takeReward(run, bX, true);
       }
-      R.advance(run);
-      continue;
-    }
-    if (run.phase === 'shop') {
-      var kw3 = teamKeywords(run);
-      /* Nach Wert je Gold kaufen statt in Angebotsreihenfolge. Ohne das gibt der
-         Bot sein Gold für die erstbeste teure Einheit aus und lässt Relikte
-         liegen — genau daran hing der Unterschied zwischen Anfänger und Veteran. */
-      var reihenfolge = run.pending.offers.map(function (o, i) {
-        var wert = o.kind === 'relic' ? reliktWert(run, o.id)
-          : o.kind === 'item' ? 12
-          : o.kind === 'rang' ? 14
-          : Math.max(0, passt(o.id, kw3)) + (run.team.length < 4 ? 14 : 0);
-        return { i: i, o: o, punkte: wert / Math.max(1, o.price) };
-      }).sort(function (a2, b2) { return b2.punkte - a2.punkte; });
-      reihenfolge.forEach(function (e) {
-        var o = e.o;
-        if (o.price > run.magicules) { unbezahlbar++; return; }
-        if (o.kind === 'unit' && passt(o.id, kw3) < 4) return;
-        if (o.kind === 'relic' && reliktWert(run, o.id) < 10) return;
-        if (R.buy(run, e.i)) kaeufe[o.kind] = (kaeufe[o.kind] || 0) + 1;
-      });
-      haushalten();
       R.advance(run);
       continue;
     }

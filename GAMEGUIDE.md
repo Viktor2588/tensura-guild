@@ -39,6 +39,27 @@ Anstieg ist flacher als der Zugewinn einer zusätzlichen Einheit — wachsen loh
 sich immer, aber ein Trupp von zwei kämpft nicht gegen die Wand, für die sechs
 gedacht waren.
 
+## Nach dem Kampf: der Markt
+
+**Ein gewonnener Kampf bringt nur Magicule** — keine Belohnungskarte mehr. Statt
+dessen geht danach die Truppenverwaltung auf, und dort liegt der **Markt**: was
+die Beute eingebracht hat, gibst du sofort aus.
+
+Jeder Posten steht **ausführlich** da — bei einer Einheit ihre Signatur, ihre
+erste Passive und ihre Werte auf Rang C; bei einem Relikt seine Wirkung und ob
+die Bedingung bei deinem Trupp greift; bei Ausrüstung, was sie tut. Fehlen dir
+Magicule, steht dabei, wie viele.
+
+Es gibt **keinen Händler-Knoten** mehr auf der Karte — der wäre doppelt. Die
+freien Slots sind Kämpfe geworden.
+
+### Verkaufen
+
+Einheit, Ausrüstung oder Relikt auf die **Verkaufsfläche ziehen** — sie steht
+überall dort, wo auch dein Trupp steht. Es gibt **ein Viertel** dessen zurück,
+was darin steckt: bei einer Einheit Anwerbepreis plus Rangaufstiege, ihre
+Ausrüstung wandert in den Beutel. Während der Kampfauflösung ist das gesperrt.
+
 ## Magicule — die einzige Währung
 
 Es gibt kein Gold mehr. **Alles kostet Magicule**: Rangaufstiege, Einheiten,
@@ -114,7 +135,6 @@ Anfang an fest.
 | **Elite-Kampf** | Härter besetzt, würfelt die Belohnung eine Stufe besser |
 | **Kampfherausforderung** | Deutlich härtere Gegner plus eine angesagte Auflage |
 | **Ereignis** | Zwei bis drei Optionen, Ausgang steht an der Option |
-| **Händler** | Kaufen mit Magicule |
 | **Lager** | Magicule, ein Ausrüstungsstück oder dauerhafte Werte |
 | **Boss** | Abschluss des Akts, tritt allein an und eskaliert |
 

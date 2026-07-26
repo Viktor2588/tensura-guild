@@ -95,6 +95,8 @@
       5: 'Legendär. Run-definierend und entsprechend selten — am ehesten bei Elite, Boss und hohem Rang.'
     },
     begriffe: {
+      markt: 'Nach jedem gewonnenen Kampf. Was die Beute eingebracht hat, gibst du hier aus: Einheiten, Ausrüstung, Relikte, ein günstiger Rang. Jeder Posten steht ausführlich beschrieben da. Verkauft wird durch Ziehen auf die Verkaufsfläche — ein Viertel des Einsatzes kommt zurück.',
+      verkaufen: 'Einheit, Ausrüstung oder Relikt auf die Verkaufsfläche ziehen. Es gibt ein Viertel dessen zurück, was darin steckt. Bei einer Einheit zählen Anwerbepreis und Rangaufstiege, ihre Ausrüstung wandert zurück in den Beutel. Während der Kampfauflösung geht das nicht.',
       magicule: 'Die EINZIGE Währung. Jeder gewonnene Kampf bringt Magicule, und alles kostet sie: Rangaufstiege, Einheiten, Ausrüstung, Relikte. Jeder ausgegebene Punkt fehlt woanders — genau darin liegt die Entscheidung.',
       leben: 'Verlorene Kämpfe. Sind alle Leben aufgebraucht, endet der Run — der Kampf selbst kostet keine dauerhaften Werte. Fünf Leben auf fünf Akte, auf Bedrohungsstufe 5 nur drei.',
       rang: 'C → B → A → S. Jeder Aufstieg gibt +30 % Leben und Angriff, einen Item-Slot (S: zwei), eine Passive zur Wahl und einen Prädator-Slot. Die aktive Fähigkeit bleibt immer die Signatur.',

@@ -173,13 +173,25 @@ ok($$('#kampflog .aktiv').length > 0, 'aktive Fähigkeiten stehen hervorgehoben 
 var sieg = run.pending.result.winner === 'player';
 if (sieg) {
   ok(/Sieg/.test(text('main p')), 'ein Sieg wird gemeldet');
-  var belohnungen = karten().filter(function (k) { return k.dataset.a === 'belohnung'; });
-  ok(belohnungen.length >= 3, 'es gibt mindestens drei Belohnungen zur Wahl');
-  ok(belohnungen.every(function (k) { return k.querySelector('.art'); }),
-     'jede Belohnung ist als Gefolge/Relikt/Ausrüstung/Vorräte gekennzeichnet');
-  var vorher = run.team.length + (run.bag || []).length + run.relics.length;
-  klick(belohnungen[belohnungen.length - 1]);          // Vorräte sind immer nehmbar
-  ok(run.magicules > 0, 'die Belohnung wird gutgeschrieben');
+  ok(run.magicules > 0, 'die Beute wird als Magicule gutgeschrieben');
+  /* Nach dem Kampf steht der Markt, nicht eine Belohnungskarte. */
+  var posten = karten().filter(function (k) { return k.dataset.a === 'kaufen'; });
+  ok(posten.length >= 3, 'der Markt bietet mindestens drei Posten (' + posten.length + ')');
+  ok(posten.every(function (k) { return k.querySelector('.art') && k.querySelector('.beschreibung'); }),
+     'jeder Posten ist gekennzeichnet und ausführlich beschrieben');
+  ok(posten.every(function (k) { return /✦/.test(k.querySelector('.titel').textContent); }),
+     'jeder Posten nennt seinen Preis in Magicule');
+  ok(!!$('#verkauf'), 'es gibt eine Verkaufsfläche');
+  ok($$('[data-verkauf]').length > 0, 'und ziehbare Gegenstände dafür');
+
+  /* Kaufen: genug Magicule geben, dann den ersten bezahlbaren Posten nehmen. */
+  run.magicules = 9000; win.UI.render();
+  var kaufbar = karten().filter(function (k) { return k.dataset.a === 'kaufen' && !k.disabled; });
+  if (kaufbar.length) {
+    var magVor = run.magicules;
+    klick(kaufbar[0]);
+    ok(run.magicules < magVor, 'ein Kauf zieht Magicule ab');
+  } else { ok(false, 'kein Posten war kaufbar'); }
   ok($('[data-a=weiter]'), 'danach geht es weiter');
   klick($('[data-a=weiter]'));
   ok(run.phase === 'karte', 'nach dem Kampf steht wieder die Karte');
@@ -210,29 +222,58 @@ ok($$('.einheit')[0].querySelectorAll('.fk.aktiv').length === 1,
    'die Einheit hat weiterhin genau eine Aktive');
 ok($$('.einheit')[0].querySelector('.fk.passiv'), 'die erste Passive ist freigeschaltet');
 
-/* --------------------------------------------------------------- Shop */
-head('Händler');
-run.magicules = 3000;
-var shopIndex = -1;
-for (var v2 = 0; v2 < 20 && shopIndex < 0; v2++) {
-  run.phase = 'karte'; run.pending = null;
-  shopIndex = run.options.map(function (o, i) { return o.type === 'shop' ? i : -1; })
-    .filter(function (x) { return x >= 0; })[0];
-  if (shopIndex === undefined) shopIndex = -1;
-  if (shopIndex < 0) { win.Run.advance(run); }
-  win.UI.render();
+/* ------------------------------------------------------------- Markt */
+head('Markt und Verkaufen');
+ok(!win.Run.STEPS.some(function (t) { return t.indexOf('shop') >= 0; }),
+   'es gibt keinen Händler-Knoten mehr auf der Karte');
+
+/* Verkaufen per Ziehen: Pointer-Bahn von der Karte auf die Verkaufsfläche. */
+function zieh(el, ziel) {
+  var r = ziel.getBoundingClientRect();
+  function ev(typ, x, y) {
+    var e = new win.MouseEvent(typ, { bubbles: true, clientX: x, clientY: y });
+    el.dispatchEvent(e);
+    if (typ !== 'pointerdown') doc.dispatchEvent(e);
+    return e;
+  }
+  el.dispatchEvent(new win.MouseEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }));
+  doc.dispatchEvent(new win.MouseEvent('pointermove',
+    { bubbles: true, clientX: r.left + 1, clientY: r.top + 1 }));
+  doc.dispatchEvent(new win.MouseEvent('pointerup',
+    { bubbles: true, clientX: r.left + 1, clientY: r.top + 1 }));
 }
-ok(shopIndex >= 0, 'ein Händler ist erreichbar');
-klick(karten()[shopIndex]);
-ok(/Händler/.test(text('main h2')), 'der Laden öffnet');
-var angebote = karten().filter(function (k) { return k.dataset.a === 'kaufen'; });
-ok(angebote.length >= 5, 'der Laden zeigt mehrere Angebote');
-ok(angebote.some(function (k) { return /Namensweihe/.test(k.textContent); }),
-   'die Namensweihe wird als Goldsenke angeboten');
-ok($('#rang-ziel'), 'für die Namensweihe ist ein Ziel wählbar');
-var magVorher = run.magicules;
-klick(angebote[0]);
-ok(run.magicules < magVorher, 'ein Kauf zieht Magicule ab');
+/* jsdom liefert für alles 0-Rechtecke — die Trefferprüfung braucht echte Werte. */
+win.Element.prototype.getBoundingClientRect = function () {
+  return this.id === 'verkauf'
+    ? { left: 0, top: 0, right: 100, bottom: 100, width: 100, height: 100 }
+    : { left: 500, top: 500, right: 520, bottom: 520, width: 20, height: 20 };
+};
+
+(run.bag = run.bag || []).push('kurzschwert');
+run.relics.push('lebensquell');
+run.phase = 'lager'; run.pending = { done: true };
+win.UI.render();
+var itemChip = $('[data-verkauf="item"]');
+ok(!!itemChip, 'Beutel-Gegenstände sind ziehbar markiert');
+ok(!!$('#verkauf'), 'die Verkaufsfläche steht am Trupp, nicht nur im Markt');
+var vorMag = run.magicules, vorBag = run.bag.length;
+zieh(itemChip, $('#verkauf'));
+ok(run.bag.length === vorBag - 1 && run.magicules > vorMag,
+   'ein auf die Fläche gezogener Gegenstand wird verkauft (+' +
+   (run.magicules - vorMag) + ' ✦)');
+var relChip = $('[data-verkauf="relikt"]');
+var vorRel = run.relics.length;
+zieh(relChip, $('#verkauf'));
+ok(run.relics.length === vorRel - 1, 'ein Relikt lässt sich genauso verkaufen');
+var einheitKarte = $('[data-verkauf="einheit"]');
+var vorTeam = run.team.length;
+zieh(einheitKarte, $('#verkauf'));
+ok(run.team.length === vorTeam - 1, 'und eine Einheit ebenso');
+/* Während der Kampfauflösung wird nicht verkauft, im Markt danach schon. */
+ok(!win.Run.darfEntlassen({ phase: 'kampf', pending: { result: {} } }),
+   'während des Kampfes ist Verkaufen gesperrt');
+ok(win.Run.darfEntlassen({ phase: 'kampf', pending: { markt: [] } }),
+   'im Markt nach dem Kampf ist es erlaubt');
 
 /* -------------------------------------------------------------- Menü */
 head('Menü und Glossar');

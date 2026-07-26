@@ -172,18 +172,17 @@ ok(R.gewicht({ rarity: 1 }, 1) > R.gewicht({ rarity: 5 }, 1), 'Gewicht fällt mi
 /* Angebote tragen ihre Stufe mit, sonst kann die UI sie nicht zeigen. */
 var rRun2 = fertigerRun(4711);
 rRun2.phase = 'karte';
-var shop = null;
-for (var sv = 0; sv < 12 && !shop; sv++) {
-  var ix = rRun2.options.map(function (o, i2) { return o.type === 'shop' ? i2 : -1; })
-    .filter(function (x) { return x >= 0; })[0];
-  if (ix === undefined) { R.advance(rRun2); continue; }
-  shop = R.choose(rRun2, ix);
-}
-ok(shop && shop.offers.filter(function (o) { return o.kind !== 'rang'; })
+/* Es gibt keinen Händler-Knoten mehr — der Markt geht nach jedem Kampf auf. */
+ok(!R.STEPS.some(function (t) { return t.indexOf('shop') >= 0; }),
+   'kein Händler-Knoten mehr in der Wegleiste');
+var markt = R.marktOffers(rRun2, { type: 'kampf' }, false);
+ok(markt.filter(function (o) { return o.kind !== 'rang'; })
    .every(function (o) { return STUFEN.indexOf(o.rarity) >= 0; }),
-   'jedes Shop-Angebot mit Gegenstand trägt seine Stufe');
-ok(shop && shop.offers.some(function (o) { return o.kind === 'rang'; }),
-   'der Laden bietet auch einen Rang gegen Gold an');
+   'jeder Marktposten mit Gegenstand trägt seine Stufe');
+ok(markt.some(function (o) { return o.kind === 'rang'; }),
+   'der Markt bietet auch einen Rang an');
+ok(R.marktOffers(rRun2, { type: 'elite' }, false).length >= markt.length,
+   'Elite füllt den Markt mindestens so gut wie ein gewöhnlicher Kampf');
 
 /* ------------------------------------------------------- Akt-1-Inhalt */
 head('Akt 1');
@@ -265,16 +264,12 @@ for (var ps = 0; ps < 60 && !(pGehalten && pVerfehlt); ps++) {
   if (lauf.pending.result.winner !== 'player') continue;
   if (lauf.pending.bestanden) pGehalten = pGehalten || lauf; else pVerfehlt = pVerfehlt || lauf;
 }
-ok(pGehalten && pGehalten.pending.extra && pGehalten.pending.extra.length,
-   'gehaltene Auflage gibt ein zweites Belohnungsangebot');
-ok(pVerfehlt && !pVerfehlt.pending.extra && pVerfehlt.pending.rewards,
-   'verfehlte Auflage gibt nur die gewöhnliche Belohnung');
-if (pGehalten) {
-  var vorMag = pGehalten.magicules;
-  ok(R.takeReward(pGehalten, 0) && R.takeReward(pGehalten, 0, true),
-     'beide Angebote lassen sich einlösen');
-  ok(!pGehalten.pending.rewards && !pGehalten.pending.extra, 'danach ist nichts mehr offen');
-}
+ok(pGehalten && pVerfehlt, 'beide Ausgänge kommen vor');
+ok(pGehalten.pending.markt.length > pVerfehlt.pending.markt.length,
+   'gehaltene Auflage gibt einen Posten mehr im Markt (' +
+   pVerfehlt.pending.markt.length + ' → ' + pGehalten.pending.markt.length + ')');
+ok(pGehalten.pending.gold > pVerfehlt.pending.gold,
+   'und mehr Magicule (' + pVerfehlt.pending.gold + ' → ' + pGehalten.pending.gold + ')');
 /* Die Unterzahl-Auflage schickt wirklich weniger Einheiten ins Feld. */
 var uLauf = pruefLauf('unterzahl', 3);
 ok(uLauf.pending.result.roster.filter(function (u) { return u.side === 'player'; }).length <= 2,
@@ -633,10 +628,7 @@ while (kleinRun.team.length > 3) R.entlassen(kleinRun, kleinRun.team[kleinRun.te
 var angeboteneRelikte = 0, davonTot = 0;
 for (var av = 0; av < 40; av++) {
   kleinRun.phase = 'karte';
-  var six = kleinRun.options.map(function (o, i2) { return o.type === 'shop' ? i2 : -1; })
-    .filter(function (x) { return x >= 0; })[0];
-  if (six === undefined) { R.advance(kleinRun); continue; }
-  var ang = R.choose(kleinRun, six);
+  var ang = { offers: R.marktOffers(kleinRun, { type: 'kampf' }, false) };
   ang.offers.filter(function (o) { return o.kind === 'relic'; }).forEach(function (o) {
     angeboteneRelikte++;
     var rel = GD.relic(o.id);
@@ -651,13 +643,8 @@ ok(davonTot / Math.max(1, angeboteneRelikte) < 0.25,
 /* Der Preis darf nicht an der Seltenheit hängen — sonst bestraft Freischalten. */
 var preise = {};
 var pRun2 = fertigerRun(2470);
-pRun2.phase = 'shop';
 for (var pv = 0; pv < 30; pv++) {
-  pRun2.phase = 'karte';
-  var pix = pRun2.options.map(function (o, i2) { return o.type === 'shop' ? i2 : -1; })
-    .filter(function (x) { return x >= 0; })[0];
-  if (pix === undefined) { R.advance(pRun2); continue; }
-  R.choose(pRun2, pix).offers.filter(function (o) { return o.kind === 'relic'; })
+  R.marktOffers(pRun2, { type: 'kampf' }, false).filter(function (o) { return o.kind === 'relic'; })
     .forEach(function (o) { preise[o.rarity] = o.price; });
   R.advance(pRun2);
 }
@@ -1329,7 +1316,7 @@ ok(R.resolve(wieder.team[0]).actives.length === 1 &&
    R.resolve(wieder.team[0]).effects.some(function (e) { return e.id === wieder.team[0].passives[0]; }),
    'geladene Mitglieder lösen Signatur und gewählte Passive korrekt auf');
 
-/* Ein Neuladen im Belohnungsbildschirm darf die Belohnung nicht verschlucken. */
+/* Ein Neuladen im Markt darf den Markt nicht verschlucken. */
 var bRun2 = fertigerRun(4712);
 var beute2 = null;
 for (var bb = 0; bb < 16 && !beute2; bb++) {
@@ -1337,18 +1324,19 @@ for (var bb = 0; bb < 16 && !beute2; bb++) {
     .filter(function (x) { return x >= 0; })[0];
   if (bi === undefined) { R.advance(bRun2); continue; }
   var bp = R.choose(bRun2, bi);
-  if (bp.result.winner === 'player' && bp.rewards) beute2 = bp;
+  if (bp.result.winner === 'player' && bp.markt) beute2 = bp;
   else { bRun2.lives = 3; R.advance(bRun2); }
 }
-ok(!!beute2, 'ein Kampf mit offener Belohnung ist erreichbar');
+ok(!!beute2, 'ein Kampf mit offenem Markt ist erreichbar');
 if (beute2) {
   var wieder2 = R.deserialize(R.serialize(bRun2));
-  ok(wieder2.phase === 'kampf' && wieder2.pending && wieder2.pending.rewards,
-     'nach dem Laden steht die Belohnung noch zur Wahl');
-  ok(wieder2.pending.rewards.length === beute2.rewards.length,
-     'es sind dieselben Belohnungen wie vorher');
-  ok(R.takeReward(wieder2, wieder2.pending.rewards.length - 1),
-     'die Belohnung lässt sich nach dem Laden noch nehmen');
+  ok(wieder2.phase === 'kampf' && wieder2.pending && wieder2.pending.markt,
+     'nach dem Laden steht der Markt noch offen');
+  ok(wieder2.pending.markt.length === beute2.markt.length,
+     'es sind dieselben Posten wie vorher');
+  wieder2.magicules = 9000;
+  ok(R.buy(wieder2, wieder2.pending.markt.length - 1, wieder2.team[0].uid),
+     'im geladenen Markt lässt sich noch kaufen');
   ok(R.advance(wieder2) && wieder2.phase === 'karte' && wieder2.options,
      'danach geht es normal auf der Karte weiter');
 }

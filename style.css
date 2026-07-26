@@ -352,3 +352,19 @@ table.dbg i.ab { color: #e77; }
 .art-kampf { color: #cfd4dc; } .art-elite { color: var(--rot); }
 .art-boss { color: var(--gold); } .art-shop { color: #9fd6c2; }
 .art-event { color: #b8a1ff; } .art-lager { color: #8fd8ff; }
+
+/* Markt und Verkaufen per Ziehen. */
+.karte .beschreibung { display: block; font-size: .78rem; opacity: .85; margin-top: .3rem;
+                       text-align: left; line-height: 1.35; }
+.verkauf { margin: .6rem 0; padding: .9rem; border: 2px dashed #fff3; border-radius: 8px;
+           text-align: center; opacity: .6; transition: all .12s; }
+.verkauf .unter { display: block; font-size: .72rem; }
+.verkauf.bereit { opacity: 1; border-color: var(--gold); }
+.verkauf.drueber { background: #ffd88022; border-color: var(--gold); transform: scale(1.02); }
+[data-verkauf] { touch-action: none; }
+.wird-gezogen { opacity: .35; }
+.zieh-geist { position: fixed; z-index: 99; pointer-events: none;
+              transform: translate(-50%, -50%); background: #222c; color: #fff;
+              border: 1px solid var(--gold); border-radius: 6px; padding: .25rem .5rem;
+              font-size: .78rem; white-space: nowrap; }
+.ziehhinweis { opacity: .5; font-size: .7rem; }

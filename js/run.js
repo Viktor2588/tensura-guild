@@ -15,13 +15,15 @@
   /* Knotenangebot je Schritt eines Akts. Drei Wege statt zwei: die Wahl
      zwischen sicherem Kampf, Elite mit besserer Beute und Laden ist die
      eigentliche Routenplanung. */
+  /* Kein Händler-Knoten mehr: nach JEDEM gewonnenen Kampf geht der Markt auf,
+     ein eigener Knoten dafür wäre doppelt. Die drei Slots sind Kämpfe geworden. */
   var STEPS = [
     ['kampf', 'kampf', 'event'],
-    ['kampf', 'event', 'shop'],
-    ['shop', 'pruefung', 'kampf'],
+    ['kampf', 'event', 'pruefung'],
+    ['kampf', 'pruefung', 'elite'],
     ['kampf', 'elite', 'lager'],
     ['lager', 'event', 'pruefung'],
-    ['kampf', 'shop', 'elite'],
+    ['kampf', 'kampf', 'elite'],
     ['elite', 'pruefung', 'lager'],
     ['boss']
   ];
@@ -34,6 +36,7 @@
   /* Der Kampf selbst ist härter als ein gewöhnlicher — sonst wäre die Auflage
      ein Geschenk. Gemessen wurden die ersten Auflagen zu 92–100 % gehalten. */
   var PRUEFUNG_HAERTE = 1.9;
+  var PRUEFUNG_BONUS = 0.6;        // gehaltene Auflage: so viel Magicule obendrauf
   var PRUEFUNGEN = [
     { id: 'ohne_verlust', name: 'Ohne einen Verlust',
       text: 'Keine deiner Einheiten darf fallen.',
@@ -134,7 +137,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.02;   // Stapel sind unbegrenzt; das kostet den Gegner etwas Haerte zurueck
+  var GRUNDHAERTE = 1.08;   // Markt nach jedem Kampf; gemessen 50 % Siege (frisch)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -551,7 +554,6 @@
     var node = run.options[i];
     if (!node) return null;
     run.node = node;
-    if (node.type === 'shop') { run.phase = 'shop'; run.pending = { offers: shopOffers(run) }; return run.pending; }
     if (node.type === 'event') { run.phase = 'event'; run.pending = { event: node.event }; return run.pending; }
     if (node.type === 'lager') { run.phase = 'lager'; run.pending = { done: false }; return run.pending; }
     return fight(run, node);
@@ -640,12 +642,19 @@
       var beute = ertrag(node.encounter.beute * (node.belagert ? 0.75 : 1)) +
         ertrag(MAG_JE_KAMPF + inhaltsStufe(run) * 15);
       run.magicules += beute;
-      /* Auflage erfüllt: ein zweites Belohnungsangebot. Zusätzlich die Beute zu
-         verdoppeln war gemessen zu viel — 63 % Siegquote statt der Zielmarke. */
-      if (p) run.pending.bestanden = p.pruef(res, run);
+      /* Auflage erfüllt: mehr Magicule und ein Posten mehr im Markt. */
+      if (p) {
+        run.pending.bestanden = p.pruef(res, run);
+        if (run.pending.bestanden) {
+          var bonus = Math.round(beute * PRUEFUNG_BONUS);
+          run.magicules += bonus;
+          beute += bonus;
+        }
+      }
       run.pending.gold = beute;
-      run.pending.rewards = rollRewards(run, node);
-      if (p && run.pending.bestanden) run.pending.extra = rollRewards(run, node);
+      /* Der Markt statt einer Belohnungskarte: was der Kampf einbringt, wird
+         hier ausgegeben — Einheiten, Ausrüstung, Relikte. */
+      run.pending.markt = marktOffers(run, node, run.pending.bestanden);
       run.pending.devour = res.fallen.filter(function (f) { return f.side === 'enemy'; })
         .filter(function (f) { return (EN.get(f.id).effects || []).length; })
         .map(function (f) {
@@ -688,42 +697,6 @@
     return GD.artName(u.art) + ' · ' + GD.rolleName(u.tags[1]) + ' · ' + (sig ? sig.name : '');
   }
 
-  function rollRewards(run, node) {
-    var rng = rngOf(run);
-    var out = [];
-    var stark = (node.type === 'elite' || node.type === 'boss') && !node.belagert;
-    /* Elite und Boss würfeln eine Stufe höher — dafür geht man das Risiko ein. */
-    var akt = inhaltsStufe(run) + (stark ? 1 : 0);
-    themenWahl(run, rng, unitPool(run), akt, 2).forEach(function (u) {
-      out.push({ kind: 'unit', id: u.id, name: u.name, text: unitText(u), rarity: u.rarity });
-    });
-    var rels = relicPool(run);
-    if (rels.length && (stark || out.length < 2 || rng() < 0.5)) {
-      var r = themenWahl(run, rng, rels, akt, 1)[0];
-      out.push({ kind: 'relic', id: r.id, name: r.name, text: r.text, rarity: r.rarity });
-    }
-    var it = themenWahl(run, rng, GD.items, akt, 1)[0];
-    out.push({ kind: 'item', id: it.id, name: it.name, text: itemText(it), rarity: it.rarity });
-    out.push({ kind: 'gold', name: ertrag(stark ? 160 : 100) + ' Magicule',
-               mag: ertrag(stark ? 160 : 100) });
-    commit(run, rng);
-    return out;
-  }
-
-  function takeReward(run, i, ausExtra) {
-    var p = run.pending;
-    var liste = ausExtra ? p && p.extra : p && p.rewards;
-    if (!liste) return false;
-    var r = liste[i];
-    if (!r) return false;
-    if (r.kind === 'unit') { if (!addUnit(run, r.id)) return false; }
-    else if (r.kind === 'relic') run.relics.push(r.id);
-    else if (r.kind === 'item') (run.bag = run.bag || []).push(r.id);
-    else run.magicules += r.mag;
-    if (ausExtra) p.extra = null; else p.rewards = null;
-    return true;
-  }
-
   function addUnit(run, id) {
     var u = GD.unit(id);
     if (!u || !freieArt(run, u.art)) return false;      // eine Einheit je Art
@@ -748,12 +721,40 @@
     return summe;
   }
   var RUECKGABE = 0.25;
+  /* Wiederverkauf zum selben Satz wie beim Entlassen: ein Viertel. Sonst wird
+     der Markt zur Drehtür, in der man Fehlkäufe folgenlos rückgängig macht. */
+  function itemWert(id) {
+    var it = GD.item(id);
+    return it ? Math.round(it.cost * PREIS_ITEM * RUECKGABE) : 0;
+  }
+  function reliktWert(id) { return Math.round(PREIS_RELIKT * RUECKGABE); }
+
+  function verkaufeItem(run, id) {
+    if (!darfEntlassen(run)) return false;
+    var bag = run.bag || [];
+    var i = bag.indexOf(id);
+    if (i < 0) return false;
+    bag.splice(i, 1);
+    run.magicules += itemWert(id);
+    return true;
+  }
+  function verkaufeRelikt(run, id) {
+    if (!darfEntlassen(run)) return false;
+    var i = run.relics.indexOf(id);
+    if (i < 0) return false;
+    run.relics.splice(i, 1);
+    run.magicules += reliktWert(id);
+    return true;
+  }
   function entlassenWert(m) { return Math.round(investiert(m) * RUECKGABE); }
 
-  /* Nur außerhalb des Kampfes: mitten in einer laufenden Auflösung wäre der
-     Trupp ein anderer als der, der gerade kämpft. */
+  /* Nicht während der Kampfauflösung — da wäre der Trupp ein anderer als der,
+     der gerade kämpft. Der Markt NACH dem Kampf zählt schon zur Truppenpflege:
+     dort wird gekauft und verkauft. */
   function darfEntlassen(run) {
-    return !run.over && run.phase !== 'kampf';
+    if (run.over) return false;
+    if (run.phase !== 'kampf') return true;
+    return !!(run.pending && run.pending.markt);
   }
 
   function entlassen(run, uid) {
@@ -860,19 +861,27 @@
 
   /* ---- Shop ---------------------------------------------------------------- */
 
-  function shopOffers(run) {
+  /* Der Markt nach dem Kampf. Elite und Boss zahlen sich auch hier aus: sie
+     würfeln eine Inhaltsstufe höher, eine gehaltene Auflage gibt einen Posten
+     mehr. */
+  function marktOffers(run, node, bestanden) {
+    var stark = node && (node.type === 'elite' || node.type === 'boss');
+    return shopOffers(run, stark ? 1 : 0, bestanden ? 1 : 0);
+  }
+
+  function shopOffers(run, stufenBonus, extra) {
     var rng = rngOf(run);
     var offers = [];
-    var st = inhaltsStufe(run);
+    var st = inhaltsStufe(run) + (stufenBonus || 0);
     /* Kriegsrecht: EIN Angebot statt drei. Ganz ohne Einheiten war die Stufe
        gemessen härter als die nächsthöhere (13 gegen 20 % Siege) — die Kurve lief
        rückwärts, weil ein Trupp, dem eine Rolle fehlt, gar nicht mehr aufholt. */
-    themenWahl(run, rng, unitPool(run), st, regel(run, 'kriegsrecht') ? 1 : 3)
+    themenWahl(run, rng, unitPool(run), st, (regel(run, 'kriegsrecht') ? 1 : 2) + (extra || 0))
       .forEach(function (u) {
         offers.push({ kind: 'unit', id: u.id, name: u.name, price: PREIS_EINHEIT + u.cost * 45,
                       text: unitText(u), rarity: u.rarity });
       });
-    themenWahl(run, rng, GD.items, st, 2).forEach(function (it) {
+    themenWahl(run, rng, GD.items, st, 1 + (extra || 0)).forEach(function (it) {
       offers.push({ kind: 'item', id: it.id, name: it.name, price: Math.round(it.cost * PREIS_ITEM),
                     text: itemText(it), rarity: it.rarity });
     });
@@ -897,7 +906,8 @@
   }
 
   function buy(run, i, uid) {
-    var o = run.pending && run.pending.offers && run.pending.offers[i];
+    var liste = run.pending && (run.pending.markt || run.pending.offers);
+    var o = liste && liste[i];
     if (!o || o.sold || run.magicules < o.price) return false;
     if (o.kind === 'unit' && !addUnit(run, o.id)) return false;
     if (o.kind === 'rang') {
@@ -1101,9 +1111,9 @@
      nur das Nötige gespeichert, nicht das ganze Log. */
   function schlankesPending(run) {
     var p = run.pending;
-    if (run.phase !== 'kampf' || !p || !(p.rewards || p.extra)) return null;
+    if (run.phase !== 'kampf' || !p || !p.markt) return null;
     return {
-      rewards: p.rewards, extra: p.extra, bestanden: p.bestanden, devour: p.devour, gold: p.gold,
+      markt: p.markt, bestanden: p.bestanden, devour: p.devour, gold: p.gold,
       node: { name: p.node.name }, result: { winner: p.result.winner }
     };
   }
@@ -1172,7 +1182,7 @@
 
   root.Run = {
     create: create, newMeta: newMeta, resolve: resolve, member: member, abilities: abilities,
-    choose: choose, advance: advance, takeReward: takeReward, devour: devour,
+    choose: choose, advance: advance, devour: devour,
     rankUp: rankUp,
     passivWahl: passivWahl, choosePassive: choosePassive,
     passivIds: passivIds, hatLinien: hatLinien,
@@ -1182,10 +1192,12 @@
     regelnTest: regeln, rollTest: roll, EINSTIEG: EINSTIEG, EINSTIEG_HAERTE: EINSTIEG_HAERTE,
     START_MAX_RARITAET: START_MAX_RARITAET,
     itemSlots: itemSlots, aktivSlots: aktivSlots, passivSlots: passivSlots, praedatorSlots: praedatorSlots,
-    buy: buy, eventChoose: eventChoose, camp: camp,
+    buy: buy, eventChoose: eventChoose, camp: camp, marktOffers: marktOffers,
     equip: equip, unequip: unequip, move: move, bench: bench, deploy: deploy, entlassen: entlassen,
     find: find, addUnit: addUnit, swap: swap, unitPool: unitPool, relicPool: relicPool,
     entlassenWert: entlassenWert, darfEntlassen: darfEntlassen,
+    verkaufeItem: verkaufeItem, verkaufeRelikt: verkaufeRelikt,
+    itemWert: itemWert, reliktWert: reliktWert,
     belegteArten: belegteArten, freieArt: freieArt, waehle: waehle, gewicht: gewicht,
     inhaltsStufe: inhaltsStufe, boss: bossOf, STUFEN: STUFEN, ertrag: ertrag,
     PRUEFUNGEN: PRUEFUNGEN, pruefung: pruefung, TYP_NAME: TYP_NAME,

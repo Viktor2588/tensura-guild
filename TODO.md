@@ -40,7 +40,19 @@ Abgearbeitet in Phase 11:
 - [x] UI-Wechsel: während des Kampfes nur die Kampfansicht, danach das Management
 - [x] Entlassen nur außerhalb des Kampfes, mit 25 % Rückerstattung des Einsatzes
 
+Abgearbeitet in Phase 12/13:
+
+- [x] Stapel unbegrenzt (Wirkung gedeckelt statt Zahl), Erstarrung bleibt ein Schalter
+- [x] Knoten nennen nur ihre Art — die Gegnervorschau log beim Einstieg
+- [x] Kampfherausforderung als vierter Kampfknoten mit angesagter Auflage
+- [x] Belohnung ist nur noch Magicule; nach jedem Kampf öffnet der Markt
+- [x] Verkaufen per Ziehen (Pointer Events, auch auf Touch)
+- [x] Händler-Knoten entfernt
+
 Offen:
+
+- Anfänger/Veteran-Abstand auf 12 Punkte gewachsen (48 gegen 60 % Siege).
+- Konter-Builds bei 76 % knapp über dem Zielband.
 
 - 38 Einheiten haben noch keine eigenen Linien (`AB.linien`). Shion und Souei sind die Vorlagen — vier Linien à vier Stufen je Einheit.
 - Der Aufstiegs-Pool aus 34 aktiven Fähigkeiten wird vom Spieler & gegner nicht gezogen. jeder Kampfeinheit hat nur eine Aktive fähikgeit mit passiven Fähgikeiten
