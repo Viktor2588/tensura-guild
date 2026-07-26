@@ -48,14 +48,21 @@ Slot frei — dann kann ihn der Prädator füllen. Die Passiven gehören der Ein
 und schalten automatisch auf.
 
 **Aktiv** = feuert im Kampf nach Ablauf der Abklingzeit und ersetzt den normalen
-Angriff. Liegt mehr als eine bereit, gewinnt die mit der längsten Abklingzeit.
-**Passiv** = hängt an einem Hook und wirkt dauerhaft.
+Angriff. Liegt mehr als eine bereit, gewinnt die mit der längsten Abklingzeit —
+außer die Fähigkeit trägt ein `wenn(c)`, dann wartet sie auf ihre Lage
+(verwundeter Trupp, angeschlagenes Ziel, zwei Gegner). **Passiv** = hängt an
+einem Hook und wirkt dauerhaft.
 
 **Schlüsselwörter** tragen die Kombos: jede Fähigkeit erzeugt etwas (Quelle)
 oder verstärkt etwas (Verstärker) — Gift, Brand, Frost, Verderbnis, Schild,
 Heilung, Konter, Exekution, Fläche, Tempo. Ein Build ist rund, wenn Quellen und
 Verstärker desselben Worts zusammenkommen. Relikte greifen an denselben Wörtern
 an (*„je Gift-Fähigkeit im Trupp +7 % Angriff"*).
+
+**Resonanz** ist die mechanische Schwelle dazu: drei Teile derselben Linie —
+Fähigkeiten, Ausrüstung, Relikte zusammengezählt — schalten einen Trupp-Bonus
+frei (`Combat.RESONANZ`). Es resoniert nur die stärkste Linie, sonst sammelt ein
+Trupp mit neun Relikten alle Boni nebenbei ein. Gilt für beide Seiten.
 
 **Prädator** — nach einem Sieg darf *ein* Gegner verschlungen werden: seine
 Fähigkeit wandert dauerhaft in eine Einheit. Prädator-Slots gibt es ab Rang B.
@@ -100,7 +107,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 1 | Run-Gerüst: Karte, Knoten, Belohnung, Gold/Shop, Tod & Neustart | Ein Run ist im Browser durchspielbar | ✅ |
 | 2 | Fähigkeiten (aktiv/passiv), Schlüsselwörter, Relikte, Ausrüstung, Zustände | Zwei sichtbar verschiedene Build-Ideen gewinnen | ✅ |
 | 3 | Ränge C/B/A/S, Prädator, Magicule | Zwei Runs mit gleichem Seed fühlen sich unterschiedlich an | ✅ |
-| 4 | Content: 40 Einheiten mit eigener Signatur, 16 Pool-Aktive, 27 Passive, 37 Relikte, 33 Gegner, 3 Bosse | Pool trägt 10 Runs ohne Wiederholungsgefühl | ✅ |
+| 4 | Content: 40 Einheiten mit eigener Signatur, 31 Pool-Aktive, 27 Passive, 37 Relikte, 68 Gegner, 5 Bosse, 5 Akte | Pool trägt 10 Runs ohne Wiederholungsgefühl | ✅ |
 | 5 | `dev/balance.js`: Winrate pro Build, tote & dominante Kombos markieren | Kein Build unter 25 % / über 75 % Winrate | ⚠️ siehe unten |
 | 6 | Politur: Kampf-Animation, Meta-Freischaltungen, Save/Resume | — | ✅ |
 
@@ -228,6 +235,63 @@ allem Freigeschalteten gewinnt der Bot seltener** (41 statt 53 %). Truppstärke
 und Rangsumme sind gleich, der Unterschied liegt in Relikten und Ausrüstung.
 Die Bedingungen und die flache Preisstaffel haben fünf der ursprünglich
 sechzehn Punkte zurückgeholt, der Rest ist ungeklärt.
+
+Nachgezogen 2026-07-26 (Einheiten statt Einheitsbrei): Rimuru ist kein gesetzter
+Held mehr — der Starttrupp wird komplett gedraftet (dreimal eine aus drei), er
+liegt als legendäre Einheit mit im Pool. Der Aufstieg bietet zwei der drei
+Fähigkeiten aus der Linie der Einheit selbst an (Schlüsselwörter ihrer Signatur
+und ihrer freigeschalteten Passiven), das dritte bleibt offen. Dafür brauchte
+jede Linie Tiefe: der Aufstiegs-Pool wuchs von 16 auf 31 Aktive, jedes Thema hat
+jetzt mindestens drei Antworten. Siegquote unverändert bei 56 %.
+
+Nachgezogen 2026-07-26 (letzter TODO-Punkt): Tooltips färben Zustände,
+Fähigkeitsart und Raritätsstufe. Eine Stammtabelle in `ui.js` (`TIP_STAMM`)
+markiert beim Anzeigen, die rund vierzig `tip()`-Aufrufe bleiben roher Text.
+
+Nachgezogen 2026-07-26 (Kampf- und Buildsystem): zwei Eingriffe, beide gemessen.
+
+1. **Lagebedingte Fähigkeiten.** Aktive tragen optional ein `wenn(c)`; die
+   Auswahl im Kampf überspringt, was gerade sinnlos wäre. Vorher feuerte immer
+   die mit der längsten Abklingzeit — der Heilige Segen heilte einen
+   unverletzten Trupp, das Todesurteil traf volles Leben, und die Wahl beim
+   Aufstieg war faktisch „nimm die höchste Zahl". Wert: +3 Punkte Siegquote,
+   für beide Seiten.
+2. **Resonanz.** Drei Teile derselben Linie (Fähigkeiten, Ausrüstung, Relikte)
+   schalten einen Trupp-Bonus frei; nur die stärkste Linie zählt. Vorher war
+   „Build" nur eine Zahl in `dev/balance.js` — die Teile wirkten einzeln, nichts
+   belohnte das Bündeln. Erste Fassung mit allen Resonanzen gleichzeitig war
+   +24 Punkte (82 % Siegquote); auf eine Linie begrenzt und halbiert sind es
+   +8. Bezahlt wird das mit `GRUNDHAERTE` = 1.02 in `run.js` (alle Gegner 2 %
+   stärker) — die Kurve ist so steil, dass 7 % bereits 26 Punkte kosten.
+
+Ergebnis `dev/balance.js 600`: 59 % Siege (frischer Spieler), Builds zwischen
+57 und 66 % statt 47 bis 80 %. Nebenbei gefunden: `amplifies` an Ausrüstung
+zählte in `resolve()` nicht für die Synergie-Anzeige mit. `dev/balance.js` weist
+Siegquote jetzt auch nach Resonanz aus.
+
+Nachgezogen 2026-07-26 (Akt 4 und 5, bis Ende Anime-Staffel 3): Der Run läuft
+über fünf Akte — neu sind die Westliche Heilige Kirche (Boss Hinata Sakaguchi,
+mit Reflexion auf erlittenen Schaden) und Ruberios (Boss Luminous Valentine, mit
+Lebensraub und einer Wiederauferstehung). Dazu 20 Gegner, 24 normale und
+8 Elite-Begegnungen, 8 Ereignisse. `AKTE` in `run.js` ist die einzige Stelle, an
+der die Aktzahl steht.
+
+Die Kalibrierung danach war der eigentliche Aufwand. Zwei Befunde:
+- **Akt 3 war die Wand, nicht das Finale.** Als letzter Akt war das richtig, in
+  der Mitte einer Fünf-Akt-Kurve nicht: der Sprung von Akt 2 auf 3 verdoppelte
+  den gegnerischen Angriff. Jetzt 1.85 (Akt 2) und 1.68 (Akt 3) statt 1.75/1.98.
+- **Fünf Leben statt drei.** 40 Knoten mit dem Lebensbudget für 24 sind kein
+  härteres Spiel, nur ein kürzeres. Bedrohungsstufe 5 nimmt jetzt zwei davon.
+
+Ergebnis `dev/balance.js 400`: 47 % Siege (frischer Spieler), 62 % mit allem
+Freigeschalteten — der Veteran gewinnt endlich öfter als der Anfänger, das war
+vorher umgekehrt. Nebeneffekt: Ø 9,5 Rangstufen statt 4,7, Rang S ist über fünf
+Akte erreichbar. Damit ist auch der alte offene Punkt „alle bleiben auf B" weg.
+
+Nachgezogen 2026-07-26 (TODO.md): Wegleiste unter der Kopfzeile — alle acht
+Knoten des Akts mit ihren Wahlmöglichkeiten, aktueller Position und dem Boss am
+Ende. Und die Aufstellung geht in zwei Tipps (erste Einheit, zweite Einheit,
+getauscht) statt mit vier Pfeilklicks; `Run.swap` dazu.
 
 Weitere offene Punkte:
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"

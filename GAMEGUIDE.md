@@ -8,8 +8,9 @@ an: härtere Gegner, weniger Startgold, teurere Ränge, am Ende ein Leben wenige
 
 ## Der Start
 
-Rimuru ist gesetzt. Den Rest des Trupps wählst du: zweimal eine Einheit aus drei
-Angeboten. Achte schon hier auf die Signaturen — sie bestimmen, welcher Build
+Den ganzen Trupp wählst du selbst: dreimal eine Einheit aus drei Angeboten.
+Niemand ist gesetzt — auch Rimuru nicht, er liegt als legendäre Einheit mit im
+Pool und taucht entsprechend selten auf. Achte schon hier auf die Signaturen — sie bestimmen, welcher Build
 überhaupt möglich wird.
 
 ## Der Run
@@ -18,12 +19,28 @@ Den Boss des laufenden Akts siehst du von Anfang an — mit allen Fähigkeiten i
 Tooltip. Wer weiß, dass Charybdis Flächenschaden austeilt und Gift streut, baut
 anders als jemand, der es erst am achten Knoten erfährt.
 
-3 Akte à 8 Knoten. An jedem Knoten wählst du zwischen **drei Wegen** — und die
-Vorschau zeigt dir vorher, welche Gegner dort stehen, welche Werte sie haben und
-welche Fähigkeiten sie einsetzen. Ein Heiler in der gegnerischen Reihe ist ein
-Grund für Brand, ein einzelner harter Gegner ein Grund für Frost. Am Ende jedes
-Akts steht ein Boss. Drei verlorene Kämpfe beenden den Run — danach werden zwei
-neue Karten dauerhaft freigeschaltet.
+**5 Akte à 8 Knoten** — die Handlung bis zum Ende der dritten Anime-Staffel:
+
+| Akt | Wo | Boss |
+|---|---|---|
+| 1 | Jura-Wald | Charybdis |
+| 2 | Höhlen, Orks und Gruften | Clayman |
+| 3 | Falmuth und die Dämonen | Milim Nava |
+| 4 | Die Westliche Heilige Kirche | Hinata Sakaguchi |
+| 5 | Nacht über Ruberios | Luminous Valentine |
+
+An jedem Knoten wählst du zwischen **drei Wegen** — und die Vorschau zeigt dir
+vorher, welche Gegner dort stehen, welche Werte sie haben und welche Fähigkeiten
+sie einsetzen. Ein Heiler in der gegnerischen Reihe ist ein Grund für Brand, ein
+einzelner harter Gegner ein Grund für Frost. Am Ende jedes Akts steht ein Boss.
+
+Die **Wegleiste** unter der Kopfzeile zeigt den ganzen Akt: welche Knotenarten an
+welcher Stelle zur Wahl stehen, wo du gerade bist und welcher Boss am Ende
+wartet. Fünf verlorene Kämpfe beenden den Run — danach werden zwei neue Karten
+dauerhaft freigeschaltet.
+
+Weil ein Run über fünf Akte läuft, reichen die Magicule jetzt bis **Rang S**:
+gemessen erreicht ein sauber gespielter Trupp neun bis zehn Rangstufen.
 
 Kämpfe laufen **von allein** ab. Du greifst nicht ein. Alles entscheidet sich
 vorher.
@@ -51,6 +68,12 @@ Beim Aufstieg wählst du **eine von drei** aktiven Fähigkeiten für den neuen S
 — oder lässt ihn frei, damit der Prädator ihn später füllt. Die nächste eigene
 Passive schaltet automatisch frei.
 
+Zwei der drei Angebote liegen auf der **Linie der Einheit selbst**: Shion mit
+ihren Konter-Passiven sieht Vergeltung und Dornenmantel, Gabiru sieht Gift und
+Flammen, ein Heiler sieht Lebensbund. Das dritte Angebot ist offen — nur so
+lässt sich eine Einheit bewusst gegen ihre Neigung bauen. Weil die Passiven erst
+mit dem Rang aufgehen, wird die Linie mit jedem Aufstieg schärfer.
+
 Magicule sind knapp. Vier Einheiten auf Rang B oder eine auf S? Das ist die
 Frage, die jeden Run prägt.
 
@@ -59,6 +82,13 @@ Frage, die jeden Run prägt.
 **Aktive Fähigkeiten** feuern im Kampf, sobald ihre Abklingzeit abgelaufen ist,
 und ersetzen in dem Zug den normalen Angriff. Liegt mehr als eine bereit, wird
 die mit der längsten Abklingzeit gewählt — also in aller Regel die stärkste.
+
+Manche warten aber auf ihre **Lage**, und das steht in ihrem Text: der Heilige
+Segen geht erst los, wenn jemand verwundet ist, das Todesurteil erst gegen ein
+angeschlagenes Ziel, der Klingensturm erst, wenn mindestens zwei Gegner stehen.
+Ohne diese Regel wäre die Wahl beim Aufstieg keine Entscheidung, sondern nur
+„nimm die mit der längsten Abklingzeit" — und dein Heiler würde einen
+unverletzten Trupp heilen, während der Gegner zuschlägt.
 
 Jede Einheit startet mit ihrer **einzigartigen Signatur**, die es sonst nirgends
 gibt. Signaturen haben immer zwei Teile: eine Grundwirkung und eine Bedingung,
@@ -85,6 +115,11 @@ wird.** Wen ein Angreifer trifft, hängt an seiner Rolle:
 | Magier | das Ziel mit dem **wenigsten Leben**, ignoriert 60 % Rüstung |
 | Unterstützer | heilt den am stärksten verwundeten Verbündeten, wenn keine Fähigkeit bereit ist |
 | Verstärker | normaler Angriff |
+
+**Umstellen geht in zwei Schritten**: in der Zeile über dem Trupp die eine
+Einheit antippen, dann die andere — die beiden tauschen den Platz. Die Pfeile
+▲▼ an jeder Karte bleiben für die Feinkorrektur. Der Strich in der Zeile
+markiert, ab wo die Deckung greift.
 
 ## Deckung
 
@@ -127,6 +162,29 @@ doppelt so oft wie ohne. Relikte und Ausrüstung zählen dabei mit: Apitos
 Giftstachel legt 5 Gift an, Giftzahn schlägt +30 % auf vergiftete Ziele, das
 Relikt *Zeichen der Brutmutter* gibt für jede Gift-Fähigkeit im Trupp +7 %
 Angriff. Einzeln solide, zusammen ein Build.
+
+### Resonanz
+
+**Drei Teile derselben Linie — Fähigkeiten, Ausrüstung und Relikte zusammen —
+schalten für den ganzen Trupp einen Bonus frei.** Die Synergie-Anzeige markiert
+das golden, der Tooltip sagt dir vorher, wie viele Teile noch fehlen.
+
+| Linie | Resonanz |
+|---|---|
+| Gift | Gift richtet 20 % mehr Schaden an |
+| Brand | Brand richtet 20 % mehr Schaden an |
+| Frost | gegnerischer Widerstand gegen Erstarrung sinkt um 30 % |
+| Verderbnis | +13 % Schaden je Stapel statt +10 % |
+| Schild | alle Schilde 15 % stärker |
+| Heilung | alle Heilung 15 % stärker |
+| Tempo | der ganze Trupp 6 % schneller |
+| Konter | jede Einheit wirft 4 plus 10 % ihres Angriffs zurück |
+| Exekution | +15 % Schaden gegen Ziele unter 35 % Leben |
+| Fläche | +8 % Schaden, solange mindestens zwei Gegner stehen |
+
+Es resoniert immer nur die **stärkste** Linie. Vier Boni nebenher einzusammeln
+wäre kein Build, sondern nur ein volles Inventar — die Regel zwingt zur
+Entscheidung, worauf du baust. Gegner spielen nach derselben Regel.
 
 ## Raritätsstufen
 

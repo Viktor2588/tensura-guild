@@ -1,17 +1,9 @@
-> ⚠️ Diese Datei wurde am 2026-07-25 gegen 21:34 von Claude versehentlich
-> überschrieben. Wiederhergestellt ist unten nur die Fassung von 21:14.
-> Notizen, die zwischen 21:25 und 21:34 dazugekommen sind, fehlen — bitte
-> ergänzen. Der Statusbericht steht ab jetzt in PLAN.md, damit hier nur deine
-> eigenen Punkte stehen.
+- Alle frontline Einheiten sollten direkt an Position 1 kommen wenn sie sich in das Roster anschließen (Temporär um das testen zu beschleunigen)
+- Bitte die Akte so umbauen das wir nur 2 Akte haben & die Bosse jeweils alleine auftreten & Alle aktuelle Bosse in zwei pools kommen. Pool akt 1 boss / Pool Akt 2 boss. so das immer nur zwei bosse pro Run sind.
+- Bitte Erstelle ein umfangreiches Debug Framework, welches umfangreich zeigt wie stark jede Einheit aktuell ist mit all den modifier, relicten, items & entwicklungsboni in echtzeit in der strategischen Übersicht.
+- z.b. Shion, entwicklungsphase C-B-A-S (C = Oger) (B = Teufel) (A = Verdorbener Teufel) (S = Ultimativer Teufel) Signatur Fähigkeit Chaos schlag => Erzeuge X Chaos stapel pro Rang (C = 1, B = 2, A = 3, S = 5) Jeder Chaos Stapel erzeugt folgendes 
+Chaos instabilität: Werte wie Rüstung, Schaden oder Trefferchance ändern sich von Runde zu Runde unvorhersehbar (z. B. per Würfelwurf in jeder Runde neu bestimmt & bitte per tooltip anzeigen) oder das wirken von zaubern kann fehlschlagen mit chance X abhänig der Stapel.
+- Jede Aufstieg gibt Shion eine Auswahl von 4 Möglichen Passiven z.b. 1) Das hinzufügen von Chaosstapeln führt zum steigern des Tempo & des Angriffs abhänig der hinzugefügten Stapel.
+2) Chaos Meisterschaft: Der Effect der Chaosstapel ist um 50% effektiver 3) Realitätswarp (Unterstützung): Für jeden Chaosstapel im Kampf, füge einen anti-chaos stapel auf das Team der den invertierten (positiven) effect auf die Gruppe Auswirkt 4) Oger Shield(Defensive): erhöhe die Max HP um 20%, für jeden oger im Team steigere den Wert weiter um 2%.
+Wir brauchen ungefähr 16 Solcher Fähigkeiten pro Einheit. Angefangen bei Shion. Hierbei sollte jede Einhei 4 Grund passive bekommen (Stats stärkende Angriffs Passive, vgl. Shions 1) Fähigkeit, Einheiten Mechanic stärkende Fähigkeit vgl. 2) Chaos Meisterschaft, 3) Unterstüzungsfähigkeiten siehe Realitätswarp, 4) Defensive Fähigkeit vgl. Ogershield. Bitte reserchieren wie man mehr RPG tiefe bei den Fähigkeiten hinzufügen kann. Das man einheiten Synergien erzeugen kann. Z.b. wenn ein assasine wie z.b. der Oger/Teufel soey ein gegner angreift wird dieser verletzlicher & alle anderen einheiten mehr physichen/gift/blutungs schaden ein je nach passiver Fähigkeit / nach entwicklung auswählbar. Ähnliches System für die andere Das Wirken von Zaubern kann fehlschlagen, verheerende Nebeneffekte auslösen oder zufällige Fluch-Effekten Das Wirken von Zaubern kann fehlschlagen, verheerende Nebeneffekte auslösen oder zufällige Fluch-Effekte
 
-. das start roster sollte aus drei zufälligen einheiten auswählbar
-  sein.
-. Es sollte eine knifflige entscheidung sein, eine neues Item zu bekommen oder eine neue einheit zu kaufen. 
-* ereignisse wie gratisaufwertung von einheiten bis stufe B sollte es noch geben. 
-Ausrüstungen & zusätzliche Relikte einführen die sollten complexer & auf die individuellen passiven eigenschaften der Einheiten eingehen
-
----
-
-Diese vier Punkte sind umgesetzt (Details im Abschnitt „Stand" in PLAN.md):
-Startdraft, Gold als knappe Ressource mit drei Senken, drei Ereignisse mit
-Gratisaufstieg, 9 Ausrüstungen und 7 Relikte, die auf Passive und Rang schauen.

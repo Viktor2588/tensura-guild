@@ -50,9 +50,30 @@ ok(karten().length === 3, 'drei Einheiten stehen zur Wahl');
 ok(karten().every(function (k) { return k.querySelector('.titel') && k.querySelector('.unter'); }),
    'jede Wahlkarte nennt Namen und Beschreibung');
 klick(karten()[0]);
-ok(run.team.length === 2 && /Wer zieht mit dir los/.test(text('main h2')), 'nach der ersten Wahl folgt die zweite');
+ok(run.team.length === 1 && /Wer zieht mit dir los/.test(text('main h2')), 'nach der ersten Wahl folgt die zweite');
 klick(karten()[0]);
-ok(run.phase === 'karte' && run.team.length === 3, 'nach zwei Wahlen beginnt die Karte');
+klick(karten()[0]);
+ok(run.phase === 'karte' && run.team.length === 3, 'nach drei Wahlen beginnt die Karte');
+
+/* ------------------------------------------------------------ Wegleiste */
+head('Wegleiste und Aufstellung');
+ok($$('#pfad .pfad-knoten').length === win.Run.STEPS.length,
+   'die Wegleiste zeigt jeden Knoten des Akts');
+ok($$('#pfad .pfad-knoten.jetzt').length === 1, 'genau ein Knoten ist als aktueller markiert');
+ok(!!$('#pfad .pfad-knoten.boss') && !!$('#pfad .pfad-boss'),
+   'der Boss am Ende des Akts ist sichtbar, bevor man dort ankommt');
+
+/* Aufstellung: zwei Klicks tauschen zwei Plätze. */
+var vorherOrder = run.team.map(function (m) { return m.uid; });
+var plaetze = $$('.aufstellung .platz');
+ok(plaetze.length === run.team.length, 'jede Einheit hat einen Platzknopf');
+klick(plaetze[0]);
+ok($$('.aufstellung .platz.gewaehlt').length === 1, 'der erste Klick wählt aus');
+klick($$('.aufstellung .platz')[2]);
+var nachherOrder = run.team.map(function (m) { return m.uid; });
+ok(nachherOrder[0] === vorherOrder[2] && nachherOrder[2] === vorherOrder[0],
+   'der zweite Klick tauscht die beiden Plätze');
+ok(!$('.aufstellung .platz.gewaehlt'), 'nach dem Tausch ist nichts mehr ausgewählt');
 
 /* ----------------------------------------------------------------- HUD */
 head('Kopfzeile und Trupp');
@@ -80,6 +101,21 @@ proben.forEach(function (p) {
   ok(box && box.style.display === 'block' && box.querySelector('b').textContent &&
      box.querySelector('span').textContent.length > 15, p[1] + ' hat einen Tooltip mit Text');
 });
+/* Schlüsselwörter und Fähigkeitsart müssen im Tooltip farbig herausstechen. */
+hover($('.einheit .fk.aktiv'));
+var tipHtml = $('.tooltip').lastChild.innerHTML;
+ok(/<em class="(typ-signatur|typ-aktiv)"/.test(tipHtml),
+   'der Tooltip färbt die Fähigkeitsart');
+ok(/<em class="rar-text-[1-5]"/.test(tipHtml), 'der Tooltip färbt die Raritätsstufe');
+ok(tipHtml.indexOf('<script') < 0 && $('.tooltip').lastChild.textContent.length > 15,
+   'der Tooltip bleibt escapt und behält seinen Text');
+var kwGefunden = 0;
+$$('[data-tip-text]').forEach(function (el) {
+  hover(el);
+  if (/<em class="kw-/.test($('.tooltip').lastChild.innerHTML)) kwGefunden++;
+});
+ok(kwGefunden >= 3, 'Schlüsselwörter wie Gift oder Schild sind gefärbt (' + kwGefunden + ' Tooltips)');
+
 hover(doc.body);
 ok($('.tooltip').style.display === 'none', 'der Tooltip verschwindet wieder');
 

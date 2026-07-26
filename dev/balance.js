@@ -24,7 +24,7 @@ function vollMeta() {
   var m = R.newMeta();
   m.threat = STUFE; m.threatGewaehlt = STUFE;
   if (process.argv.indexOf('--nur-relikte') < 0) {
-    m.unlockedUnits = GD.units.filter(function (u) { return !u.hero; }).map(function (u) { return u.id; });
+    m.unlockedUnits = GD.units.map(function (u) { return u.id; });
   }
   if (process.argv.indexOf('--nur-einheiten') < 0) {
     m.unlockedRelics = GD.relics.map(function (r) { return r.id; });
@@ -208,10 +208,10 @@ function play(seed, voll) {
 
 /* ---- Läufe ------------------------------------------------------------- */
 
-var siege = 0, akte = [0, 0, 0, 0], schritteSum = 0, rangSum = 0, teamSum = 0;
+var siege = 0, akte = {}, schritteSum = 0, rangSum = 0, teamSum = 0;
 var kaeufe = {}, unbezahlbar = 0, kostenSum = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
 var ohneFront = 0, ohneStuetze = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
-var proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {};
+var proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {}, proResonanz = {};
 
 function bump(map, key, won) {
   var e = map[key] = map[key] || { n: 0, w: 0 };
@@ -222,7 +222,7 @@ for (var s = 0; s < N; s++) {
   var run = play(s, VOLL);
   var won = run.won;
   if (won) siege++;
-  akte[Math.min(run.act, 3)]++;
+  akte[Math.min(run.act, R.AKTE)] = (akte[Math.min(run.act, R.AKTE)] || 0) + 1;
   schritteSum += (run.act - 1) * 8 + run.step;
   teamSum += run.team.length;
 
@@ -252,6 +252,10 @@ for (var s = 0; s < N; s++) {
     return (kw[b].quellen + kw[b].verstaerker) - (kw[a].quellen + kw[a].verstaerker);
   });
   bump(proKeyword, builds.length ? builds[0] : 'kein Build', won);
+  /* Resonanz ist die Schwelle, ab der ein Build im Kampf wirklich etwas tut —
+     also die Zahl, die zeigt, ob sich das Bündeln lohnt. */
+  var reso = Object.keys(R.resonanzen(run));
+  bump(proResonanz, reso.length ? reso[0] : 'keine Resonanz', won);
   run.relics.forEach(function (id) { bump(proRelikt, id, won); });
 }
 
@@ -271,9 +275,11 @@ function tabelle(titel, map, nameFn, minN) {
 console.log('=== ' + N + ' Runs' + (VOLL ? ', volle Freischaltung' : ', frischer Spieler') +
   (STUFE ? ', Bedrohungsstufe ' + STUFE : '') + (STELLEN ? '' : ', ohne Aufstellung') + ' ===');
 console.log('Siege: ' + siege + ' (' + Math.round(siege / N * 100) + '%)');
-console.log('Ø erreichte Knoten: ' + (schritteSum / N).toFixed(1) + ' von 24');
+console.log('Ø erreichte Knoten: ' + (schritteSum / N).toFixed(1) + ' von ' + (R.AKTE * R.STEPS.length));
 console.log('Ø Trupp: ' + (teamSum / N).toFixed(1) + ' Einheiten, Ø Rangstufen gesamt: ' + (rangSum / N).toFixed(1));
-console.log('gescheitert in Akt 1/2/3: ' + akte[1] + ' / ' + akte[2] + ' / ' + akte[3]);
+console.log('gescheitert je Akt: ' + Object.keys(akte).sort().map(function (a) {
+  return a + ': ' + akte[a];
+}).join(' · '));
 console.log('nicht bezahlbare Angebote: ' + unbezahlbar + ' (je Run ' + (unbezahlbar / N).toFixed(1) + ')');
 console.log('Trupps ohne Frontlinie: ' + ohneFront + ' · ohne Unterstützung: ' + ohneStuetze);
 console.log('Ø Relikte: ' + (reliktSum / N).toFixed(1) + ' · Ø angelegte Ausrüstung: ' + (itemSum / N).toFixed(1));
@@ -283,6 +289,7 @@ console.log('Käufe im Laden: ' + Object.keys(kaeufe).map(function (k) {
 }).join(' · '));
 
 var kwRows = tabelle('Winrate nach Build (Quellen + Verstärker):', proKeyword, function (k) { return k; }, Math.max(10, N / 40));
+tabelle('Winrate nach Resonanz (drei Teile derselben Linie):', proResonanz, function (k) { return k; }, 10);
 tabelle('Winrate nach höchstem Rang im Trupp:', proRang, function (k) { return 'Rang ' + k; }, 10);
 var relRows = tabelle('Winrate nach Relikt:', proRelikt, function (k) {
   var r = GD.relic(k); return r ? r.name : k;

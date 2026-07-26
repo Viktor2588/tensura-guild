@@ -13,9 +13,16 @@
 'use strict';
 (function (root) {
 
-  function aktiv(id, name, cd, keywords, text, fn) {
-    return { id: id, name: name, art: 'aktiv', cd: cd, keywords: keywords, text: text, fn: fn };
+  /* `wenn` ist optional: die Fähigkeit wird nur eingesetzt, wenn die Lage passt
+     (c: self, target, allies, foes). Ohne sie feuert immer die mit der längsten
+     Abklingzeit — dann ist die Auswahl beim Aufstieg keine Entscheidung mehr,
+     sondern eine Zahl. */
+  function aktiv(id, name, cd, keywords, text, fn, wenn) {
+    return { id: id, name: name, art: 'aktiv', cd: cd, keywords: keywords, text: text,
+             fn: fn, wenn: wenn || null };
   }
+  var verwundet = function (c) { return c.allies.some(function (u) { return u.hp < u.maxHp * 0.85; }); };
+  var mehrereGegner = function (c) { return c.foes.length >= 2; };
   function passiv(id, name, hook, keywords, amplifies, text, fn) {
     return { id: id, name: name, art: 'passiv', hook: hook, keywords: keywords,
              amplifies: amplifies, text: text, fn: fn };
@@ -133,14 +140,21 @@
       function (c) { c.attack(1); if (c.rng() < 0.6) c.applyStatus(c.target, 'erstarrung', 1); }),
     aktiv('fluchstoss', 'Fluchklinge', 3, ['verderbnis'], '110 % Schaden und 2 Verderbnis',
       function (c) { c.attack(1.1); c.applyStatus(c.target, 'verderbnis', 2); }),
-    aktiv('rundumschlag', 'Klingensturm', 4, ['flaeche'], '80 % Schaden auf alle Gegner',
-      function (c) { c.foes().forEach(function (f) { c.attack(0.8, f); }); }),
-    aktiv('heilwelle', 'Heiliger Segen', 4, ['heilung'], 'Heilt alle Verbündeten um 120 % des Angriffs',
-      function (c) { c.allies().forEach(function (u) { c.heal(u, c.self.atk * 1.2, 'Heiliger Segen'); }); }),
-    aktiv('schildruf', 'Schutzfeld', 4, ['schild'], 'Schild in Höhe von 150 % des Angriffs für alle',
-      function (c) { c.allies().forEach(function (u) { c.applyStatus(u, 'schild', Math.round(c.self.atk * 1.5)); }); }),
-    aktiv('hinrichtung', 'Todesurteil', 4, ['exekution'], '140 % Schaden, 300 % gegen Ziele unter 35 % Leben',
-      function (c) { c.attack(c.target.hp < c.target.maxHp * 0.35 ? 3 : 1.4); }),
+    aktiv('rundumschlag', 'Klingensturm', 4, ['flaeche'],
+      '80 % Schaden auf alle Gegner. Wird nur eingesetzt, wenn mindestens zwei Gegner stehen.',
+      function (c) { c.foes().forEach(function (f) { c.attack(0.8, f); }); }, mehrereGegner),
+    aktiv('heilwelle', 'Heiliger Segen', 4, ['heilung'],
+      'Heilt alle Verbündeten um 120 % des Angriffs. Wird nur eingesetzt, wenn jemand verwundet ist.',
+      function (c) { c.allies().forEach(function (u) { c.heal(u, c.self.atk * 1.2, 'Heiliger Segen'); }); },
+      verwundet),
+    aktiv('schildruf', 'Schutzfeld', 4, ['schild'],
+      'Schild in Höhe von 150 % des Angriffs für alle. Wird erst eingesetzt, wenn die Schilde dünn geworden sind.',
+      function (c) { c.allies().forEach(function (u) { c.applyStatus(u, 'schild', Math.round(c.self.atk * 1.5)); }); },
+      function (c) { return c.allies.some(function (u) { return (u.status.schild || 0) < c.self.atk; }); }),
+    aktiv('hinrichtung', 'Todesurteil', 4, ['exekution'],
+      '300 % Schaden gegen Ziele unter der Hälfte ihres Lebens — auf ein volles Ziel wartet sie.',
+      function (c) { c.attack(c.target.hp < c.target.maxHp * 0.35 ? 3 : 1.4); },
+      function (c) { return c.target.hp < c.target.maxHp * 0.5; }),
     aktiv('aderlass', 'Blutschnitt', 3, ['heilung'], '150 % Schaden, heilt die Hälfte davon',
       function (c) { var d = c.attack(1.5); c.heal(c.self, d * 0.5, 'Aderlass'); }),
     aktiv('hetzjagd', 'Blutspur', 3, ['exekution'], '150 % Schaden auf das schwächste Ziel',
@@ -154,8 +168,77 @@
       function (c) { c.deal(c.target, c.self.atk * 1.2, 'Seelenschlag', { pure: true }); }),
     aktiv('ansporn', 'Anführerbefehl', 5, ['tempo'], 'Alle Verbündeten dauerhaft +15 % Angriff',
       function (c) { c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.15); }); }),
-    aktiv('betaeubung', 'Lähmender Atem', 4, ['frost'], '80 % Schaden, 70 % Chance auf Erstarrung',
-      function (c) { c.attack(0.8); if (c.rng() < 0.7) c.applyStatus(c.target, 'erstarrung', 1); })
+    aktiv('betaeubung', 'Lähmender Atem', 4, ['frost'],
+      '80 % Schaden, 70 % Chance auf Erstarrung. Ein bereits erstarrtes Ziel lässt sie in Ruhe.',
+      function (c) { c.attack(0.8); if (c.rng() < 0.7) c.applyStatus(c.target, 'erstarrung', 1); },
+      function (c) { return !(c.target.status.erstarrung > 0); }),
+
+    /* Ab hier: Tiefe je Thema. Der Aufstieg bietet vorrangig an, was zur Einheit
+       passt (Run.rankUp) — dafür braucht jedes Thema mehr als einen Eintrag,
+       sonst sieht dieselbe Einheit immer dieselbe Fähigkeit. */
+    aktiv('giftwolke', 'Giftschwaden', 4, ['gift', 'flaeche'], '70 % Schaden auf alle Gegner und je 2 Gift',
+      function (c) { c.foes().forEach(function (f) { c.attack(0.7, f); c.applyStatus(f, 'gift', 2); }); },
+      mehrereGegner),
+    aktiv('feuersbrunst', 'Feuersbrunst', 4, ['brand', 'flaeche'], '70 % Schaden auf alle Gegner und je 2 Brand',
+      function (c) { c.foes().forEach(function (f) { c.attack(0.7, f); c.applyStatus(f, 'brand', 2); }); },
+      mehrereGegner),
+    aktiv('frostnova', 'Frostnova', 5, ['frost', 'flaeche'],
+      '60 % Schaden auf alle Gegner, jedes Ziel mit 30 % Chance erstarrt',
+      function (c) {
+        c.foes().forEach(function (f) { c.attack(0.6, f); if (c.rng() < 0.3) c.applyStatus(f, 'erstarrung', 1); });
+      }, mehrereGegner),
+    aktiv('fluchmal', 'Fluchmal', 4, ['verderbnis'],
+      '90 % Schaden und 4 Verderbnis. Auf ein voll verfluchtes Ziel wird sie nicht verschwendet.',
+      function (c) { c.attack(0.9); c.applyStatus(c.target, 'verderbnis', 4); },
+      function (c) { return (c.target.status.verderbnis || 0) < 4; }),
+    aktiv('schildstoss', 'Schildstoß', 3, ['schild'],
+      '110 % Schaden plus die Hälfte des eigenen Schilds obendrauf, danach Schild 20',
+      function (c) {
+        var s = c.self.status.schild || 0;
+        c.attack(1.1);
+        if (s >= 2) c.deal(c.target, s * 0.5, 'Schildstoß');
+        c.applyStatus(c.self, 'schild', 20);
+      }),
+    aktiv('trutzwall', 'Trutzwall', 5, ['schild'],
+      'Schild in Höhe von 250 % des Angriffs und Regeneration 8. Wartet, bis der eigene Schild dünn ist.',
+      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.atk * 2.5)); c.self.regen += 8; },
+      function (c) { return (c.self.status.schild || 0) < c.self.atk; }),
+    aktiv('lebensbund', 'Lebensbund', 4, ['heilung'],
+      'Heilt die am schwersten verwundete Verbündete um 220 % des Angriffs',
+      function (c) {
+        var u = c.allies().reduce(function (a, b) { return (b.maxHp - b.hp) > (a.maxHp - a.hp) ? b : a; });
+        c.heal(u, c.self.atk * 2.2, 'Lebensbund');
+      }, verwundet),
+    aktiv('vergeltung', 'Vergeltung', 3, ['konter'],
+      '100 % Schaden, und je fehlendem Zehntel Leben 15 % mehr — bei einem Rest von 10 % also mehr als das Doppelte',
+      function (c) { c.attack(1 + 1.35 * (1 - c.self.hp / c.self.maxHp)); }),
+    aktiv('dornenstoss', 'Dornenmantel', 4, ['konter'],
+      '90 % Schaden und bis zum Kampfende erleiden Angreifer die Hälfte des eigenen Angriffs zurück',
+      function (c) {
+        c.attack(0.9);
+        c.addEffect(c.self, { hook: 'onDamaged', name: 'Dornenmantel',
+          fn: function (k) { var f = k.foes()[0]; if (f) k.deal(f, k.self.atk * 0.5, 'Dornenmantel'); } });
+      },
+      /* Ein zweiter Mantel stapelt sich sonst über den ganzen Kampf hoch. */
+      function (c) { return !c.self.effects.some(function (e) { return e.name === 'Dornenmantel'; }); }),
+    aktiv('sturmlauf', 'Sturmlauf', 4, ['tempo'], '120 % Schaden und dauerhaft +25 % eigenes Tempo',
+      function (c) { c.attack(1.2); c.self.spd = Math.round(c.self.spd * 1.25); }),
+    aktiv('blitzfolge', 'Blitzfolge', 4, ['tempo'], 'Drei Angriffe mit je 65 %',
+      function (c) { c.attack(0.65); c.attack(0.65); c.attack(0.65); }),
+    aktiv('spiegelhieb', 'Spiegelhieb', 3, ['konter'],
+      '90 % Schaden plus ein Drittel dessen, was die Trägerin bisher selbst eingesteckt hat',
+      function (c) { c.attack(0.9); c.deal(c.target, (c.self.dmgTaken || 0) / 3, 'Spiegelhieb'); }),
+    aktiv('seuchenstoss', 'Seuchenstoß', 3, ['gift', 'verderbnis'], '100 % Schaden, 3 Gift und 1 Verderbnis',
+      function (c) {
+        c.attack(1);
+        c.applyStatus(c.target, 'gift', 3);
+        c.applyStatus(c.target, 'verderbnis', 1);
+      }),
+    aktiv('brandmal', 'Brandmal', 3, ['brand'], '90 % Schaden und 2 Brand — gegen brennende Ziele stattdessen 200 %',
+      function (c) { c.attack(c.target.status.brand > 0 ? 2 : 0.9); c.applyStatus(c.target, 'brand', 2); }),
+    aktiv('kopfgeld', 'Kopfgeld', 4, ['exekution'],
+      '130 % Schaden. Stirbt das Ziel, ist die Fähigkeit sofort wieder bereit.',
+      function (c) { c.attack(1.3); if (c.target.hp <= 0) c.aktive.bereit = 0; })
   ];
 
   /* ---- Signaturen: genau eine je Einheit, nicht im Pool -------------------
@@ -484,6 +567,10 @@
     froststoss: 3, fluchstoss: 3, hetzjagd: 3, panzerbruch: 3, schildruf: 3,
     rundumschlag: 4, heilwelle: 4, seelenschlag: 4, hinrichtung: 4,
     ansporn: 5,
+    schildstoss: 1, brandmal: 1, vergeltung: 2, blitzfolge: 2, sturmlauf: 2,
+    spiegelhieb: 2, seuchenstoss: 3, fluchmal: 3,
+    giftwolke: 3, feuersbrunst: 3, dornenstoss: 3, lebensbund: 4, kopfgeld: 4,
+    frostnova: 4, trutzwall: 5,
     /* Passive */
     kriegsherz: 1, windschritt: 1, erstschlag: 1, giftbrut: 1, glutkern: 1, schildwall: 1,
     lebenskraft: 3, bollwerkmeister: 3, massenschlaechter: 4, schwungmeister: 3, rachsucht: 3,

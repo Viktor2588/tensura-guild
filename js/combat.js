@@ -15,6 +15,42 @@
   var TICK_CAP = 3000;                                   // Patt-Bremse
   /* Ohne Obergrenzen läuft alles davon, was pro Treffer stapelt. */
   var STATUS_CAP = { verderbnis: 5, gift: 12, brand: 8, erstarrung: 1 };
+
+  /* ---- Resonanz ----------------------------------------------------------
+     Drei Teile mit demselben Schlüsselwort im Trupp — Fähigkeiten, Ausrüstung,
+     Relikte — und der Trupp kippt von „hat auch Gift dabei" zu „ist ein
+     Gift-Build". Vorher war ein Build nur eine Zahl in der Auswertung: die
+     einzelnen Teile wirkten, aber nichts belohnte das Bündeln. Die Schwelle
+     ist der Grund, eine Linie zu Ende zu bauen statt überall etwas
+     mitzunehmen. Gilt für beide Seiten. */
+  var RESONANZ_SCHWELLE = 3;
+  var RESONANZ = {
+    gift: 'Gift richtet 20 % mehr Schaden an',
+    brand: 'Brand richtet 20 % mehr Schaden an',
+    frost: 'Gegnerischer Widerstand gegen Erstarrung sinkt um 30 %',
+    verderbnis: 'Jeder Verderbnis-Stapel erhöht den Schaden um 13 % statt 10 %',
+    schild: 'Alle Schilde sind 15 % stärker',
+    heilung: 'Alle Heilung wirkt 15 % stärker',
+    tempo: 'Der ganze Trupp ist 6 % schneller',
+    konter: 'Jede Einheit wirft 4 plus 10 % ihres Angriffs auf Angreifer zurück',
+    exekution: '+15 % Schaden gegen Ziele unter 35 % Leben',
+    flaeche: '+8 % Schaden, solange mindestens zwei Gegner stehen'
+  };
+  /* Eine Stelle, die zählt — Kampf und Anzeige dürfen nicht auseinanderlaufen.
+     Es resoniert nur die STÄRKSTE Linie: sonst sammelt ein Trupp mit neun
+     Relikten nebenbei vier Resonanzen ein, und aus der Entscheidung „worauf
+     baue ich" wird wieder „nimm alles mit". Gemessen: alle Resonanzen zugleich
+     hoben die Siegquote von 58 auf 82 %. */
+  function resonanz(keywords) {
+    var n = {}, best = null;
+    keywords.forEach(function (k) { if (RESONANZ[k]) n[k] = (n[k] || 0) + 1; });
+    Object.keys(RESONANZ).forEach(function (k) {
+      if (n[k] >= RESONANZ_SCHWELLE && (!best || n[k] > n[best])) best = k;
+    });
+    var out = {};
+    if (best) out[best] = n[best];
+    return out;
+  }
   var ROLES = ['front', 'fernkampf', 'magier', 'unterstuetzer', 'verstaerker'];
 
   function roleOf(u) {
@@ -30,7 +66,7 @@
       role: roleOf(def), effects: (def.effects || []).slice(),
       /* Abklingzeiten sind Zustand, nicht Daten — deshalb eine eigene Kopie. */
       actives: (def.actives || []).map(function (a) {
-        return { id: a.id, name: a.name, cd: a.cd, fn: a.fn, bereit: 0 };
+        return { id: a.id, name: a.name, cd: a.cd, fn: a.fn, wenn: a.wenn, bereit: 0 };
       }),
       keywords: (def.keywords || []).slice(), resistenz: def.resistenz || 0,
       side: side, pos: pos, gauge: 0, status: {}, regen: 0, lifesteal: 0,
@@ -52,13 +88,26 @@
     function team(s) { return units.filter(function (u) { return u.side === s; }); }
     function other(s) { return s === 'player' ? 'enemy' : 'player'; }
 
+    var res = { player: null, enemy: null };
+    ['player', 'enemy'].forEach(function (s) {
+      var ks = [];
+      team(s).forEach(function (u) { ks = ks.concat(u.keywords || []); });
+      if (s === 'player') (opts.relics || []).forEach(function (r) {
+        if (r) ks = ks.concat(r.keywords || [], r.amplifies || []);
+      });
+      res[s] = resonanz(ks);
+    });
+    /* „Hat die Gegenseite von u diese Resonanz?" — Gift und Frost wirken auf
+       den, der sie abbekommt, also zählt immer die andere Seite. */
+    function gegen(u, k) { return !!res[other(u.side)][k]; }
+
     /* ---- Grundoperationen ------------------------------------------------ */
 
     function deal(target, amount, source, opt) {
       if (!target || !alive(target)) return 0;
       opt = opt || {};
       var v = target.status.verderbnis || 0;
-      amount = amount * (1 + v * 0.1);
+      amount = amount * (1 + v * (gegen(target, 'verderbnis') ? 0.13 : 0.1));
 
       /* Deckung: wer hinten steht, gibt ein Drittel des Schadens an die vorderste
          lebende Einheit ab. Damit ist die Frontlinie mehr als Reihenfolge —
@@ -116,7 +165,8 @@
       if (!target || !alive(target) || stacks <= 0) return;
       /* Bosse schütteln Erstarrung meist ab — sonst gewinnt Frost jeden
          Einzelkampf, indem er dem Gegner schlicht die Züge nimmt. */
-      if (key === 'erstarrung' && target.resistenz && rng() < target.resistenz) {
+      if (key === 'erstarrung' && target.resistenz &&
+          rng() < target.resistenz * (gegen(target, 'frost') ? 0.7 : 1)) {
         log.push({ t: t, type: 'widersteht', key: target.key, target: target.name,
                    side: target.side, status: key });
         return;
@@ -157,6 +207,8 @@
       var base = u.atk * (mult || 1) - target.def * (1 - pierce);
       var c = ctx(u, { attacker: u, target: target, dmg: base * (0.9 + rng() * 0.2) });
       fire(u, 'onHit', c);
+      if (res[u.side].exekution && target.hp < target.maxHp * 0.35) c.dmg *= 1.15;
+      if (res[u.side].flaeche && living(other(u.side)).length >= 2) c.dmg *= 1.08;
       if (!alive(target)) return 0;
       var done = deal(target, c.dmg, quelle || u.name, { pure: !!u.durchschlag || !!opt.pure });
       u.dmgDealt += done;
@@ -178,6 +230,16 @@
       if (side === 'player') {
         (opts.relics || []).forEach(function (r) { if (r && r.apply) r.apply(mine, api); });
       }
+      /* Resonanz vor onStart: Schild- und Heilfaktor müssen stehen, bevor die
+         erste Barriere gelegt wird. */
+      var r = res[side];
+      mine.forEach(function (u) {
+        if (r.tempo) u.spd = Math.round(u.spd * 1.06);
+        if (r.schild) u.schildfaktor += 0.15;
+        if (r.heilung) u.heilfaktor += 0.15;
+        if (r.konter) u.effects.push({ hook: 'onDamaged', name: 'Resonanz: Konter',
+          fn: function (c) { var f = c.foes()[0]; if (f) c.deal(f, 4 + c.self.atk * 0.1, 'Konter-Resonanz'); } });
+      });
       mine.forEach(function (u) { fire(u, 'onStart', ctx(u, {})); });
     }
     setup('player');
@@ -203,11 +265,16 @@
     }
 
     /* Von den bereiten Fähigkeiten die mit der längsten Abklingzeit — die ist
-       in aller Regel die stärkste. */
-    function waehleAktive(u) {
+       in aller Regel die stärkste. Fähigkeiten mit `wenn` kommen nur dran, wenn
+       ihre Lage da ist: sonst heilt der Segen einen unverletzten Trupp und das
+       Todesurteil trifft ein volles Leben — und die Wahl beim Aufstieg wäre
+       nichts weiter als „nimm die mit der längsten Abklingzeit". */
+    function waehleAktive(u, target) {
       var best = null;
       u.actives.forEach(function (a) {
-        if (a.bereit <= 0 && (!best || a.cd > best.cd)) best = a;
+        if (a.bereit > 0) return;
+        if (a.wenn && !a.wenn({ self: u, target: target, allies: living(u.side), foes: living(other(u.side)) })) return;
+        if (!best || a.cd > best.cd) best = a;
       });
       return best;
     }
@@ -216,8 +283,14 @@
       fire(u, 'onTurnStart', ctx(u, {}));
       if (!alive(u)) return;
 
-      if (u.status.gift > 0) { deal(u, u.status.gift * 1.7, 'Gift', { pure: true }); u.status.gift--; if (!alive(u)) return; }
-      if (u.status.brand > 0) { deal(u, u.status.brand * 2, 'Brand', { pure: true }); u.status.brand--; if (!alive(u)) return; }
+      if (u.status.gift > 0) {
+        deal(u, u.status.gift * 1.7 * (gegen(u, 'gift') ? 1.2 : 1), 'Gift', { pure: true });
+        u.status.gift--; if (!alive(u)) return;
+      }
+      if (u.status.brand > 0) {
+        deal(u, u.status.brand * 2 * (gegen(u, 'brand') ? 1.2 : 1), 'Brand', { pure: true });
+        u.status.brand--; if (!alive(u)) return;
+      }
       if (u.status.verderbnis > 0) u.status.verderbnis--;
       if (u.regen > 0) heal(u, u.regen, 'Regeneration');
       u.actives.forEach(function (a) { if (a.bereit > 0) a.bereit--; });
@@ -228,7 +301,9 @@
         return;
       }
 
-      var aktive = waehleAktive(u);
+      var target = pickTarget(u);
+      if (!target) return;
+      var aktive = waehleAktive(u, target);
 
       /* Unterstützer heilen, wenn gerade keine Fähigkeit bereit ist. */
       if (u.role === 'unterstuetzer' && !aktive) {
@@ -239,9 +314,6 @@
           return;
         }
       }
-
-      var target = pickTarget(u);
-      if (!target) return;
 
       if (aktive) {
         aktive.bereit = aktive.cd;
@@ -287,5 +359,6 @@
   }
 
   root.Combat = { simulate: simulate, TICK_CAP: TICK_CAP, ROLES: ROLES, roleOf: roleOf,
-                  STATUS_CAP: STATUS_CAP };
+                  STATUS_CAP: STATUS_CAP, RESONANZ: RESONANZ,
+                  RESONANZ_SCHWELLE: RESONANZ_SCHWELLE, resonanz: resonanz };
 })(globalThis);

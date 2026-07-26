@@ -42,7 +42,7 @@
 
   var GLOSSAR = {
     arten: {
-      slime: 'Rimurus Art. Formlos, lernt durch Verschlingen — der einzige Held, der nie den Trupp verlässt.',
+      slime: 'Rimurus Art. Formlos, lernt durch Verschlingen — legendär und darum selten im Angebot.',
       goblin: 'Schwach geboren, billig zu haben, wächst über seine Fähigkeiten hinaus.',
       oger: 'Kriegervolk aus dem Jura-Wald. Hoher Schaden, wird im Verlauf eines Kampfes stärker.',
       direwolf: 'Sturmwölfe. Schnellste Züge im Spiel, dafür dünnes Fell.',
@@ -90,16 +90,17 @@
     begriffe: {
       gold: 'Wird beim Händler ausgegeben: Einheiten, Ausrüstung, gelegentlich ein Relikt. Kämpfe und Ereignisse bringen Gold.',
       magicule: 'Die Währung der Ränge. Nur damit steigen Einheiten von C auf B, A und S auf.',
-      leben: 'Verlorene Kämpfe. Beim dritten verlorenen Kampf endet der Run — der Kampf selbst kostet keine dauerhaften Werte.',
+      leben: 'Verlorene Kämpfe. Sind alle Leben aufgebraucht, endet der Run — der Kampf selbst kostet keine dauerhaften Werte. Fünf Leben auf fünf Akte, auf Bedrohungsstufe 5 nur drei.',
       rang: 'C → B → A → S. Jeder Aufstieg gibt +30 % Leben und Angriff, einen Item-Slot (S: zwei), eine aktive Fähigkeit zur Wahl, die nächste eigene Passive und einen Prädator-Slot.',
       signatur: 'Die einzigartige aktive Fähigkeit dieser Einheit. Gibt es bei keiner anderen und ist nie im Aufstiegs-Angebot.',
-      aktiv: 'Feuert im Kampf, sobald die Abklingzeit abgelaufen ist, und ERSETZT in dem Zug den normalen Angriff. Sind mehrere bereit, wird die mit der längsten Abklingzeit gewählt.',
+      aktiv: 'Feuert im Kampf, sobald die Abklingzeit abgelaufen ist, und ERSETZT in dem Zug den normalen Angriff. Sind mehrere bereit, wird die mit der längsten Abklingzeit gewählt — Fähigkeiten mit einer Lagebedingung ("nur wenn jemand verwundet ist") warten, bis diese Lage da ist.',
       passiv: 'Wirkt dauerhaft im Hintergrund, ohne Abklingzeit. Schaltet mit dem Rang frei.',
       abklingzeit: 'Zahl der eigenen Züge, die zwischen zwei Einsätzen dieser Fähigkeit liegen müssen.',
       praedator: 'Nach jedem gewonnenen Kampf darf ein besiegter Gegner verschlungen werden: seine Fähigkeit wandert dauerhaft in eine Einheit. Slots gibt es erst ab Rang B.',
       itemslot: 'Wie viele Ausrüstungsstücke diese Einheit tragen kann. Hängt am Rang: C 1, B 2, A 3, S 5.',
       quelle: 'Eine Fähigkeit, die diesen Zustand erzeugt.',
       verstaerker: 'Eine Fähigkeit, die diesen Zustand ausnutzt — mehr Schaden gegen Ziele, die ihn tragen.',
+      resonanz: 'Drei Teile mit demselben Schlüsselwort — Fähigkeiten, Ausrüstung, Relikte zusammengezählt — schalten für den ganzen Trupp einen Bonus frei. Das ist der Grund, eine Linie zu Ende zu bauen statt überall etwas mitzunehmen. Gegner haben dieselbe Regel.',
       art: 'Volk der Einheit. Gibt KEINE Boni: Arten regeln nur, dass von jeder genau eine Einheit im Trupp stehen darf.',
       rolle: 'Bestimmt, wen die Einheit im Kampf angreift.',
       aufstellung: 'Die Reihenfolge ist die Frontlinie: vorn steht, wer von gegnerischen Nahkämpfern zuerst getroffen wird. Ab Platz 3 greift zusätzlich die Deckung — ein Drittel des erlittenen Schadens übernimmt die vorderste lebende Einheit. Ein zäher Körper vorn schützt die Reihe dahinter also wirklich.',
@@ -123,7 +124,7 @@
 
   var units = [
     u('rimuru', 'Rimuru', 'slime', 'magier', 0, 100, 16, 4, 28,
-      'sig_rimuru', ['trophaenjaeger', 'panzerbrecher', 'zaeh'], { hero: true }),
+      'sig_rimuru', ['trophaenjaeger', 'panzerbrecher', 'zaeh']),
 
     u('gobta', 'Gobta', 'goblin', 'front', 1, 65, 8, 3, 24,
       'sig_gobta', ['zaeh', 'windschritt', 'konterstoss']),
@@ -344,7 +345,8 @@
       }, [], [],
       function (run) { return raenge(run).some(function (r) { return r > 0; }); }),
     relic('praedator_zahn', 'Prädatorzahn', 5, 'Rimuru erhält +50 % Angriff und Leben',
-      jeder(function (x) { if (x.id === 'rimuru') scale(x, { hp: 0.5, atk: 0.5 }); })),
+      jeder(function (x) { if (x.id === 'rimuru') scale(x, { hp: 0.5, atk: 0.5 }); }), [], [],
+      function (run) { return run.team.some(function (m) { return m.id === 'rimuru'; }); }),
     relic('kleines_team', 'Einsamer Pfad', 5, 'Bei höchstens 3 Einheiten: +45 % auf alle Werte',
       function (m) {
         if (m.length <= 3) m.forEach(function (x) { scale(x, { hp: 0.45, atk: 0.45, def: 0.45, spd: 0.45 }); });

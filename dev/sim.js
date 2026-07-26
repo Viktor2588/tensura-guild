@@ -66,9 +66,12 @@ EN.encounters.concat(EN.bosses).forEach(function (e) {
 });
 ok(!stumm.length, 'jeder eingesetzte Gegner hat eine aktive Fähigkeit' +
    (stumm.length ? ': ' + stumm.join(', ') : ''));
-ok([1, 2, 3].every(function (a) { return EN.forAct(a).length >= 12 && EN.elitesForAct(a).length >= 4; }),
-   'jeder Akt hat mindestens 12 normale und 4 Elite-Begegnungen');
-ok([1, 2, 3].every(function (a) { return EN.events.filter(function (e) { return e.act === a; }).length >= 3; }),
+var AKTE = [];
+for (var ai = 1; ai <= R.AKTE; ai++) AKTE.push(ai);
+ok(AKTE.every(function (a) { return EN.forAct(a).length >= 12 && EN.elitesForAct(a).length >= 4; }),
+   'jeder der ' + R.AKTE + ' Akte hat mindestens 12 normale und 4 Elite-Begegnungen');
+ok(AKTE.every(function (a) { return !!EN.boss(a); }), 'jeder Akt hat einen Boss');
+ok(AKTE.every(function (a) { return EN.events.filter(function (e) { return e.act === a; }).length >= 3; }),
    'jeder Akt hat eigene Story-Ereignisse');
 
 /* Jede Art muss auch spielbar sein, sonst blockiert die Regel "eine je Art". */
@@ -216,15 +219,16 @@ head('Startdraft und Laden');
 var dRun = R.create(321, R.newMeta());
 ok(dRun.phase === 'start' && dRun.startwahl, 'der Run beginnt mit einer Wahl statt fester Begleiter');
 ok(dRun.startwahl.offers.length === 3, 'drei Einheiten stehen zur Wahl');
-ok(dRun.team.length === 1, 'vorher ist nur Rimuru im Trupp');
+ok(dRun.team.length === 0, 'vorher ist der Trupp leer — niemand ist gesetzt');
 var ersteArt = GD.unit(dRun.startwahl.offers[0]).art;
 ok(R.chooseStart(dRun, 0), 'die erste Wahl gelingt');
-ok(dRun.team.length === 2 && dRun.phase === 'start', 'danach folgt die zweite Wahl');
+ok(dRun.team.length === 1 && dRun.phase === 'start', 'danach folgt die zweite Wahl');
 ok(dRun.startwahl.offers.every(function (id) { return GD.unit(id).art !== ersteArt; }),
    'die schon gewählte Art taucht im zweiten Angebot nicht mehr auf');
 R.chooseStart(dRun, 0);
+R.chooseStart(dRun, 0);
 ok(dRun.phase === 'karte' && dRun.team.length === 3 && dRun.options,
-   'nach zwei Wahlen beginnt die Karte');
+   'nach drei Wahlen beginnt die Karte');
 var dGeladen = R.deserialize(R.serialize(R.create(321, R.newMeta())));
 ok(dGeladen.phase === 'start' && dGeladen.startwahl, 'ein Speicherstand mitten im Draft bleibt im Draft');
 
@@ -343,9 +347,11 @@ ok(Object.keys(inv.quellen).every(function (k) { return !!G.keywords[k]; }),
 function heilung(items, seed) {
   var m = R.member('gobwa'); m.rank = 2; m.items = items || [];
   var t = R.member('gabiru'); t.rank = 1;
-  var r = C.simulate([R.resolve(t), R.resolve(m)], [EN.get('ritter'), EN.get('bogenschuetze')], seed);
+  /* Gegner aus Akt 3: gegen schwache Schläge ist jede Heilung vom fehlenden
+     Leben gedeckelt und der Verstärker verschwindet in der Überheilung. */
+  var r = C.simulate([R.resolve(t), R.resolve(m)], [EN.get('kreuzritter'), EN.get('inquisitor')], seed);
   var sum = 0;
-  r.log.forEach(function (l) { if (l.type === 'heal' && l.side === 'player') sum += l.amount; });
+  r.log.forEach(function (l) { if (l.type === 'heal' && l.target === 'Gobwa') sum += l.amount; });
   return sum;
 }
 var ohneKelch = 0, mitKelch = 0;
@@ -405,7 +411,8 @@ ok(zuHoch.threat === 0, 'eine nicht freigeschaltete Stufe greift nicht');
 var meta4 = R.newMeta(); meta4.threat = 5; meta4.threatGewaehlt = 5;
 var hart = R.create(1, meta4);
 ok(hart.threat === 5, 'eine freigeschaltete Stufe wird übernommen');
-ok(hart.lives === 2, 'Stufe 4 nimmt ein Leben');
+ok(hart.lives === 3 && R.create(1, R.newMeta()).lives === 5,
+   'Stufe 5 nimmt zwei der fünf Leben');
 ok(hart.gold < 60, 'Stufe 2 kürzt das Startgold');
 while (hart.phase === 'start') R.chooseStart(hart, 0);
 ok(R.rankCost(hart.team[0], hart) > R.rankCost(hart.team[0]), 'Stufe 3 verteuert die Ränge');
@@ -418,20 +425,22 @@ ok(schwer[0].hp > leicht[0].hp && schwer[0].atk > leicht[0].atk,
    'Stufe 5 macht Gegner stärker (' + leicht[0].hp + ' -> ' + schwer[0].hp + ' Leben)');
 ok(R.bedrohungsFaktor({ threat: 5 }, { type: 'elite' }) >
    R.bedrohungsFaktor({ threat: 5 }, { type: 'kampf' }), 'Stufe 5 trifft Elite härter');
-ok(R.bedrohungsFaktor({ threat: 0 }, { type: 'boss' }) === 1, 'Stufe 0 ändert nichts');
+ok(R.bedrohungsFaktor({ threat: 0 }, { type: 'boss' }) ===
+   R.bedrohungsFaktor({ threat: 0 }, { type: 'kampf' }),
+   'Stufe 0 behandelt Boss und normalen Kampf gleich');
 
 /* Sieg auf der höchsten Stufe schaltet die nächste frei. */
 var metaAuf = R.newMeta();
 var sieger = R.create(7, metaAuf);
 while (sieger.phase === 'start') R.chooseStart(sieger, 0);
-sieger.act = 3; sieger.step = R.STEPS.length - 1;   // letzter Knoten des letzten Akts
+sieger.act = R.AKTE; sieger.step = R.STEPS.length - 1;   // letzter Knoten des letzten Akts
 R.advance(sieger);
 ok(sieger.won && metaAuf.threat === 1, 'ein Sieg öffnet die nächste Bedrohungsstufe');
 ok(sieger.neueStufe && sieger.neueStufe.stufe === 1, 'die neue Stufe wird gemeldet');
 var metaMax = R.newMeta(); metaMax.threat = 5; metaMax.threatGewaehlt = 5;
 var maxRun = R.create(8, metaMax);
 while (maxRun.phase === 'start') R.chooseStart(maxRun, 0);
-maxRun.act = 3; maxRun.step = R.STEPS.length - 1; R.advance(maxRun);
+maxRun.act = R.AKTE; maxRun.step = R.STEPS.length - 1; R.advance(maxRun);
 ok(metaMax.threat === 5, 'über Stufe 5 hinaus geht es nicht');
 
 /* Die Stufe überlebt das Speichern. */
@@ -482,6 +491,59 @@ for (var pv = 0; pv < 30; pv++) {
 var werte = Object.keys(preise).map(function (k) { return preise[k]; });
 ok(werte.length && werte.every(function (p2) { return p2 === werte[0]; }),
    'Relikte kosten unabhängig von der Seltenheit dasselbe');
+
+head('Resonanz');
+/* Die Schwelle selbst. */
+ok(!Object.keys(C.resonanz(['gift', 'gift'])).length, 'zwei Teile sind noch keine Resonanz');
+ok(C.resonanz(['gift', 'gift', 'gift']).gift === 3, 'drei Teile derselben Linie resonieren');
+var mehrfach = C.resonanz(['gift', 'gift', 'gift', 'schild', 'schild', 'schild', 'schild']);
+ok(Object.keys(mehrfach).length === 1 && mehrfach.schild === 4,
+   'nur die stärkste Linie resoniert — sonst sammelt ein Trupp alle Boni nebenbei ein');
+
+/* Und sie muss im Kampf ankommen: derselbe Trupp, nur mit genug Schild-Teilen. */
+function ersterSchild(extra) {
+  var d = def('rigurd', 1);
+  d.keywords = d.keywords.concat(extra);
+  var r = C.simulate([d], [EN.get('felsgolem')], 5);
+  /* Der erste Wert, nicht der größte: Schild ist bei 60 % des Lebens gedeckelt,
+     am Deckel sind alle Trupps gleich stark. */
+  var erster = 0;
+  r.log.some(function (l) { if (l.status === 'schild') { erster = l.stacks; return true; } });
+  return erster;
+}
+ok(ersterSchild(['schild', 'schild', 'schild']) > ersterSchild([]),
+   'Schild-Resonanz macht die Barrieren messbar dicker');
+/* Die Anzeige darf nichts versprechen, was der Kampf nicht einlöst. */
+var resoRun = fertigerRun(88);
+ok(typeof R.resonanzen(resoRun) === 'object', 'der Run kann seine Resonanzen benennen');
+resoRun.relics = ['giftdorn', 'giftträger'].filter(function (id) { return GD.relic(id); });
+ok(Object.keys(R.resonanzen(resoRun)).every(function (k) { return !!C.RESONANZ[k]; }),
+   'jede angezeigte Resonanz hat auch eine Wirkung im Kampf');
+
+head('Lagebedingte Fähigkeiten');
+/* Ein Heiliger Segen auf einen unverletzten Trupp ist ein verlorener Zug. */
+function setztEin(aid, ziel, seed) {
+  var d = def('gobwa', 1);
+  d.actives = [AB.get(aid)];
+  var r = C.simulate([d], [ziel], seed);
+  return r.log.some(function (l) { return l.type === 'aktiv' && l.name === AB.get(aid).name; });
+}
+var schwach = JSON.parse(JSON.stringify(EN.get('hornhase')));
+schwach.atk = 0;                       // tut nicht weh: niemand wird verwundet
+ok(!setztEin('heilwelle', schwach, 4), 'Heiliger Segen wartet, solange niemand verwundet ist');
+ok(setztEin('heilwelle', EN.get('kreuzritter'), 4), 'sobald Schaden ankommt, wird er eingesetzt');
+/* Das Todesurteil darf erst fallen, wenn das Ziel angeschlagen ist. */
+var zaeherTroll = JSON.parse(JSON.stringify(EN.get('hoehlentroll')));
+zaeherTroll.effects = [];                      // ohne Trollhaut endet der Kampf überhaupt
+var hRun = C.simulate([(function () { var d = def('gobwa', 1); d.actives = [AB.get('hinrichtung')]; return d; })()],
+  [zaeherTroll], 6);
+var anteil = 1, frueh = 0, spaet = 0;
+hRun.log.forEach(function (l) {
+  if (l.type === 'hit' && l.side === 'enemy') anteil = l.hp / l.maxHp;
+  if (l.type === 'aktiv' && l.name === 'Todesurteil') { if (anteil >= 0.5) frueh++; else spaet++; }
+});
+ok(spaet > 0 && frueh === 0,
+   'das Todesurteil wartet auf ein angeschlagenes Ziel (' + spaet + '× spät, ' + frueh + '× früh)');
 
 head('Deckung');
 /* Wer hinten steht, soll messbar weniger abbekommen — sonst ist die Aufstellung
@@ -651,7 +713,8 @@ ok(!kaputtI.length, 'jede Ausrüstung läuft fehlerfrei' + (kaputtI.length ? ' �
 /* ------------------------------------------------------------- Run */
 head('Run');
 var run = fertigerRun(777);
-ok(run.team[0].id === 'rimuru', 'Run startet mit Rimuru');
+ok(run.team.length === 3 && run.team.every(function (m) { return GD.unit(m.id); }),
+   'Run startet mit drei gedrafteten Einheiten');
 ok(run.phase === 'karte' && run.options.length >= 1, 'Karte bietet Knoten an');
 var arten = R.belegteArten(run);
 ok(new Set(arten).size === arten.length, 'der Starttrupp hat keine Art doppelt');
@@ -699,6 +762,39 @@ R.rankUp(rRun, held.uid); R.skipActive(rRun);
 ok(R.rankName(held) === 'S' && R.itemSlots(held) === 5, 'Rang S gibt zwei Item-Slots statt einem');
 ok(R.praedatorSlots(held) === 3, 'Rang S trägt drei verschlungene Fähigkeiten');
 ok(!R.rankUp(rRun, held.uid), 'über S hinaus geht es nicht');
+
+/* Der Aufstieg muss zur Einheit passen — sonst wertet jeder dasselbe auf. */
+function aufstiegsAngebote(id, n) {
+  var out = {};
+  for (var s = 0; s < n; s++) {
+    var r = fertigerRun(700 + s);
+    r.team = [R.member(id)]; r.bank = []; r.magicules = 5000; r.wahl = null;
+    R.rankUp(r, r.team[0].uid);
+    r.wahl.offers.forEach(function (o) { out[o] = (out[o] || 0) + 1; });
+  }
+  return out;
+}
+function neigung(id) {
+  var m = R.member(id); m.rank = 1;            // wie beim Aufstieg: eine Passive ist offen
+  var kw = AB.keywords(R.abilities(m));
+  return function (aid) {
+    var a = AB.get(aid);
+    return (a.keywords || []).concat(a.amplifies || []).some(function (k) { return kw[k]; });
+  };
+}
+['shion', 'gabiru', 'quellenpriesterin'].forEach(function (id) {
+  var ang = aufstiegsAngebote(id, 10), passt = neigung(id);
+  var eigen = Object.keys(ang).filter(passt).reduce(function (n, k) { return n + ang[k]; }, 0);
+  ok(eigen >= 20,
+     GD.unit(id).name + ': zwei von drei Aufstiegsangeboten liegen auf ihrer Linie (' + eigen + '/30)');
+  ok(Object.keys(ang).filter(passt).length >= 3,
+     GD.unit(id).name + ': ihre Linie hat mehr als eine Antwort — ' +
+     Object.keys(ang).filter(passt).length + ' verschiedene passende Fähigkeiten');
+});
+var shionAng = Object.keys(aufstiegsAngebote('shion', 10)).filter(neigung('shion'));
+var priesterinAng = Object.keys(aufstiegsAngebote('quellenpriesterin', 10)).filter(neigung('quellenpriesterin'));
+ok(!shionAng.some(function (a) { return priesterinAng.indexOf(a) >= 0; }),
+   'zwei Einheiten mit verschiedenen Themen bekommen verschiedene Fähigkeiten angeboten');
 
 /* Item-Slots hängen am Rang */
 var iRun = fertigerRun(31);
@@ -775,7 +871,7 @@ ok(wieder.team[0].rank === 1 && wieder.team[0].actives.length === 1, 'Rang und g
 ok(R.resolve(wieder.team[0]).actives.length === 2, 'geladene Mitglieder lösen ihre Fähigkeiten korrekt auf');
 
 /* Ein Neuladen im Belohnungsbildschirm darf die Belohnung nicht verschlucken. */
-var bRun2 = fertigerRun(4711);
+var bRun2 = fertigerRun(4712);
 var beute2 = null;
 for (var bb = 0; bb < 16 && !beute2; bb++) {
   var bi = bRun2.options.map(function (o, i2) { return o.type === 'kampf' ? i2 : -1; })

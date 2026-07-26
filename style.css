@@ -67,6 +67,23 @@ select {
 
 main, #unten { max-width: 860px; margin: 0 auto; padding: .8rem; }
 
+/* ---- Wegleiste: der Akt auf einen Blick ---- */
+#pfad {
+  display: flex; align-items: center; gap: .25rem; flex-wrap: wrap;
+  padding: .3rem .6rem; background: var(--bg2);
+  border-bottom: 1px solid var(--rand); font-size: .8rem;
+}
+#pfad:empty { display: none; }
+.pfad-akt { color: var(--grau); margin-right: .2rem; }
+.pfad-knoten {
+  padding: .05rem .3rem; border-radius: 5px; letter-spacing: -.04em;
+  border: 1px solid var(--rand); color: var(--grau); background: var(--bg3);
+}
+.pfad-knoten.vorbei { opacity: .4; }
+.pfad-knoten.jetzt { border-color: var(--lila); color: var(--text); background: #241d33; }
+.pfad-knoten.boss { border-color: var(--rot); color: #ffc6c2; }
+.pfad-boss { color: var(--rot); margin-left: .2rem; font-size: .76rem; }
+
 /* ---- Karten ---- */
 .karten { display: grid; gap: .6rem; grid-template-columns: 1fr; }
 @media (min-width: 620px) { .karten { grid-template-columns: 1fr 1fr; } }
@@ -145,13 +162,21 @@ main, #unten { max-width: 860px; margin: 0 auto; padding: .8rem; }
 .einheit .knoepfe { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .35rem; }
 .einheit .knoepfe button { padding: .2rem .45rem; font-size: .78rem; }
 
+.aufstellung { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .5rem; align-items: center; }
+.aufstellung .platz { padding: .2rem .5rem; font-size: .8rem; border-radius: 6px; }
+.aufstellung .platz b { color: var(--grau); font-variant-numeric: tabular-nums; }
+.aufstellung .platz.gewaehlt { border-color: var(--lila); background: #241d33; }
+.platz-trenner { color: var(--grau); opacity: .7; cursor: help; }
+
 .syn { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .6rem; }
 .syn-eintrag {
   font-size: .78rem; padding: .15rem .45rem; border-radius: 5px;
   background: var(--bg3); border: 1px solid var(--rand); color: var(--grau);
 }
 .syn-eintrag.an { border-color: var(--gruen); color: #b8e6c2; }
+.syn-eintrag.reso { border-color: var(--gold); background: #241d10; color: #f0dcb0; }
 .syn-eintrag b { color: var(--text); }
+.reso-marke { font-size: .62rem; letter-spacing: .08em; color: var(--gold) !important; }
 
 .liste { display: flex; flex-wrap: wrap; gap: .35rem; }
 .chip {
@@ -218,6 +243,16 @@ dialog::backdrop { background: rgba(0,0,0,.65); }
   white-space: pre-line;                /* \n aus dem Glossar bleibt Zeilenumbruch */
 }
 .tooltip b { display: block; margin-bottom: .2rem; color: var(--lila); }
+/* Schlüsselwörter im Tooltip — dieselben Farben wie die Marken am Kämpfer. */
+.tooltip em { font-style: normal; font-weight: 600; }
+.kw-gift { color: #9ede8a; } .kw-brand { color: #ffa46b; }
+.kw-frost { color: #8fd8ff; } .kw-verderbnis { color: #d18aff; }
+.kw-schild { color: #e2e2e2; } .kw-heilung { color: var(--gruen); }
+.kw-konter { color: #f0857c; } .kw-tempo { color: #ffe08a; }
+.kw-flaeche { color: #b8a1ff; } .kw-exekution { color: var(--rot); }
+.typ-signatur { color: var(--gold); } .typ-aktiv { color: var(--lila); }
+.typ-passiv { color: #7fb3d5; } .typ-relikt { color: var(--gold); }
+.typ-item { color: #c9b48a; }
 
 [data-tip] { cursor: help; }
 button[data-tip], .karte[data-tip] { cursor: pointer; }

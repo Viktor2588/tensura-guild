@@ -49,6 +49,30 @@
     if (!text) return '';
     return ' data-tip="' + esc(titel) + '" data-tip-text="' + esc(text) + '"';
   }
+
+  /* Farbe im Tooltip: Wortstamm -> Klasse. Eine Tabelle statt Markup an rund
+     vierzig tip()-Aufrufen — die Texte bleiben roher Text, gefärbt wird erst
+     beim Anzeigen. Der Stamm fängt die Beugung mit ab ("Gift" -> "Giftnebel",
+     "erstarr" -> "erstarrte"). */
+  var TIP_STAMM = {
+    vergift: 'kw-gift', gift: 'kw-gift',
+    verbrenn: 'kw-brand', brenn: 'kw-brand', brand: 'kw-brand',
+    frost: 'kw-frost', erstarr: 'kw-frost',
+    verderb: 'kw-verderbnis', fluch: 'kw-verderbnis',
+    schild: 'kw-schild', heilung: 'kw-heilung', heilt: 'kw-heilung',
+    konter: 'kw-konter', tempo: 'kw-tempo', flächen: 'kw-flaeche', fläche: 'kw-flaeche',
+    exekution: 'kw-exekution',
+    signatur: 'typ-signatur', aktive: 'typ-aktiv', passive: 'typ-passiv', passiv: 'typ-passiv',
+    relikt: 'typ-relikt', ausrüstung: 'typ-item',
+    üblich: 'rar-text-1', ungewöhnlich: 'rar-text-2', selten: 'rar-text-3',
+    episch: 'rar-text-4', legendär: 'rar-text-5'
+  };
+  var TIP_RE = new RegExp('(' + Object.keys(TIP_STAMM).join('|') + ')[a-zäöüß]*', 'gi');
+  function markiere(t) {
+    return esc(t).replace(TIP_RE, function (treffer, stamm) {
+      return '<em class="' + TIP_STAMM[stamm.toLowerCase()] + '">' + treffer + '</em>';
+    });
+  }
   var tipEl = null;
   function tipBox() {
     if (!tipEl) {
@@ -62,8 +86,8 @@
   }
   function zeigeTip(el) {
     var box = tipBox();
-    box.firstChild.textContent = el.dataset.tip || '';
-    box.lastChild.textContent = el.dataset.tipText || '';
+    box.firstChild.innerHTML = markiere(el.dataset.tip || '');
+    box.lastChild.innerHTML = markiere(el.dataset.tipText || '');
     box.style.display = 'block';
     box.style.left = '0px';
     box.style.top = '0px';
@@ -96,6 +120,35 @@
     $('hud-gold').textContent = run.gold;
     $('hud-mag').textContent = run.magicules;
     $('hud-leben').textContent = run.lives;
+    zeichnePfad();
+  }
+
+  /* Der Weg durch den Akt: was an jedem Knoten zur Wahl steht, wo du gerade
+     stehst und wann der Boss kommt. Ohne das plant niemand voraus — die
+     Reihenfolge der Knotenarten steht ja fest (Run.STEPS). */
+  var TYP_ICON = { kampf: '⚔', elite: '☠', boss: '👑', shop: '🪙', event: '❓', lager: '🏕' };
+  function zeichnePfad() {
+    var el = $('pfad');
+    if (!el) return;
+    if (run.over) { el.innerHTML = ''; return; }
+    var boss = EN.boss(run.act);
+    var html = '<span class="pfad-akt"' + tip('Akt ' + run.act + ' von ' + R.AKTE,
+      'Jeder Akt hat ' + R.STEPS.length + ' Knoten und endet mit seinem Boss.') +
+      '>Akt ' + run.act + '/' + R.AKTE + '</span>';
+    R.STEPS.forEach(function (typen, i) {
+      var klasse = i < run.step ? 'vorbei' : i === run.step ? 'jetzt' : '';
+      var istBoss = typen.length === 1 && typen[0] === 'boss';
+      if (istBoss) klasse += ' boss';
+      var zeichen = typen.map(function (t) { return TYP_ICON[t] || '?'; }).join('');
+      html += '<span class="pfad-knoten ' + klasse + '"' +
+        tip('Knoten ' + (i + 1) + (istBoss ? ' · Boss' : ''),
+          istBoss ? (boss ? boss.name + ' — kein Weg daran vorbei.' : 'Der Boss des Akts.')
+                  : 'Zur Wahl: ' + typen.map(function (t) { return TYP_TEXT[t] || t; }).join(' · ')) +
+        '>' + zeichen + '</span>';
+    });
+    if (boss) html += '<span class="pfad-boss"' + tip('BOSS: ' + boss.name, gegnerDetails(boss)) +
+      '>' + esc(boss.name) + '</span>';
+    el.innerHTML = html;
   }
 
   /* -------------------------------------------------------------- Karte */
@@ -184,7 +237,7 @@
     var w = run.startwahl;
     var html = stufenHtml() + bossVorschau(1) + '<h2>Wer zieht mit dir los?</h2>' +
       '<p class="hinweis">Noch ' + w.verbleibend + ' Wahl' + (w.verbleibend === 1 ? '' : 'en') +
-      '. Rimuru ist gesetzt — der Rest des Trupps ist deine Entscheidung. ' +
+      '. Der ganze Trupp ist deine Entscheidung. ' +
       'Von jeder Art kommt nur eine Einheit mit.</p><div class="karten">';
     w.offers.forEach(function (id, i) {
       var u = GD.unit(id), sig = AB.get(u.signature);
@@ -519,26 +572,55 @@
 
   /* Fähigkeits-Synergien: was erzeugt der Trupp, was verstärkt er? */
   function synergienHtml() {
-    var kw = AB.keywords(R.buildTeile(run));
+    var teile = R.buildTeile(run);
+    var kw = AB.keywords(teile);
+    var reso = R.resonanzen(run);
     var keys = Object.keys(kw).sort(function (a, b) {
       return (kw[b].quellen + kw[b].verstaerker) - (kw[a].quellen + kw[a].verstaerker);
     });
     if (!keys.length) return '';
     var html = '<h3' + tip('Fähigkeits-Synergien',
       'Was der Trupp erzeugt und was er davon ausnutzt. Ein Build ist erst rund, wenn zu einer ' +
-      'Quelle auch ein Verstärker desselben Schlüsselworts kommt — grün markiert.') +
+      'Quelle auch ein Verstärker desselben Schlüsselworts kommt — grün markiert.\n\n' +
+      G.begriffe.resonanz) +
       '>Fähigkeits-Synergien</h3><div class="syn">';
     keys.forEach(function (k) {
-      var e = kw[k];
+      var e = kw[k], n = e.quellen + e.verstaerker;
       var stark = e.quellen >= 2 && e.verstaerker >= 1;
-      html += '<span class="syn-eintrag' + (stark ? ' an' : '') + '"' +
-        tip(kwName(k), (G.keywords[k] || '') + '\n\n' + (G.zustaende[k] ? G.zustaende[k] + '\n\n' : '') +
+      var an = !!reso[k];
+      html += '<span class="syn-eintrag' + (stark ? ' an' : '') + (an ? ' reso' : '') + '"' +
+        tip(kwName(k) + (an ? ' · Resonanz' : ''),
+          (G.keywords[k] || '') + '\n\n' + (G.zustaende[k] ? G.zustaende[k] + '\n\n' : '') +
           'Quelle: ' + G.begriffe.quelle + '\nVerstärker: ' + G.begriffe.verstaerker +
-          (stark ? '\n\n✓ Quellen und Verstärker greifen ineinander — das ist ein Build.' : '')) + '>' +
+          (stark ? '\n\n✓ Quellen und Verstärker greifen ineinander — das ist ein Build.' : '') +
+          (C.RESONANZ[k] ? '\n\n' + G.begriffe.resonanz + '\nResonanz: ' + C.RESONANZ[k] +
+            (an ? '\n✓ aktiv (' + n + ' Teile)' : '\nNoch ' + (C.RESONANZ_SCHWELLE - n) +
+              ' Teil' + (C.RESONANZ_SCHWELLE - n === 1 ? '' : 'e') + ' bis zur Resonanz.') : '')) + '>' +
         '<b>' + esc(kwName(k)) + '</b> · ' + e.quellen + ' Quelle' + (e.quellen === 1 ? '' : 'n') +
-        (e.verstaerker ? ' · ' + e.verstaerker + '× Verstärker' : '') + '</span>';
+        (e.verstaerker ? ' · ' + e.verstaerker + '× Verstärker' : '') +
+        (an ? ' <b class="reso-marke">RESONANZ</b>' : '') + '</span>';
     });
     return html + '</div>';
+  }
+
+  /* Aufstellung in einer Zeile: erste Einheit antippen, zweite antippen,
+     getauscht. Mit ▲▼ allein braucht ein Weg von Platz 5 nach vorn vier Klicks
+     — genau das war umständlich. Die Pfeile bleiben für die Feinkorrektur. */
+  var tauschUid = null;
+  function aufstellungHtml() {
+    if (run.team.length < 2) return '';
+    var html = '<div class="aufstellung"' + tip('Aufstellung ändern',
+      'Erst die eine Einheit antippen, dann die andere — die beiden tauschen den Platz. ' +
+      G.begriffe.aufstellung) + '>';
+    run.team.forEach(function (m, i) {
+      var gewaehlt = m.uid === tauschUid;
+      html += '<button class="platz' + (gewaehlt ? ' gewaehlt' : '') + '" data-a="platz" data-uid="' +
+        m.uid + '"><b>' + (i + 1) + '</b> ' + esc(GD.unit(m.id).name) + '</button>';
+      if (i === 1) html += '<span class="platz-trenner"' + tip('Ab hier greift die Deckung',
+        G.begriffe.deckung) + '>┊</span>';
+    });
+    return html + '</div>' +
+      (tauschUid ? '<p class="hinweis">Jetzt die Einheit antippen, mit der getauscht werden soll.</p>' : '');
   }
 
   function einheitHtml(m, aufBank) {
@@ -623,18 +705,19 @@
     if (!aufBank) {
       html += '<button data-a="vor" data-uid="' + m.uid + '" title="nach vorn">▲</button>' +
         '<button data-a="zurueck" data-uid="' + m.uid + '" title="nach hinten">▼</button>';
-      if (m.id !== 'rimuru') html += '<button data-a="bank" data-uid="' + m.uid + '">Bank</button>';
+      html += '<button data-a="bank" data-uid="' + m.uid + '">Bank</button>';
     } else {
       html += '<button data-a="einsetzen" data-uid="' + m.uid + '">Einsetzen</button>';
     }
-    if (m.id !== 'rimuru') html += '<button data-a="entlassen" data-uid="' + m.uid + '">Entlassen</button>';
+    html += '<button data-a="entlassen" data-uid="' + m.uid + '">Entlassen</button>';
     html += '<button class="' + (kannAufsteigen ? 'haupt' : '') + '" data-a="aufstieg" data-uid="' + m.uid + '"' +
       (kannAufsteigen ? '' : ' disabled') +
       tip(m.rank >= 3 ? 'Höchster Rang' : 'Aufstieg auf Rang ' + R.RANK_NAME[m.rank + 1],
         m.rank >= 3 ? 'Weiter geht es nicht.' :
         'Kostet ' + kosten + ' Magicule (du hast ' + run.magicules + ').\n\nGibt: +30 % Leben und Angriff, ' +
         '+1 Rüstung, +1 Tempo, ' + (m.rank === 2 ? 'ZWEI Item-Slots' : 'einen Item-Slot') +
-        ', einen aktiven Slot mit Auswahl aus drei Fähigkeiten, die Passive „' +
+        ', einen aktiven Slot mit Auswahl aus drei Fähigkeiten (zwei davon passen ' +
+        'zur Linie dieser Einheit), die Passive „' +
         (AB.get(basis.passives[R.passivSlots(m)]) || { name: '—' }).name + '" und einen Prädator-Slot.') + '>' +
       (m.rank >= 3 ? 'Rang S erreicht' : 'Aufstieg ' + R.RANK_NAME[m.rank + 1] + ' — ' + kosten + '✦') + '</button>';
     html += '</div></div>';
@@ -649,6 +732,7 @@
     var html = '<h3' + tip('Aufstellung', G.begriffe.aufstellung + '\n\n' + G.begriffe.art) +
       '>Trupp — vorn zuerst getroffen (' + run.team.length + '/' + R.TEAM_MAX + ')' +
       ' · eine Einheit je Art</h3>' +
+      aufstellungHtml() +
       '<p class="hinweis">Freie Arten: ' + (frei.length
         ? frei.map(function (a2) {
             return '<span class="frei-art"' + tip(GD.artName(a2), G.arten[a2]) + '>' +
@@ -748,6 +832,11 @@
     aufstieg: function (d) { R.rankUp(run, d.uid); render(); speichern(); },
     wahl: function (d) { R.chooseActive(run, +d.i); render(); speichern(); },
     'wahl-skip': function () { R.skipActive(run); render(); speichern(); },
+    platz: function (d) {
+      if (!tauschUid || tauschUid === d.uid) tauschUid = tauschUid === d.uid ? null : d.uid;
+      else { R.swap(run, tauschUid, d.uid); tauschUid = null; speichern(); }
+      render();
+    },
     vor: function (d) { R.move(run, d.uid, -1); render(); speichern(); },
     zurueck: function (d) { R.move(run, d.uid, 1); render(); speichern(); },
     bank: function (d) { R.bench(run, d.uid); render(); speichern(); },

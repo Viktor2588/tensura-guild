@@ -26,6 +26,10 @@
     ['boss']
   ];
   var TEAM_MAX = 6, BANK_MAX = 3;
+  /* Fünf Akte: Jura-Wald, Höhlen und Orks, Falmuth, die Westliche Heilige
+     Kirche, Ruberios — also die Handlung bis zum Ende der dritten Anime-
+     Staffel. */
+  var AKTE = 5;
 
   /* Rang C=0, B=1, A=2, S=3 */
   var RANK_NAME = ['C', 'B', 'A', 'S'];
@@ -35,7 +39,7 @@
   var PASSIV_SLOTS = [0, 1, 2, 3];                // schalten automatisch frei
   var PRAEDATOR_SLOTS = [0, 1, 2, 3];             // verschlungene Gegnerfähigkeiten
 
-  var START_UNITS = ['gobta', 'gobkyu', 'sturmwolf', 'riesenameise', 'skelettritter',
+  var START_UNITS = ['rimuru', 'gobta', 'gobkyu', 'sturmwolf', 'riesenameise', 'skelettritter',
     'rigurd', 'rigur', 'gobwa', 'kurobe', 'schattenwolf', 'souka', 'kaefergarde',
     'giftfalter', 'daemonengarde', 'gruftwaechter', 'drachenknecht', 'quellenpriesterin',
     'ranga', 'shion', 'gabiru', 'wightkoenig'];
@@ -54,17 +58,22 @@
     { stufe: 2, name: 'Aufmarsch', text: 'Gegner +5 % und 20 Gold weniger zum Start.' },
     { stufe: 3, name: 'Krieg', text: 'Gegner +7,5 %, dazu kosten Rangaufstiege 12 % mehr Magicule.' },
     { stufe: 4, name: 'Untergang', text: 'Gegner +10 % — der letzte Akt wird zur Wand.' },
-    { stufe: 5, name: 'Sturmgott', text: 'Gegner +12,5 %, Elite und Bosse zusätzlich, und nur zwei Leben.' }
+    { stufe: 5, name: 'Sturmgott', text: 'Gegner +12,5 %, Elite und Bosse zusätzlich, und nur drei statt fünf Leben.' }
   ];
   function bedrohung(i) { return BEDROHUNG[Math.max(0, Math.min(BEDROHUNG.length - 1, i || 0))]; }
+
+  /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
+     wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
+     zurück. Gemessen mit `node dev/balance.js 500`. */
+  var GRUNDHAERTE = 1.02;
 
   /* Gegnerhärte je Stufe — greift auf denselben mult wie die Begegnung selbst. */
   function bedrohungsFaktor(run, node) {
     var t = run.threat || 0;
-    if (!t) return 1;
+    if (!t) return GRUNDHAERTE;
     /* Klein halten: die Kurve ist steil, 20 % mehr Gegnerwerte kippen fast jeden
        Run. Gemessen mit `node dev/balance.js 500 --stufe N`. */
-    var f = 1 + 0.025 * Math.min(t, 5);
+    var f = GRUNDHAERTE + 0.025 * Math.min(t, 5);
     if (t >= 5 && node.type === 'boss') f *= 1.05;
     if (t >= 5 && node.type === 'elite') f *= 1.07;
     return f;
@@ -142,7 +151,7 @@
       if (!it) return;
       addStats(d, it.stats || {});
       (it.effects || []).forEach(function (e) { d.effects.push(e); });
-      d.keywords = d.keywords.concat(it.keywords || []);
+      d.keywords = d.keywords.concat(it.keywords || [], it.amplifies || []);
     });
 
     m.devoured.slice(0, PRAEDATOR_SLOTS[r]).forEach(function (eid) {
@@ -192,6 +201,14 @@
     return out;
   }
 
+  /* Welche Resonanzen der Trupp gerade hätte — dieselbe Zählung wie im Kampf,
+     damit die Anzeige nicht etwas anderes verspricht als der Kampf einlöst. */
+  function resonanzen(run) {
+    var ks = [];
+    buildTeile(run).forEach(function (t) { ks = ks.concat(t.keywords || [], t.amplifies || []); });
+    return root.Combat.resonanz(ks);
+  }
+
   /* ---- Run anlegen ------------------------------------------------------- */
 
   function create(seed, meta) {
@@ -200,14 +217,14 @@
     var run = {
       seed: seed >>> 0, rngState: seed >>> 0, meta: meta, threat: t,
       act: 1, step: 0, phase: 'karte', over: false, won: false,
-      gold: t >= 2 ? 40 : 60, magicules: 0, lives: t >= 5 ? 2 : 3,
-      team: [member('rimuru')], bank: [], relics: [],
+      gold: t >= 2 ? 40 : 60, magicules: 0, lives: t >= 5 ? 3 : 5,
+      team: [], bank: [], relics: [],
       options: null, node: null, pending: null, wahl: null, chronik: []
     };
-    /* Rimuru allein gegen drei verliert immer — zwei Begleiter kommen dazu,
-       aber der Spieler wählt sie: zweimal eine aus drei. */
+    /* Kein gesetzter Held: der ganze Starttrupp wird gedraftet, dreimal eine
+       aus drei. Rimuru liegt als legendäre Einheit mit im Pool. */
     run.phase = 'start';
-    startAngebot(run, 2);
+    startAngebot(run, 3);
     return run;
   }
 
@@ -437,7 +454,7 @@
   function entlassen(run, uid) {
     var i = run.team.map(function (m) { return m.uid; }).indexOf(uid);
     if (i >= 0) {
-      if (run.team[i].id === 'rimuru') return false;
+      if (run.team.length <= 1) return false;          // ohne Trupp kein Kampf
       run.team.splice(i, 1);
       return true;
     }
@@ -473,12 +490,23 @@
     m.rank++;
     run.chronik.push('Aufstieg: ' + GD.unit(m.id).name + ' auf Rang ' + rankName(m));
 
-    /* Der neue aktive Slot will gefüllt werden — drei Angebote zur Wahl. */
+    /* Der neue aktive Slot will gefüllt werden — drei Angebote zur Wahl.
+       Zwei davon liegen auf der Linie der Einheit selbst: was ihre Signatur und
+       ihre Passiven erzeugen oder verstärken, bekommt sie auch beim Aufstieg
+       angeboten. Sonst wertet jede Einheit dasselbe auf und alle Builds sehen
+       gleich aus. Das dritte Angebot bleibt offen — sonst gibt es keinen Weg,
+       eine Einheit bewusst gegen ihre Neigung zu bauen. */
     var rng = rngOf(run);
     var frei = AB.pool.filter(function (a) { return m.actives.indexOf(a.id) < 0; });
     /* Höherer Rang würfelt aus einem besseren Topf — Rang S sieht öfter Legendäres. */
-    run.wahl = { uid: uid, offers: themenWahl(run, rng, frei, run.act + m.rank - 1, 3)
-      .map(function (a) { return a.id; }) };
+    var stufe = run.act + m.rank - 1;
+    var eigen = AB.keywords(abilities(m));
+    var offers = waehle(rng, frei.filter(function (a) {
+      return (a.keywords || []).concat(a.amplifies || []).some(function (k) { return eigen[k]; });
+    }), stufe, 2);
+    var rest = frei.filter(function (a) { return offers.indexOf(a) < 0; });
+    offers = offers.concat(waehle(rng, rest, stufe, 3 - offers.length));
+    run.wahl = { uid: uid, offers: offers.map(function (a) { return a.id; }) };
     commit(run, rng);
     return true;
   }
@@ -641,6 +669,16 @@
     return true;
   }
 
+  /* Zwei Einheiten direkt tauschen — mit `move` allein braucht ein Weg von
+     Platz 5 nach 1 vier Klicks und vier Neuzeichnungen. */
+  function swap(run, uidA, uidB) {
+    var ids = run.team.map(function (m) { return m.uid; });
+    var i = ids.indexOf(uidA), j = ids.indexOf(uidB);
+    if (i < 0 || j < 0 || i === j) return false;
+    var tmp = run.team[i]; run.team[i] = run.team[j]; run.team[j] = tmp;
+    return true;
+  }
+
   function move(run, uid, dir) {
     var i = run.team.map(function (m) { return m.uid; }).indexOf(uid);
     if (i < 0) return false;
@@ -652,7 +690,6 @@
   function bench(run, uid) {
     var i = run.team.map(function (m) { return m.uid; }).indexOf(uid);
     if (i < 0 || run.team.length <= 1 || run.bank.length >= BANK_MAX) return false;
-    if (run.team[i].id === 'rimuru') return false;
     run.bank.push(run.team.splice(i, 1)[0]);
     return true;
   }
@@ -674,7 +711,7 @@
     if (run.step >= STEPS.length) {
       run.step = 0;
       run.act++;
-      if (run.act > 3) { finish(run, true); return true; }
+      if (run.act > AKTE) { finish(run, true); return true; }
       run.chronik.push('— Akt ' + run.act + ' —');
     }
     run.phase = 'karte';
@@ -698,8 +735,8 @@
         run.neueStufe = bedrohung(run.meta.threat);
       }
     }
-    var score = (run.act - 1) * 8 + run.step;
-    run.meta.best = Math.max(run.meta.best || 0, won ? 24 : score);
+    var score = (run.act - 1) * STEPS.length + run.step;
+    run.meta.best = Math.max(run.meta.best || 0, won ? AKTE * STEPS.length : score);
     run.unlocked = unlock(run.meta, rng);
     commit(run, rng);
   }
@@ -780,11 +817,11 @@
     itemSlots: itemSlots, aktivSlots: aktivSlots, passivSlots: passivSlots, praedatorSlots: praedatorSlots,
     buy: buy, eventChoose: eventChoose, camp: camp,
     equip: equip, unequip: unequip, move: move, bench: bench, deploy: deploy, entlassen: entlassen,
-    find: find, addUnit: addUnit, unitPool: unitPool, relicPool: relicPool,
+    find: find, addUnit: addUnit, swap: swap, unitPool: unitPool, relicPool: relicPool,
     belegteArten: belegteArten, freieArt: freieArt, waehle: waehle, gewicht: gewicht,
-    buildTeile: buildTeile,
+    buildTeile: buildTeile, resonanzen: resonanzen,
     save: save, load: load, clear: clear, loadMeta: loadMeta, saveMeta: saveMeta,
     serialize: serialize, deserialize: deserialize,
-    TEAM_MAX: TEAM_MAX, BANK_MAX: BANK_MAX, STEPS: STEPS, RANK_NAME: RANK_NAME
+    TEAM_MAX: TEAM_MAX, BANK_MAX: BANK_MAX, STEPS: STEPS, RANK_NAME: RANK_NAME, AKTE: AKTE
   };
 })(globalThis);

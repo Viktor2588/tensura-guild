@@ -115,6 +115,77 @@
       effects: [faehigkeit('onAllyDeath', 'Schwarze Schwingen', 'Stirbt ein Verbündeter, erhält er dauerhaft +8 Angriff.', [],
         function (c) { c.self.atk += 8; })] },
 
+    /* --- Akt 4: die Westliche Heilige Kirche (Anime-Staffel 3) --- */
+    { id: 'tempelritter', name: 'Tempelritter', tags: ['mensch', 'front'], hp: 230, atk: 34, def: 12, spd: 28,
+      effects: [faehigkeit('onStart', 'Geweihte Rüstung', 'Startet mit Schild 60.', ['schild'],
+        function (c) { c.applyStatus(c.self, 'schild', 60); })] },
+    { id: 'heilige_schuetzin', name: 'Heilige Schützin', tags: ['mensch', 'fernkampf'], hp: 175, atk: 40, def: 6, spd: 34,
+      effects: [faehigkeit('onHit', 'Läuterungspfeil', '35 % Chance auf 3 Brand — Brand halbiert zusätzlich die Heilung des Ziels.',
+        ['brand'], chance(0.35, inflict('brand', 3)))] },
+    { id: 'exorzist', name: 'Exorzist', tags: ['mensch', 'unterstuetzer'], hp: 190, atk: 33, def: 7, spd: 30,
+      effects: [faehigkeit('onStart', 'Gebetskreis', 'Gibt allen Verbündeten Regeneration 12.', ['heilung'],
+        function (c) { c.allies().forEach(function (u) { u.regen += 12; }); })] },
+    { id: 'bussritter', name: 'Bußritter', tags: ['mensch', 'front'], hp: 245, atk: 32, def: 11, spd: 26,
+      effects: [faehigkeit('onDamaged', 'Selbstgeißelung', 'Wirft jedem Angreifer 14 plus 30 % des eigenen Angriffs zurück.',
+        ['konter'], function (c) { var f = c.foes()[0]; if (f) c.deal(f, 14 + c.self.atk * 0.3, 'Selbstgeißelung'); })] },
+    { id: 'kantor', name: 'Kantor des Lichts', tags: ['mensch', 'verstaerker'], hp: 185, atk: 38, def: 7, spd: 32,
+      effects: [faehigkeit('onStart', 'Choral', 'Gibt allen Verbündeten dauerhaft +12 % Angriff und Tempo.', ['tempo'],
+        function (c) { c.allies().forEach(function (u) { scale(u, { atk: 0.12, spd: 0.12 }); }); })] },
+    { id: 'reliquienwaechter', name: 'Reliquienwächter', tags: ['untot', 'front'], hp: 300, atk: 30, def: 14, spd: 20,
+      effects: [faehigkeit('onDeath', 'Zerbrochenes Siegel', 'Zerbricht er, erleiden alle Gegner 45 Schaden.', ['flaeche'],
+        function (c) { c.foes().forEach(function (f) { c.deal(f, 45, 'Zerbrochenes Siegel'); }); })] },
+    { id: 'geweihter_greif', name: 'Geweihter Greif', tags: ['bestie', 'fernkampf'], hp: 195, atk: 42, def: 6, spd: 40,
+      effects: [faehigkeit('onHit', 'Sturzflug', 'Der erste Angriff verursacht doppelten Schaden.', [],
+        function (c) { if (!c.self._sf) { c.self._sf = 1; c.dmg *= 2; } })] },
+    { id: 'glaubenswaechter', name: 'Glaubenswächter', tags: ['mensch', 'front'], hp: 265, atk: 31, def: 13, spd: 24,
+      effects: [faehigkeit('onStart', 'Schildmauer', 'Gibt allen Verbündeten Schild 40.', ['schild'],
+        function (c) { c.allies().forEach(function (u) { c.applyStatus(u, 'schild', 40); }); })] },
+    { id: 'ketzerjaeger', name: 'Ketzerjäger', tags: ['mensch', 'magier'], hp: 170, atk: 44, def: 5, spd: 33,
+      effects: [faehigkeit('onHit', 'Urteilsspruch', '+60 % Schaden gegen Ziele unter der Hälfte ihres Lebens.',
+        ['exekution'], function (c) { if (c.target.hp < c.target.maxHp * 0.5) c.dmg *= 1.6; })] },
+    { id: 'lichtkleriker', name: 'Lichtkleriker', tags: ['mensch', 'unterstuetzer'], hp: 180, atk: 35, def: 6, spd: 31,
+      effects: [faehigkeit('onAllyDeath', 'Letzte Ölung', 'Stirbt ein Verbündeter, heilen alle anderen 60 Leben.',
+        ['heilung'], function (c) { c.allies().forEach(function (u) { c.heal(u, 60, 'Letzte Ölung'); }); })] },
+
+    /* --- Akt 5: Nacht über Ruberios --- */
+    { id: 'blutdiener', name: 'Blutdiener', tags: ['untot', 'front'], hp: 300, atk: 44, def: 12, spd: 30,
+      effects: [faehigkeit('onStart', 'Blutzoll', 'Heilt 35 % des verursachten Schadens.', ['heilung'],
+        function (c) { c.self.lifesteal += 0.35; })] },
+    { id: 'nachtzehrer', name: 'Nachtzehrer', tags: ['untot', 'fernkampf'], hp: 250, atk: 50, def: 8, spd: 38,
+      effects: [faehigkeit('onHit', 'Zehrender Biss', 'Jeder Treffer legt 3 Verderbnis an.', ['verderbnis'],
+        inflict('verderbnis', 3))] },
+    { id: 'gargoyle', name: 'Kathedralen-Gargoyle', tags: ['daemon', 'front'], hp: 340, atk: 42, def: 16, spd: 22,
+      effects: [faehigkeit('onDamaged', 'Steinhaut', 'Fügt jedem Angreifer 25 Schaden zu.', ['konter'],
+        function (c) { var f = c.foes()[0]; if (f) c.deal(f, 25, 'Steinhaut'); })] },
+    { id: 'blutmagier', name: 'Blutmagier', tags: ['untot', 'magier'], hp: 230, atk: 54, def: 7, spd: 34,
+      effects: [faehigkeit('onHit', 'Aderlass', '30 % Chance, zusätzlich 4 Gift anzulegen.', ['gift'],
+        chance(0.3, inflict('gift', 4)))] },
+    { id: 'vampirfuerstin', name: 'Vampirfürstin', tags: ['untot', 'verstaerker'], hp: 280, atk: 52, def: 9, spd: 36,
+      effects: [faehigkeit('onKill', 'Erbe der Nacht', 'Jeder erledigte Gegner gibt ihr dauerhaft +12 % Angriff.', [],
+        function (c) { scale(c.self, { atk: 0.12 }); })] },
+    { id: 'nachtwache', name: 'Nachtwache', tags: ['mensch', 'front'], hp: 320, atk: 43, def: 15, spd: 26,
+      effects: [faehigkeit('onStart', 'Wachtturm', 'Startet mit Schild 90.', ['schild'],
+        function (c) { c.applyStatus(c.self, 'schild', 90); })] },
+    { id: 'saare', name: 'Saare, Klinge des Siebten', tags: ['mensch', 'front'], hp: 360, atk: 50, def: 13, spd: 34,
+      effects: [faehigkeit('onStart', 'Rüstungsbrecher', 'Ignoriert die Rüstung des Ziels vollständig.', [],
+        function (c) { c.self.pierce = 1; })] },
+    { id: 'glenda', name: 'Glenda, Auge des Siebten', tags: ['mensch', 'fernkampf'], hp: 270, atk: 56, def: 8, spd: 42,
+      effects: [faehigkeit('onHit', 'Kettenschuss', '30 % Chance, ein zweites Ziel für 50 % zu treffen.', ['flaeche'],
+        chance(0.3, function (c) {
+          var f = c.foes().filter(function (x) { return x !== c.target; })[0];
+          if (f) c.deal(f, c.attacker.atk * 0.5, 'Kettenschuss');
+        }))] },
+    { id: 'roy_valentine', name: 'Roy Valentine', tags: ['untot', 'verstaerker'], hp: 420, atk: 54, def: 12, spd: 38,
+      effects: [
+        faehigkeit('onStart', 'Falscher Fürst', 'Gibt allen Verbündeten dauerhaft +18 % Angriff.', [],
+          function (c) { c.allies().forEach(function (u) { scale(u, { atk: 0.18 }); }); }),
+        faehigkeit('onDeath', 'Blutspiegel', 'Fällt er, heilen alle Verbündeten 120 Leben.', ['heilung'],
+          function (c) { c.allies().forEach(function (u) { c.heal(u, 120, 'Blutspiegel'); }); })
+      ] },
+    { id: 'blutgolem', name: 'Blutgolem', tags: ['untot', 'front'], hp: 400, atk: 40, def: 18, spd: 18,
+      effects: [faehigkeit('onDamaged', 'Gerinnung', 'Heilt sich bei jedem erlittenen Treffer um 18 Leben.', ['heilung'],
+        function (c) { c.heal(c.self, 18, 'Gerinnung'); })] },
+
     /* --- Bosse --- */
     { id: 'charybdis', name: 'Charybdis', tags: ['drache', 'front'], boss: true, resistenz: 0.6, hp: 400, atk: 24, def: 6, spd: 26,
       effects: [
@@ -135,6 +206,34 @@
           ['heilung'], chance(0.1, function (c) {
             c.allies().forEach(function (u) { c.heal(u, 18, 'Puppenspiel'); });
           }))
+      ] },
+    { id: 'hinata', name: 'Hinata Sakaguchi', tags: ['mensch', 'magier'], boss: true, resistenz: 0.6,
+      hp: 1150, atk: 52, def: 12, spd: 44,
+      effects: [
+        faehigkeit('onStart', 'Schmelzklinge', 'Ignoriert die Rüstung des Ziels vollständig.', [],
+          function (c) { c.self.pierce = 1; }),
+        faehigkeit('onDamaged', 'Reflexion', '40 % Chance, die Hälfte des erlittenen Schadens zurückzuwerfen.',
+          ['konter'], chance(0.4, function (c) {
+            var f = c.foes()[0]; if (f) c.deal(f, (c.amount || 0) * 0.5, 'Reflexion');
+          })),
+        faehigkeit('onHit', 'Göttlicher Zorn', '+70 % Schaden gegen Ziele unter der Hälfte ihres Lebens.',
+          ['exekution'], function (c) { if (c.target.hp < c.target.maxHp * 0.5) c.dmg *= 1.7; })
+      ] },
+    { id: 'luminous', name: 'Luminous Valentine', tags: ['untot', 'verstaerker'], boss: true, resistenz: 0.6,
+      hp: 1500, atk: 62, def: 14, spd: 42,
+      effects: [
+        faehigkeit('onStart', 'Blutorden', 'Heilt 40 % des verursachten Schadens.', ['heilung'],
+          function (c) { c.self.lifesteal += 0.4; }),
+        faehigkeit('onHit', 'Nachtherrschaft', '30 % Chance, zusätzlich alle Gegner für 75 % zu treffen.',
+          ['flaeche'], chance(0.3, function (c) {
+            c.foes().forEach(function (f) { c.deal(f, c.attacker.atk * 0.75, 'Nachtherrschaft'); });
+          })),
+        faehigkeit('onDeath', 'Königin der Nacht', 'Steht einmal mit 45 % Leben wieder auf.', ['heilung'],
+          function (c) {
+            if (c.self._auf) return;
+            c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.45);
+            c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+          })
       ] },
     { id: 'milim_boss', name: 'Milim Nava', tags: ['drache', 'verstaerker'], boss: true, resistenz: 0.6, hp: 820, atk: 38, def: 9, spd: 38,
       effects: [
@@ -181,47 +280,85 @@
     enc(1, 'Elite: Das gestreifte Paar', ['klingentiger', 'klingentiger', 'eberrammler', 'klingentiger'], 38, true, 1.55),
     enc(1, 'Elite: Orkvorhut', ['orkspaeher', 'orkspaeher', 'orkspaeher', 'eberrammler'], 38, true, 1.55),
 
-    enc(2, 'Knochenkammer', ['skelett', 'skelett', 'knochenmagier'], 27, false, 1.75),
-    enc(2, 'Einsturzstollen', ['minenkobold', 'minenkobold', 'hoehlentroll'], 27, false, 1.75),
-    enc(2, 'Orkvorhut', ['orkkrieger', 'orkkrieger', 'orkhaeuptling'], 29, false, 1.75),
-    enc(2, 'Tiefe Nische', ['hoehlenspinne', 'schattenfalter', 'hoehlenspinne'], 27, false, 1.75),
-    enc(2, 'Wächterhalle', ['felsgolem', 'skelett', 'knochenmagier'], 29, false, 1.75),
-    enc(2, 'Gruft', ['gruftghul', 'gruftghul', 'knochenmagier', 'skelett'], 30, false, 1.75),
-    enc(2, 'Die Orkstraße', ['orkkrieger', 'orkkrieger', 'orkschamane', 'orkspaeher'], 29, false, 1.75),
-    enc(2, 'Die Grube', ['grubenwurm', 'hoehlenspinne', 'hoehlenspinne'], 29, false, 1.75),
-    enc(2, 'Verlassene Zwergenmine', ['minenkobold', 'minenaufseher', 'felsgolem'], 29, false, 1.75),
-    enc(2, 'Der brennende Weiler', ['orkkrieger', 'orkschamane', 'orkspaeher'], 27, false, 1.75),
-    enc(2, 'Gruft der Bergkönige', ['gruftfledermaus', 'gruftghul', 'knochenmagier', 'skelett'], 30, false, 1.75),
-    enc(2, 'Späher des Orklords', ['orkspaeher', 'orkspaeher', 'orkhaeuptling'], 29, false, 1.75),
+    enc(2, 'Knochenkammer', ['skelett', 'skelett', 'knochenmagier'], 27, false, 1.85),
+    enc(2, 'Einsturzstollen', ['minenkobold', 'minenkobold', 'hoehlentroll'], 27, false, 1.85),
+    enc(2, 'Orkvorhut', ['orkkrieger', 'orkkrieger', 'orkhaeuptling'], 29, false, 1.85),
+    enc(2, 'Tiefe Nische', ['hoehlenspinne', 'schattenfalter', 'hoehlenspinne'], 27, false, 1.85),
+    enc(2, 'Wächterhalle', ['felsgolem', 'skelett', 'knochenmagier'], 29, false, 1.85),
+    enc(2, 'Gruft', ['gruftghul', 'gruftghul', 'knochenmagier', 'skelett'], 30, false, 1.85),
+    enc(2, 'Die Orkstraße', ['orkkrieger', 'orkkrieger', 'orkschamane', 'orkspaeher'], 29, false, 1.85),
+    enc(2, 'Die Grube', ['grubenwurm', 'hoehlenspinne', 'hoehlenspinne'], 29, false, 1.85),
+    enc(2, 'Verlassene Zwergenmine', ['minenkobold', 'minenaufseher', 'felsgolem'], 29, false, 1.85),
+    enc(2, 'Der brennende Weiler', ['orkkrieger', 'orkschamane', 'orkspaeher'], 27, false, 1.85),
+    enc(2, 'Gruft der Bergkönige', ['gruftfledermaus', 'gruftghul', 'knochenmagier', 'skelett'], 30, false, 1.85),
+    enc(2, 'Späher des Orklords', ['orkspaeher', 'orkspaeher', 'orkhaeuptling'], 29, false, 1.85),
 
     enc(2, 'Elite: Vorhut des Orklords', ['orkhaeuptling', 'orkkrieger', 'orkkrieger', 'orkschamane'], 52, true, 2.0),
     enc(2, 'Elite: Der Grubenwurm', ['grubenwurm', 'grubenwurm', 'hoehlentroll'], 52, true, 2.0),
     enc(2, 'Elite: Trollpaar', ['hoehlentroll', 'hoehlentroll', 'felsgolem'], 52, true, 2.0),
     enc(2, 'Elite: Orkhorde', ['orkkrieger', 'orkkrieger', 'orkkrieger', 'orkhaeuptling'], 52, true, 2.0),
 
-    enc(3, 'Vorhut Falmuths', ['ritter', 'ritter', 'bogenschuetze'], 40, false, 1.98),
-    enc(3, 'Hofstaat', ['hofmagier', 'hofmagier', 'ritter'], 40, false, 1.98),
-    enc(3, 'Heilige Kompanie', ['paladin', 'bogenschuetze', 'heilige_klinge'], 44, false, 1.98),
-    enc(3, 'Dämonenpforte', ['daemonenbrut', 'hoellenhund', 'erzdaemon'], 44, false, 1.98),
-    enc(3, 'Verfluchtes Feld', ['verderbte_seele', 'blutritter', 'verderbte_seele'], 42, false, 1.98),
-    enc(3, 'Letzte Bastion', ['paladin', 'ritter', 'hofmagier', 'bogenschuetze'], 46, false, 1.98),
-    enc(3, 'Der Zug der Kreuzritter', ['kreuzritter', 'kreuzritter', 'inquisitor'], 42, false, 1.98),
-    enc(3, 'Vor den Toren Falmuths', ['ritter', 'ritter', 'bogenschuetze', 'hofmagier'], 44, false, 1.98),
-    enc(3, 'Die weiße Kapelle', ['paladin', 'inquisitor', 'kreuzritter'], 44, false, 1.98),
-    enc(3, 'Blutmond', ['gefallener_engel', 'daemonenbrut', 'hoellenhund'], 44, false, 1.98),
-    enc(3, 'Das Feld der Verräter', ['verderbte_seele', 'gefallener_engel', 'blutritter'], 42, false, 1.98),
-    enc(3, 'Dämonenpakt', ['erzdaemon', 'daemonenbrut', 'gefallener_engel'], 44, false, 1.98),
+    enc(3, 'Vorhut Falmuths', ['ritter', 'ritter', 'bogenschuetze'], 40, false, 1.68),
+    enc(3, 'Hofstaat', ['hofmagier', 'hofmagier', 'ritter'], 40, false, 1.68),
+    enc(3, 'Heilige Kompanie', ['paladin', 'bogenschuetze', 'heilige_klinge'], 44, false, 1.68),
+    enc(3, 'Dämonenpforte', ['daemonenbrut', 'hoellenhund', 'erzdaemon'], 44, false, 1.68),
+    enc(3, 'Verfluchtes Feld', ['verderbte_seele', 'blutritter', 'verderbte_seele'], 42, false, 1.68),
+    enc(3, 'Letzte Bastion', ['paladin', 'ritter', 'hofmagier', 'bogenschuetze'], 46, false, 1.68),
+    enc(3, 'Der Zug der Kreuzritter', ['kreuzritter', 'kreuzritter', 'inquisitor'], 42, false, 1.68),
+    enc(3, 'Vor den Toren Falmuths', ['ritter', 'ritter', 'bogenschuetze', 'hofmagier'], 44, false, 1.68),
+    enc(3, 'Die weiße Kapelle', ['paladin', 'inquisitor', 'kreuzritter'], 44, false, 1.68),
+    enc(3, 'Blutmond', ['gefallener_engel', 'daemonenbrut', 'hoellenhund'], 44, false, 1.68),
+    enc(3, 'Das Feld der Verräter', ['verderbte_seele', 'gefallener_engel', 'blutritter'], 42, false, 1.68),
+    enc(3, 'Dämonenpakt', ['erzdaemon', 'daemonenbrut', 'gefallener_engel'], 44, false, 1.68),
 
-    enc(3, 'Elite: Heilige Inquisition', ['inquisitor', 'inquisitor', 'paladin', 'kreuzritter'], 72, true, 2.0),
-    enc(3, 'Elite: Der gefallene Chor', ['gefallener_engel', 'gefallener_engel', 'erzdaemon', 'blutritter'], 72, true, 2.0),
-    enc(3, 'Elite: Kreuzzug', ['paladin', 'paladin', 'heilige_klinge', 'hofmagier'], 72, true, 2.0),
-    enc(3, 'Elite: Dämonenrat', ['erzdaemon', 'erzdaemon', 'blutritter', 'hoellenhund'], 72, true, 2.0)
+    enc(3, 'Elite: Heilige Inquisition', ['inquisitor', 'inquisitor', 'paladin', 'kreuzritter'], 72, true, 1.85),
+    enc(3, 'Elite: Der gefallene Chor', ['gefallener_engel', 'gefallener_engel', 'erzdaemon', 'blutritter'], 72, true, 1.85),
+    enc(3, 'Elite: Kreuzzug', ['paladin', 'paladin', 'heilige_klinge', 'hofmagier'], 72, true, 1.85),
+    enc(3, 'Elite: Dämonenrat', ['erzdaemon', 'erzdaemon', 'blutritter', 'hoellenhund'], 72, true, 1.85),
+
+    enc(4, 'Vorposten der Kirche', ['tempelritter', 'tempelritter', 'heilige_schuetzin'], 58, false, 1.8),
+    enc(4, 'Prozession', ['lichtkleriker', 'tempelritter', 'kantor'], 58, false, 1.8),
+    enc(4, 'Das geweihte Tor', ['glaubenswaechter', 'reliquienwaechter', 'exorzist'], 60, false, 1.8),
+    enc(4, 'Jagd auf Ketzer', ['ketzerjaeger', 'ketzerjaeger', 'heilige_schuetzin'], 58, false, 1.8),
+    enc(4, 'Bußkapelle', ['bussritter', 'bussritter', 'lichtkleriker'], 58, false, 1.8),
+    enc(4, 'Greifenhorst', ['geweihter_greif', 'geweihter_greif', 'heilige_schuetzin'], 60, false, 1.8),
+    enc(4, 'Die weiße Straße', ['tempelritter', 'glaubenswaechter', 'kantor', 'heilige_schuetzin'], 62, false, 1.8),
+    enc(4, 'Reliquienzug', ['reliquienwaechter', 'reliquienwaechter', 'exorzist'], 60, false, 1.8),
+    enc(4, 'Chor der Läuterung', ['kantor', 'lichtkleriker', 'ketzerjaeger'], 58, false, 1.8),
+    enc(4, 'Wachablösung', ['glaubenswaechter', 'tempelritter', 'bussritter'], 60, false, 1.8),
+    enc(4, 'Der Kreuzgang', ['exorzist', 'ketzerjaeger', 'tempelritter', 'geweihter_greif'], 62, false, 1.8),
+    enc(4, 'Vor dem Konzil', ['ketzerjaeger', 'kantor', 'glaubenswaechter', 'lichtkleriker'], 62, false, 1.8),
+
+    enc(4, 'Elite: Die Heiligen Ritter', ['tempelritter', 'tempelritter', 'glaubenswaechter', 'kantor'], 95, true, 1.95),
+    enc(4, 'Elite: Inquisitionsgericht', ['ketzerjaeger', 'ketzerjaeger', 'exorzist', 'bussritter'], 95, true, 1.95),
+    enc(4, 'Elite: Der Reliquienschrein', ['reliquienwaechter', 'reliquienwaechter', 'glaubenswaechter', 'lichtkleriker'], 95, true, 1.95),
+    enc(4, 'Elite: Greifenschwarm', ['geweihter_greif', 'geweihter_greif', 'geweihter_greif', 'heilige_schuetzin'], 98, true, 1.95),
+
+    enc(5, 'Blutzoll am Stadttor', ['blutdiener', 'blutdiener', 'nachtzehrer'], 78, false, 1.75),
+    enc(5, 'Gargoyle-Terrasse', ['gargoyle', 'gargoyle', 'blutmagier'], 78, false, 1.75),
+    enc(5, 'Die Krypta', ['blutgolem', 'nachtzehrer', 'blutmagier'], 80, false, 1.75),
+    enc(5, 'Nachtwache am Wall', ['nachtwache', 'nachtwache', 'glenda'], 80, false, 1.75),
+    enc(5, 'Hof der Fürstin', ['vampirfuerstin', 'blutdiener', 'nachtzehrer'], 80, false, 1.75),
+    enc(5, 'Klinge des Siebten', ['saare', 'nachtwache', 'blutmagier'], 82, false, 1.75),
+    enc(5, 'Blutmesse', ['blutmagier', 'blutmagier', 'blutdiener', 'nachtzehrer'], 82, false, 1.75),
+    enc(5, 'Der steinerne Chor', ['gargoyle', 'blutgolem', 'nachtwache'], 80, false, 1.75),
+    enc(5, 'Auge des Siebten', ['glenda', 'nachtzehrer', 'nachtwache'], 80, false, 1.75),
+    enc(5, 'Die lange Treppe', ['blutdiener', 'gargoyle', 'vampirfuerstin'], 82, false, 1.75),
+    enc(5, 'Thronvorhalle', ['nachtwache', 'saare', 'blutgolem'], 84, false, 1.75),
+    enc(5, 'Schattenkabinett', ['vampirfuerstin', 'blutmagier', 'glenda'], 84, false, 1.75),
+
+    enc(5, 'Elite: Die Sieben Tage', ['saare', 'glenda', 'nachtwache', 'blutmagier'], 130, true, 1.9),
+    enc(5, 'Elite: Roys Hofstaat', ['roy_valentine', 'vampirfuerstin', 'blutdiener', 'nachtzehrer'], 130, true, 1.9),
+    enc(5, 'Elite: Steinerne Wacht', ['gargoyle', 'gargoyle', 'blutgolem', 'blutgolem'], 130, true, 1.9),
+    enc(5, 'Elite: Blutmond über Ruberios', ['vampirfuerstin', 'vampirfuerstin', 'blutmagier', 'saare'], 135, true, 1.9)
   ];
 
   var bosses = [
     { act: 1, name: 'Charybdis', units: ['charybdis', 'giftspinne', 'giftspinne'], gold: 80, mult: 1 },
     { act: 2, name: 'Clayman', units: ['clayman', 'gruftghul', 'knochenmagier'], gold: 120, mult: 1.1 },
-    { act: 3, name: 'Milim Nava', units: ['milim_boss', 'daemonenbrut', 'erzdaemon'], gold: 200, mult: 1.2 }
+    { act: 3, name: 'Milim Nava', units: ['milim_boss', 'daemonenbrut', 'erzdaemon'], gold: 200, mult: 1.2 },
+    { act: 4, name: 'Hinata Sakaguchi', units: ['hinata', 'tempelritter', 'exorzist'], gold: 300, mult: 1.15 },
+    { act: 5, name: 'Luminous Valentine', units: ['luminous', 'roy_valentine', 'vampirfuerstin'], gold: 420, mult: 1.2 }
   ];
 
   /* ---- Ereignisse: api liefert run.js, damit die Daten dumm bleiben ------- */
@@ -422,6 +559,77 @@
           fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { hp: 25 }); }); } }
       ] },
 
+    /* --- Akt 4: die Westliche Heilige Kirche --- */
+    { id: 'weisse_botin', act: 4, name: 'Die Botin in Weiß',
+      text: 'Eine Ordensschwester wartet an der Wegkreuzung. „Kehrt um, und niemand muss sterben. Geht weiter, und die Heiligen Ritter erwarten euch."',
+      options: [
+        { text: 'Umkehren und den langen Weg nehmen: +260 Gold', fn: function (r) { r.gold += 260; } },
+        { text: 'Die Warnung mitnehmen: +240 Magicule', fn: function (r) { r.magicules += 240; } },
+        { text: 'Ihr das Schwert abnehmen: zufällige Ausrüstung, eine zufällige Einheit verliert dauerhaft 30 Leben',
+          fn: function (r, api) { api.grantItem(); api.buffRandom({ hp: -30 }); } }
+      ] },
+    { id: 'gruendungsfest', act: 4, name: 'Das Gründungsfest',
+      text: 'In Tempest wird gefeiert, während im Westen die Glocken läuten. Zwischen zwei Kriegen liegt ein einziger ruhiger Abend.',
+      options: [
+        { text: 'Mitfeiern: dauerhaft +35 Leben für den ganzen Trupp',
+          fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { hp: 35 }); }); } },
+        { text: 'Die Schmiede öffnen lassen: zufällige Ausrüstung', fn: function (r, api) { api.grantItem(); } },
+        { text: 'Die Nacht durcharbeiten: die schwächste Einheit steigt gratis einen Rang auf',
+          fn: function (r, api) { api.freierRang(); } }
+      ] },
+    { id: 'beichtstuhl', act: 4, name: 'Ein leerer Beichtstuhl',
+      text: 'Die Kapelle ist verlassen, das Gitter offen. Jemand hat hier etwas hinterlassen, das nicht für Menschen gedacht war.',
+      options: [
+        { text: 'Die Reliquie nehmen: ein zufälliges Relikt', fn: function (r, api) { api.grantRelic(); } },
+        { text: 'Den Opferstock leeren: +200 Gold', fn: function (r) { r.gold += 200; } },
+        { text: 'Beten und weitergehen: eine zufällige Einheit dauerhaft +10 Angriff und +4 Rüstung',
+          fn: function (r, api) { api.buffRandom({ atk: 10, def: 4 }); } }
+      ] },
+    { id: 'gefallener_ritter', act: 4, name: 'Der gefallene Ritter',
+      text: 'Ein Tempelritter liegt im Straßengraben, die Rüstung aufgerissen. Er lebt noch. „Nicht … die Kirche. Etwas anderes war das."',
+      options: [
+        { text: 'Ihn heilen und ausfragen: +280 Magicule', fn: function (r) { r.magicules += 280; } },
+        { text: 'Seine Rüstung nehmen: zufällige Ausrüstung', fn: function (r, api) { api.grantItem(); } }
+      ] },
+
+    /* --- Akt 5: Nacht über Ruberios --- */
+    { id: 'blutpakt', act: 5, name: 'Ein Pakt bei Kerzenlicht',
+      text: 'Eine Fürstin der Nacht schenkt zwei Gläser ein. „Ihr wollt zu Ihr? Dann trinkt. Was danach kommt, ist Verhandlung."',
+      options: [
+        { text: 'Trinken: die schwächste Einheit steigt gratis einen Rang auf, der Trupp verliert 40 Leben je Einheit',
+          fn: function (r, api) { api.freierRang(); r.team.forEach(function (m) { api.buffUnit(m, { hp: -40 }); }); } },
+        { text: 'Höflich ablehnen: ein zufälliges Relikt', fn: function (r, api) { api.grantRelic(); } },
+        { text: 'Das Glas umstoßen: +350 Magicule', fn: function (r) { r.magicules += 350; } }
+      ] },
+    { id: 'siebte_nacht', act: 5, name: 'Die Sieben Tage',
+      text: 'Sieben Namen stehen an der Kathedralenwand, sechs davon durchgestrichen. Der siebte ist frisch geschrieben.',
+      options: [
+        { text: 'Den Namen lesen und sich vorbereiten: eine zufällige Einheit dauerhaft +14 Angriff',
+          fn: function (r, api) { api.buffRandom({ atk: 14 }); } },
+        { text: 'Die Wand einreißen: ein zufälliges Relikt und −80 Gold',
+          can: function (r) { return r.gold >= 80; },
+          fn: function (r, api) { r.gold -= 80; api.grantRelic(); } },
+        { text: 'Weitergehen, ohne stehenzubleiben: +300 Gold', fn: function (r) { r.gold += 300; } }
+      ] },
+    { id: 'kathedralendach', act: 5, name: 'Auf dem Kathedralendach',
+      text: 'Von hier oben sieht man die ganze Stadt — und dass in jedem Fenster jemand zurückschaut.',
+      options: [
+        { text: 'Die Wachen zählen: der ganze Trupp dauerhaft +6 Tempo',
+          fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { spd: 6 }); }); } },
+        { text: 'Rasten, solange es geht: dauerhaft +45 Leben für den ganzen Trupp',
+          fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { hp: 45 }); }); } },
+        { text: 'Sofort hinunter: +250 Gold und +150 Magicule',
+          fn: function (r) { r.gold += 250; r.magicules += 150; } }
+      ] },
+    { id: 'letztes_licht', act: 5, name: 'Das letzte Licht',
+      text: 'Vor dem Thronsaal brennt eine einzige Kerze. Wer sie löscht, geht im Dunkeln weiter — wer sie brennen lässt, wird gesehen.',
+      options: [
+        { text: 'Löschen: eine zufällige Einheit dauerhaft +12 Angriff und +6 Tempo',
+          fn: function (r, api) { api.buffRandom({ atk: 12, spd: 6 }); } },
+        { text: 'Brennen lassen: zufällige Ausrüstung und +200 Magicule',
+          fn: function (r, api) { api.grantItem(); r.magicules += 200; } }
+      ] },
+
     { id: 'alter_baum', name: 'Baum der Namen',
       text: 'In die Rinde sind Namen geritzt, die niemand mehr kennt.',
       options: [
@@ -458,9 +666,19 @@
     orkschamane: 'ansporn', grubenwurm: 'wuchtschlag', minenaufseher: 'doppelhieb',
     gruftfledermaus: 'aderlass',
     kreuzritter: 'panzerbruch', inquisitor: 'fluchstoss', gefallener_engel: 'rundumschlag',
+    tempelritter: 'schildstoss', heilige_schuetzin: 'brandmal', exorzist: 'lebensbund',
+    bussritter: 'vergeltung', kantor: 'ansporn', reliquienwaechter: 'trutzwall',
+    geweihter_greif: 'blitzfolge', glaubenswaechter: 'schildruf', ketzerjaeger: 'hinrichtung',
+    lichtkleriker: 'heilwelle',
+    blutdiener: 'aderlass', nachtzehrer: 'fluchmal', gargoyle: 'dornenstoss',
+    blutmagier: 'seuchenstoss', vampirfuerstin: 'kopfgeld', nachtwache: 'schildstoss',
+    saare: 'panzerbruch', glenda: 'rundumschlag', roy_valentine: 'sturmlauf',
+    blutgolem: 'wuchtschlag',
     charybdis: ['rundumschlag', 'wuchtschlag'],
     clayman: ['fluchstoss', 'seelenschlag'],
-    milim_boss: ['wuchtschlag', 'rundumschlag']
+    milim_boss: ['wuchtschlag', 'rundumschlag'],
+    hinata: ['hinrichtung', 'blitzfolge', 'panzerbruch'],
+    luminous: ['rundumschlag', 'aderlass', 'frostnova']
   };
   function aktiveVon(id) {
     var v = AKTIV[id];
