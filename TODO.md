@@ -27,3 +27,4 @@ Offen:
   macht. Pool 2 liegt sauber bei 61–65 %.
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
+- Bedrohungsstufen sollten nicht reine Gegner boni sein, sei kreativ hier.
