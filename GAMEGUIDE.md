@@ -39,11 +39,18 @@ Anstieg ist flacher als der Zugewinn einer zusätzlichen Einheit — wachsen loh
 sich immer, aber ein Trupp von zwei kämpft nicht gegen die Wand, für die sechs
 gedacht waren.
 
-## Nach dem Kampf: der Markt
+## Nach dem Kampf: Ergebnis, dann Verwaltung
 
-**Ein gewonnener Kampf bringt nur Magicule** — keine Belohnungskarte mehr. Statt
-dessen geht danach die Truppenverwaltung auf, und dort liegt der **Markt**: was
-die Beute eingebracht hat, gibst du sofort aus.
+Ein Kampf läuft über **drei Bildschirme**:
+
+1. **Kampf** — die Auflösung, Zug für Zug. Nichts anderes ist zu sehen.
+2. **Ergebnis** — Sieg oder Niederlage, die gewonnenen Magicule groß, dazu
+   Zugzahl, wer noch steht und wer gefallen ist. Hier wird auch verschlungen.
+3. **Verwaltung** — nach der Bestätigung: der Markt, dein Trupp, Aufstellung,
+   Ausrüstung, Aufstiege und die Verkaufsfläche.
+
+**Ein gewonnener Kampf bringt nur Magicule** — keine Belohnungskarte mehr. Was
+die Beute eingebracht hat, gibst du in der Verwaltung aus.
 
 Jeder Posten steht **ausführlich** da — bei einer Einheit ihre Signatur, ihre
 erste Passive und ihre Werte auf Rang C; bei einem Relikt seine Wirkung und ob

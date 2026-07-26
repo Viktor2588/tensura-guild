@@ -468,7 +468,16 @@
   function ergebnisHtml(p) {
     var html = '';
     if (p.result.winner === 'player') {
-      html += '<p class="gut">Sieg! +' + p.gold + ' Magicule.</p>';
+      /* Das Ergebnis als eigene Ansage: was der Kampf gekostet und gebracht hat. */
+      var lebend = p.result.survivors.filter(function (u) { return u.side === 'player'; });
+      var gefallen = p.result.fallen.filter(function (u) { return u.side === 'player'; });
+      html += '<div class="ergebnis"><h2 class="gut">Sieg</h2>' +
+        '<p class="beute">+' + p.gold + ' ✦ Magicule</p>' +
+        '<p class="hinweis">' + p.result.ticks + ' Züge · ' + lebend.length + ' von ' +
+        (lebend.length + gefallen.length) + ' Einheiten stehen noch' +
+        (gefallen.length ? ' · gefallen: ' + esc(gefallen.map(function (u) { return u.name; }).join(', ')) : '') +
+        '</p>' +
+        '<p class="hinweis">Magicule gesamt: ' + run.magicules + ' ✦</p></div>';
       if (p.devour && p.devour.length) {
         var moeglich = run.team.filter(function (m) { return m.devoured.length < R.praedatorSlots(m); });
         html += '<h3' + tip('Prädator', G.begriffe.praedator) + '>Prädator</h3>';
@@ -508,11 +517,12 @@
           (pr ? ' — ' + esc(pr.name) + ': ' + esc(pr.text) : '') +
           (p.bestanden ? ' Mehr Magicule und ein Posten mehr im Markt.' : '') + '</p>';
       }
-      if (p.markt) html += marktHtml(p.markt);
     } else {
       html += '<p class="schlecht">Niederlage. Ein Leben verloren — ' + run.lives + ' übrig.</p>';
     }
-    html += '<div class="reihe"><button class="haupt" data-a="weiter">Weiterziehen</button></div>';
+    html += '<div class="reihe"><button class="haupt" data-a="' +
+      (p.markt ? 'zum-markt' : 'weiter') + '">' +
+      (p.markt ? 'Zur Verwaltung' : 'Weiter') + '</button></div>';
     return html;
   }
 
@@ -632,6 +642,15 @@
   }
 
   /* -------------------------------------------------------------- Lager */
+
+  function zeichneMarkt() {
+    var p = run.pending;
+    $('view').innerHTML = '<h2>Verwaltung</h2>' +
+      '<p class="hinweis">Rüste den Trupp aus, bevor es weitergeht. Unten stehen ' +
+      'Aufstellung, Ausrüstung und Aufstiege.</p>' +
+      marktHtml(p.markt || []) +
+      '<div class="reihe"><button class="haupt" data-a="weiter">Weiterziehen</button></div>';
+  }
 
   function zeichneLager() {
     var html = '<h2>Lager</h2>';
@@ -980,9 +999,9 @@
   /* Solange der Kampf läuft, gehört der Bildschirm dem Kampf. Erst danach kommt
      das Truppen-Management samt Aufstiegen zurück — sonst steht die halbe
      Verwaltung unter einer laufenden Animation und niemand sieht beides. */
-  function kampfLaeuft() {
-    return run.phase === 'kampf' && replay && !replay.fertig;
-  }
+  /* Die Kampfphase gehört ganz dem Kampf — erst die Auflösung, dann das
+     Ergebnis. Die Verwaltung kommt danach in ihrem eigenen Bildschirm. */
+  function kampfLaeuft() { return run.phase === 'kampf'; }
 
   function zeichneUnten() {
     if (kampfLaeuft()) {
@@ -1061,6 +1080,7 @@
     if (run.phase === 'start') zeichneStart();
     else if (run.phase === 'karte') zeichneKarte();
     else if (run.phase === 'kampf') zeichneKampf();
+    else if (run.phase === 'markt') zeichneMarkt();
     else if (run.phase === 'event') zeichneEvent();
     else if (run.phase === 'lager') zeichneLager();
     else zeichneEnde();
@@ -1086,6 +1106,7 @@
       R.devour(run, d.id, ziel ? ziel.value : run.team[0].uid);
       render(); speichern();
     },
+    'zum-markt': function () { R.zumMarkt(run); replay = null; render(); speichern(); },
     weiter: function () { R.advance(run); replay = null; render(); speichern(); },
     stufe: function (d) {
       var neu = Math.min(+d.i, run.meta.threat || 0);

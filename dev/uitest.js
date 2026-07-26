@@ -172,9 +172,18 @@ ok($$('#kampflog .aktiv').length > 0, 'aktive Fähigkeiten stehen hervorgehoben 
 
 var sieg = run.pending.result.winner === 'player';
 if (sieg) {
-  ok(/Sieg/.test(text('main p')), 'ein Sieg wird gemeldet');
+  /* Bildschirm 2: das Ergebnis für sich, ohne Verwaltung darunter. */
+  ok(/Sieg/.test(text('.ergebnis h2')), 'ein Sieg wird als eigene Ansage gemeldet');
+  ok(/✦/.test(text('.ergebnis .beute')), 'die gewonnenen Magicule stehen gross da');
   ok(run.magicules > 0, 'die Beute wird als Magicule gutgeschrieben');
-  /* Nach dem Kampf steht der Markt, nicht eine Belohnungskarte. */
+  ok(!$('#team').innerHTML, 'die Verwaltung ist auf dem Ergebnisbildschirm noch weg');
+  ok(!karten().some(function (k) { return k.dataset.a === 'kaufen'; }),
+     'und der Markt auch');
+  /* Bildschirm 3: nach der Bestätigung die Verwaltung. */
+  ok($('[data-a=zum-markt]'), 'ein Knopf führt zur Verwaltung');
+  klick($('[data-a=zum-markt]'));
+  ok(run.phase === 'markt', 'danach steht die Verwaltung');
+  ok($$('#team .einheit').length > 0, 'mit dem Trupp darunter');
   var posten = karten().filter(function (k) { return k.dataset.a === 'kaufen'; });
   ok(posten.length >= 3, 'der Markt bietet mindestens drei Posten (' + posten.length + ')');
   ok(posten.every(function (k) { return k.querySelector('.art') && k.querySelector('.beschreibung'); }),
@@ -271,9 +280,9 @@ zieh(einheitKarte, $('#verkauf'));
 ok(run.team.length === vorTeam - 1, 'und eine Einheit ebenso');
 /* Während der Kampfauflösung wird nicht verkauft, im Markt danach schon. */
 ok(!win.Run.darfEntlassen({ phase: 'kampf', pending: { result: {} } }),
-   'während des Kampfes ist Verkaufen gesperrt');
-ok(win.Run.darfEntlassen({ phase: 'kampf', pending: { markt: [] } }),
-   'im Markt nach dem Kampf ist es erlaubt');
+   'in der Kampfphase ist Verkaufen gesperrt');
+ok(win.Run.darfEntlassen({ phase: 'markt', pending: { markt: [] } }),
+   'in der Verwaltung danach ist es erlaubt');
 
 /* -------------------------------------------------------------- Menü */
 head('Menü und Glossar');

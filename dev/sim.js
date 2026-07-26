@@ -1331,7 +1331,16 @@ ok(!!beute2, 'ein Kampf mit offenem Markt ist erreichbar');
 if (beute2) {
   var wieder2 = R.deserialize(R.serialize(bRun2));
   ok(wieder2.phase === 'kampf' && wieder2.pending && wieder2.pending.markt,
-     'nach dem Laden steht der Markt noch offen');
+     'nach dem Laden steht der Ergebnisbildschirm noch');
+  /* Drei Bildschirme: Kampf -> Ergebnis -> Verwaltung, jeder für sich ladbar. */
+  ok(R.zumMarkt(bRun2) && bRun2.phase === 'markt', 'die Bestätigung führt in die Verwaltung');
+  var imMarkt = R.deserialize(R.serialize(bRun2));
+  ok(imMarkt.phase === 'markt' && imMarkt.pending.markt.length === bRun2.pending.markt.length,
+     'auch die Verwaltung übersteht ein Neuladen');
+  ok(!R.zumMarkt(bRun2), 'aus der Verwaltung führt kein zweiter Weg dorthin');
+  ok(!R.darfEntlassen({ phase: 'kampf', pending: {} }) &&
+     R.darfEntlassen({ phase: 'markt', pending: {} }),
+     'verkauft wird in der Verwaltung, nicht in der Kampfphase');
   ok(wieder2.pending.markt.length === beute2.markt.length,
      'es sind dieselben Posten wie vorher');
   wieder2.magicules = 9000;

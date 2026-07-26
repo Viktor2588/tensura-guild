@@ -752,9 +752,7 @@
      der gerade kämpft. Der Markt NACH dem Kampf zählt schon zur Truppenpflege:
      dort wird gekauft und verkauft. */
   function darfEntlassen(run) {
-    if (run.over) return false;
-    if (run.phase !== 'kampf') return true;
-    return !!(run.pending && run.pending.markt);
+    return !run.over && run.phase !== 'kampf';
   }
 
   function entlassen(run, uid) {
@@ -1052,6 +1050,14 @@
 
   /* ---- Weiter ------------------------------------------------------------- */
 
+  /* Drei Bildschirme statt zweier: Kampf -> Ergebnis -> Verwaltung. Der Markt
+     hing vorher am Ergebnis, also lief beides auf einer Seite. */
+  function zumMarkt(run) {
+    if (run.phase !== 'kampf' || !run.pending || !run.pending.markt) return false;
+    run.phase = 'markt';
+    return true;
+  }
+
   function advance(run) {
     if (run.over) return false;
     if (run.phase === 'kampf' && run.pending && run.pending.result.winner !== 'player' && run.lives > 0) {
@@ -1111,7 +1117,7 @@
      nur das Nötige gespeichert, nicht das ganze Log. */
   function schlankesPending(run) {
     var p = run.pending;
-    if (run.phase !== 'kampf' || !p || !p.markt) return null;
+    if (!p || !p.markt || (run.phase !== 'kampf' && run.phase !== 'markt')) return null;
     return {
       markt: p.markt, bestanden: p.bestanden, devour: p.devour, gold: p.gold,
       node: { name: p.node.name }, result: { winner: p.result.winner }
@@ -1122,7 +1128,7 @@
     return JSON.stringify({
       seed: run.seed, rngState: run.rngState, act: run.act, step: run.step, threat: run.threat,
       magicules: run.magicules, lives: run.lives, relics: run.relics,
-      bag: run.bag || [], chronik: run.chronik, meta: run.meta, bosse: run.bosse,
+      bag: run.bag || [], chronik: run.chronik, meta: run.meta, bosse: run.bosse, phase: run.phase,
       pwahlen: run.pwahlen || [],
       team: run.team, bank: run.bank, uidSeq: uidSeq, startwahl: run.startwahl,
       pending: schlankesPending(run)
@@ -1140,9 +1146,9 @@
     run.startwahl = d.startwahl || null;
     if (run.startwahl) { run.phase = 'start'; return run; }
     if (d.pending) {
-      /* Offene Belohnung: zurück in den Ergebnisbildschirm, ohne Kampfwiederholung.
-         Gewürfelt wird erst wieder in advance(). */
-      run.phase = 'kampf';
+      /* Offener Markt: zurück in den Bildschirm, in dem gespeichert wurde, ohne
+         Kampfwiederholung. Gewürfelt wird erst wieder in advance(). */
+      run.phase = d.phase === 'markt' ? 'markt' : 'kampf';
       run.pending = d.pending;
       return run;
     }
@@ -1182,7 +1188,7 @@
 
   root.Run = {
     create: create, newMeta: newMeta, resolve: resolve, member: member, abilities: abilities,
-    choose: choose, advance: advance, devour: devour,
+    choose: choose, advance: advance, devour: devour, zumMarkt: zumMarkt,
     rankUp: rankUp,
     passivWahl: passivWahl, choosePassive: choosePassive,
     passivIds: passivIds, hatLinien: hatLinien,

@@ -368,3 +368,9 @@ table.dbg i.ab { color: #e77; }
               border: 1px solid var(--gold); border-radius: 6px; padding: .25rem .5rem;
               font-size: .78rem; white-space: nowrap; }
 .ziehhinweis { opacity: .5; font-size: .7rem; }
+
+/* Ergebnisbildschirm: die Ansage steht für sich, bevor die Verwaltung kommt. */
+.ergebnis { text-align: center; padding: 1rem .6rem; }
+.ergebnis h2 { margin: 0 0 .2rem; }
+.ergebnis .beute { font-size: 1.5rem; font-weight: 700; color: var(--gold); margin: .2rem 0; }
+.ergebnis .hinweis { margin: .15rem 0; }

@@ -157,7 +157,7 @@ function play(seed, voll) {
       R.choose(run, route(run, rng));
       continue;
     }
-    if (run.phase === 'kampf') {
+    if (run.phase === 'kampf' || run.phase === 'markt') {
       var p = run.pending;
       if (p.devour && p.devour.length) {
         for (var k2 = 0; k2 < run.team.length; k2++) {
@@ -166,9 +166,15 @@ function play(seed, voll) {
       }
       /* Der Markt nach dem Kampf: nach Wert je Magicule kaufen, solange es
          reicht. Genau die Entscheidung, die das Spiel jetzt vom Spieler will. */
-      if (p.bestanden !== undefined) {
-        run._pruefN = (run._pruefN || 0) + 1;
-        if (p.bestanden) run._pruefOk = (run._pruefOk || 0) + 1;
+      /* Denselben Weg wie ein Spieler: erst das Ergebnis bestätigen, dann in der
+         Verwaltung einkaufen. Gezählt wird beim Bestätigen, sonst doppelt. */
+      if (p.markt && run.phase === 'kampf') {
+        if (p.bestanden !== undefined) {
+          run._pruefN = (run._pruefN || 0) + 1;
+          if (p.bestanden) run._pruefOk = (run._pruefOk || 0) + 1;
+        }
+        R.zumMarkt(run);
+        continue;
       }
       if (p.markt) {
         var kw2 = teamKeywords(run);

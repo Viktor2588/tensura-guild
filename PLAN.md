@@ -576,6 +576,10 @@ Zielband und hängt vermutlich an den jetzt unbegrenzten Stapeln.
   Truppenverwaltung. Jeder Posten steht ausführlich da statt in einem Tooltip:
   Signatur, erste Passive und Werte bei Einheiten; Wirkung und erfüllte Bedingung
   bei Relikten; und wie viele Magicule fehlen, wenn es nicht reicht.
+- **Drei Bildschirme je Kampf:** Auflösung, Ergebnis, Verwaltung. Vorher hingen
+  Ergebnis und Markt auf einer Seite; jetzt trägt `run.phase === 'markt'` die
+  Verwaltung, und `zumMarkt(run)` ist der Übergang. Beide Bildschirme überstehen
+  ein Neuladen (`phase` liegt im Speicherstand).
 - **Der Händler-Knoten ist raus** — er wäre doppelt. Seine drei Slots in `STEPS`
   sind Kämpfe und Herausforderungen geworden.
 - **Verkaufen durch Ziehen.** Einheit, Ausrüstung oder Relikt auf die
