@@ -34,3 +34,4 @@ Offen:
   oder „eine auf S" besser ist, misst er damit nicht.
 - Chaos sollte standardmäßig das gegnerische Ziel debuffen & nicht buffen
 - Es sollte nicht Möglich sein, entwicklungsfähigkeiten(passive) auszulassen. Die infromation das diese den ganzen run anhalten ist unnötig
+- Einheiten belohnungen sollten auf Tags verteilt sein, und nicht ein rießieger wall auf text sein wenn man über die belohnung hovert so teilt sich die Infos auf jeweilige häppchen auf. Möchte ich wissen was untot heißt? da bekomme ich den "untoten" tooltip über den tag damit ich das kurz nachschauen kann.
