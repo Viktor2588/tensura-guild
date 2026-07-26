@@ -95,12 +95,12 @@
       5: 'Legendär. Run-definierend und entsprechend selten — am ehesten bei Elite, Boss und hohem Rang.'
     },
     begriffe: {
-      gold: 'Wird beim Händler ausgegeben: Einheiten, Ausrüstung, gelegentlich ein Relikt. Kämpfe und Ereignisse bringen Gold.',
-      magicule: 'Die Währung der Ränge. Nur damit steigen Einheiten von C auf B, A und S auf.',
+      magicule: 'Die EINZIGE Währung. Jeder gewonnene Kampf bringt Magicule, und alles kostet sie: Rangaufstiege, Einheiten, Ausrüstung, Relikte. Jeder ausgegebene Punkt fehlt woanders — genau darin liegt die Entscheidung.',
       leben: 'Verlorene Kämpfe. Sind alle Leben aufgebraucht, endet der Run — der Kampf selbst kostet keine dauerhaften Werte. Fünf Leben auf fünf Akte, auf Bedrohungsstufe 5 nur drei.',
       rang: 'C → B → A → S. Jeder Aufstieg gibt +30 % Leben und Angriff, einen Item-Slot (S: zwei), eine Passive zur Wahl und einen Prädator-Slot. Die aktive Fähigkeit bleibt immer die Signatur.',
       aktiv: 'Jede Einheit hat genau eine: ihre Signatur. Sie feuert in JEDEM Zug und ersetzt den normalen Angriff. Trägt sie eine Lagebedingung ("nur wenn jemand verwundet ist"), schlägt die Einheit stattdessen normal zu, bis die Lage da ist.',
       passiv: 'Wirkt dauerhaft im Hintergrund. Alles, was eine Einheit über ihre Signatur hinaus lernt, ist passiv — beim Aufstieg wird eine aus mehreren gewählt.',
+      entwicklung: 'Der Weg einer Einheit: mit jedem Rang kommt eine Passive dazu, die du auswählst. Ausgelassen werden kann sie nicht — eine Einheit entwickelt sich, oder sie steigt nicht auf.',
       bedrohungsstufe: 'Die Langzeitschicht: Nach jedem Sieg geht die nächste Stufe auf, und jede schaltet EINE neue Regel frei — nicht bloß mehr Gegnerwerte. Überzahl stellt einen Nachzügler dazu, Nachschub lässt den vordersten Gegner einmal wiederauferstehen, Kriegsrecht macht den Händler karg, Belagerung stellt überall Elite hin, Sturmgott nimmt zwei Leben und lässt Bosse doppelt so schnell eskalieren. Die Regeln sind kumulativ. Eine Prozentzahl verlangt einen stärkeren Trupp, eine Regel einen anderen.',
       eskalation: 'Bosse treten allein an und werden mit jedem ihrer Züge 6 % stärker. Ein Bosskampf ist deshalb ein Tempo-Check: wer nicht abräumt, verliert allmählich. Ohne diese Eskalation entscheidet sich ein Kampf gegen einen einzelnen Gegner in der ersten Runde.',
       praedator: 'Nach jedem gewonnenen Kampf darf ein besiegter Gegner verschlungen werden: seine Fähigkeit wandert als zusätzliche Passive dauerhaft in eine Einheit. Slots gibt es erst ab Rang B.',

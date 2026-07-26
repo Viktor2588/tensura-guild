@@ -289,8 +289,8 @@
   /* mult ist der Kalibrierknopf: dieselben Gegner, andere Härte. Ohne ihn müsste
      man 30 Statblöcke einzeln nachziehen, sobald sich die Machtkurve verschiebt.
      dev/balance.js misst, hier wird gedreht. */
-  function enc(act, name, units, gold, elite, mult) {
-    return { act: act, name: name, units: units, gold: gold, elite: !!elite, mult: mult || 1 };
+  function enc(act, name, units, beute, elite, mult) {
+    return { act: act, name: name, units: units, beute: beute, elite: !!elite, mult: mult || 1 };
   }
 
   var encounters = [
@@ -400,14 +400,14 @@
      Zwei Pools statt fünf fester Bosse: pro Run wird je einer gezogen, also
      sieht kein Run dieselbe Paarung zweimal. */
   var bosses = [
-    { id: 'b_charybdis', pool: 1, name: 'Charybdis', units: ['charybdis'], gold: 140, mult: 1.5, hpMult: 3 },
-    { id: 'b_clayman', pool: 1, name: 'Clayman', units: ['clayman'], gold: 150, mult: 1.44, hpMult: 2.73 },
-    { id: 'b_milim', pool: 1, name: 'Milim Nava', units: ['milim_boss'], gold: 170, mult: 0.71, hpMult: 1.25 },
-    { id: 'b_orklord', pool: 1, name: 'Geld, der Orklord', units: ['orklord'], gold: 150, mult: 1.37, hpMult: 2.46 },
-    { id: 'b_hinata', pool: 2, name: 'Hinata Sakaguchi', units: ['hinata'], gold: 340, mult: 1.62, hpMult: 3.08 },
-    { id: 'b_luminous', pool: 2, name: 'Luminous Valentine', units: ['luminous'], gold: 400, mult: 1.19, hpMult: 2.13 },
-    { id: 'b_razen', pool: 2, name: 'Razen der Hofmagier', units: ['razen'], gold: 320, mult: 1.28, hpMult: 2.43 },
-    { id: 'b_roy', pool: 2, name: 'Roy Valentine', units: ['roy_valentine'], gold: 330, mult: 2.66, hpMult: 5.32 }
+    { id: 'b_charybdis', pool: 1, name: 'Charybdis', units: ['charybdis'], beute: 140, mult: 1.5, hpMult: 3 },
+    { id: 'b_clayman', pool: 1, name: 'Clayman', units: ['clayman'], beute: 150, mult: 1.44, hpMult: 2.73 },
+    { id: 'b_milim', pool: 1, name: 'Milim Nava', units: ['milim_boss'], beute: 170, mult: 0.71, hpMult: 1.25 },
+    { id: 'b_orklord', pool: 1, name: 'Geld, der Orklord', units: ['orklord'], beute: 150, mult: 1.37, hpMult: 2.46 },
+    { id: 'b_hinata', pool: 2, name: 'Hinata Sakaguchi', units: ['hinata'], beute: 340, mult: 1.62, hpMult: 3.08 },
+    { id: 'b_luminous', pool: 2, name: 'Luminous Valentine', units: ['luminous'], beute: 400, mult: 1.19, hpMult: 2.13 },
+    { id: 'b_razen', pool: 2, name: 'Razen der Hofmagier', units: ['razen'], beute: 320, mult: 1.28, hpMult: 2.43 },
+    { id: 'b_roy', pool: 2, name: 'Roy Valentine', units: ['roy_valentine'], beute: 330, mult: 2.66, hpMult: 5.32 }
   ];
 
   /* ---- Ereignisse: api liefert run.js, damit die Daten dumm bleiben ------- */
@@ -419,15 +419,15 @@
     { id: 'wandernder_haendler', name: 'Wandernder Händler',
       text: 'Ein Kobold zieht einen Karren voller Krempel hinter sich her. „Alles echt, alles günstig!"',
       options: [
-        { text: '80 Gold zahlen für ein zufälliges Relikt (wirkt auf den ganzen Trupp)', can: function (r) { return r.gold >= 80; },
-          fn: function (r, api) { r.gold -= 80; api.grantRelic(); } },
-        { text: 'Weiterziehen (+30 Gold gespart bleibt gespart)', fn: function (r) { r.gold += 30; } }
+        { text: '240 Magicule zahlen für ein zufälliges Relikt (wirkt auf den ganzen Trupp)', can: function (r) { return r.magicules >= 240; },
+          fn: function (r, api) { r.magicules -= 240; api.grantRelic(); } },
+        { text: 'Weiterziehen (+90 Magicule gespart bleibt gespart)', fn: function (r) { r.magicules += 90; } }
       ] },
     { id: 'heisse_quelle', name: 'Heiße Quelle',
       text: 'Dampf steigt aus dem Fels. Die Truppe schaut dich erwartungsvoll an.',
       options: [
         { text: 'Rasten — eine zufällige Einheit erhält dauerhaft +25 Leben', fn: function (r, api) { api.buffRandom({ hp: 25 }); } },
-        { text: 'Weitermarschieren — +50 Gold', fn: function (r) { r.gold += 50; } }
+        { text: 'Weitermarschieren — +150 Magicule', fn: function (r) { r.magicules += 150; } }
       ] },
     { id: 'magicule_ader', name: 'Magicule-Ader',
       text: 'Der Boden glimmt. Rohe Magie sammelt sich in der Senke.',
@@ -445,7 +445,7 @@
     { id: 'verlassenes_lager', name: 'Verlassenes Lager',
       text: 'Erloschene Feuerstelle, umgeworfene Kisten. Jemand ist in Eile aufgebrochen.',
       options: [
-        { text: 'Durchsuchen: +70 Gold', fn: function (r) { r.gold += 70; } },
+        { text: 'Durchsuchen: +210 Magicule', fn: function (r) { r.magicules += 210; } },
         { text: 'Vorräte mitnehmen: +40 Magicule und dauerhaft +15 Leben für den ganzen Trupp',
           fn: function (r, api) { r.magicules += 40; r.team.forEach(function (m) { api.buffUnit(m, { hp: 15 }); }); } }
       ] },
@@ -454,15 +454,15 @@
       options: [
         { text: '100 Magicule opfern für ein zufälliges Relikt', can: function (r) { return r.magicules >= 100; },
           fn: function (r, api) { r.magicules -= 100; api.grantRelic(); } },
-        { text: '60 Gold opfern: eine zufällige Einheit erhält dauerhaft +6 Angriff', can: function (r) { return r.gold >= 60; },
-          fn: function (r, api) { r.gold -= 60; api.buffRandom({ atk: 6 }); } },
+        { text: '180 Magicule opfern: eine zufällige Einheit erhält dauerhaft +6 Angriff', can: function (r) { return r.magicules >= 180; },
+          fn: function (r, api) { r.magicules -= 180; api.buffRandom({ atk: 6 }); } },
         { text: 'Nichts anrühren', fn: function () {} }
       ] },
     { id: 'sklavenkarawane', name: 'Karawane in Not',
       text: 'Räuber haben eine Karawane überfallen. Die Überlebenden brauchen Hilfe.',
       options: [
         { text: 'Helfen — eine zufällige Einheit einer noch freien Art schließt sich an', fn: function (r, api) { api.grantUnit(); } },
-        { text: 'Die Ladung nehmen: +90 Gold', fn: function (r) { r.gold += 90; } }
+        { text: 'Die Ladung nehmen: +270 Magicule', fn: function (r) { r.magicules += 270; } }
       ] },
     { id: 'sturm', name: 'Magiesturm',
       text: 'Wilde Magicule fegen über die Ebene. Wer sich hineinstellt, verändert sich.',
@@ -474,10 +474,10 @@
     { id: 'schmiede', name: 'Zwergenschmiede',
       text: 'Ein Zwerg hämmert auf glühenden Stahl ein und sieht kaum auf.',
       options: [
-        { text: '50 Gold: zufällige Ausrüstung in den Beutel', can: function (r) { return r.gold >= 50; },
-          fn: function (r, api) { r.gold -= 50; api.grantItem(); } },
-        { text: '25 Gold: eine zufällige Einheit dauerhaft +3 Rüstung', can: function (r) { return r.gold >= 25; },
-          fn: function (r, api) { r.gold -= 25; api.buffRandom({ def: 3 }); } }
+        { text: '150 Magicule: zufällige Ausrüstung in den Beutel', can: function (r) { return r.magicules >= 150; },
+          fn: function (r, api) { r.magicules -= 150; api.grantItem(); } },
+        { text: '75 Magicule: eine zufällige Einheit dauerhaft +3 Rüstung', can: function (r) { return r.magicules >= 75; },
+          fn: function (r, api) { r.magicules -= 75; api.buffRandom({ def: 3 }); } }
       ] },
     /* --- Akt 1: der Jura-Wald --- */
     { id: 'versiegelte_hoehle', act: 1, name: 'Die versiegelte Höhle',
@@ -486,7 +486,7 @@
         { text: 'Mit dem Gefangenen reden: +150 Magicule', fn: function (r) { r.magicules += 150; } },
         { text: 'Am Siegel zerren: ein zufälliges Relikt, aber eine zufällige Einheit verliert dauerhaft 25 Leben',
           fn: function (r, api) { api.grantRelic(); api.buffRandom({ hp: -25 }); } },
-        { text: 'Die Höhle in Ruhe lassen: +70 Gold', fn: function (r) { r.gold += 70; } }
+        { text: 'Die Höhle in Ruhe lassen: +210 Magicule', fn: function (r) { r.magicules += 210; } }
       ] },
     { id: 'namensgebung', act: 1, name: 'Ein Volk ohne Namen',
       text: 'Ein Goblindorf hat die Nacht überlebt. Der Älteste kniet nieder: „Gebt uns Namen, Meister."',
@@ -494,28 +494,28 @@
         { text: 'Namen geben: eine zufällige Einheit einer freien Art schließt sich an, kostet 60 Magicule',
           can: function (r) { return r.magicules >= 60; },
           fn: function (r, api) { r.magicules -= 60; api.grantUnit(); } },
-        { text: 'Nur Vorräte annehmen: +80 Gold', fn: function (r) { r.gold += 80; } }
+        { text: 'Nur Vorräte annehmen: +240 Magicule', fn: function (r) { r.magicules += 240; } }
       ] },
     { id: 'sturmwolf_rudel', act: 1, name: 'Das Rudel vor der Höhle',
       text: 'Ein Sturmwolf-Rudel hat euch eingekreist. Der Anführer knurrt, greift aber nicht an.',
       options: [
         { text: 'Den Anführer niederstarren: eine zufällige Einheit erhält dauerhaft +5 Angriff und +3 Tempo',
           fn: function (r, api) { api.buffRandom({ atk: 5, spd: 3 }); } },
-        { text: 'Fleisch opfern: −40 Gold, dafür +90 Magicule', can: function (r) { return r.gold >= 40; },
-          fn: function (r) { r.gold -= 40; r.magicules += 90; } }
+        { text: 'Fleisch opfern: −120 Magicule, dafür +270 Magicule', can: function (r) { return r.magicules >= 120; },
+          fn: function (r) { r.magicules -= 120; r.magicules += 90; } }
       ] },
     { id: 'zwergenschmied', act: 1, name: 'Ein Zwerg im Exil',
       text: 'Ein verbannter Schmied aus Dwargon hämmert an einem Wanderofen. Er mustert eure Ausrüstung mit Verachtung.',
       options: [
         { text: 'Ihn arbeiten lassen: zufällige Ausrüstung in den Beutel', fn: function (r, api) { api.grantItem(); } },
-        { text: 'Ihm 40 Gold für eine Lehre zahlen: eine zufällige Einheit erhält dauerhaft +4 Rüstung',
-          can: function (r) { return r.gold >= 40; },
-          fn: function (r, api) { r.gold -= 40; api.buffRandom({ def: 4 }); } }
+        { text: 'Ihm 120 Magicule für eine Lehre zahlen: eine zufällige Einheit erhält dauerhaft +4 Rüstung',
+          can: function (r) { return r.magicules >= 120; },
+          fn: function (r, api) { r.magicules -= 120; api.buffRandom({ def: 4 }); } }
       ] },
     { id: 'echsenboten', act: 1, name: 'Boten vom Sumpf',
       text: 'Echsenmenschen mit Federschmuck bringen eine Warnung: Orks marschieren nach Norden. Zehntausende.',
       options: [
-        { text: 'Die Warnung ernst nehmen: +100 Gold für Vorbereitungen', fn: function (r) { r.gold += 100; } },
+        { text: 'Die Warnung ernst nehmen: +300 Magicule für Vorbereitungen', fn: function (r) { r.magicules += 300; } },
         { text: 'Ein Bündnis schließen: eine zufällige Einheit einer freien Art schließt sich an',
           fn: function (r, api) { api.grantUnit(); } }
       ] },
@@ -524,13 +524,13 @@
       options: [
         { text: 'Die Klinge nehmen: zufällige Ausrüstung', fn: function (r, api) { api.grantItem(); } },
         { text: 'Die Toten bestatten: +120 Magicule', fn: function (r) { r.magicules += 120; } },
-        { text: 'Der Spur folgen: +60 Gold und +60 Magicule',
-          fn: function (r) { r.gold += 60; r.magicules += 60; } }
+        { text: 'Der Spur folgen: +180 Magicule und +60 Magicule',
+          fn: function (r) { r.magicules += 180; r.magicules += 60; } }
       ] },
     { id: 'hornhasen_jagd', act: 1, name: 'Hornhasen-Jagd',
       text: 'Ein ganzer Schwarm Hornhasen. Zäh, schnell — und ausgezeichnetes Fleisch.',
       options: [
-        { text: 'Jagen: +70 Gold', fn: function (r) { r.gold += 70; } },
+        { text: 'Jagen: +210 Magicule', fn: function (r) { r.magicules += 210; } },
         { text: 'Den Trupp durchfüttern: dauerhaft +20 Leben für den ganzen Trupp',
           fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { hp: 20 }); }); } }
       ] },
@@ -547,14 +547,14 @@
       options: [
         { text: 'Hineingehen: die schwächste Einheit steigt gratis einen Rang auf, verliert aber dauerhaft 20 Leben',
           fn: function (r, api) { api.freierRang(); api.buffRandom({ hp: -20 }); } },
-        { text: 'Abwarten: +90 Gold', fn: function (r) { r.gold += 90; } }
+        { text: 'Abwarten: +270 Magicule', fn: function (r) { r.magicules += 270; } }
       ] },
     { id: 'lehrmeister_ereignis', name: 'Ein alter Lehrmeister',
       text: 'Ein grauhaariger Schwertkämpfer sitzt am Weg und beobachtet euren Trupp mit schmalen Augen. „Ihr kämpft schlampig."',
       options: [
-        { text: '80 Gold für eine Lektion: die schwächste Einheit steigt gratis einen Rang auf',
-          can: function (r) { return r.gold >= 80; },
-          fn: function (r, api) { r.gold -= 80; api.freierRang(); } },
+        { text: '240 Magicule für eine Lektion: die schwächste Einheit steigt gratis einen Rang auf',
+          can: function (r) { return r.magicules >= 240; },
+          fn: function (r, api) { r.magicules -= 240; api.freierRang(); } },
         { text: 'Nur zuhören: zufällige Ausrüstung', fn: function (r, api) { api.grantItem(); } }
       ] },
 
@@ -562,7 +562,7 @@
     { id: 'orkarmee', act: 2, name: 'Zehntausend Schritte',
       text: 'Vom Höhenzug aus seht ihr sie: eine Orkarmee ohne Ende, die alles frisst, was ihr begegnet. Ihr Anführer trägt eine Krone aus Knochen.',
       options: [
-        { text: 'Der Armee ausweichen: +140 Gold für den Umweg', fn: function (r) { r.gold += 140; } },
+        { text: 'Der Armee ausweichen: +420 Magicule für den Umweg', fn: function (r) { r.magicules += 420; } },
         { text: 'Die Nachhut abfangen: +180 Magicule, eine zufällige Einheit verliert dauerhaft 25 Leben',
           fn: function (r, api) { r.magicules += 180; api.buffRandom({ hp: -25 }); } }
       ] },
@@ -571,7 +571,7 @@
       options: [
         { text: 'Tief graben: zufällige Ausrüstung und +60 Magicule',
           fn: function (r, api) { api.grantItem(); r.magicules += 60; } },
-        { text: 'Nur die Oberfläche abtragen: +130 Gold', fn: function (r) { r.gold += 130; } }
+        { text: 'Nur die Oberfläche abtragen: +390 Magicule', fn: function (r) { r.magicules += 390; } }
       ] },
     { id: 'gefangener', act: 2, name: 'Ein Gefangener der Orks',
       text: 'In einem umgestürzten Käfig hockt jemand, der seit Tagen nichts getrunken hat — und trotzdem grinst.',
@@ -585,16 +585,16 @@
     { id: 'daemonenangebot', act: 3, name: 'Ein Angebot aus dem Schatten',
       text: 'Eine Gestalt im Frack verbeugt sich tief. „Ich diene dem Stärkeren. Zeigt mir, dass Ihr das seid — oder nehmt einfach, was ich biete."',
       options: [
-        { text: 'Den Pakt annehmen: die schwächste Einheit steigt gratis einen Rang auf, der Trupp verliert 60 Gold',
-          can: function (r) { return r.gold >= 60; },
-          fn: function (r, api) { r.gold -= 60; api.freierRang(); } },
+        { text: 'Den Pakt annehmen: die schwächste Einheit steigt gratis einen Rang auf, der Trupp verliert 180 Magicule',
+          can: function (r) { return r.magicules >= 180; },
+          fn: function (r, api) { r.magicules -= 180; api.freierRang(); } },
         { text: 'Ablehnen und die Klinge nehmen: zufällige Ausrüstung', fn: function (r, api) { api.grantItem(); } },
         { text: 'Ihn fortschicken: +200 Magicule', fn: function (r) { r.magicules += 200; } }
       ] },
     { id: 'botschafterin', act: 3, name: 'Die Botschafterin',
       text: 'Eine Frau in weißer Rüstung wartet allein auf der Straße. Sie zieht nicht. Sie sagt nur: „Kehrt um."',
       options: [
-        { text: 'Umkehren und einen Umweg nehmen: +150 Gold', fn: function (r) { r.gold += 150; } },
+        { text: 'Umkehren und einen Umweg nehmen: +450 Magicule', fn: function (r) { r.magicules += 450; } },
         { text: 'An ihr vorbeigehen: +100 Magicule und ein zufälliges Relikt',
           fn: function (r, api) { r.magicules += 100; api.grantRelic(); } }
       ] },
@@ -612,7 +612,7 @@
     { id: 'weisse_botin', act: 4, name: 'Die Botin in Weiß',
       text: 'Eine Ordensschwester wartet an der Wegkreuzung. „Kehrt um, und niemand muss sterben. Geht weiter, und die Heiligen Ritter erwarten euch."',
       options: [
-        { text: 'Umkehren und den langen Weg nehmen: +260 Gold', fn: function (r) { r.gold += 260; } },
+        { text: 'Umkehren und den langen Weg nehmen: +780 Magicule', fn: function (r) { r.magicules += 780; } },
         { text: 'Die Warnung mitnehmen: +240 Magicule', fn: function (r) { r.magicules += 240; } },
         { text: 'Ihr das Schwert abnehmen: zufällige Ausrüstung, eine zufällige Einheit verliert dauerhaft 30 Leben',
           fn: function (r, api) { api.grantItem(); api.buffRandom({ hp: -30 }); } }
@@ -630,7 +630,7 @@
       text: 'Die Kapelle ist verlassen, das Gitter offen. Jemand hat hier etwas hinterlassen, das nicht für Menschen gedacht war.',
       options: [
         { text: 'Die Reliquie nehmen: ein zufälliges Relikt', fn: function (r, api) { api.grantRelic(); } },
-        { text: 'Den Opferstock leeren: +200 Gold', fn: function (r) { r.gold += 200; } },
+        { text: 'Den Opferstock leeren: +600 Magicule', fn: function (r) { r.magicules += 600; } },
         { text: 'Beten und weitergehen: eine zufällige Einheit dauerhaft +10 Angriff und +4 Rüstung',
           fn: function (r, api) { api.buffRandom({ atk: 10, def: 4 }); } }
       ] },
@@ -655,10 +655,10 @@
       options: [
         { text: 'Den Namen lesen und sich vorbereiten: eine zufällige Einheit dauerhaft +14 Angriff',
           fn: function (r, api) { api.buffRandom({ atk: 14 }); } },
-        { text: 'Die Wand einreißen: ein zufälliges Relikt und −80 Gold',
-          can: function (r) { return r.gold >= 80; },
-          fn: function (r, api) { r.gold -= 80; api.grantRelic(); } },
-        { text: 'Weitergehen, ohne stehenzubleiben: +300 Gold', fn: function (r) { r.gold += 300; } }
+        { text: 'Die Wand einreißen: ein zufälliges Relikt und −240 Magicule',
+          can: function (r) { return r.magicules >= 240; },
+          fn: function (r, api) { r.magicules -= 240; api.grantRelic(); } },
+        { text: 'Weitergehen, ohne stehenzubleiben: +900 Magicule', fn: function (r) { r.magicules += 900; } }
       ] },
     { id: 'kathedralendach', act: 5, name: 'Auf dem Kathedralendach',
       text: 'Von hier oben sieht man die ganze Stadt — und dass in jedem Fenster jemand zurückschaut.',
@@ -667,8 +667,8 @@
           fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { spd: 6 }); }); } },
         { text: 'Rasten, solange es geht: dauerhaft +45 Leben für den ganzen Trupp',
           fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { hp: 45 }); }); } },
-        { text: 'Sofort hinunter: +250 Gold und +150 Magicule',
-          fn: function (r) { r.gold += 250; r.magicules += 150; } }
+        { text: 'Sofort hinunter: +750 Magicule und +150 Magicule',
+          fn: function (r) { r.magicules += 750; r.magicules += 150; } }
       ] },
     { id: 'letztes_licht', act: 5, name: 'Das letzte Licht',
       text: 'Vor dem Thronsaal brennt eine einzige Kerze. Wer sie löscht, geht im Dunkeln weiter — wer sie brennen lässt, wird gesehen.',

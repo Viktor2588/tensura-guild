@@ -61,9 +61,15 @@ function route(run, rng) {
   run.options.forEach(function (o, i) {
     var wert = 0;
     if (o.type === 'kampf') wert = 10;
-    if (o.type === 'elite') wert = run.lives >= 3 ? 12 : run.lives === 2 ? 4 : -20;
+    /* Ein belagerter Knoten trägt zwar Elite-Gegner, zahlt aber normale Beute —
+       er ist kein Elite-Angebot, sondern ein teurer Pflichtkampf. Ohne diese
+       Unterscheidung suchte der Bot sie AUF und maß Stufe 4 dadurch leichter
+       als Stufe 3. */
+    if (o.type === 'elite') {
+      wert = o.belagert ? 10 : (run.lives >= 3 ? 12 : run.lives === 2 ? 4 : -20);
+    }
     if (o.type === 'boss') wert = 100;                       // führt kein Weg vorbei
-    if (o.type === 'shop') wert = run.gold >= 120 ? 16 : 6;
+    if (o.type === 'shop') wert = run.magicules >= 400 ? 16 : 6;
     if (o.type === 'lager') wert = 9;
     if (o.type === 'event') wert = 11;
     wert += rng() * 3;                                       // etwas Streuung
@@ -183,7 +189,7 @@ function play(seed, voll) {
       }).sort(function (a2, b2) { return b2.punkte - a2.punkte; });
       reihenfolge.forEach(function (e) {
         var o = e.o;
-        if (o.price > run.gold) { unbezahlbar++; return; }
+        if (o.price > run.magicules) { unbezahlbar++; return; }
         if (o.kind === 'unit' && passt(o.id, kw3) < 4) return;
         if (o.kind === 'relic' && reliktWert(run, o.id) < 10) return;
         if (R.buy(run, e.i)) kaeufe[o.kind] = (kaeufe[o.kind] || 0) + 1;

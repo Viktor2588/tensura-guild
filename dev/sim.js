@@ -15,9 +15,15 @@ function ok(cond, msg) { if (cond) pass++; else { fail++; console.log('  ✗ ' +
 function head(s) { console.log('--- ' + s + ' ---'); }
 function mit(id, rank) { var m = R.member(id); m.rank = rank || 0; return m; }
 /* Der Run beginnt im Draft — für Tests, die die Karte brauchen, durchziehen. */
+/* Der Run startet jetzt mit EINER Einheit. Für die Tests, die einen fertigen
+   Trupp brauchen, wird auf drei aufgefüllt — und offene Passiv-Wahlen abgeräumt. */
 function fertigerRun(seed, meta) {
   var r = R.create(seed, meta || R.newMeta());
   while (r.phase === 'start') R.chooseStart(r, 0);
+  ['gobta', 'sturmwolf', 'skelettritter', 'riesenameise', 'gobkyu'].forEach(function (id) {
+    if (r.team.length < 3) R.addUnit(r, id);
+  });
+  while (R.passivWahl(r)) R.choosePassive(r, 0);
   return r;
 }
 function def(id, rank) { return R.resolve(mit(id, rank)); }
@@ -225,32 +231,44 @@ ok(hochVoll > 0 && hochSchwach > 0, 'bedingte Signaturen laufen gegen volle und 
 head('Startdraft und Laden');
 var dRun = R.create(321, R.newMeta());
 ok(dRun.phase === 'start' && dRun.startwahl, 'der Run beginnt mit einer Wahl statt fester Begleiter');
-ok(dRun.startwahl.offers.length === 3, 'drei Einheiten stehen zur Wahl');
-ok(dRun.team.length === 0, 'vorher ist der Trupp leer — niemand ist gesetzt');
-var ersteArt = GD.unit(dRun.startwahl.offers[0]).art;
-ok(R.chooseStart(dRun, 0), 'die erste Wahl gelingt');
-ok(dRun.team.length === 1 && dRun.phase === 'start', 'danach folgt die zweite Wahl');
-ok(dRun.startwahl.offers.every(function (id) { return GD.unit(id).art !== ersteArt; }),
-   'die schon gewählte Art taucht im zweiten Angebot nicht mehr auf');
-R.chooseStart(dRun, 0);
-R.chooseStart(dRun, 0);
-ok(dRun.phase === 'karte' && dRun.team.length === 3 && dRun.options,
-   'nach drei Wahlen beginnt die Karte');
+ok(dRun.startwahl.offers.length === 4, 'vier Anfänge stehen zur Wahl');
+ok(dRun.startwahl.offers.every(function (o) { return GD.unit(o.unit) && GD.relic(o.relic); }),
+   'jeder Anfang ist ein Paar aus Einheit und Relikt');
+ok(dRun.startwahl.offers.every(function (o) { return !GD.relic(o.relic).bedingung; }),
+   'kein Start-Relikt hat eine Bedingung, die noch gar nicht erfüllbar wäre');
+ok(dRun.team.length === 0 && !dRun.relics.length, 'vorher ist alles leer — nichts ist gesetzt');
+ok(R.chooseStart(dRun, 0), 'die Wahl gelingt');
+ok(dRun.team.length === 1 && dRun.relics.length === 1 && dRun.phase === 'karte' && dRun.options,
+   'danach steht eine Einheit mit einem Relikt auf der Karte');
+
+/* Aufbau statt Massenschlacht: der erste Kampf ist ein Duell. */
+function gegnerzahl(step) {
+  var r = R.create(4242, R.newMeta());
+  R.chooseStart(r, 0);
+  r.step = step;
+  return R.regelnTest(r, { type: 'kampf' }, EN.build(EN.forAct(1)[0], 1)).length;
+}
+ok(gegnerzahl(0) === 1, 'der erste Kampf ist ein 1 gegen 1');
+ok(gegnerzahl(1) === 2 && gegnerzahl(2) === 2, 'die nächsten beiden gehen gegen zwei');
+ok(gegnerzahl(3) >= 3, 'danach steht die volle Begegnung');
 var dGeladen = R.deserialize(R.serialize(R.create(321, R.newMeta())));
 ok(dGeladen.phase === 'start' && dGeladen.startwahl, 'ein Speicherstand mitten im Draft bleibt im Draft');
 
-head('Gold gegen Magicule');
+head('Eine Währung');
+ok(R.create(1, R.newMeta()).gold === undefined, 'ein Run kennt kein Gold mehr');
 var kRun = fertigerRun(88);
-kRun.gold = 1000; kRun.magicules = 0;
+kRun.magicules = 1000;
 kRun.phase = 'shop';
-kRun.pending = { offers: R.relicPool(kRun).length ? [{ kind: 'rang', name: 'Namensweihe', price: 130 }] : [] };
+kRun.pending = { offers: [{ kind: 'rang', name: 'Namensweihe', price: 130 }] };
 var vorRang = kRun.team[1].rank;
-ok(R.buy(kRun, 0, kRun.team[1].uid), 'die Namensweihe ist mit Gold bezahlbar');
+ok(R.buy(kRun, 0, kRun.team[1].uid), 'die Namensweihe ist bezahlbar');
 ok(kRun.team[1].rank === vorRang + 1, 'sie hebt genau die gewählte Einheit einen Rang');
-ok(kRun.magicules === 0, 'und kostet dabei keine Magicule');
+ok(kRun.magicules === 870, 'und kostet Magicule wie alles andere');
+/* Sie bleibt sinnvoll, weil sie unter dem normalen Rangpreis liegt. */
+ok(130 < R.rankCost({ rank: 0 }), 'die Namensweihe ist billiger als ein regulärer Aufstieg');
 ok(R.passivWahl(kRun) && R.passivWahl(kRun).uid === kRun.team[1].uid,
    'auch dabei wird eine neue Passive gewählt');
-R.skipPassive(kRun);
+R.choosePassive(kRun, 0);
 
 /* Ein Ereignis, das einen Rang schenkt, muss auch ohne Magicule wirken. */
 var gRun = fertigerRun(89);
@@ -468,17 +486,21 @@ function bossWut(t) {
 }
 ok(bossWut(5) === bossWut(4) * 2, 'Sturmgott verdoppelt die Boss-Eskalation');
 
-/* Belagerung: aus jedem Kampfknoten wird eine Elite, zur normalen Beute. */
-function knotenTypen(t) {
+/* Belagerung: im zweiten Akt wird jeder zweite Kampfknoten zur Elite, aber zur
+   normalen Beute. Nicht alle — ein durchgehend erzwungener Elite-Kampf kostete
+   gemessen 14 Punkte Siegquote statt der gewollten 6. */
+function belagerte(t) {
   var r = R.create(77, R.newMeta()); r.threat = t;
-  r.phase = 'karte'; r.startwahl = null; r.team = [R.member('gobta')];
-  var typen = [];
-  for (var st = 0; st < R.STEPS.length; st++) { r.step = st; r.act = 1; typen = typen.concat(
-    (function () { var o = []; r.options = null; R.rollTest(r); return r.options.map(function (x) { return x.type; }); })()); }
-  return typen;
+  r.phase = 'karte'; r.startwahl = null; r.team = [R.member('gobta')]; r.act = 2;
+  var n = 0;
+  for (var st = 0; st < R.STEPS.length; st++) {
+    r.step = st; r.options = null; R.rollTest(r);
+    r.options.forEach(function (o) { if (o.belagert) n++; });
+  }
+  return n;
 }
-ok(knotenTypen(4).indexOf('kampf') < 0 && knotenTypen(3).indexOf('kampf') >= 0,
-   'Belagerung macht aus jedem Kampfknoten eine Elite');
+ok(belagerte(4) > 0 && belagerte(3) === 0, 'Belagerung greift ab Stufe 4');
+ok(belagerte(4) < R.STEPS.length, 'aber nicht auf jedem Knoten (' + belagerte(4) + ')');
 
 /* Kriegsrecht: karges Angebot im Laden, teurere Ränge. */
 var krieg = fertigerRun(9001); krieg.threat = 3;
@@ -971,7 +993,8 @@ R.rankUp(pRun, shionM.uid);
 var pw2 = R.passivWahl(pRun);
 ok(pw2 && pw2.stufe === 2 && pw2.offers.every(function (o) { return AB.linien.shion[o.linie][1] === o.id; }),
    'der Aufstieg bietet die nächste Stufe jeder Linie an');
-ok(R.skipPassive(pRun) && !R.passivWahl(pRun), 'man darf auch verzichten');
+ok(!R.skipPassive, 'eine Passive lässt sich nicht auslassen — es gibt keinen Weg daran vorbei');
+ok(R.choosePassive(pRun, 0) && !R.passivWahl(pRun), 'die Wahl muss getroffen werden');
 ok(R.passivIds(R.member('gobta')).length === 0 &&
    R.passivIds({ id: 'gobta', rank: 2 }).length === 2,
    'Einheiten ohne eigene Linien behalten die festen Passiven nach Rang');
@@ -1044,10 +1067,10 @@ ok(R.choosePassive(rRun, 0), 'eine Passive wird gewählt');
 ok(held.passives[0] === gewaehlt && R.resolve(held).effects.some(function (e) { return e.id === gewaehlt; }),
    'sie wirkt danach im Kampf');
 
-R.rankUp(rRun, held.uid); R.skipPassive(rRun);
+R.rankUp(rRun, held.uid); R.choosePassive(rRun, 0);
 ok(R.rankName(held) === 'A', 'Rang A wird erreicht');
-ok(R.passivWahl(rRun) === null, 'man darf auch verzichten');
-R.rankUp(rRun, held.uid); R.skipPassive(rRun);
+ok(R.passivWahl(rRun) === null, 'nach der Wahl ist die Warteschlange leer');
+R.rankUp(rRun, held.uid); R.choosePassive(rRun, 0);
 ok(R.rankName(held) === 'S' && R.itemSlots(held) === 5, 'Rang S gibt zwei Item-Slots statt einem');
 ok(R.praedatorSlots(held) === 3, 'Rang S trägt drei verschlungene Fähigkeiten');
 ok(!R.rankUp(rRun, held.uid), 'über S hinaus geht es nicht');
@@ -1103,13 +1126,13 @@ iRun.bag = ['kurzschwert', 'langschwert'];
 var im = iRun.team[0];
 ok(R.equip(iRun, im.uid, 'kurzschwert'), 'erstes Item passt');
 ok(!R.equip(iRun, im.uid, 'langschwert'), 'zweites Item braucht Rang B');
-iRun.magicules = 5000; R.rankUp(iRun, im.uid); R.skipPassive(iRun);
+iRun.magicules = 5000; R.rankUp(iRun, im.uid); R.choosePassive(iRun, 0);
 ok(R.equip(iRun, im.uid, 'langschwert'), 'nach dem Aufstieg passt es');
 
 /* Prädator */
 var pRun = fertigerRun(11);
 pRun.magicules = 5000;
-R.rankUp(pRun, pRun.team[0].uid); R.skipPassive(pRun);
+R.rankUp(pRun, pRun.team[0].uid); R.choosePassive(pRun, 0);
 var beute = null;
 for (var i = 0; i < 14 && !beute; i++) {
   var opt = pRun.options.map(function (o, ix) { return { o: o, ix: ix }; })
@@ -1142,7 +1165,7 @@ if (beute) {
 
 /* Shop */
 var sRun = fertigerRun(99);
-sRun.gold = 1000;
+sRun.magicules = 3000;
 sRun.phase = 'shop';
 sRun.pending = { offers: [{ kind: 'item', id: 'kurzschwert', name: 'Kurzschwert', price: 25 }] };
 ok(R.buy(sRun, 0), 'Kauf gelingt mit genug Gold');
@@ -1153,7 +1176,7 @@ var eKaputt = [];
 EN.events.forEach(function (ev) {
   ev.options.forEach(function (opt, oi) {
     var t = fertigerRun(3);
-    t.gold = 500; t.magicules = 500;
+    t.magicules = 1500;
     t.phase = 'event'; t.pending = { event: ev };
     try { R.eventChoose(t, oi); } catch (e) { eKaputt.push(ev.id + '#' + oi + ': ' + e.message); }
   });
@@ -1162,11 +1185,12 @@ ok(!eKaputt.length, 'jede Ereignisoption läuft fehlerfrei' + (eKaputt.length ? 
 
 /* Speichern */
 var save = fertigerRun(1234);
-save.gold = 321; save.magicules = 77; save.relics.push('kern_des_zorns');
+save.magicules = 321; save.relics.push('kern_des_zorns');
 save.magicules = 5000; R.rankUp(save, save.team[0].uid); R.choosePassive(save, 0);
-save.gold = 321;
+save.magicules = 321;
 var wieder = R.deserialize(R.serialize(save));
-ok(wieder.gold === 321 && wieder.relics.length === 1, 'Gold und Relikte überleben das Speichern');
+ok(wieder.magicules === 321 && wieder.relics.length === save.relics.length,
+   'Magicule und Relikte überleben das Speichern');
 ok(wieder.team.length === save.team.length, 'der Trupp überlebt das Speichern');
 ok(wieder.team[0].rank === 1 && wieder.team[0].passives.length === 1,
    'Rang und gewählte Passive überleben das Speichern');

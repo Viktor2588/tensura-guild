@@ -9,13 +9,13 @@ Verbindliche Referenz. Konzeptänderungen hier nachziehen.
 ## 1. Kern-Loop
 
 ```
-Run-Start: 1 Start-Einheit + 1 Start-Relikt + 3 Leben
+Run-Start: 1 aus 4 Paaren (Einheit + Relikt), 5 Leben
   ↓
 Karte: Knoten wählen (Kampf / Elite / Shop / Event / Rast / Boss)
   ↓
 Kampf: läuft automatisch ab (Spieler greift nicht ein)
   ↓
-Belohnung: 1 aus 3 (Einheit | Relikt | Item | Magicule)
+Belohnung: 1 aus 4-5 (Einheit | Relikt | Item | Magicule)
   ↓  → Aufstellung + Ausrüstung anpassen
   └──── zurück zur Karte, bis Boss ────→ Sieg oder Tod
   ↓
@@ -122,6 +122,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 8 | Einheiten-Synergie: „verwundbar" als Trupp-Marke, Blutung, Soueis sechzehn Passive, größere Boss-Pools | Ein Assassine macht den ganzen Trupp stärker, nicht nur sich | ✅ Souei, 38 Einheiten offen |
 | 9 | Bedrohungsstufen als Regeln statt Prozentzahlen | Jede Stufe verlangt ein anderes Spiel, nicht nur einen stärkeren Trupp | ✅ |
 | 10 | Eine Aktive je Einheit, keine Abklingzeiten, Passive als einziger Fortschritt | Der Aufstieg ist eine Passiv-Entscheidung, die Signatur bleibt die Handschrift | ✅ |
+| 11 | Aufbau statt Ausrüstung: ein Anfang aus vier Paaren, eine Währung, Tags statt Textwänden | Der erste Kampf ist ein Duell, und jeder Kauf ist ein verzichteter Aufstieg | ✅ |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -483,6 +484,47 @@ Drei Dinge, die erst die Messung zeigte:
 Ergebnis `dev/balance.js 400`: 50 % frisch, 45 % voll freigeschaltet, Builds
 41–60 %. Bedrohungsleiter 50/34/25/19/19/15 — Stufe 3 und 4 liegen gleichauf,
 verlangen aber Verschiedenes (karger Händler gegen Elite überall).
+
+### Phase 11 (2026-07-26): Aufbau, eine Währung, Tags
+
+Sieben Punkte aus `TODO.md`.
+
+- **Chaos debufft nur noch.** Der Wurf war symmetrisch — als Debuff gedacht, als
+  Glücksspiel gespielt. Jetzt zieht Chaos nur nach unten, Antichaos nur nach
+  oben; unvorhersehbar bleibt die Höhe, nicht die Richtung.
+- **Passive lassen sich nicht auslassen.** `skipPassive` ist ersatzlos weg.
+- **Tags statt Textwänden.** Belohnung, Startwahl und Laden zeigen Art, Rolle,
+  Signatur, Schlüsselwörter und Bedingung als einzelne Tags mit eigenem Tooltip.
+- **Werte im Kampf** auf jeder Kämpferkarte, und **das Management verschwindet,
+  solange der Kampf läuft** — vorher stand die halbe Verwaltung unter einer
+  laufenden Animation.
+- **Der Start ist ein Aufbau:** vier Paare aus Einheit und passendem Relikt statt
+  dreier Einheiten. Erster Kampf 1 gegen 1, die ersten sieben Knoten mit weniger
+  und schwächeren Gegnern (`EINSTIEG`, `EINSTIEG_HAERTE`).
+- **Eine Währung.** Gold und Magicule waren dieselbe Zahl in zwei Beuteln.
+
+Das Zusammenlegen der Währungen war der teuerste Teil, in drei Stufen:
+
+1. Beim Umbau ersetzte der Magicule-Anteil die Kampfbeute, statt sie zu
+   ergänzen — **der Ertrag fiel auf ein Drittel**, Siegquote 4 %.
+2. Mit einer Einheit statt dreien am Start erreicht der Trupp nie die Größe, für
+   die Akt 2 kalibriert war. Deshalb hängt die Gegnerhärte jetzt an der
+   Truppgröße (`TRUPP_BEZUG`, `TRUPP_STEIGUNG`), flacher als der Zugewinn einer
+   Einheit — wachsen lohnt sich weiterhin.
+3. `WACHSTUM` von 6,5 auf 14,5. Dann waren Magicule zu reichlich (0,1
+   unbezahlbare Angebote je Run — also keine Entscheidung), also mussten die
+   Ladenpreise in dieselbe Liga wie die Rangkosten: Einheit 130 + 45 je
+   Kostenpunkt, Relikt 340, Ausrüstung dreifach. Jetzt 1,0 unbezahlbare
+   Angebote je Run.
+
+Und noch ein Messfehler statt eines Balancefehlers: **Stufe 4 maß sich leichter
+als Stufe 3**, weil der Bot belagerte Knoten an ihrem Elite-Label bewertete und
+sie deshalb aufsuchte — obwohl sie nur normale Beute zahlen. Nach der Korrektur
+im Bot zeigte sich die Regel als viel zu hart (25 → 11 %), sie trifft jetzt nur
+jeden zweiten Kampfknoten in Akt 2.
+
+Ergebnis `dev/balance.js 500`: 47 % frisch, 47 % voll freigeschaltet, Ø 4,8
+Einheiten. Bedrohungsleiter **47/37/29/25/21/15** — erstmals sauber monoton.
 
 Weitere offene Punkte:
 - Der Aufstiegs-Pool aus 34 Aktiven wird vom Spieler nicht mehr gezogen und lebt

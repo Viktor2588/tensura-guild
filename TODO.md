@@ -28,27 +28,24 @@ Abgearbeitet in Phase 10:
 - [x] Schlüsselwörter werden zentral an der Einheitenkarte erklärt statt an
       jeder einzelnen Fähigkeit
 
+Abgearbeitet in Phase 11:
+
+- [x] Chaos debufft nur noch — vorher konnte es den Gegner ebenso gut stärken
+- [x] Passive lassen sich nicht mehr auslassen; der „gilt den ganzen Run"-Hinweis ist weg
+- [x] Belohnungen, Startwahl und Laden zeigen Tags mit eigenen Tooltips statt einer Textwand
+- [x] Start als Aufbau: vier Paare aus Einheit + Relikt, erster Kampf 1 gegen 1,
+      die ersten Knoten gestaffelt, Gegnerhärte wächst mit der Truppgröße
+- [x] Eine Währung: Gold ist weg, alles kostet Magicule
+- [x] Werte der Kämpfer stehen im Kampf auf der Karte
+- [x] UI-Wechsel: während des Kampfes nur die Kampfansicht, danach das Management
+
 Offen:
 
+- 38 Einheiten haben noch keine eigenen Linien (`AB.linien`). Shion und Souei
+  sind die Vorlagen — vier Linien à vier Stufen je Einheit.
 - Der Aufstiegs-Pool aus 34 aktiven Fähigkeiten wird vom Spieler nicht mehr
-  gezogen — er lebt nur noch als Gegner-Repertoire weiter. Entweder in Passive
-  umbauen oder bewusst als Gegnerinhalt führen.
-- 38 Einheiten haben noch keine eigenen Linien. Das System steht (`AB.linien`),
-  Shion und Souei sind die Vorlagen — pro Einheit vier Linien à vier Stufen:
-  Werte-Angriff, eigene Mechanik, Unterstützung, Defensive. Als Nächstes bieten
-  sich die übrigen Oger an (Benimaru/Brand, Shuna/Heilung, Hakuro/Exekution,
-  Kurobe/Ausrüstung), weil sie mit Shion und Souei um denselben Artenslot
-  konkurrieren — da wird die Wahl am ehesten spürbar.
-- Boss-Balance in Pool 1 streut: Clayman 90 %, Milim 40 % gegen denselben
-  Referenztrupp. Der Grund ist Claymans Selbstheilung, die für Boss+Gefolge
-  entworfen war und ihn allein stehend entweder unkaputtbar oder wirkungslos
-  macht. Pool 2 liegt sauber bei 61–65 %.
+  gezogen und lebt nur noch als Gegner-Repertoire.
+- Boss-Balance in Pool 1 streut (Clayman leicht, Milim hart) — Claymans
+  Selbstheilung war für Boss plus Gefolge entworfen.
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
-- Chaos sollte standardmäßig das gegnerische Ziel debuffen & nicht buffen
-- Es sollte nicht Möglich sein, entwicklungsfähigkeiten(passive) auszulassen. Die infromation das diese den ganzen run anhalten ist unnötig
-- Einheiten belohnungen sollten auf Tags verteilt sein, und nicht ein rießieger wall auf text sein wenn man über die belohnung hovert so teilt sich die Infos auf jeweilige häppchen auf. Möchte ich wissen was untot heißt? da bekomme ich den "untoten" tooltip über den tag damit ich das kurz nachschauen kann.
-- Spielmechanik: Es soll ein aufbauen sein. D.h. initial habe ich die Wahl aus einer Festen kombi aus einer Einheit mit einem start Relikt. Aus vier solcher Kombinationen kann ich wählen. Dementsprechen sollten die ersten zwei / drei kämpfe leicher / weniger gegner sein. (erster kampf sollte ein 1vs 1 sein).
-- Spielmechanik: Nach jedem Kampf bekomme ich Magicule. Das rekrutieren von Einheiten kostet Magicule. Das erwerben von Relikten & Items kostet magicule. Alles kostet magicule. Geld ist eine duplette die wir nicht brauchen.
-- Spielmechanik: Ich möchte die Statuswerte der Kämpfer im kampf sehen
-- Spielmechanik: ich möchte nach jedem Kampf ein UI wechsel sehen. Im Kampf die Kampf ui / nach dem Kampf das Truppen management / mit den Upgrade optionen

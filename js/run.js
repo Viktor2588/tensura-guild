@@ -80,8 +80,8 @@
       text: 'Der Händler bietet nur noch EINE Einheit an statt drei, und Rangaufstiege kosten ' +
             '15 % mehr Magicule. Du gewinnst weitgehend mit dem Trupp, den du gedraftet hast.' },
     { stufe: 4, name: 'Belagerung', regel: 'belagerung',
-      text: 'Auf JEDEM Kampfknoten steht eine Elite — zur Beute eines normalen ' +
-            'Kampfes. Dazu gibt das Lager 30 % weniger — es gibt keinen ruhigen Knoten mehr.' },
+      text: 'Im zweiten Akt steht auf jedem zweiten Kampfknoten eine Elite — zur Beute ' +
+            'eines normalen Kampfes. Dazu gibt das Lager 15 % weniger.' },
     { stufe: 5, name: 'Sturmgott', regel: 'sturmgott',
       text: 'Nur drei Leben statt fünf, und Bosse eskalieren doppelt so schnell. Jetzt zählt Tempo.' }
   ];
@@ -105,21 +105,39 @@
      mehr Gold und Magicule abwerfen, sonst steht auf Stufe 5 ein Trupp auf Rang
      C. Ein Knopf statt dreissig nachgezogener Zahlen — gemessen mit
      `node dev/balance.js 400`. */
-  var WACHSTUM = 6.5;      // gemessen: 50 % Siege (frisch), 10,4 Rangstufen
+  var WACHSTUM = 14.5;    // eine Waehrung statt zwei; gemessen 50 % Siege (frisch)
+  /* Grundstock Magicule je gewonnenem Kampf, oben auf die Beute der Begegnung.
+     Beides zusammen ersetzt die früheren zwei Währungen — beim Zusammenlegen
+     fiel der Ertrag sonst auf ein Drittel. */
+  var MAG_JE_KAMPF = 25;
+  /* Bezugsgröße 5 Einheiten: dort ist der Faktor 1. */
+  var TRUPP_BEZUG = 0.70, TRUPP_STEIGUNG = 0.06;
+
+  /* Preise in derselben Liga wie die Rangkosten (140/300/560). Mit nur einer
+     Währung ist jeder Kauf ein verzichteter Aufstieg — vorher waren die Läden
+     mit Gold bezahlt und damit fast gratis. */
+  var PREIS_EINHEIT = 130, PREIS_ITEM = 3, PREIS_RELIKT = 340, PREIS_RANG = 260;
   function ertrag(x) { return Math.round(x * WACHSTUM); }
 
   /* Gegnerhärte je Stufe — greift auf denselben mult wie die Begegnung selbst. */
   function bedrohungsFaktor(run, node) {
     var t = run.threat || 0;
-    if (!t) return GRUNDHAERTE;
     /* Klein halten: die Kurve ist steil, 20 % mehr Gegnerwerte kippen fast jeden
        Run. Gemessen mit `node dev/balance.js 500 --stufe N`. */
     /* Nur noch ein leiser Anstieg: die Regeln oben tragen die Härte. */
     var f = GRUNDHAERTE + 0.012 * Math.min(t, 5);
+    if (run.act === 1 && node && node.type !== 'boss' && EINSTIEG_HAERTE[run.step]) {
+      f *= EINSTIEG_HAERTE[run.step];
+    }
+    /* Die Welt wächst mit dem Trupp. Seit der Run mit EINER Einheit beginnt,
+       kann er die Truppgröße nicht mehr erreichen, für die Akt 2 kalibriert war
+       — gemessen 7 % Siegquote. Der Anstieg ist flacher als der Zugewinn einer
+       zusätzlichen Einheit, wachsen lohnt sich also weiterhin. */
+    f *= TRUPP_BEZUG + TRUPP_STEIGUNG * (run.team ? run.team.length : 5);
     /* Eine Elite mit vier Körpern ist gegen einen Flächen-Trupp keine Strafe,
        sondern ein Angebot — deshalb bekommt der belagerte Knoten zusätzlich
        Werte. Ohne das lag Stufe 4 gemessen ÜBER Stufe 3. */
-    if (node && node.belagert) f *= 1.1;
+    if (node && node.belagert) f *= 1.0;
     return f;
   }
 
@@ -307,7 +325,7 @@
     var run = {
       seed: seed >>> 0, rngState: seed >>> 0, meta: meta, threat: t,
       act: 1, step: 0, phase: 'karte', over: false, won: false,
-      gold: 60, magicules: 0, lives: t >= 5 ? 3 : 5,
+      magicules: 120, lives: t >= 5 ? 3 : 5,
       team: [], bank: [], relics: [],
       options: null, node: null, pending: null, wahl: null, chronik: []
     };
@@ -316,31 +334,49 @@
     var brng = rngOf(run);
     run.bosse = [1, 2].map(function (p) { return root.RNG.pick(brng, EN.bossPool(p)).id; });
     commit(run, brng);
-    /* Kein gesetzter Held: der ganze Starttrupp wird gedraftet, dreimal eine
-       aus drei. Rimuru liegt als legendäre Einheit mit im Pool. */
+    /* Der Run ist ein Aufbau: EINE Einheit mit EINEM Relikt, aus vier Paaren
+       gewählt. Vorher standen drei Einheiten am Start und der erste Kampf war
+       ein Massenkampf — es fehlte das Gefühl, aus dem Nichts etwas zu bauen. */
     run.phase = 'start';
-    startAngebot(run, 3);
+    startAngebot(run);
     return run;
   }
 
-  /* Draft am Anfang: drei Einheiten zur Wahl, Arten ohne Dopplung. */
-  function startAngebot(run, verbleibend) {
+  /* Vier Anfänge zur Wahl: je eine billige Einheit und ein Relikt, das zu ihr
+     passt. Das Paar ist die erste Build-Ansage des Runs. */
+  function startAngebot(run) {
     var rng = rngOf(run);
     var pool = unitPool(run).filter(function (u) { return u.cost <= 3; });
+    var relPool = relicPool(run);
+    var einheiten = waehle(rng, pool, 1, 4);
     run.startwahl = {
-      verbleibend: verbleibend,
-      offers: waehle(rng, pool, 1, 3).map(function (u) { return u.id; })
+      offers: einheiten.map(function (u) {
+        /* Ein Relikt, das die Schlüsselwörter der Einheit trifft — sonst ist
+           das Paar zufällig statt eine Ansage. */
+        var sig = AB.get(u.signature);
+        var kw = (sig ? sig.keywords : []).concat();
+        (u.passives || []).forEach(function (pid) {
+          var ab = AB.get(pid);
+          if (ab) kw = kw.concat(ab.keywords || [], ab.amplifies || []);
+        });
+        var passend = relPool.filter(function (r) {
+          if (r.bedingung) return false;
+          return (r.keywords || []).concat(r.amplifies || []).some(function (k) { return kw.indexOf(k) >= 0; });
+        });
+        var offen = relPool.filter(function (r) { return !r.bedingung; });
+        var r = waehle(rng, passend.length ? passend : offen, 1, 1)[0];
+        return { unit: u.id, relic: r ? r.id : null };
+      })
     };
     commit(run, rng);
   }
 
   function chooseStart(run, i) {
     if (!run.startwahl) return false;
-    var id = run.startwahl.offers[i];
-    if (!id || !addUnit(run, id)) return false;
-    var rest = run.startwahl.verbleibend - 1;
+    var o = run.startwahl.offers[i];
+    if (!o || !addUnit(run, o.unit)) return false;
+    if (o.relic) run.relics.push(o.relic);
     run.startwahl = null;
-    if (rest > 0) { startAngebot(run, rest); return true; }
     run.phase = 'karte';
     roll(run);
     return true;
@@ -426,7 +462,15 @@
            Beute. Mit der Elite-Belohnung war die Stufe gemessen LEICHTER als die
            darunter (23 gegen 17 % Siege): die bessere Beute zahlte die härteren
            Gegner mehr als zurück. */
-        var belagert = type === 'kampf' && regel(run, 'belagerung');
+        /* Nicht während des Einstiegs: dort werden Begegnungen ohnehin auf
+           ein bis zwei Gegner gestutzt, und eine gestutzte Elite ist leichter
+           als die volle normale Begegnung — gemessen lag Stufe 4 damit ÜBER
+           Stufe 3. */
+        /* Nur der zweite Akt. Auf beide Akte angewandt kostete die Regel
+           gemessen 14 Punkte Siegquote statt der gewollten 6 — ein erzwungener
+           Elite-Kampf wiegt deutlich schwerer als er aussieht. */
+        var belagert = type === 'kampf' && regel(run, 'belagerung') && run.act >= AKTE &&
+          run.step % 2 === 1;
         if (belagert) type = 'elite';
         var pool = type === 'elite' ? EN.elitesForAct(st) : EN.forAct(st);
         var e = root.RNG.pick(rng, pool);
@@ -476,7 +520,18 @@
     } };
 
   /* Was die Bedrohungsstufe am fertigen Gegnerfeld ändert. */
+  /* Die ersten Knoten sind der Einstieg: ein Gegner, dann zwei. Wer mit einer
+     einzigen Einheit startet, soll nicht sofort gegen vier stehen. */
+  var EINSTIEG = [1, 2, 2, 3, 3, 4, 4];
+  /* Und sie sind zusätzlich schwächer: mit einer einzigen Einheit ist selbst ein
+     1-gegen-1 zur vollen Härte ein Münzwurf — gemessen 4 % Siegquote über den
+     ganzen Run. */
+  var EINSTIEG_HAERTE = [0.55, 0.65, 0.72, 0.78, 0.84, 0.9, 0.95];
+
   function regeln(run, node, foes) {
+    if (run.act === 1 && node.type !== 'boss' && EINSTIEG[run.step]) {
+      foes = foes.slice(0, EINSTIEG[run.step]);
+    }
     if (regel(run, 'ueberzahl') && node.type !== 'boss') {
       /* Ein Nachzügler, keine zweite Begegnung: ein voller Extragegner halbierte
          gemessen die Siegquote (46 -> 14 %). Bei NACHZUEGLER = 0.5 bleibt die
@@ -523,10 +578,12 @@
     run.pending = { result: res, node: node, rewards: null, devour: null };
 
     if (res.winner === 'player') {
-      var gold = ertrag(node.encounter.gold * (node.belagert ? 0.45 : 1));
-      run.gold += gold;
-      run.magicules += ertrag(25 + inhaltsStufe(run) * 15);
-      run.pending.gold = gold;
+      /* Eine Währung. Gold und Magicule waren dieselbe Zahl in zwei Beuteln:
+         beide kamen aus Kämpfen, beide gingen in Truppstärke. */
+      var beute = ertrag(node.encounter.beute * (node.belagert ? 0.75 : 1)) +
+        ertrag(MAG_JE_KAMPF + inhaltsStufe(run) * 15);
+      run.magicules += beute;
+      run.pending.gold = beute;
       run.pending.rewards = rollRewards(run, node);
       run.pending.devour = res.fallen.filter(function (f) { return f.side === 'enemy'; })
         .filter(function (f) { return (EN.get(f.id).effects || []).length; })
@@ -586,8 +643,8 @@
     }
     var it = themenWahl(run, rng, GD.items, akt, 1)[0];
     out.push({ kind: 'item', id: it.id, name: it.name, text: itemText(it), rarity: it.rarity });
-    out.push({ kind: 'gold', name: ertrag(stark ? 70 : 40) + ' Gold + ' + ertrag(stark ? 90 : 60) + ' Magicule',
-               gold: ertrag(stark ? 70 : 40), mag: ertrag(stark ? 90 : 60) });
+    out.push({ kind: 'gold', name: ertrag(stark ? 160 : 100) + ' Magicule',
+               mag: ertrag(stark ? 160 : 100) });
     commit(run, rng);
     return out;
   }
@@ -600,7 +657,7 @@
     if (r.kind === 'unit') { if (!addUnit(run, r.id)) return false; }
     else if (r.kind === 'relic') run.relics.push(r.id);
     else if (r.kind === 'item') (run.bag = run.bag || []).push(r.id);
-    else { run.gold += r.gold; run.magicules += r.mag; }
+    else run.magicules += r.mag;
     p.rewards = null;
     return true;
   }
@@ -720,12 +777,7 @@
     run.chronik.push('Passive: ' + GD.unit(m.id).name + ' wählt ' + AB.get(o.id).name);
     return true;
   }
-  /* Auch hier darf man verzichten — sonst ist eine schlechte Stufe ein Zwang. */
-  function skipPassive(run) {
-    if (!passivWahl(run)) return false;
-    run.pwahlen.shift();
-    return true;
-  }
+
 
   /* ---- Shop ---------------------------------------------------------------- */
 
@@ -738,11 +790,11 @@
        rückwärts, weil ein Trupp, dem eine Rolle fehlt, gar nicht mehr aufholt. */
     themenWahl(run, rng, unitPool(run), st, regel(run, 'kriegsrecht') ? 1 : 3)
       .forEach(function (u) {
-        offers.push({ kind: 'unit', id: u.id, name: u.name, price: 70 + u.cost * 8,
+        offers.push({ kind: 'unit', id: u.id, name: u.name, price: PREIS_EINHEIT + u.cost * 45,
                       text: unitText(u), rarity: u.rarity });
       });
     themenWahl(run, rng, GD.items, st, 2).forEach(function (it) {
-      offers.push({ kind: 'item', id: it.id, name: it.name, price: it.cost,
+      offers.push({ kind: 'item', id: it.id, name: it.name, price: Math.round(it.cost * PREIS_ITEM),
                     text: itemText(it), rarity: it.rarity });
     });
     var rels = relicPool(run);
@@ -752,13 +804,13 @@
          sonst wird jede Freischaltung zur Geldstrafe — gemessen kaufte ein
          Veteran ein Achtel weniger Relikte als ein Anfänger und verlor dadurch
          15 Punkte Siegquote. */
-      offers.push({ kind: 'relic', id: r.id, name: r.name, price: 120,
+      offers.push({ kind: 'relic', id: r.id, name: r.name, price: PREIS_RELIKT,
                     text: r.text, rarity: r.rarity });
     }
     /* Dritte Goldsenke neben Einheit und Ausrüstung: ein Rang, sonst nur für
        Magicule zu haben. Damit ist jeder Kauf ein Verzicht auf zwei andere. */
     if (run.team.some(function (m) { return m.rank < 3; })) {
-      offers.push({ kind: 'rang', name: 'Namensweihe', price: 130,
+      offers.push({ kind: 'rang', name: 'Namensweihe', price: PREIS_RANG,
                     text: 'Hebt eine Einheit deiner Wahl einen Rang, ohne Magicule' });
     }
     commit(run, rng);
@@ -767,7 +819,7 @@
 
   function buy(run, i, uid) {
     var o = run.pending && run.pending.offers && run.pending.offers[i];
-    if (!o || o.sold || run.gold < o.price) return false;
+    if (!o || o.sold || run.magicules < o.price) return false;
     if (o.kind === 'unit' && !addUnit(run, o.id)) return false;
     if (o.kind === 'rang') {
       var ziel = uid ? find(run, uid)
@@ -776,7 +828,7 @@
     }
     if (o.kind === 'relic') run.relics.push(o.id);
     if (o.kind === 'item') (run.bag = run.bag || []).push(o.id);
-    run.gold -= o.price;
+    run.magicules -= o.price;
     o.sold = true;
     return true;
   }
@@ -841,9 +893,11 @@
     if (run.phase !== 'lager' || run.pending.done) return false;
     /* Belagerung nimmt auch die Erholung — sonst ist der Schritt von Stufe 3
        auf 4 gemessen nur zwei Punkte wert. */
-    var f = regel(run, 'belagerung') ? 0.7 : 1;
-    if (i === 0) run.gold += Math.round(ertrag(60) * f);
-    else if (i === 1) run.magicules += Math.round(ertrag(120) * f);
+    var f = regel(run, 'belagerung') ? 0.85 : 1;
+    /* Drei verschiedene Antworten, nicht dreimal dieselbe Währung: Magicule
+       jetzt, ein Ausrüstungsstück, oder dauerhafte Werte. */
+    if (i === 0) run.magicules += Math.round(ertrag(140) * f);
+    else if (i === 1) api.grantItem(run);
     else api.buffRandom(run, { hp: Math.round(30 * f), atk: Math.round(4 * f) });
     run.pending.done = true;
     return true;
@@ -967,7 +1021,7 @@
   function serialize(run) {
     return JSON.stringify({
       seed: run.seed, rngState: run.rngState, act: run.act, step: run.step, threat: run.threat,
-      gold: run.gold, magicules: run.magicules, lives: run.lives, relics: run.relics,
+      magicules: run.magicules, lives: run.lives, relics: run.relics,
       bag: run.bag || [], chronik: run.chronik, meta: run.meta, bosse: run.bosse,
       pwahlen: run.pwahlen || [],
       team: run.team, bank: run.bank, uidSeq: uidSeq, startwahl: run.startwahl,
@@ -978,7 +1032,7 @@
     var d = JSON.parse(raw);
     var run = create(d.seed, d.meta);
     run.team = []; run.bank = [];
-    ['rngState', 'act', 'step', 'threat', 'gold', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank', 'bosse']
+    ['rngState', 'act', 'step', 'threat', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank', 'bosse']
       .forEach(function (k) { if (d[k] !== undefined) run[k] = d[k]; });
     uidSeq = Math.max(uidSeq, d.uidSeq || 0);
     run.pending = null;
@@ -1020,12 +1074,12 @@
     create: create, newMeta: newMeta, resolve: resolve, member: member, abilities: abilities,
     choose: choose, advance: advance, takeReward: takeReward, devour: devour,
     rankUp: rankUp,
-    passivWahl: passivWahl, choosePassive: choosePassive, skipPassive: skipPassive,
+    passivWahl: passivWahl, choosePassive: choosePassive,
     passivIds: passivIds, hatLinien: hatLinien,
     chooseStart: chooseStart,
     rankName: rankName, rankCost: rankCost,
     BEDROHUNG: BEDROHUNG, bedrohung: bedrohung, bedrohungsFaktor: bedrohungsFaktor, regel: regel,
-    regelnTest: regeln, rollTest: roll,
+    regelnTest: regeln, rollTest: roll, EINSTIEG: EINSTIEG, EINSTIEG_HAERTE: EINSTIEG_HAERTE,
     itemSlots: itemSlots, aktivSlots: aktivSlots, passivSlots: passivSlots, praedatorSlots: praedatorSlots,
     buy: buy, eventChoose: eventChoose, camp: camp,
     equip: equip, unequip: unequip, move: move, bench: bench, deploy: deploy, entlassen: entlassen,

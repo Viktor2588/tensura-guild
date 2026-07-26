@@ -395,8 +395,12 @@
       if (negC || posC) {
         var streu = CHAOS_STREUUNG * (gegen(u, 'chaos') ? 1.25 : 1);
         u.chaos = { stapel: negC };
+        /* Chaos zieht nur nach unten, Antichaos nur nach oben. Symmetrisch
+           gewürfelt konnte Chaos den Gegner ebenso gut STÄRKEN — als Debuff
+           gedacht, als Glücksspiel gespielt. Unvorhersehbar bleibt es: die Höhe
+           der Einbuße wird in jeder Runde neu gewürfelt. */
         ['atk', 'def', 'spd'].forEach(function (k) {
-          u.chaos[k] = 1 + rng() * streu * posC - (rng() * 2 - 1) * streu * negC;
+          u.chaos[k] = 1 + rng() * streu * posC - rng() * streu * negC;
         });
         log.push({ t: t, type: 'chaos', key: u.key, unit: u.name, side: u.side,
                    stapel: Math.round(negC), anti: Math.round(posC),

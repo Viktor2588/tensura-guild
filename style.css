@@ -322,3 +322,14 @@ table.dbg i.ab { color: #e77; }
 .kw-leiste { display: flex; flex-wrap: wrap; gap: .25rem; margin: .3rem 0 .2rem; }
 .kw-tag { font-size: .7rem; padding: .05rem .4rem; border-radius: 999px;
           border: 1px solid currentColor; opacity: .9; }
+
+/* Werte am Kämpfer: klein unter dem Lebensbalken. */
+.kaempfer .kwerte { font-size: .68rem; opacity: .7; margin-top: .15rem;
+                    font-variant-numeric: tabular-nums; }
+/* Tags auf Belohnungs- und Ladenkarten. */
+.karte .kw-leiste { justify-content: flex-start; margin: .25rem 0 0; }
+.tag-art { color: #b9c6ff; } .tag-rolle { color: #ffd9a0; }
+.tag-sig { color: var(--lila); } .tag-relikt { color: var(--gold); }
+.tag-item { color: #9fd6c2; } .tag-rang { color: var(--gold); }
+.tag-mag { color: #c7a3ff; } .tag-linien { color: #ff9db0; }
+.tag-an { color: var(--gruen); } .tag-aus { color: var(--rot); opacity: .8; }

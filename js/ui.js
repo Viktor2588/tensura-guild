@@ -108,7 +108,7 @@
   /* ---------------------------------------------------------------- Kopf */
 
   function hudTips() {
-    var paare = [['hud-gold', 'Gold', G.begriffe.gold], ['hud-mag', 'Magicule', G.begriffe.magicule],
+    var paare = [['hud-mag', 'Magicule', G.begriffe.magicule],
                  ['hud-leben', 'Verbleibende Niederlagen', G.begriffe.leben]];
     paare.forEach(function (p) {
       var el = $(p[0]).parentNode;
@@ -122,7 +122,6 @@
     $('hud-ort').textContent = (run.over ? 'Run beendet'
       : 'Akt ' + run.act + ' · Knoten ' + (run.step + 1) + '/' + R.STEPS.length) +
       (run.threat ? ' · Stufe ' + run.threat : '');
-    $('hud-gold').textContent = run.gold;
     $('hud-mag').textContent = run.magicules;
     $('hud-leben').textContent = run.lives;
     zeichnePfad();
@@ -131,7 +130,7 @@
   /* Der Weg durch den Akt: was an jedem Knoten zur Wahl steht, wo du gerade
      stehst und wann der Boss kommt. Ohne das plant niemand voraus — die
      Reihenfolge der Knotenarten steht ja fest (Run.STEPS). */
-  var TYP_ICON = { kampf: '⚔', elite: '☠', boss: '👑', shop: '🪙', event: '❓', lager: '🏕' };
+  var TYP_ICON = { kampf: '⚔', elite: '☠', boss: '👑', shop: '⚖', event: '❓', lager: '🏕' };
   function zeichnePfad() {
     var el = $('pfad');
     if (!el) return;
@@ -193,15 +192,15 @@
       var klasse = o.type === 'boss' ? 'karte boss' : o.type === 'elite' ? 'karte elite' : 'karte';
       var unter = o.encounter ? gegnerVorschau(o.encounter)
         : o.type === 'shop' ? 'Einheiten, Ausrüstung, Relikte kaufen'
-        : o.type === 'lager' ? 'Gold, Magicule oder eine Einheit stärken'
+        : o.type === 'lager' ? 'Magicule, Ausrüstung oder eine Einheit stärken'
         : 'Unbekannter Ausgang';
       var tipText = o.encounter
         ? gegnerDetails(o.encounter) +
           (o.type === 'elite' ? '\n\nElite: härter, würfelt Belohnungen aber eine Stufe besser.' : '') +
           (o.type === 'boss' ? '\n\nBoss: Abschluss des Akts. Widersteht Erstarrung zu 60 %.' : '') +
           '\n\nVerlierst du, kostet das ein Leben und der Knoten wird neu ausgewürfelt.'
-        : o.type === 'shop' ? 'Kaufen mit Gold: Einheiten, Ausrüstung, meist ein Relikt.'
-        : o.type === 'lager' ? 'Ein Bonus zur Wahl: Gold, Magicule oder dauerhafte Werte für eine zufällige Einheit.'
+        : o.type === 'shop' ? 'Kaufen mit Magicule: Einheiten, Ausrüstung, meist ein Relikt.'
+        : o.type === 'lager' ? 'Eines zur Wahl: Magicule, ein Ausrüstungsstück oder dauerhafte Werte für eine zufällige Einheit.'
         : 'Ein Ereignis mit zwei bis drei Optionen. Was dabei herauskommt, steht an der Option.';
       html += '<button class="' + klasse + '" data-a="knoten" data-i="' + i + '"' +
         tip(o.name, tipText) + '>' +
@@ -252,18 +251,19 @@
 
   function zeichneStart() {
     var w = run.startwahl;
-    var html = stufenHtml() + bossVorschau(1) + '<h2>Wer zieht mit dir los?</h2>' +
-      '<p class="hinweis">Noch ' + w.verbleibend + ' Wahl' + (w.verbleibend === 1 ? '' : 'en') +
-      '. Der ganze Trupp ist deine Entscheidung. ' +
-      'Von jeder Art kommt nur eine Einheit mit.</p><div class="karten">';
-    w.offers.forEach(function (id, i) {
-      var u = GD.unit(id), sig = AB.get(u.signature);
-      html += '<button class="karte" data-a="start" data-i="' + i + '"' +
-        belohnungTip({ kind: 'unit', id: id }) + '>' +
-        artHtml('unit') + '<span class="titel">' + esc(u.name) + '</span>' +
-        '<span class="unter">' + esc(GD.artName(u.art)) + ' · ' + esc(GD.rolleName(u.tags[1])) +
-        ' · ' + esc(sig.name) + '</span>' +
-        '<span class="unter">' + esc(sig.text) + '</span></button>';
+    var html = stufenHtml() + bossVorschau(1) + '<h2>Womit fängst du an?</h2>' +
+      '<p class="hinweis">Eine Einheit und ein Relikt — mehr hast du nicht. ' +
+      'Der Rest wird erkämpft.</p><div class="karten">';
+    w.offers.forEach(function (o, i) {
+      var u = GD.unit(o.unit), sig = AB.get(u.signature);
+      var rel = o.relic ? GD.relic(o.relic) : null;
+      html += '<button class="karte" data-a="start" data-i="' + i + '">' +
+        artHtml('unit') + '<span class="titel">' + esc(u.name) +
+        (rel ? ' + ' + esc(rel.name) : '') + '</span>' +
+        '<div class="kw-leiste">' + belohnungTags({ kind: 'unit', id: o.unit }) +
+        (rel ? belohnungTags({ kind: 'relic', id: o.relic }) : '') + '</div>' +
+        '<span class="unter">' + esc(sig.text) + '</span>' +
+        (rel ? '<span class="unter">' + esc(rel.text) + '</span>' : '') + '</button>';
     });
     return $('view').innerHTML = html + '</div>';
   }
@@ -273,7 +273,9 @@
   function starteReplay(res) {
     replay = { res: res, i: 0, u: {}, zeilen: [], fertig: false, timer: null };
     res.roster.forEach(function (r) {
-      replay.u[r.key] = { name: r.name, side: r.side, hp: r.maxHp, maxHp: r.maxHp, status: {}, tot: false };
+      replay.u[r.key] = { name: r.name, side: r.side, hp: r.maxHp, maxHp: r.maxHp,
+                          atk: r.atk, def: r.def, spd: r.spd, role: r.role,
+                          aktive: (r.actives || [])[0] || null, status: {}, tot: false };
     });
     zeichneKampf();
     replay.timer = setInterval(schritt, 70);
@@ -336,9 +338,12 @@
           (STATUS_NAMEN[k] || k) + ' ' + Math.round(u.status[k]) + '</span>';
       }).join('');
     var pct = Math.max(0, Math.round(u.hp / u.maxHp * 100));
-    return '<div class="kaempfer' + (u.tot ? ' tot' : '') + (u.side === 'enemy' ? ' feind' : '') + '">' +
+    return '<div class="kaempfer' + (u.tot ? ' tot' : '') + (u.side === 'enemy' ? ' feind' : '') + '"' +
+      tip(u.name, GD.rolleName(u.role) + '\n' + (G.rollen[u.role] || '') +
+        (u.aktive ? '\n\nSignatur: ' + u.aktive : '')) + '>' +
       '<div class="zeile"><span>' + esc(u.name) + '</span><span>' + Math.max(0, u.hp) + '/' + u.maxHp + '</span></div>' +
       '<div class="balken"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="kwerte">' + u.atk + '⚔ ' + u.def + '🛡 ' + u.spd + '⚡</div>' +
       (marken ? '<div class="marken">' + marken + '</div>' : '') + '</div>';
   }
 
@@ -383,41 +388,70 @@
       : '<span class="bed aus">derzeit wirkungslos</span>';
   }
 
-  function belohnungTip(r) {
+  /* Ein Tag mit eigenem Tooltip. Statt einer Textwand am Kartenrand bekommt
+     jede Information ihr eigenes Häppchen: wer wissen will, was „Untot" heißt,
+     tippt den Untot-Tag an. */
+  function tag(klasse, text, titel, hilfe) {
+    return '<span class="kw-tag ' + klasse + '"' + tip(titel, hilfe) + '>' + esc(text) + '</span>';
+  }
+
+  function belohnungTags(r) {
+    var tags = [];
     if (r.kind === 'unit') {
       var u = GD.unit(r.id), sig = AB.get(u.signature);
-      var txt = GD.artName(u.art) + ' · ' + GD.rolleName(u.tags[1]) + '\n' +
-        (G.rollen[u.tags[1]] || '') + '\n\n' +
-        'Signatur: ' + sig.name + ' — ' + sig.text + '\n' +
-        'Passive ab Rang B/A/S: ' + u.passives.map(function (id) {
-          var p2 = AB.get(id); return p2.name + ' (' + p2.text + ')';
-        }).join(' · ');
-      return tip(u.name, txt);
+      tags.push(tag('tag-art', GD.artName(u.art), 'Art: ' + GD.artName(u.art),
+        G.arten[u.art] + '\n\n' + G.begriffe.art));
+      tags.push(tag('tag-rolle', GD.rolleName(u.tags[1]), 'Rolle: ' + GD.rolleName(u.tags[1]),
+        G.rollen[u.tags[1]]));
+      tags.push(tag('tag-sig', sig.name, sig.name, 'Aktive Fähigkeit\n\n' + sig.text));
+      (sig.keywords || []).forEach(function (k) {
+        tags.push(tag('kw-' + k, kwName(k), kwName(k),
+          (G.keywords[k] || '') + (G.zustaende[k] ? '\n\n' + G.zustaende[k] : '')));
+      });
+      if (AB.linien[u.id]) {
+        tags.push(tag('tag-linien', 'Vier Linien', 'Eigene Entwicklungslinien',
+          'Diese Einheit wählt bei jedem Aufstieg aus vier Passiven — je eine aus Angriff, ' +
+          'eigener Mechanik, Unterstützung und Defensive.'));
+      }
+      return tags.join('');
     }
     if (r.kind === 'relic') {
       var rel = GD.relic(r.id);
-      return tip(rel.name, rarZeile(rel.rarity, 'Relikt') +
-        'Wirkt auf den ganzen Trupp, den ganzen Run.\n' + rel.text +
-        (rel.bedingung ? '\n\n' + (rel.bedingung(run)
-          ? '✓ Bedingung ist mit deinem jetzigen Trupp erfüllt.'
-          : '✗ Mit deinem jetzigen Trupp wirkungslos — erst sinnvoll, wenn die Bedingung zutrifft.') : ''));
+      tags.push(tag('rar-tag rar-text-' + rel.rarity, AB.rarName(rel.rarity),
+        'Raritätsstufe', G.raritaeten[rel.rarity]));
+      tags.push(tag('tag-relikt', 'Relikt', 'Relikt', 'Wirkt auf den ganzen Trupp, den ganzen Run.'));
+      (rel.keywords || []).concat(rel.amplifies || []).forEach(function (k) {
+        tags.push(tag('kw-' + k, kwName(k), kwName(k), G.keywords[k] || ''));
+      });
+      if (rel.bedingung) {
+        var an = rel.bedingung(run);
+        tags.push(tag(an ? 'tag-an' : 'tag-aus', an ? 'Bedingung erfüllt' : 'wirkungslos',
+          'Bedingtes Relikt', an ? 'Mit deinem jetzigen Trupp wirkt es.'
+            : 'Mit deinem jetzigen Trupp wirkungslos — erst sinnvoll, wenn die Bedingung zutrifft.'));
+      }
+      return tags.join('');
     }
     if (r.kind === 'item') {
       var it = GD.item(r.id);
-      return tip(it.name, rarZeile(it.rarity, 'Ausrüstung') +
-        'Landet im Beutel und wird einer Einheit angelegt.\n' + (it.text || ''));
+      tags.push(tag('rar-tag rar-text-' + it.rarity, AB.rarName(it.rarity),
+        'Raritätsstufe', G.raritaeten[it.rarity]));
+      tags.push(tag('tag-item', 'Ausrüstung', 'Ausrüstung',
+        'Landet im Beutel und wird einer Einheit angelegt.\n\n' + G.begriffe.itemslot));
+      (it.keywords || []).concat(it.amplifies || []).forEach(function (k) {
+        tags.push(tag('kw-' + k, kwName(k), kwName(k), G.keywords[k] || ''));
+      });
+      return tags.join('');
     }
     if (r.kind === 'rang') {
-      return tip('Namensweihe', 'Hebt die oben gewählte Einheit einen Rang — ohne Magicule.\n\n' +
-        G.begriffe.rang);
+      return tag('tag-rang', 'Aufstieg', 'Namensweihe', G.begriffe.rang);
     }
-    return tip('Vorräte', G.begriffe.gold + '\n\n' + G.begriffe.magicule);
+    return tag('tag-mag', 'Vorräte', 'Vorräte', G.begriffe.magicule);
   }
 
   function ergebnisHtml(p) {
     var html = '';
     if (p.result.winner === 'player') {
-      html += '<p class="gut">Sieg! +' + p.gold + ' Gold, +' + R.ertrag(25 + R.inhaltsStufe(run) * 15) + ' Magicule.</p>';
+      html += '<p class="gut">Sieg! +' + p.gold + ' Magicule.</p>';
       if (p.devour && p.devour.length) {
         var moeglich = run.team.filter(function (m) { return m.devoured.length < R.praedatorSlots(m); });
         html += '<h3' + tip('Prädator', G.begriffe.praedator) + '>Prädator</h3>';
@@ -454,10 +488,10 @@
         html += '<h3>Belohnung wählen</h3><div class="karten">';
         p.rewards.forEach(function (r, i) {
           var geht = r.kind !== 'unit' || R.freieArt(run, GD.unit(r.id).art);
-          html += '<button class="karte" data-a="belohnung" data-i="' + i + '"' + (geht ? '' : ' disabled') +
-            belohnungTip(r) + '>' +
-            artHtml(r.kind) + (r.kind === 'unit' ? '' : rarHtml(r.rarity)) + bedingungHtml(r) + '<span class="titel">' + esc(r.name) + '</span>' +
-            '<span class="unter">' + esc(r.text || '') + (geht ? '' : ' — Art schon besetzt') + '</span></button>';
+          html += '<button class="karte" data-a="belohnung" data-i="' + i + '"' + (geht ? '' : ' disabled') + '>' +
+            artHtml(r.kind) + '<span class="titel">' + esc(r.name) + '</span>' +
+            '<div class="kw-leiste">' + belohnungTags(r) + '</div>' +
+            (geht ? '' : '<span class="unter">Art schon besetzt</span>') + '</button>';
         });
         html += '</div>';
       }
@@ -490,7 +524,7 @@
   /* --------------------------------------------------------------- Shop */
 
   function zeichneShop() {
-    var html = '<h2>Händler</h2><p class="hinweis">Gold: ' + run.gold + '</p>';
+    var html = '<h2>Händler</h2><p class="hinweis">Magicule: ' + run.magicules + '</p>';
     if (run.pending.offers.some(function (o) { return o.kind === 'rang' && !o.sold; })) {
       var kandidaten = run.team.filter(function (m) { return m.rank < 3; });
       html += '<div class="reihe"><span class="hinweis">Namensweihe für:</span>' +
@@ -503,12 +537,12 @@
     run.pending.offers.forEach(function (o, i) {
       var frei = o.kind !== 'unit' || R.freieArt(run, GD.unit(o.id).art);
       if (o.kind === 'rang') frei = run.team.some(function (m) { return m.rank < 3; }) && !R.passivWahl(run);
-      var geht = !o.sold && run.gold >= o.price && frei;
+      var geht = !o.sold && run.magicules >= o.price && frei;
       html += '<button class="karte' + (o.sold ? ' gewaehlt' : '') + '" data-a="kaufen" data-i="' + i + '"' +
-        (geht ? '' : ' disabled') + belohnungTip(o) + '>' + artHtml(o.kind) +
-        (o.kind === 'unit' ? '' : rarHtml(o.rarity)) + bedingungHtml(o) +
-        '<span class="titel">' + esc(o.name) + ' — ' + o.price + ' 🪙' + (o.sold ? ' (gekauft)' : '') + '</span>' +
-        '<span class="unter">' + esc(o.text || '') + (frei ? '' : ' — Art schon besetzt') + '</span></button>';
+        (geht ? '' : ' disabled') + '>' + artHtml(o.kind) +
+        '<span class="titel">' + esc(o.name) + ' — ' + o.price + ' ✦' + (o.sold ? ' (gekauft)' : '') + '</span>' +
+        '<div class="kw-leiste">' + belohnungTags(o) + '</div>' +
+        (frei ? '' : '<span class="unter">Art schon besetzt</span>') + '</button>';
     });
     html += '</div><div class="reihe"><button class="haupt" data-a="weiter">Weiterziehen</button></div>';
     $('view').innerHTML = html;
@@ -540,10 +574,10 @@
     var html = '<h2>Lager</h2>';
     if (!run.pending.done) {
       html += '<p>Ihr schlagt die Zelte auf. Was ist jetzt am wichtigsten?</p><div class="karten">' +
-        '<button class="karte" data-a="lager" data-i="0"' + tip('Vorräte verkaufen', G.begriffe.gold) +
-        '><span class="titel">Vorräte verkaufen</span><span class="unter">+60 Gold</span></button>' +
-        '<button class="karte" data-a="lager" data-i="1"' + tip('Meditieren', G.begriffe.magicule) +
-        '><span class="titel">Meditieren</span><span class="unter">+120 Magicule</span></button>' +
+        '<button class="karte" data-a="lager" data-i="0"' + tip('Meditieren', G.begriffe.magicule) +
+        '><span class="titel">Meditieren</span><span class="unter">Magicule für den nächsten Aufstieg</span></button>' +
+        '<button class="karte" data-a="lager" data-i="1"' + tip('Schmieden', G.begriffe.itemslot) +
+        '><span class="titel">Schmieden</span><span class="unter">Ein Ausrüstungsstück in den Beutel</span></button>' +
         '<button class="karte" data-a="lager" data-i="2"' + tip('Training',
           'Trifft eine zufällige Einheit aus dem Trupp, nicht die von dir gewählte. Der Bonus bleibt den ganzen Run.') +
         '><span class="titel">Training</span><span class="unter">Eine zufällige Einheit: dauerhaft +30 Leben, +4 Angriff</span></button>' +
@@ -585,7 +619,9 @@
     if (!m) return '';
     var html = '<div class="wahlbox"><h3>' + esc(GD.unit(m.id).name) + ' — Passive Stufe ' + w.stufe +
       ' (Rang ' + R.rankName(m) + ')</h3>' +
-      '<p class="hinweis">Eine aus vier, eine je Linie. Die Wahl bleibt für den ganzen Run.</p>' +
+      '<p class="hinweis">' + (w.offers.length === 4
+        ? 'Eine je Linie: Angriff, Mechanik, Unterstützung, Defensive.'
+        : 'Eine davon ist die eigene nächste Passive dieser Einheit.') + '</p>' +
       '<div class="karten">';
     w.offers.forEach(function (o, i) {
       var a = AB.get(o.id);
@@ -600,7 +636,7 @@
         '<span class="linie">' + esc(o.linieName) + '</span>' +
         '<span class="unter">' + esc(a.text) + '</span></button>';
     });
-    return html + '</div><div class="reihe"><button data-a="pwahl-skip">Keine nehmen</button></div></div>';
+    return html + '</div></div>';
   }
 
   function zeichneWahl() {
@@ -873,7 +909,20 @@
     return html + '</div>';
   }
 
+  /* Solange der Kampf läuft, gehört der Bildschirm dem Kampf. Erst danach kommt
+     das Truppen-Management samt Aufstiegen zurück — sonst steht die halbe
+     Verwaltung unter einer laufenden Animation und niemand sieht beides. */
+  function kampfLaeuft() {
+    return run.phase === 'kampf' && replay && !replay.fertig;
+  }
+
   function zeichneUnten() {
+    if (kampfLaeuft()) {
+      ['wahl', 'synergien', 'team', 'beutel', 'reliktliste'].forEach(function (id) {
+        var el = $(id); if (el) el.innerHTML = '';
+      });
+      return;
+    }
     zeichneWahl();
     $('synergien').innerHTML = synergienHtml();
 
@@ -985,7 +1034,6 @@
     lager: function (d) { R.camp(run, +d.i); render(); speichern(); },
     aufstieg: function (d) { R.rankUp(run, d.uid); render(); speichern(); },
     pwahl: function (d) { R.choosePassive(run, +d.i); render(); speichern(); },
-    'pwahl-skip': function () { R.skipPassive(run); render(); speichern(); },
     platz: function (d) {
       if (!tauschUid || tauschUid === d.uid) tauschUid = tauschUid === d.uid ? null : d.uid;
       else { R.swap(run, tauschUid, d.uid); tauschUid = null; speichern(); }

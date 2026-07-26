@@ -23,10 +23,32 @@ die Härte kommt aus den Regeln.
 
 ## Der Start
 
-Den ganzen Trupp wählst du selbst: dreimal eine Einheit aus drei Angeboten.
-Niemand ist gesetzt — auch Rimuru nicht, er liegt als legendäre Einheit mit im
-Pool und taucht entsprechend selten auf. Achte schon hier auf die Signaturen — sie bestimmen, welcher Build
-überhaupt möglich wird.
+**Ein Anfang aus vier.** Jeder ist ein Paar: eine Einheit und ein Relikt, das zu
+ihren Schlüsselwörtern passt. Mehr hast du nicht — der Rest wird erkämpft.
+
+Die ersten Knoten sind entsprechend gestaffelt: **der erste Kampf ist ein
+1 gegen 1**, die nächsten gehen gegen zwei, dann drei, und die Gegner sind dabei
+zusätzlich abgeschwächt. Ab dem achten Knoten steht die volle Begegnung.
+
+Und die Welt wächst mit dir: die Gegnerhärte hängt an deiner Truppgröße. Der
+Anstieg ist flacher als der Zugewinn einer zusätzlichen Einheit — wachsen lohnt
+sich immer, aber ein Trupp von zwei kämpft nicht gegen die Wand, für die sechs
+gedacht waren.
+
+## Magicule — die einzige Währung
+
+Es gibt kein Gold mehr. **Alles kostet Magicule**: Rangaufstiege, Einheiten,
+Ausrüstung, Relikte. Jeder gewonnene Kampf bringt welche, und jeder ausgegebene
+Punkt fehlt woanders. Genau darin liegt die Entscheidung — ein Relikt für 340
+ist ein verzichteter Aufstieg von C auf B plus die Hälfte des nächsten.
+
+| Was | Preis |
+|---|---|
+| Rang C → B / B → A / A → S | 140 / 300 / 560 |
+| Einheit im Laden | 130 + 45 je Kostenpunkt |
+| Relikt im Laden | 340 |
+| Namensweihe (ein Rang, günstiger) | 260 |
+| Ausrüstung | das Dreifache ihres Grundwerts |
 
 ## Der Run
 

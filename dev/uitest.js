@@ -45,15 +45,23 @@ var run = win.UI.aktueller();
 
 /* ---------------------------------------------------------------- Start */
 head('Startdraft');
-ok(/Wer zieht mit dir los/.test(text('main h2')), 'der Startbildschirm fragt nach den Begleitern');
-ok(karten().length === 3, 'drei Einheiten stehen zur Wahl');
-ok(karten().every(function (k) { return k.querySelector('.titel') && k.querySelector('.unter'); }),
-   'jede Wahlkarte nennt Namen und Beschreibung');
+ok(/Womit fängst du an/.test(text('main h2')), 'der Startbildschirm fragt nach dem Anfang');
+ok(karten().length === 4, 'vier Anfänge stehen zur Wahl');
+ok(karten().every(function (k) { return k.querySelector('.titel') && k.querySelector('.kw-leiste'); }),
+   'jede Wahlkarte nennt Namen und Tags');
+ok(karten().every(function (k) { return k.querySelectorAll('.kw-tag').length >= 4; }),
+   'die Infos stecken in einzelnen Tags statt in einer Textwand');
 klick(karten()[0]);
-ok(run.team.length === 1 && /Wer zieht mit dir los/.test(text('main h2')), 'nach der ersten Wahl folgt die zweite');
-klick(karten()[0]);
-klick(karten()[0]);
-ok(run.phase === 'karte' && run.team.length === 3, 'nach drei Wahlen beginnt die Karte');
+ok(run.phase === 'karte' && run.team.length === 1 && run.relics.length === 1,
+   'nach der Wahl steht eine Einheit mit einem Relikt auf der Karte');
+
+/* Der Run startet mit einer Einheit — für Aufstellung und Trupp-Panel braucht
+   der Test drei. */
+['gobta', 'sturmwolf', 'skelettritter', 'riesenameise'].forEach(function (id) {
+  if (run.team.length < 3) win.Run.addUnit(run, id);
+});
+while (win.Run.passivWahl(run)) win.Run.choosePassive(run, 0);
+win.UI.render();
 
 /* ------------------------------------------------------------ Wegleiste */
 head('Wegleiste und Aufstellung');
@@ -88,7 +96,7 @@ ok(!$('.aufstellung .platz.gewaehlt'), 'nach dem Tausch ist nichts mehr ausgewä
 
 /* ----------------------------------------------------------------- HUD */
 head('Kopfzeile und Trupp');
-ok($('#hud-gold').textContent === String(run.gold), 'Gold steht in der Kopfzeile');
+ok(!$('#hud-gold'), 'Gold gibt es nicht mehr in der Kopfzeile');
 ok($('#hud-mag').textContent === String(run.magicules), 'Magicule stehen in der Kopfzeile');
 ok($$('.einheit').length === 3, 'der Trupp zeigt drei Einheitenkarten');
 ok($$('.einheit .rang').length === 3, 'jede Karte trägt ein Rangabzeichen');
@@ -160,7 +168,7 @@ if (sieg) {
      'jede Belohnung ist als Gefolge/Relikt/Ausrüstung/Vorräte gekennzeichnet');
   var vorher = run.team.length + (run.bag || []).length + run.relics.length;
   klick(belohnungen[belohnungen.length - 1]);          // Vorräte sind immer nehmbar
-  ok(run.gold > 0, 'die Belohnung wird gutgeschrieben');
+  ok(run.magicules > 0, 'die Belohnung wird gutgeschrieben');
   ok($('[data-a=weiter]'), 'danach geht es weiter');
   klick($('[data-a=weiter]'));
   ok(run.phase === 'karte', 'nach dem Kampf steht wieder die Karte');
@@ -173,13 +181,15 @@ if (sieg) {
 /* -------------------------------------------------------- Rangaufstieg */
 head('Rangaufstieg');
 run.magicules = 5000;
+/* Eine offene Passiv-Wahl blockiert den Aufstieg — erst abräumen. */
+while (win.Run.passivWahl(run)) win.Run.choosePassive(run, 0);
 win.UI.render();
 var aufstieg = $('[data-a=aufstieg]');
 ok(aufstieg && !aufstieg.disabled, 'der Aufstiegsknopf ist mit genug Magicule aktiv');
 klick(aufstieg);
 ok($('#wahl .karte'), 'nach dem Aufstieg stehen Passive zur Wahl');
 ok($$('#wahl .karte').length >= 3, 'mindestens drei Angebote');
-ok($('[data-a=pwahl-skip]'), 'man darf auch verzichten');
+ok(!$('[data-a=pwahl-skip]'), 'es gibt keinen Weg, die Passive auszulassen');
 var vorherPassive = $$('.einheit')[0].querySelectorAll('.fk.passiv').length;
 klick($('#wahl .karte'));
 ok(!win.Run.passivWahl(run) &&
@@ -191,7 +201,7 @@ ok($$('.einheit')[0].querySelector('.fk.passiv'), 'die erste Passive ist freiges
 
 /* --------------------------------------------------------------- Shop */
 head('Händler');
-run.gold = 800;
+run.magicules = 3000;
 var shopIndex = -1;
 for (var v2 = 0; v2 < 20 && shopIndex < 0; v2++) {
   run.phase = 'karte'; run.pending = null;
@@ -209,9 +219,9 @@ ok(angebote.length >= 5, 'der Laden zeigt mehrere Angebote');
 ok(angebote.some(function (k) { return /Namensweihe/.test(k.textContent); }),
    'die Namensweihe wird als Goldsenke angeboten');
 ok($('#rang-ziel'), 'für die Namensweihe ist ein Ziel wählbar');
-var goldVorher = run.gold;
+var magVorher = run.magicules;
 klick(angebote[0]);
-ok(run.gold < goldVorher, 'ein Kauf zieht Gold ab');
+ok(run.magicules < magVorher, 'ein Kauf zieht Magicule ab');
 
 /* -------------------------------------------------------------- Menü */
 head('Menü und Glossar');
