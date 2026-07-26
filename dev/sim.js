@@ -1301,6 +1301,19 @@ ok(R.deserialize(R.serialize(R.create(7, R.newMeta()))).startwahl.offers
    .every(function (o) { return GD.unit(o.unit) && GD.relic(o.relic); }),
    'ein frischer Startdraft überlebt Speichern und Laden vollständig');
 
+/* Ein beendeter Run muss beendet bleiben. Vorher kam er als unfertiger zurück,
+   mit einer Aktnummer hinter dem letzten Akt — der nächste Kartenwurf suchte
+   dann einen Boss, den es nicht gibt. */
+var endeRun = fertigerRun(4242);
+endeRun.act = R.AKTE; endeRun.step = R.STEPS.length - 1;
+R.advance(endeRun);
+ok(endeRun.over, 'der Run endet nach dem letzten Knoten');
+var endeGeladen = R.deserialize(R.serialize(endeRun));
+ok(endeGeladen.over && endeGeladen.phase === 'ende', 'und bleibt nach dem Laden beendet');
+ok(endeGeladen.won === endeRun.won, 'Sieg oder Niederlage überlebt mit');
+/* Und der Boss-Zugriff hält auch eine kaputte Aktnummer aus. */
+ok(!!R.boss({ act: 99, bosse: [] }), 'die Bossabfrage liefert auch hinter dem letzten Akt etwas');
+
 /* Speichern */
 var save = fertigerRun(1234);
 save.magicules = 321; save.relics.push('kern_des_zorns');
@@ -1332,6 +1345,12 @@ if (beute2) {
   var wieder2 = R.deserialize(R.serialize(bRun2));
   ok(wieder2.phase === 'kampf' && wieder2.pending && wieder2.pending.markt,
      'nach dem Laden steht der Ergebnisbildschirm noch');
+  /* Die Bilanz muss mitkommen — das Kampflog tut es bewusst nicht. */
+  ok(wieder2.pending.bilanz && typeof wieder2.pending.bilanz.ticks === 'number' &&
+     typeof wieder2.pending.bilanz.lebend === 'number' &&
+     Array.isArray(wieder2.pending.bilanz.gefallen),
+     'die Kampfbilanz übersteht das Speichern');
+  ok(!wieder2.pending.result.log, 'das Kampflog wandert nicht in den Speicherstand');
   /* Drei Bildschirme: Kampf -> Ergebnis -> Verwaltung, jeder für sich ladbar. */
   ok(R.zumMarkt(bRun2) && bRun2.phase === 'markt', 'die Bestätigung führt in die Verwaltung');
   var imMarkt = R.deserialize(R.serialize(bRun2));

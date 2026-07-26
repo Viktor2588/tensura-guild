@@ -601,6 +601,21 @@ Relikte ins Spiel (Ø 8,3 Relikte und 8,4 Ausrüstungen gegen vorher 6,3 und 5,6
 also stieg `GRUNDHAERTE` von 1.02 auf 1.08. Ergebnis `dev/balance.js 500`:
 **48 % frisch, 60 % voll freigeschaltet**, 59 % der Auflagen gehalten.
 
+Nachgetragen: **zwei Laufzeitfehler, beide beim Neuladen.**
+
+1. Der Ergebnisbildschirm las `result.survivors` und `result.ticks` — der
+   schlanke Speicherstand trägt aber bewusst nur `{ winner }`. Nach einem F5 auf
+   dem Ergebnis stürzte die Seite ab. Der Kampf legt jetzt eine `bilanz` an
+   (Züge, wer steht, wer fiel), die mitgespeichert wird; das Log bleibt draußen.
+2. `deserialize` stellte `over`/`won` nicht wieder her. Ein beendeter Run kam als
+   unfertiger zurück — mit einer Aktnummer hinter dem letzten Akt, und der
+   nächste Kartenwurf suchte einen Boss, den es nicht gibt. Gefunden mit einem
+   Fuzz über 60 000 Aktionen, der nach jeder Aktion speichert und lädt.
+   Zusätzlich begrenzt `bossOf` die Aktnummer jetzt selbst.
+
+Der Fuzz und ein Renderlauf über alle Phasen aus geladenem Stand sind seither
+sauber.
+
 Weitere offene Punkte:
 - Der Abstand zwischen Anfänger und Veteran ist auf 12 Punkte gewachsen
   (48 gegen 60 %) — der Markt nach jedem Kampf belohnt einen großen Reliktpool

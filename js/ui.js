@@ -468,15 +468,15 @@
   function ergebnisHtml(p) {
     var html = '';
     if (p.result.winner === 'player') {
-      /* Das Ergebnis als eigene Ansage: was der Kampf gekostet und gebracht hat. */
-      var lebend = p.result.survivors.filter(function (u) { return u.side === 'player'; });
-      var gefallen = p.result.fallen.filter(function (u) { return u.side === 'player'; });
+      /* Das Ergebnis als eigene Ansage. Die Zahlen kommen aus `bilanz`, nicht aus
+         dem Kampflog — das steht nach einem Neuladen nicht mehr zur Verfügung. */
+      var b = p.bilanz || {};
+      var gefallen = b.gefallen || [];
       html += '<div class="ergebnis"><h2 class="gut">Sieg</h2>' +
-        '<p class="beute">+' + p.gold + ' ✦ Magicule</p>' +
-        '<p class="hinweis">' + p.result.ticks + ' Züge · ' + lebend.length + ' von ' +
-        (lebend.length + gefallen.length) + ' Einheiten stehen noch' +
-        (gefallen.length ? ' · gefallen: ' + esc(gefallen.map(function (u) { return u.name; }).join(', ')) : '') +
-        '</p>' +
+        '<p class="beute">+' + (p.gold || 0) + ' ✦ Magicule</p>' +
+        (b.ticks ? '<p class="hinweis">' + b.ticks + ' Züge · ' + b.lebend + ' von ' +
+          (b.lebend + gefallen.length) + ' Einheiten stehen noch' +
+          (gefallen.length ? ' · gefallen: ' + esc(gefallen.join(', ')) : '') + '</p>' : '') +
         '<p class="hinweis">Magicule gesamt: ' + run.magicules + ' ✦</p></div>';
       if (p.devour && p.devour.length) {
         var moeglich = run.team.filter(function (m) { return m.devoured.length < R.praedatorSlots(m); });

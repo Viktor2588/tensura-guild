@@ -499,8 +499,11 @@
 
   /* Der Boss dieses Akts — feststehend, nicht je Aufruf neu gewürfelt. */
   function bossOf(run, akt) {
-    var id = (run.bosse || [])[(akt || run.act) - 1];
-    return (id && EN.bossById(id)) || EN.bossPool(akt || run.act)[0];
+    /* Auf gültige Akte begrenzen: ein Speicherstand hinter dem letzten Akt gab
+       sonst `undefined` zurück und ließ roll() abstürzen. */
+    var a = Math.max(1, Math.min(akt || run.act, AKTE));
+    var id = (run.bosse || [])[a - 1];
+    return (id && EN.bossById(id)) || EN.bossPool(a)[0];
   }
 
   function roll(run) {
@@ -634,7 +637,17 @@
     var antritt = (p && p.vorher ? p.vorher(run).team : run.team);
     var res = C.simulate(antritt.map(resolve), foes, seed, { relics: run.relics.map(GD.relic) });
     run.phase = 'kampf';
-    run.pending = { result: res, node: node, rewards: null, devour: null };
+    /* Die Bilanz getrennt vom Log: der Ergebnisbildschirm braucht sie auch nach
+       einem Neuladen, und das ganze Kampflog wandert nicht in den Speicherstand. */
+    var meine = function (l) { return l.filter(function (u) { return u.side === 'player'; }); };
+    run.pending = {
+      result: res, node: node, devour: null,
+      bilanz: {
+        ticks: res.ticks,
+        lebend: meine(res.survivors).length,
+        gefallen: meine(res.fallen).map(function (u) { return u.name; })
+      }
+    };
 
     if (res.winner === 'player') {
       /* Eine Währung. Gold und Magicule waren dieselbe Zahl in zwei Beuteln:
@@ -1120,7 +1133,7 @@
     if (!p || !p.markt || (run.phase !== 'kampf' && run.phase !== 'markt')) return null;
     return {
       markt: p.markt, bestanden: p.bestanden, devour: p.devour, gold: p.gold,
-      node: { name: p.node.name }, result: { winner: p.result.winner }
+      bilanz: p.bilanz, node: { name: p.node.name }, result: { winner: p.result.winner }
     };
   }
 
@@ -1129,6 +1142,7 @@
       seed: run.seed, rngState: run.rngState, act: run.act, step: run.step, threat: run.threat,
       magicules: run.magicules, lives: run.lives, relics: run.relics,
       bag: run.bag || [], chronik: run.chronik, meta: run.meta, bosse: run.bosse, phase: run.phase,
+      over: run.over, won: run.won,
       pwahlen: run.pwahlen || [],
       team: run.team, bank: run.bank, uidSeq: uidSeq, startwahl: run.startwahl,
       pending: schlankesPending(run)
@@ -1143,6 +1157,13 @@
     uidSeq = Math.max(uidSeq, d.uidSeq || 0);
     run.pending = null;
     run.pwahlen = d.pwahlen || [];
+    /* Ein beendeter Run bleibt beendet. Ohne das kam er als unfertiger zurück —
+       mit einer Aktnummer hinter dem letzten Akt, und der nächste Wurf der Karte
+       suchte einen Boss, den es nicht gibt. */
+    if (d.over) {
+      run.over = true; run.won = !!d.won; run.phase = 'ende'; run.options = [];
+      return run;
+    }
     run.startwahl = d.startwahl || null;
     if (run.startwahl) { run.phase = 'start'; return run; }
     if (d.pending) {
