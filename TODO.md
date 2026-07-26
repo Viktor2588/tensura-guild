@@ -66,12 +66,18 @@ Abgearbeitet in Phase 15:
 - [x] Bedrohungsstufe sichtbar: dauerhaft in der Kopfzeile, umstellbar im
       Menü. `threatGewaehlt` fällt nicht mehr hinter `threat` zurück.
 
+Abgearbeitet in Phase 16:
+
+- [x] Linien für alle fünf Goblins: Gobta (Glück), Gobkyu (Präzision),
+      Rigurd (Häuptling und Schild), Rigur (Wache und Konter), Gobwa
+      (Feldverband). Damit sind zwei Arten vollständig, 176 Linien-Passive.
+
 Offen:
 
-1. **34 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Sechs sind
-   fertig (alle Oger). Vier Linien à vier Stufen je Einheit, also 16 Passive.
-   Als Nächstes bietet sich eine ganze Art an, nicht einzelne Einheiten — erst
-   dann wird „eine Einheit je Art" auch dort zur Entscheidung.
+1. **29 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Elf sind
+   fertig: alle sechs Oger und alle fünf Goblins, zusammen 176 Passive. Vier
+   Linien à vier Stufen je Einheit. Weiter Art für Art — als Nächstes bieten
+   sich die Sturmwölfe (4) oder die Echsenmenschen (5) an.
 
 2. **Den Aufstiegs-Pool in Passive umbauen.** *(entschieden)* Die 34 aktiven
    Fähigkeiten sind totes Gewicht, seit jede Einheit nur noch ihre Signatur

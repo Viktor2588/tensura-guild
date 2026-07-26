@@ -1107,9 +1107,11 @@ ok(Object.keys(AB.LINIEN_NAME).every(function (l) {
 ok(Object.keys(AB.linien).length >= 6, 'sechs Einheiten haben eigene Linien: ' + Object.keys(AB.linien).join(', '));
 /* Die Oger sind vollständig — damit ist „eine Einheit je Art" bei ihnen eine
    echte Wahl zwischen sechs verschiedenen Spielweisen. */
-ok(GD.units.filter(function (u) { return u.art === 'oger'; })
-   .every(function (u) { return !!AB.linien[u.id]; }),
-   'jeder Oger hat eigene Linien');
+['oger', 'goblin'].forEach(function (art) {
+  ok(GD.units.filter(function (u) { return u.art === art; })
+     .every(function (u) { return !!AB.linien[u.id]; }),
+     'jede Einheit der Art „' + GD.artName(art) + '" hat eigene Linien');
+});
 /* Jede Linien-Passive muss im Kampf laufen — 96 Stück, einmal durchgespielt. */
 var kaputteLinie = [];
 Object.keys(AB.linien).forEach(function (uid) {
@@ -1155,8 +1157,8 @@ ok(pw2 && pw2.stufe === 2 && pw2.offers.every(function (o) { return AB.linien.sh
    'der Aufstieg bietet die nächste Stufe jeder Linie an');
 ok(!R.skipPassive, 'eine Passive lässt sich nicht auslassen — es gibt keinen Weg daran vorbei');
 ok(R.choosePassive(pRun, 0) && !R.passivWahl(pRun), 'die Wahl muss getroffen werden');
-ok(R.passivIds(R.member('gobta')).length === 0 &&
-   R.passivIds({ id: 'gobta', rank: 2 }).length === 2,
+ok(R.passivIds(R.member('sturmwolf')).length === 0 &&
+   R.passivIds({ id: 'sturmwolf', rank: 2 }).length === 2,
    'Einheiten ohne eigene Linien behalten die festen Passiven nach Rang');
 
 /* ------------------------------------------------- Debug-Übersicht */
@@ -1290,7 +1292,7 @@ function neigung(id) {
 });
 /* Zufällig statt statisch: dieselbe Einheit sieht über mehrere Runs
    verschiedene Angebote — vorher stand immer dieselbe feste Passive da. */
-['gabiru', 'quellenpriesterin', 'rigurd'].forEach(function (id) {
+['gabiru', 'quellenpriesterin', 'skelettritter'].forEach(function (id) {
   var ang = aufstiegsAngebote(id, 12);
   ok(Object.keys(ang).length >= 6,
      GD.unit(id).name + ': das Angebot streut über die Runs (' +
@@ -1300,7 +1302,7 @@ function neigung(id) {
 });
 /* Und jede Kategorie kommt vor. */
 var katGesehen = {};
-['gabiru', 'quellenpriesterin', 'rigurd', 'gobta'].forEach(function (id) {
+['gabiru', 'quellenpriesterin', 'skelettritter', 'riesenameise'].forEach(function (id) {
   Object.keys(aufstiegsAngebote(id, 8)).forEach(function (aid) {
     katGesehen[AB.kategorie(aid)] = 1;
   });
@@ -1309,7 +1311,7 @@ ok(['angriff', 'mechanik', 'unterstuetzung', 'defensive'].every(function (k) { r
    'über mehrere Einheiten kommt jede Kategorie im Angebot vor');
 /* Linien-Passive einer Einheit dürfen nie bei einer anderen auftauchen. */
 var fremdeLinien = [];
-['gabiru', 'quellenpriesterin', 'rigurd', 'gobta'].forEach(function (id) {
+['gabiru', 'quellenpriesterin', 'skelettritter', 'riesenameise'].forEach(function (id) {
   Object.keys(aufstiegsAngebote(id, 8)).forEach(function (aid) {
     if (AB.linien_ids[aid]) fremdeLinien.push(id + ' -> ' + aid);
   });

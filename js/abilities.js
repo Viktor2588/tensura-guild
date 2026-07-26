@@ -647,7 +647,403 @@
       function (c) { c.applyStatus(c.self, 'schild', 30 + 18 * c.self.itemZahl); }),
     passiv('kur_def4', 'Unzerbrechlich', 'onStart', [], [],
       'Kein einzelner Treffer nimmt Kurobe mehr als 14 % seines maximalen Lebens',
-      function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.14); })
+      function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.14); }),
+
+    /* ---- Gobtas Linien: Glück ---------------------------------------------
+       Der billigste Anfang im Spiel. Seine Mechanik ist der Würfel: fast alles
+       hängt an einer Probe, die auch danebengehen darf.                       */
+
+    passiv('gobta_ang1', 'Anfängerglück', 'onHit', [], [],
+      '20 % Chance auf doppelten Schaden',
+      chance(0.2, function (c) { c.dmg *= 2; })),
+    passiv('gobta_ang2', 'Glückssträhne', 'onKill', ['exekution'], [],
+      'Jeder erlegte Gegner gibt dauerhaft +25 % Angriff',
+      function (c) { c.self.atk = Math.round(c.self.atk * 1.25); }),
+    passiv('gobta_ang3', 'Volltreffer', 'onHit', [], [],
+      '25 % Chance auf mehr als doppelten Schaden — und die Rüstung zählt dann nicht',
+      chance(0.25, function (c) {
+        c.dmg *= 2.2;
+        c.self.pierce = Math.max(c.self.pierce || 0, 1);
+      })),
+    passiv('gobta_ang4', 'Unverschämtes Glück', 'onHit', ['exekution'], [],
+      '12 % Chance, dem Ziel zusätzlich 15 % seines maximalen Lebens zu nehmen',
+      chance(0.12, function (c) {
+        c.deal(c.target, c.target.maxHp * 0.15, 'Unverschämtes Glück', { pure: true });
+      })),
+
+    passiv('gobta_mec1', 'Würfelglück', 'onTurnStart', [], [],
+      'In jedem Zug 25 % Chance auf dauerhaft +4 Angriff',
+      chance(0.25, function (c) { c.self.atk += 4; })),
+    passiv('gobta_mec2', 'Zweite Chance', 'onDamaged', ['heilung'], [],
+      '25 % Chance, die Hälfte eines erlittenen Treffers sofort zurückzuheilen',
+      chance(0.25, function (c) { c.heal(c.self, (c.amount || 0) * 0.5, 'Zweite Chance'); })),
+    passiv('gobta_mec3', 'Immer wieder', 'onDeath', ['heilung'], [],
+      'Fällt Gobta, steht er mit halber Wahrscheinlichkeit mit 35 % Leben wieder auf',
+      function (c) {
+        if (c.self._auf || c.rng() >= 0.5) return;
+        c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.35);
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      }),
+    passiv('gobta_mec4', 'Schicksalswende', 'onTurnStart', ['verderbnis'], [],
+      'In jedem Zug 20 % Chance, allen Gegnern 2 Verderbnis anzuhängen',
+      chance(0.2, function (c) {
+        c.foes().forEach(function (f) { c.applyStatus(f, 'verderbnis', 2); });
+      })),
+
+    passiv('gobta_unt1', 'Ansteckender Frohsinn', 'onStart', ['tempo'], [],
+      'Alle Verbündeten erhalten +10 % Tempo',
+      function (c) { c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.1); }); }),
+    passiv('gobta_unt2', 'Kameradschaft', 'onAllyDeath', [], [],
+      'Stirbt ein Verbündeter, erhalten alle übrigen +8 Angriff',
+      function (c) { c.allies().forEach(function (u) { u.atk += 8; }); }),
+    passiv('gobta_unt3', 'Glücksbringer', 'onStart', [], [],
+      'Jeder Treffer des ganzen Trupps hat 15 % Chance auf doppelten Schaden',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Glücksbringer', fn: function (k) {
+            if (k.rng() < 0.15) k.dmg *= 2;
+          } });
+        });
+      }),
+    passiv('gobta_unt4', 'Gobtas Truppe', 'onStart', [], [],
+      'Alle Verbündeten erhalten +10 % Angriff und +10 % Leben',
+      function (c) {
+        c.allies().forEach(function (u) {
+          u.atk = Math.round(u.atk * 1.1);
+          var add = Math.round(u.maxHp * 0.1);
+          u.maxHp += add; u.hp += add;
+        });
+      }),
+
+    passiv('gobta_def1', 'Ausweichen', 'onStart', ['tempo'], [],
+      '+20 % Tempo und +3 Rüstung',
+      function (c) { c.self.spd = Math.round(c.self.spd * 1.2); c.self.def += 3; }),
+    passiv('gobta_def2', 'Zäher Bursche', 'onDamaged', ['heilung'], [],
+      'Heilt einmalig 35 % seines Lebens, sobald er unter ein Viertel fällt',
+      function (c) {
+        if (c.self.hp <= 0 || c.self._zaeh2 || c.self.hp >= c.self.maxHp * 0.25) return;
+        c.self._zaeh2 = 1; c.heal(c.self, c.self.maxHp * 0.35, 'Zäher Bursche');
+      }),
+    passiv('gobta_def3', 'Glücksschild', 'onDamaged', ['schild'], [],
+      '25 % Chance auf Schild 25 bei jedem erlittenen Treffer',
+      chance(0.25, function (c) { c.applyStatus(c.self, 'schild', 25); })),
+    passiv('gobta_def4', 'Unsterblicher Gobta', 'onStart', [], [],
+      'Kein einzelner Treffer nimmt Gobta mehr als 16 % seines maximalen Lebens',
+      function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.16); }),
+
+    /* ---- Gobkyus Linien: Präzision ----------------------------------------
+       Der Schütze zielt auf die Hinterreihe und auf Schwachstellen.           */
+
+    passiv('gobkyu_ang1', 'Scharfschütze', 'onHit', [], [],
+      '+18 % Schaden auf jeden Treffer',
+      function (c) { c.dmg *= 1.18; }),
+    passiv('gobkyu_ang2', 'Schwachstelle', 'onHit', [], ['gift', 'brand', 'frost', 'verderbnis'],
+      '+35 % Schaden gegen Ziele, die irgendeinen Zustand tragen',
+      function (c) {
+        var s2 = c.target.status;
+        if (s2.gift > 0 || s2.brand > 0 || s2.erstarrung > 0 || s2.verderbnis > 0) c.dmg *= 1.35;
+      }),
+    passiv('gobkyu_ang3', 'Kopfschuss', 'onHit', [], [],
+      '25 % Chance auf +60 % Schaden, der die Rüstung ganz ignoriert',
+      chance(0.25, function (c) {
+        c.dmg *= 1.6;
+        c.self.pierce = Math.max(c.self.pierce || 0, 1);
+      })),
+    passiv('gobkyu_ang4', 'Pfeilhagel', 'onHit', ['flaeche'], [],
+      '30 % Chance, zusätzlich alle anderen Gegner für 40 % zu treffen',
+      chance(0.3, function (c) {
+        c.foes().forEach(function (f) {
+          if (f !== c.target) c.deal(f, c.self.atk * 0.4, 'Pfeilhagel');
+        });
+      })),
+
+    passiv('gobkyu_mec1', 'Zielwasser', 'onStart', [], [],
+      'Ignoriert die Hälfte der gegnerischen Rüstung',
+      function (c) { c.self.pierce = Math.max(c.self.pierce || 0, 0.5); }),
+    passiv('gobkyu_mec2', 'Markierter Schuss', 'onHit', ['verwundbar'], [],
+      'Jeder Treffer macht das Ziel für den ganzen Trupp um 1 Stapel verwundbarer',
+      function (c) { c.applyStatus(c.target, 'verwundbar', 1); }),
+    passiv('gobkyu_mec3', 'Doppelschuss', 'onHit', [], [],
+      '30 % Chance auf einen zweiten Pfeil mit 55 %',
+      chance(0.3, function (c) { c.deal(c.target, c.self.atk * 0.55, 'Doppelschuss'); })),
+    passiv('gobkyu_mec4', 'Giftpfeile', 'onHit', ['gift'], ['gift'],
+      'Jeder Treffer legt 2 Gift an, und gegen vergiftete Ziele +25 % Schaden',
+      function (c) {
+        if (c.target.status.gift > 0) c.dmg *= 1.25;
+        c.applyStatus(c.target, 'gift', 2);
+      }),
+
+    passiv('gobkyu_unt1', 'Feuerleitung', 'onStart', [], [],
+      'Alle Verbündeten erhalten +6 Angriff',
+      function (c) { c.allies().forEach(function (u) { u.atk += 6; }); }),
+    passiv('gobkyu_unt2', 'Deckungsfeuer', 'onAllyDeath', ['tempo'], [],
+      'Stirbt ein Verbündeter, werden alle übrigen 12 % schneller',
+      function (c) { c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.12); }); }),
+    passiv('gobkyu_unt3', 'Späherauge', 'onStart', [], [],
+      'Der ganze Trupp ignoriert 25 % der gegnerischen Rüstung',
+      function (c) {
+        c.allies().forEach(function (u) { u.pierce = Math.max(u.pierce || 0, 0.25); });
+      }),
+    passiv('gobkyu_unt4', 'Salve', 'onStart', ['flaeche'], [],
+      'Jeder Treffer des Trupps hat 18 % Chance auf einen Zusatzschuss mit 45 %',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Salve', fn: function (k) {
+            if (k.rng() < 0.18) k.deal(k.target, k.self.atk * 0.45, 'Salve');
+          } });
+        });
+      }),
+
+    passiv('gobkyu_def1', 'Rückzugsgefecht', 'onStart', ['tempo'], [],
+      '+25 % Tempo',
+      function (c) { c.self.spd = Math.round(c.self.spd * 1.25); }),
+    passiv('gobkyu_def2', 'Tarnung', 'onStart', [], [],
+      'Gobkyu erleidet 18 % weniger Schaden',
+      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.18); }),
+    passiv('gobkyu_def3', 'Distanz halten', 'onDamaged', ['konter'], [],
+      '30 % Chance, einen Angreifer sofort für 70 % zu beschießen',
+      chance(0.3, function (c) {
+        var f = c.foes()[0]; if (f) c.deal(f, c.self.atk * 0.7, 'Distanz halten');
+      })),
+    passiv('gobkyu_def4', 'Windschritt', 'onStart', ['tempo', 'schild'], [],
+      '+35 % Tempo und Schild 25',
+      function (c) {
+        c.self.spd = Math.round(c.self.spd * 1.35);
+        c.applyStatus(c.self, 'schild', 25);
+      }),
+
+    /* ---- Rigurds Linien: Häuptling und Schild ------------------------------
+       Der Dorfälteste hält die Reihe. Seine Mechanik ist der Schild — und zwar
+       nicht nur seiner.                                                        */
+
+    passiv('rigurd_ang1', 'Häuptlingszorn', 'onStart', [], [],
+      '+5 Angriff je lebendem Verbündeten',
+      function (c) { c.self.atk += 5 * c.allies().length; }),
+    passiv('rigurd_ang2', 'Schildschlag', 'onHit', [], ['schild'],
+      '+30 % Schaden, solange Rigurd selbst einen Schild trägt',
+      function (c) { if (c.self.status.schild > 0) c.dmg *= 1.3; }),
+    passiv('rigurd_ang3', 'Erster in der Schlacht', 'onHit', [], [],
+      '+30 % Schaden, solange Rigurd auf dem vordersten Platz steht',
+      function (c) { if (c.self.pos === 0) c.dmg *= 1.3; }),
+    passiv('rigurd_ang4', 'Sammelt euch', 'onAllyDeath', ['schild'], [],
+      'Stirbt ein Verbündeter: +12 Angriff und Schild 40 für Rigurd',
+      function (c) { c.self.atk += 12; c.applyStatus(c.self, 'schild', 40); }),
+
+    passiv('rigurd_mec1', 'Schildwall', 'onStart', ['schild'], [],
+      'Rigurd startet mit Schild 60',
+      function (c) { c.applyStatus(c.self, 'schild', 60); }),
+    passiv('rigurd_mec2', 'Bollwerk', 'onStart', [], ['schild'],
+      'Jeder Schild im ganzen Trupp ist um 35 % stärker',
+      function (c) { c.allies().forEach(function (u) { u.schildfaktor += 0.35; }); }),
+    passiv('rigurd_mec3', 'Stehende Mauer', 'onTurnStart', ['schild'], [],
+      'Rigurd baut in jedem Zug 14 Schild nach',
+      function (c) { c.applyStatus(c.self, 'schild', 14); }),
+    passiv('rigurd_mec4', 'Unerschütterlich', 'onStart', ['schild'], ['heilung'],
+      'Heilung über das Maximum hinaus wird beim ganzen Trupp zu Schild',
+      function (c) {
+        c.allies().forEach(function (u) { u.ueberheilung = Math.max(u.ueberheilung || 0, 1); });
+      }),
+
+    passiv('rigurd_unt1', 'Häuptling', 'onStart', [], [],
+      'Alle Verbündeten erhalten +3 Rüstung',
+      function (c) { c.allies().forEach(function (u) { u.def += 3; }); }),
+    passiv('rigurd_unt2', 'Schutzbefehl', 'onStart', ['schild'], [],
+      'Alle Verbündeten starten mit Schild 25',
+      function (c) { c.allies().forEach(function (u) { c.applyStatus(u, 'schild', 25); }); }),
+    passiv('rigurd_unt3', 'Formation', 'onStart', [], [],
+      'Die vorderste Einheit erhält +40 % maximales Leben',
+      function (c) {
+        var vorn = c.allies()[0];
+        if (!vorn) return;
+        var add = Math.round(vorn.maxHp * 0.4);
+        vorn.maxHp += add; vorn.hp += add;
+      }),
+    passiv('rigurd_unt4', 'Dorfältester', 'onStart', [], [],
+      'Alle Verbündeten erhalten +15 % Leben und +2 Rüstung',
+      function (c) {
+        c.allies().forEach(function (u) {
+          var add = Math.round(u.maxHp * 0.15);
+          u.maxHp += add; u.hp += add; u.def += 2;
+        });
+      }),
+
+    passiv('rigurd_def1', 'Dickes Fell', 'onStart', [], [],
+      '+25 % maximales Leben',
+      function (c) {
+        var add = Math.round(c.self.maxHp * 0.25);
+        c.self.maxHp += add; c.self.hp += add;
+      }),
+    passiv('rigurd_def2', 'Standhaft', 'onStart', [], [],
+      'Kein einzelner Treffer nimmt Rigurd mehr als 15 % seines maximalen Lebens',
+      function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.15); }),
+    passiv('rigurd_def3', 'Dornenschild', 'onDamaged', ['konter'], [],
+      'Angreifer erleiden 12 Schaden plus ein Fünftel seines Angriffs zurück',
+      function (c) { var f = c.foes()[0]; if (f) c.deal(f, 12 + c.self.atk * 0.2, 'Dornenschild'); }),
+    passiv('rigurd_def4', 'Letzter Wall', 'onDeath', ['schild', 'heilung'], [],
+      'Steht einmal mit 40 % Leben wieder auf und gibt dem Trupp Schild 40',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.4);
+        c.allies().forEach(function (u) { c.applyStatus(u, 'schild', 40); });
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* ---- Rigurs Linien: Wache und Konter ------------------------------------
+       Er zahlt zurück. Je mehr er einsteckt und je mehr fällt, desto härter.    */
+
+    passiv('rigur_ang1', 'Wachsam', 'onHit', ['konter'], [],
+      '+25 % Schaden, sobald Rigur in diesem Kampf selbst getroffen wurde',
+      function (c) { if (c.self.dmgTaken > 0) c.dmg *= 1.25; }),
+    passiv('rigur_ang2', 'Vergeltung', 'onHit', ['konter'], [],
+      '+45 % Schaden, solange Rigur unter der Hälfte seines Lebens steht',
+      function (c) { if (c.self.hp < c.self.maxHp * 0.5) c.dmg *= 1.45; }),
+    passiv('rigur_ang3', 'Rachefeldzug', 'onAllyDeath', [], [],
+      'Stirbt ein Verbündeter: dauerhaft +20 % Angriff',
+      function (c) { c.self.atk = Math.round(c.self.atk * 1.2); }),
+    passiv('rigur_ang4', 'Blutzoll', 'onHit', [], [],
+      '+50 % Schaden, sobald ein Verbündeter gefallen ist',
+      function (c) { if (c.self._gefallen) c.dmg *= 1.5; }),
+
+    passiv('rigur_mec1', 'Gegenschlag', 'onDamaged', ['konter'], [],
+      '45 % Chance auf einen Gegenangriff mit 75 %',
+      chance(0.45, function (c) {
+        var f = c.foes()[0]; if (f) c.deal(f, c.self.atk * 0.75, 'Gegenschlag');
+      })),
+    passiv('rigur_mec2', 'Dornenwache', 'onDamaged', ['konter'], [],
+      'Angreifer erleiden 12 Schaden plus 30 % seines Angriffs zurück',
+      function (c) { var f = c.foes()[0]; if (f) c.deal(f, 12 + c.self.atk * 0.3, 'Dornenwache'); }),
+    passiv('rigur_mec3', 'Reflex', 'onDamaged', ['konter'], [],
+      '25 % Chance auf einen zweiten, härteren Konter mit 110 %',
+      chance(0.25, function (c) {
+        var f = c.foes()[0]; if (f) c.deal(f, c.self.atk * 1.1, 'Reflex');
+      })),
+    passiv('rigur_mec4', 'Wachturm', 'onDamaged', ['verwundbar', 'konter'], [],
+      'Wer Rigur trifft, wird für den ganzen Trupp um 2 Stapel verwundbarer',
+      function (c) { var f = c.foes()[0]; if (f) c.applyStatus(f, 'verwundbar', 2); }),
+
+    passiv('rigur_unt1', 'Wachkommando', 'onStart', ['schild'], [],
+      'Alle Verbündeten erhalten +2 Rüstung und Schild 15',
+      function (c) {
+        c.allies().forEach(function (u) { u.def += 2; c.applyStatus(u, 'schild', 15); });
+      }),
+    passiv('rigur_unt2', 'Alarm', 'onAllyDeath', ['schild'], [],
+      'Stirbt ein Verbündeter, erhalten alle übrigen Schild 30',
+      function (c) { c.allies().forEach(function (u) { c.applyStatus(u, 'schild', 30); }); }),
+    passiv('rigur_unt3', 'Rückendeckung', 'onStart', ['konter'], [],
+      'Der ganze Trupp wirft 6 plus 8 % seines Angriffs auf Angreifer zurück',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onDamaged', name: 'Rückendeckung', fn: function (k) {
+            var f = k.foes()[0]; if (f) k.deal(f, 6 + k.self.atk * 0.08, 'Rückendeckung');
+          } });
+        });
+      }),
+    passiv('rigur_unt4', 'Leibgarde', 'onStart', [], [],
+      'Die vorderste Einheit erleidet 20 % weniger Schaden',
+      function (c) {
+        var vorn = c.allies()[0];
+        if (vorn) vorn.minderung = Math.max(vorn.minderung || 0, 0.2);
+      }),
+
+    passiv('rigur_def1', 'Wachsamkeit', 'onStart', ['tempo'], [],
+      '+4 Rüstung und +10 % Tempo',
+      function (c) { c.self.def += 4; c.self.spd = Math.round(c.self.spd * 1.1); }),
+    passiv('rigur_def2', 'Panzerung', 'onStart', [], [],
+      '+30 % maximales Leben',
+      function (c) {
+        var add = Math.round(c.self.maxHp * 0.3);
+        c.self.maxHp += add; c.self.hp += add;
+      }),
+    passiv('rigur_def3', 'Zäher Hund', 'onDamaged', ['heilung'], [],
+      'Heilt einmalig 40 % seines Lebens, sobald er unter 30 % fällt',
+      function (c) {
+        if (c.self.hp <= 0 || c.self._zaeh3 || c.self.hp >= c.self.maxHp * 0.3) return;
+        c.self._zaeh3 = 1; c.heal(c.self, c.self.maxHp * 0.4, 'Zäher Hund');
+      }),
+    passiv('rigur_def4', 'Nie allein', 'onDeath', [], [],
+      'Steht einmal mit 35 % Leben wieder auf und gibt allen Verbündeten +10 Angriff',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.35);
+        c.allies().forEach(function (u) { u.atk += 10; });
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* ---- Gobwas Linien: Feldverband ----------------------------------------
+       Die Sanitäterin. Ihre Mechanik ist die Heilung, und sie wird stärker, je
+       schlechter es dem Trupp geht.                                            */
+
+    passiv('gobwa_ang1', 'Kampfsanitäterin', 'onHit', [], [],
+      '+20 % Schaden auf jeden Treffer',
+      function (c) { c.dmg *= 1.2; }),
+    passiv('gobwa_ang2', 'Aderlass', 'onStart', ['heilung'], [],
+      'Heilt 30 % des verursachten Schadens',
+      function (c) { c.self.lifesteal += 0.3; }),
+    passiv('gobwa_ang3', 'Schmerzgrenze', 'onHit', [], ['exekution'],
+      '+35 % Schaden gegen Ziele unter der Hälfte ihres Lebens',
+      function (c) { if (c.target.hp < c.target.maxHp * 0.5) c.dmg *= 1.35; }),
+    passiv('gobwa_ang4', 'Letzte Reserve', 'onHit', [], [],
+      '+45 % Schaden, solange Gobwa selbst unter 40 % Leben steht',
+      function (c) { if (c.self.hp < c.self.maxHp * 0.4) c.dmg *= 1.45; }),
+
+    passiv('gobwa_mec1', 'Feldverband', 'onStart', [], ['heilung'],
+      'Jede Heilung im Trupp wirkt um 50 % stärker',
+      function (c) { c.allies().forEach(function (u) { u.heilfaktor += 0.5; }); }),
+    passiv('gobwa_mec2', 'Notration', 'onTurnStart', ['heilung'], [],
+      'Heilt in jedem Zug die schwächste Einheit um 6 % ihres maximalen Lebens',
+      function (c) {
+        var alle = c.allies();
+        if (!alle.length) return;
+        var schwach = alle.reduce(function (a, b) { return (b.hp / b.maxHp) < (a.hp / a.maxHp) ? b : a; });
+        c.heal(schwach, schwach.maxHp * 0.06, 'Notration');
+      }),
+    passiv('gobwa_mec3', 'Triage', 'onAllyDeath', ['heilung'], [],
+      'Stirbt ein Verbündeter, heilen alle übrigen 30 % ihres maximalen Lebens',
+      function (c) { c.allies().forEach(function (u) { c.heal(u, u.maxHp * 0.3, 'Triage'); }); }),
+    passiv('gobwa_mec4', 'Überfluss', 'onStart', ['schild'], ['heilung'],
+      'Heilung über das Maximum hinaus wird beim ganzen Trupp zu Schild',
+      function (c) {
+        c.allies().forEach(function (u) { u.ueberheilung = Math.max(u.ueberheilung || 0, 1); });
+      }),
+
+    passiv('gobwa_unt1', 'Verbandskasten', 'onStart', ['heilung'], [],
+      'Alle Verbündeten erhalten +5 Regeneration',
+      function (c) { c.allies().forEach(function (u) { u.regen += 5; }); }),
+    passiv('gobwa_unt2', 'Aufopferung', 'onStart', [], [],
+      'Alle Verbündeten erhalten +12 % maximales Leben',
+      function (c) {
+        c.allies().forEach(function (u) {
+          var add = Math.round(u.maxHp * 0.12);
+          u.maxHp += add; u.hp += add;
+        });
+      }),
+    passiv('gobwa_unt3', 'Nicht auf meiner Wache', 'onAllyDeath', ['heilung'], [],
+      'Stirbt ein Verbündeter, heilen alle übrigen 25 % und erhalten +6 Angriff',
+      function (c) {
+        c.allies().forEach(function (u) { c.heal(u, u.maxHp * 0.25, 'Nicht auf meiner Wache'); u.atk += 6; });
+      }),
+    passiv('gobwa_unt4', 'Mutter der Truppe', 'onStart', ['heilung'], ['heilung'],
+      'Alle Verbündeten erhalten +8 Regeneration, und jede Heilung wirkt 30 % stärker',
+      function (c) {
+        c.allies().forEach(function (u) { u.regen += 8; u.heilfaktor += 0.3; });
+      }),
+
+    passiv('gobwa_def1', 'Flink', 'onStart', ['tempo'], [],
+      '+20 % Tempo',
+      function (c) { c.self.spd = Math.round(c.self.spd * 1.2); }),
+    passiv('gobwa_def2', 'Selbstversorgung', 'onTurnStart', ['heilung'], [],
+      'Heilt sich in jedem Zug um 5 % ihres maximalen Lebens',
+      function (c) { c.heal(c.self, c.self.maxHp * 0.05, 'Selbstversorgung'); }),
+    passiv('gobwa_def3', 'Schutzengel', 'onDeath', ['heilung'], [],
+      'Steht einmal mit 45 % Leben wieder auf',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.45);
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      }),
+    passiv('gobwa_def4', 'Unentbehrlich', 'onStart', [], [],
+      'Gobwa erleidet 25 % weniger Schaden',
+      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.25); })
   ];
 
   /* Vier Linien à vier Stufen. Die Stufe entspricht dem Rang: bei der Anwerbung
@@ -689,6 +1085,36 @@
       mechanik: ['kur_mec1', 'kur_mec2', 'kur_mec3', 'kur_mec4'],
       unterstuetzung: ['kur_unt1', 'kur_unt2', 'kur_unt3', 'kur_unt4'],
       defensive: ['kur_def1', 'kur_def2', 'kur_def3', 'kur_def4']
+    },
+    gobta: {
+      angriff: ['gobta_ang1', 'gobta_ang2', 'gobta_ang3', 'gobta_ang4'],
+      mechanik: ['gobta_mec1', 'gobta_mec2', 'gobta_mec3', 'gobta_mec4'],
+      unterstuetzung: ['gobta_unt1', 'gobta_unt2', 'gobta_unt3', 'gobta_unt4'],
+      defensive: ['gobta_def1', 'gobta_def2', 'gobta_def3', 'gobta_def4']
+    },
+    gobkyu: {
+      angriff: ['gobkyu_ang1', 'gobkyu_ang2', 'gobkyu_ang3', 'gobkyu_ang4'],
+      mechanik: ['gobkyu_mec1', 'gobkyu_mec2', 'gobkyu_mec3', 'gobkyu_mec4'],
+      unterstuetzung: ['gobkyu_unt1', 'gobkyu_unt2', 'gobkyu_unt3', 'gobkyu_unt4'],
+      defensive: ['gobkyu_def1', 'gobkyu_def2', 'gobkyu_def3', 'gobkyu_def4']
+    },
+    rigurd: {
+      angriff: ['rigurd_ang1', 'rigurd_ang2', 'rigurd_ang3', 'rigurd_ang4'],
+      mechanik: ['rigurd_mec1', 'rigurd_mec2', 'rigurd_mec3', 'rigurd_mec4'],
+      unterstuetzung: ['rigurd_unt1', 'rigurd_unt2', 'rigurd_unt3', 'rigurd_unt4'],
+      defensive: ['rigurd_def1', 'rigurd_def2', 'rigurd_def3', 'rigurd_def4']
+    },
+    rigur: {
+      angriff: ['rigur_ang1', 'rigur_ang2', 'rigur_ang3', 'rigur_ang4'],
+      mechanik: ['rigur_mec1', 'rigur_mec2', 'rigur_mec3', 'rigur_mec4'],
+      unterstuetzung: ['rigur_unt1', 'rigur_unt2', 'rigur_unt3', 'rigur_unt4'],
+      defensive: ['rigur_def1', 'rigur_def2', 'rigur_def3', 'rigur_def4']
+    },
+    gobwa: {
+      angriff: ['gobwa_ang1', 'gobwa_ang2', 'gobwa_ang3', 'gobwa_ang4'],
+      mechanik: ['gobwa_mec1', 'gobwa_mec2', 'gobwa_mec3', 'gobwa_mec4'],
+      unterstuetzung: ['gobwa_unt1', 'gobwa_unt2', 'gobwa_unt3', 'gobwa_unt4'],
+      defensive: ['gobwa_def1', 'gobwa_def2', 'gobwa_def3', 'gobwa_def4']
     }
   };
   /* ---- Kategorien der Bibliothek ------------------------------------------

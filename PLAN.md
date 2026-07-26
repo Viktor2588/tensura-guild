@@ -131,6 +131,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 13 | Belohnung ist nur noch Magicule; nach jedem Kampf öffnet der Markt samt Verkauf per Ziehen | Was der Kampf einbringt, wird sofort zu einer Entscheidung | ✅ |
 | 14 | Entwicklung würfelt eine Passive je Kategorie, Meta-Fortschritt sichtbar, Bosse eingefangen | Der Aufstieg ist jede Runde eine andere Frage | ✅ |
 | 15 | Linien für die restlichen vier Oger — die erste Art ist vollständig | Sechs Oger, sechs Spielweisen, aber nur einer darf mit | ✅ 6 von 40 |
+| 16 | Linien für alle fünf Goblins — die zweite Art ist vollständig | Der billigste Anfang trägt jetzt eigene Tiefe | ✅ 11 von 40 |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -702,7 +703,37 @@ Ergebnis `dev/balance.js 600`: 50 % frisch, 63 % voll freigeschaltet, Bosse
 65–84 %. `GRUNDHAERTE` von 0.86 auf 0.90, weil sechs ausgebaute Oger den Trupp
 messbar stärker machen.
 
+### Phase 16 (2026-07-26): die Goblins
+
+Fünf Einheiten, 80 neue Passive — zusammen 176. Die Goblins sind bewusst die
+zweite Art: sie sind das Billigste im Angebot und stehen deshalb in fast jedem
+Startdraft.
+
+| Goblin | Linie | Kern |
+|---|---|---|
+| Gobta | Glück | fast alles hängt an einer Probe, die auch danebengehen darf |
+| Gobkyu | Präzision | Rüstung ignorieren, Schwächen ausnutzen, Zusatzschüsse |
+| Rigurd | Häuptling und Schild | Schild für den ganzen Trupp, Formation |
+| Rigur | Wache und Konter | zahlt zurück, wird stärker mit jedem Verlust |
+| Gobwa | Feldverband | Heilung, die mit dem Schaden des Trupps wächst |
+
+Gobtas Linie ist die erste, die **auf Zufall gebaut ist** statt auf feste Werte:
+20 % auf doppelten Schaden, 25 % auf einen Schild, 50 % auf ein Wiederaufstehen.
+Damit steht neben den berechenbaren Builds erstmals ein Glücksspiel.
+
+Ergebnis `dev/balance.js 600`: 51 % frisch, 61 % voll freigeschaltet;
+`GRUNDHAERTE` von 0.90 auf 0.93.
+
+Zum Prüfstand, der die Linien vergleicht: er trennt gut bei Gobta (0 → 26 %) und
+Rigur (0 → 16 %), zeigt bei **Rigurd durchgehend 0 %** — nicht weil seine Passiven
+nicht greifen (nachgeprüft: Häuptlingszorn, Bollwerk und Formation wirken alle),
+sondern weil ein rein defensiver Zuschnitt auf Rang 2 gegen Stufe-4-Gegner nichts
+rettet. Dasselbe Muster wie bei Souei in Phase 15. Ein Prüfstand, der defensive
+Linien fair misst, fehlt noch.
+
 Weitere offene Punkte:
+- Ein Prüfstand, der defensive Linien fair misst — der jetzige entscheidet zu
+  früh, ob der Trupp überhaupt überlebt.
 - Der Abstand zwischen Anfänger und Veteran ist auf 12 Punkte gewachsen
   (48 gegen 60 %) — der Markt nach jedem Kampf belohnt einen großen Reliktpool
   stärker als früher der einzelne Händler-Knoten.
