@@ -1043,7 +1043,353 @@
       }),
     passiv('gobwa_def4', 'Unentbehrlich', 'onStart', [], [],
       'Gobwa erleidet 25 % weniger Schaden',
-      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.25); })
+      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.25); }),
+
+    /* ---- Rangas Linien: der Schwarze Blitz ---------------------------------
+       Der Sturmwolf-Lord. Sein Blitz springt weiter und lähmt, was er trifft.  */
+
+    passiv('ranga_ang1', 'Blitzschlag', 'onHit', [], [],
+      '+22 % Schaden auf jeden Treffer',
+      function (c) { c.dmg *= 1.22; }),
+    passiv('ranga_ang2', 'Sturmgewalt', 'onHit', [], ['tempo'],
+      '+4 % Schaden je Punkt Tempo über 30',
+      function (c) { c.dmg *= 1 + Math.max(0, c.self.spd - 30) * 0.04; }),
+    passiv('ranga_ang3', 'Kettenblitz', 'onHit', ['flaeche'], [],
+      '35 % Chance, dass der Blitz für 55 % auf ein zweites Ziel überspringt',
+      chance(0.35, function (c) {
+        var f = c.foes().filter(function (x) { return x !== c.target; })[0];
+        if (f) c.deal(f, c.self.atk * 0.55, 'Kettenblitz');
+      })),
+    passiv('ranga_ang4', 'Gewitterfront', 'onHit', ['flaeche'], [],
+      '25 % Chance, zusätzlich alle anderen Gegner für 50 % zu treffen',
+      chance(0.25, function (c) {
+        c.foes().forEach(function (f) {
+          if (f !== c.target) c.deal(f, c.self.atk * 0.5, 'Gewitterfront');
+        });
+      })),
+
+    passiv('ranga_mec1', 'Statische Ladung', 'onHit', ['frost'], [],
+      '18 % Chance, das Ziel für einen Zug zu lähmen',
+      chance(0.18, function (c) { c.applyStatus(c.target, 'erstarrung', 1); })),
+    passiv('ranga_mec2', 'Überschlag', 'onHit', [], ['frost'],
+      '+50 % Schaden gegen gelähmte Ziele',
+      function (c) { if (c.target.status.erstarrung > 0) c.dmg *= 1.5; }),
+    passiv('ranga_mec3', 'Entladung', 'onKill', ['frost', 'flaeche'], [],
+      'Jeder erlegte Gegner lähmt alle übrigen mit 30 % Chance',
+      function (c) {
+        c.foes().forEach(function (f) {
+          if (c.rng() < 0.3) c.applyStatus(f, 'erstarrung', 1);
+        });
+      }),
+    passiv('ranga_mec4', 'Sturmherr', 'onTurnStart', ['frost'], [],
+      'In jedem Zug 22 % Chance, den vordersten Gegner zu lähmen',
+      chance(0.22, function (c) {
+        var f = c.foes()[0]; if (f) c.applyStatus(f, 'erstarrung', 1);
+      })),
+
+    passiv('ranga_unt1', 'Sturmwind', 'onStart', ['tempo'], [],
+      'Alle Verbündeten erhalten +12 % Tempo',
+      function (c) { c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.12); }); }),
+    passiv('ranga_unt2', 'Leitblitz', 'onStart', [], ['frost'],
+      'Der ganze Trupp verursacht +30 % Schaden gegen gelähmte Ziele',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Leitblitz', fn: function (k) {
+            if (k.target.status.erstarrung > 0) k.dmg *= 1.3;
+          } });
+        });
+      }),
+    passiv('ranga_unt3', 'Wolfsruf', 'onStart', ['tempo'], [],
+      'Alle Verbündeten erhalten +8 Angriff und +8 % Tempo',
+      function (c) {
+        c.allies().forEach(function (u) { u.atk += 8; u.spd = Math.round(u.spd * 1.08); });
+      }),
+    passiv('ranga_unt4', 'Auge des Sturms', 'onStart', ['frost'], [],
+      'Jeder Treffer des Trupps lähmt mit 12 % Chance',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Auge des Sturms', fn: function (k) {
+            if (k.rng() < 0.12) k.applyStatus(k.target, 'erstarrung', 1);
+          } });
+        });
+      }),
+
+    passiv('ranga_def1', 'Windfell', 'onStart', ['tempo'], [],
+      '+20 % Tempo und +3 Rüstung',
+      function (c) { c.self.spd = Math.round(c.self.spd * 1.2); c.self.def += 3; }),
+    passiv('ranga_def2', 'Blitzreflexe', 'onDamaged', ['konter'], [],
+      '30 % Chance auf einen Gegenangriff mit 80 %',
+      chance(0.3, function (c) {
+        var f = c.foes()[0]; if (f) c.deal(f, c.self.atk * 0.8, 'Blitzreflexe');
+      })),
+    passiv('ranga_def3', 'Schattenschritt', 'onStart', [], [],
+      'Ranga erleidet 20 % weniger Schaden',
+      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.2); }),
+    passiv('ranga_def4', 'Herr der Stürme', 'onStart', ['tempo', 'schild'], [],
+      '+40 % Tempo und Schild 30',
+      function (c) {
+        c.self.spd = Math.round(c.self.spd * 1.4);
+        c.applyStatus(c.self, 'schild', 30);
+      }),
+
+    /* ---- Sturmwolfs Linien: die Jagd ---------------------------------------
+       Der billigste Anfang neben Gobta. Er räumt ab, was schon wankt.         */
+
+    passiv('sturm_ang1', 'Hetzjagd', 'onHit', [], ['exekution'],
+      '+7 Schaden gegen Ziele unter der Hälfte ihres Lebens, zusätzlich +28 %',
+      function (c) {
+        if (c.target.hp < c.target.maxHp * 0.5) { c.dmg = c.dmg * 1.28 + 7; }
+      }),
+    /* Prozente auf 9 Grundangriff bewegen nichts — gemessen verschob die ganze
+       Angriffslinie den Bruchpunkt um 0.00. Der billigste Wolf bekommt deshalb
+       feste Zahlen statt Anteile. */
+    passiv('sturm_ang2', 'Reißzahn', 'onStart', [], [],
+      '+9 Angriff — eine feste Zahl, weil ein Anteil an seinem kleinen Grundwert nichts wäre',
+      function (c) { c.self.atk += 9; }),
+    passiv('sturm_ang3', 'Todesbiss', 'onHit', [], ['exekution'],
+      'Doppelter Schaden gegen Ziele unter 30 % ihres Lebens',
+      function (c) { if (c.target.hp < c.target.maxHp * 0.3) c.dmg *= 2; }),
+    passiv('sturm_ang4', 'Blutrausch', 'onKill', ['exekution'], [],
+      'Jeder erlegte Gegner gibt dauerhaft +30 % Angriff',
+      function (c) { c.self.atk = Math.round(c.self.atk * 1.3); }),
+
+    passiv('sturm_mec1', 'Witterung', 'onStart', [], [],
+      'Ignoriert die Hälfte der gegnerischen Rüstung und +5 Angriff',
+      function (c) {
+        c.self.pierce = Math.max(c.self.pierce || 0, 0.5);
+        c.self.atk += 5;
+      }),
+    passiv('sturm_mec2', 'Nachsetzen', 'onKill', ['exekution'], [],
+      'Nach jedem erlegten Gegner folgt sofort ein Biss mit 120 % auf den nächsten',
+      function (c) {
+        var f = c.foes()[0]; if (f) c.deal(f, c.self.atk * 1.2, 'Nachsetzen');
+      }),
+    passiv('sturm_mec3', 'Verwundetes Wild', 'onHit', [], ['exekution'],
+      '+5 % Schaden je fehlendem Zehntel Leben des Ziels',
+      function (c) { c.dmg *= 1 + 0.5 * (1 - c.target.hp / c.target.maxHp); }),
+    passiv('sturm_mec4', 'Kein Entkommen', 'onHit', ['exekution'], [],
+      'Ziele unter einem Viertel Leben verlieren zusätzlich 9 % ihres maximalen Lebens',
+      function (c) {
+        if (c.target.hp < c.target.maxHp * 0.25) {
+          c.deal(c.target, c.target.maxHp * 0.09, 'Kein Entkommen', { pure: true });
+        }
+      }),
+
+    passiv('sturm_unt1', 'Rudeljagd', 'onStart', ['tempo'], [],
+      'Alle Verbündeten erhalten +8 % Tempo',
+      function (c) { c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.08); }); }),
+    passiv('sturm_unt2', 'Beutezug', 'onKill', [], [],
+      'Jeder erlegte Gegner gibt allen Verbündeten +6 Angriff',
+      function (c) { c.allies().forEach(function (u) { u.atk += 6; }); }),
+    passiv('sturm_unt3', 'Gemeinsame Hetze', 'onStart', [], ['exekution'],
+      'Der ganze Trupp verursacht +22 % Schaden gegen Ziele unter 40 % Leben',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Gemeinsame Hetze', fn: function (k) {
+            if (k.target.hp < k.target.maxHp * 0.4) k.dmg *= 1.22;
+          } });
+        });
+      }),
+    passiv('sturm_unt4', 'Alpha im Werden', 'onStart', ['tempo'], [],
+      'Alle Verbündeten erhalten +10 % Angriff und +10 % Tempo',
+      function (c) {
+        c.allies().forEach(function (u) {
+          u.atk = Math.round(u.atk * 1.1);
+          u.spd = Math.round(u.spd * 1.1);
+        });
+      }),
+
+    passiv('sturm_def1', 'Flinkes Fell', 'onStart', ['tempo'], [],
+      '+25 % Tempo',
+      function (c) { c.self.spd = Math.round(c.self.spd * 1.25); }),
+    passiv('sturm_def2', 'Zäher Streuner', 'onDamaged', ['heilung'], [],
+      'Heilt einmalig 35 % seines Lebens, sobald er unter ein Viertel fällt',
+      function (c) {
+        if (c.self.hp <= 0 || c.self._zaeh4 || c.self.hp >= c.self.maxHp * 0.25) return;
+        c.self._zaeh4 = 1; c.heal(c.self, c.self.maxHp * 0.35, 'Zäher Streuner');
+      }),
+    passiv('sturm_def3', 'Ausweichen', 'onStart', [], [],
+      'Der Sturmwolf erleidet 18 % weniger Schaden',
+      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.18); }),
+    passiv('sturm_def4', 'Überlebenskünstler', 'onDeath', ['tempo', 'heilung'], [],
+      'Steht einmal mit 35 % Leben wieder auf und wird danach 25 % schneller',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1;
+        c.self.hp = Math.round(c.self.maxHp * 0.35);
+        c.self.spd = Math.round(c.self.spd * 1.25);
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* ---- Schattenwolfs Linien: Frost ---------------------------------------
+       Er nimmt Züge statt Leben. Gegen Bosse, die Erstarrung abschütteln, ist
+       das die schwächste Linie im Spiel — gegen Gruppen die stärkste.          */
+
+    passiv('schatten_ang1', 'Frostbiss', 'onHit', [], ['frost'],
+      '+28 % Schaden gegen erstarrte Ziele',
+      function (c) { if (c.target.status.erstarrung > 0) c.dmg *= 1.28; }),
+    passiv('schatten_ang2', 'Eisklinge', 'onHit', [], [],
+      '+20 % Schaden auf jeden Treffer',
+      function (c) { c.dmg *= 1.2; }),
+    passiv('schatten_ang3', 'Kältetod', 'onHit', [], ['frost'],
+      'Doppelter Schaden gegen erstarrte Ziele',
+      function (c) { if (c.target.status.erstarrung > 0) c.dmg *= 2; }),
+    passiv('schatten_ang4', 'Frostherz', 'onHit', [], ['gift', 'brand', 'frost', 'verderbnis'],
+      '+40 % Schaden gegen Ziele, die irgendeinen Zustand tragen',
+      function (c) {
+        var s2 = c.target.status;
+        if (s2.gift > 0 || s2.brand > 0 || s2.erstarrung > 0 || s2.verderbnis > 0) c.dmg *= 1.4;
+      }),
+
+    passiv('schatten_mec1', 'Frostaura', 'onHit', ['frost'], [],
+      '22 % Chance, das Ziel erstarren zu lassen',
+      chance(0.22, function (c) { c.applyStatus(c.target, 'erstarrung', 1); })),
+    passiv('schatten_mec2', 'Eisiger Hauch', 'onHit', ['frost', 'flaeche'], [],
+      '14 % Chance, ALLE Gegner erstarren zu lassen',
+      chance(0.14, function (c) {
+        c.foes().forEach(function (f) { c.applyStatus(f, 'erstarrung', 1); });
+      })),
+    passiv('schatten_mec3', 'Dauerfrost', 'onTurnStart', ['frost'], [],
+      'In jedem Zug 28 % Chance, den vordersten Gegner erstarren zu lassen',
+      chance(0.28, function (c) {
+        var f = c.foes()[0]; if (f) c.applyStatus(f, 'erstarrung', 1);
+      })),
+    passiv('schatten_mec4', 'Absoluter Nullpunkt', 'onHit', [], ['frost'],
+      'Erstarrte Ziele verlieren zusätzlich 10 % ihres maximalen Lebens',
+      function (c) {
+        if (c.target.status.erstarrung > 0) {
+          c.deal(c.target, c.target.maxHp * 0.1, 'Absoluter Nullpunkt', { pure: true });
+        }
+      }),
+
+    passiv('schatten_unt1', 'Kälteschleier', 'onStart', ['frost'], [],
+      'Jeder Treffer des Trupps lässt mit 10 % Chance erstarren',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Kälteschleier', fn: function (k) {
+            if (k.rng() < 0.1) k.applyStatus(k.target, 'erstarrung', 1);
+          } });
+        });
+      }),
+    passiv('schatten_unt2', 'Frostschneide', 'onStart', [], ['frost'],
+      'Der ganze Trupp verursacht +32 % Schaden gegen erstarrte Ziele',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Frostschneide', fn: function (k) {
+            if (k.target.status.erstarrung > 0) k.dmg *= 1.32;
+          } });
+        });
+      }),
+    passiv('schatten_unt3', 'Winterluft', 'onStart', ['tempo'], [],
+      'Alle Verbündeten erhalten +10 % Tempo',
+      function (c) { c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.1); }); }),
+    passiv('schatten_unt4', 'Ewiger Winter', 'onStart', ['frost'], [],
+      'Alle Gegner beginnen den Kampf erstarrt',
+      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'erstarrung', 1); }); }),
+
+    passiv('schatten_def1', 'Frostpanzer', 'onStart', ['schild'], [],
+      'Startet mit Schild 35',
+      function (c) { c.applyStatus(c.self, 'schild', 35); }),
+    passiv('schatten_def2', 'Schattengestalt', 'onStart', [], [],
+      'Der Schattenwolf erleidet 14 % weniger Schaden',
+      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.14); }),
+    passiv('schatten_def3', 'Eisdornen', 'onDamaged', ['frost', 'konter'], [],
+      '25 % Chance, einen Angreifer erstarren zu lassen',
+      chance(0.25, function (c) {
+        var f = c.foes()[0]; if (f) c.applyStatus(f, 'erstarrung', 1);
+      })),
+    /* Gemessen war die Defensivlinie mit Deckel UND Minderung UND Schild fast
+       unsterblich (Bruchpunkt +1.94 gegen +0.30 der nächstbesten Linie). Der
+       Deckel ist raus — Tempo und Schild bleiben. */
+    passiv('schatten_def4', 'Nebelwolf', 'onStart', ['tempo', 'schild'], [],
+      '+30 % Tempo und Schild 45',
+      function (c) {
+        c.self.spd = Math.round(c.self.spd * 1.3);
+        c.applyStatus(c.self, 'schild', 45);
+      }),
+
+    /* ---- Rudelalphas Linien: das Rudel -------------------------------------
+       Tempo ist die Art der Sturmwölfe, und der Alpha macht daraus eine
+       Trupp-Achse: mehr Züge für alle.                                        */
+
+    passiv('alpha_ang1', 'Leitwolf', 'onHit', [], ['tempo'],
+      '+4 % Schaden je Punkt Tempo über 28',
+      function (c) { c.dmg *= 1 + Math.max(0, c.self.spd - 28) * 0.04; }),
+    passiv('alpha_ang2', 'Erster Biss', 'onHit', [], [],
+      'Der erste Angriff im Kampf verursacht doppelten Schaden',
+      function (c) { if (!c.self._eb) { c.self._eb = 1; c.dmg *= 2; } }),
+    passiv('alpha_ang3', 'Alphaschlag', 'onHit', [], [],
+      '+25 % Schaden auf jeden Treffer',
+      function (c) { c.dmg *= 1.25; }),
+    passiv('alpha_ang4', 'Rudelführer', 'onStart', [], [],
+      '+6 Angriff je lebendem Verbündeten',
+      function (c) { c.self.atk += 6 * c.allies().length; }),
+
+    passiv('alpha_mec1', 'Hetze', 'onStart', ['tempo'], [],
+      'Alle Verbündeten erhalten +18 % Tempo',
+      function (c) { c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.18); }); }),
+    passiv('alpha_mec2', 'Zweiter Wind', 'onTurnStart', ['tempo'], [],
+      'Wird in jedem eigenen Zug dauerhaft 3 % schneller',
+      function (c) { c.self.spd = Math.round(c.self.spd * 1.03); }),
+    passiv('alpha_mec3', 'Sturmlauf', 'onKill', ['tempo'], [],
+      'Jeder erlegte Gegner macht den ganzen Trupp 10 % schneller',
+      function (c) { c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.1); }); }),
+    passiv('alpha_mec4', 'Rudelrausch', 'onStart', [], ['tempo'],
+      'Der ganze Trupp verursacht +3 % Schaden je Punkt Tempo über 30',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Rudelrausch', fn: function (k) {
+            k.dmg *= 1 + Math.max(0, k.self.spd - 30) * 0.03;
+          } });
+        });
+      }),
+
+    passiv('alpha_unt1', 'Rudelbefehl', 'onStart', [], [],
+      'Alle Verbündeten erhalten +8 Angriff',
+      function (c) { c.allies().forEach(function (u) { u.atk += 8; }); }),
+    passiv('alpha_unt2', 'Beschützer', 'onStart', [], [],
+      'Alle Verbündeten erhalten +12 % maximales Leben',
+      function (c) {
+        c.allies().forEach(function (u) {
+          var add = Math.round(u.maxHp * 0.12);
+          u.maxHp += add; u.hp += add;
+        });
+      }),
+    passiv('alpha_unt3', 'Gemeinsam stark', 'onStart', [], [],
+      'Alle Verbündeten erhalten +4 % Angriff je lebendem Verbündeten',
+      function (c) {
+        var n = c.allies().length;
+        c.allies().forEach(function (u) { u.atk = Math.round(u.atk * (1 + 0.04 * n)); });
+      }),
+    passiv('alpha_unt4', 'Das Rudel', 'onStart', ['tempo'], [],
+      'Alle Verbündeten erhalten +15 % Angriff und +15 % Tempo',
+      function (c) {
+        c.allies().forEach(function (u) {
+          u.atk = Math.round(u.atk * 1.15);
+          u.spd = Math.round(u.spd * 1.15);
+        });
+      }),
+
+    passiv('alpha_def1', 'Dickes Winterfell', 'onStart', [], [],
+      '+25 % maximales Leben',
+      function (c) {
+        var add = Math.round(c.self.maxHp * 0.25);
+        c.self.maxHp += add; c.self.hp += add;
+      }),
+    passiv('alpha_def2', 'Wachsam', 'onStart', ['tempo'], [],
+      '+4 Rüstung und +12 % Tempo',
+      function (c) { c.self.def += 4; c.self.spd = Math.round(c.self.spd * 1.12); }),
+    passiv('alpha_def3', 'Nie allein', 'onAllyDeath', ['heilung'], [],
+      'Stirbt ein Verbündeter: heilt 30 % und erhält +10 Angriff',
+      function (c) { c.heal(c.self, c.self.maxHp * 0.3, 'Nie allein'); c.self.atk += 10; }),
+    passiv('alpha_def4', 'Alter Alpha', 'onDeath', ['tempo', 'heilung'], [],
+      'Steht einmal mit 40 % Leben wieder auf und macht den Trupp 20 % schneller',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.4);
+        c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.2); });
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      })
   ];
 
   /* Vier Linien à vier Stufen. Die Stufe entspricht dem Rang: bei der Anwerbung
@@ -1115,6 +1461,30 @@
       mechanik: ['gobwa_mec1', 'gobwa_mec2', 'gobwa_mec3', 'gobwa_mec4'],
       unterstuetzung: ['gobwa_unt1', 'gobwa_unt2', 'gobwa_unt3', 'gobwa_unt4'],
       defensive: ['gobwa_def1', 'gobwa_def2', 'gobwa_def3', 'gobwa_def4']
+    },
+    ranga: {
+      angriff: ['ranga_ang1', 'ranga_ang2', 'ranga_ang3', 'ranga_ang4'],
+      mechanik: ['ranga_mec1', 'ranga_mec2', 'ranga_mec3', 'ranga_mec4'],
+      unterstuetzung: ['ranga_unt1', 'ranga_unt2', 'ranga_unt3', 'ranga_unt4'],
+      defensive: ['ranga_def1', 'ranga_def2', 'ranga_def3', 'ranga_def4']
+    },
+    sturmwolf: {
+      angriff: ['sturm_ang1', 'sturm_ang2', 'sturm_ang3', 'sturm_ang4'],
+      mechanik: ['sturm_mec1', 'sturm_mec2', 'sturm_mec3', 'sturm_mec4'],
+      unterstuetzung: ['sturm_unt1', 'sturm_unt2', 'sturm_unt3', 'sturm_unt4'],
+      defensive: ['sturm_def1', 'sturm_def2', 'sturm_def3', 'sturm_def4']
+    },
+    schattenwolf: {
+      angriff: ['schatten_ang1', 'schatten_ang2', 'schatten_ang3', 'schatten_ang4'],
+      mechanik: ['schatten_mec1', 'schatten_mec2', 'schatten_mec3', 'schatten_mec4'],
+      unterstuetzung: ['schatten_unt1', 'schatten_unt2', 'schatten_unt3', 'schatten_unt4'],
+      defensive: ['schatten_def1', 'schatten_def2', 'schatten_def3', 'schatten_def4']
+    },
+    rudelalpha: {
+      angriff: ['alpha_ang1', 'alpha_ang2', 'alpha_ang3', 'alpha_ang4'],
+      mechanik: ['alpha_mec1', 'alpha_mec2', 'alpha_mec3', 'alpha_mec4'],
+      unterstuetzung: ['alpha_unt1', 'alpha_unt2', 'alpha_unt3', 'alpha_unt4'],
+      defensive: ['alpha_def1', 'alpha_def2', 'alpha_def3', 'alpha_def4']
     }
   };
   /* ---- Kategorien der Bibliothek ------------------------------------------

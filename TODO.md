@@ -72,12 +72,20 @@ Abgearbeitet in Phase 16:
       Rigurd (Häuptling und Schild), Rigur (Wache und Konter), Gobwa
       (Feldverband). Damit sind zwei Arten vollständig, 176 Linien-Passive.
 
+Abgearbeitet in Phase 17:
+
+- [x] `dev/linien.js`: Linien am Bruchpunkt messen statt an fester Härte
+- [x] Linien für alle vier Sturmwölfe: Ranga (Blitz), Sturmwolf (Jagd),
+      Schattenwolf (Frost), Rudelalpha (Rudel und Tempo)
+
 Offen:
 
-1. **29 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Elf sind
-   fertig: alle sechs Oger und alle fünf Goblins, zusammen 176 Passive. Vier
-   Linien à vier Stufen je Einheit. Weiter Art für Art — als Nächstes bieten
-   sich die Sturmwölfe (4) oder die Echsenmenschen (5) an.
+1. **25 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Fünfzehn
+   sind fertig: Oger (6), Goblins (5), Sturmwölfe (4) — zusammen 240 Passive.
+   Vier Linien à vier Stufen je Einheit. Weiter Art für Art; als Nächstes die
+   Echsenmenschen (5) oder die Insektoiden (5).
+   Gemessen wird mit `npm run linien` — nicht mehr mit der Siegquote bei
+   fester Härte, die defensive Linien systematisch unterschlug.
 
 2. **Den Aufstiegs-Pool in Passive umbauen.** *(entschieden)* Die 34 aktiven
    Fähigkeiten sind totes Gewicht, seit jede Einheit nur noch ihre Signatur

@@ -134,6 +134,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 14 | Entwicklung würfelt eine Passive je Kategorie, Meta-Fortschritt sichtbar, Bosse eingefangen | Der Aufstieg ist jede Runde eine andere Frage | ✅ |
 | 15 | Linien für die restlichen vier Oger — die erste Art ist vollständig | Sechs Oger, sechs Spielweisen, aber nur einer darf mit | ✅ 6 von 40 |
 | 16 | Linien für alle fünf Goblins — die zweite Art ist vollständig | Der billigste Anfang trägt jetzt eigene Tiefe | ✅ 11 von 40 |
+| 17 | Bruchpunkt-Prüfstand für Linien, dazu die vier Sturmwölfe | Auch defensive Linien werden endlich fair gemessen | ✅ 15 von 40 |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -732,6 +733,37 @@ nicht greifen (nachgeprüft: Häuptlingszorn, Bollwerk und Formation wirken alle
 sondern weil ein rein defensiver Zuschnitt auf Rang 2 gegen Stufe-4-Gegner nichts
 rettet. Dasselbe Muster wie bei Souei in Phase 15. Ein Prüfstand, der defensive
 Linien fair misst, fehlt noch.
+
+### Phase 17 (2026-07-26): der Bruchpunkt, und die Sturmwölfe
+
+Erst das Werkzeug, dann der Inhalt — sonst hätte ich die nächste Art wieder
+falsch gemessen.
+
+**`dev/linien.js` misst den Bruchpunkt** statt der Siegquote bei fester Härte:
+den Gegner-Multiplikator, bei dem die Siegquote durch 50 % geht, per binärer
+Suche. Der alte Ansatz unterschlug defensive Linien systematisch — bei einer
+Härte, die der Trupp ohnehin nicht überlebt, steht jede Variante bei 0 %, bei
+einer leichten bei 100 %. Genau das ließ Rigurd und Souei wirkungslos aussehen,
+obwohl ihre Passiven nachweislich griffen. Jetzt zeigt jede Linie eine
+Verschiebung.
+
+**Die Sturmwölfe** sind die dritte vollständige Art, 64 neue Passive (zusammen
+240): Ranga (Blitz, springt und lähmt), Sturmwolf (Jagd auf Angeschlagene),
+Schattenwolf (Frost), Rudelalpha (Rudel und Tempo als Trupp-Achse).
+
+Der neue Prüfstand fand sofort zwei Dinge, die die alte Methode nicht gezeigt
+hätte:
+
+1. **Schattenwolfs Defensivlinie war fast unsterblich** — Schadensdeckel *und*
+   Minderung *und* Schild stapelten sich zu einem Bruchpunkt von +1.94, während
+   die nächstbeste Linie bei +0.30 lag. Der Deckel ist raus, jetzt +0.15.
+2. **Sturmwolfs ganze Angriffslinie verschob den Bruchpunkt um 0.00.** Der
+   Grund ist strukturell: er hat 9 Grundangriff, und Prozentboni auf einen so
+   kleinen Wert sind nichts. Seine Angriffslinie arbeitet jetzt mit festen
+   Zahlen. Das ist eine Lehre für alle billigen Einheiten, die noch kommen.
+
+Ergebnis `dev/balance.js`: 48 % frisch, 62 % voll freigeschaltet;
+`GRUNDHAERTE` von 0.93 auf 0.95.
 
 Weitere offene Punkte:
 - Der Abstand zwischen Anfänger und Veteran ist auf 12 Punkte gewachsen

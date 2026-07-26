@@ -495,6 +495,7 @@ ok(maxSchild <= Math.ceil(maxHp * 0.6), 'Schild ist auf 60 % des Lebens gedeckel
 
 /* onKill: der Aufbau von Exekutions-Builds hängt daran. */
 var jaeger = R.member('sturmwolf'); jaeger.rank = 2;
+jaeger.passives = ['sturm_ang4', 'sturm_mec2'];
 var jd = R.resolve(jaeger);
 ok(jd.effects.some(function (e) { return e.hook === 'onKill'; }), 'Blutrausch hängt am onKill-Hook');
 var vorAtk = C.simulate([jd], EN.build(EN.forAct(1)[0]), 2).roster[0].atk;
@@ -1107,7 +1108,7 @@ ok(Object.keys(AB.LINIEN_NAME).every(function (l) {
 ok(Object.keys(AB.linien).length >= 6, 'sechs Einheiten haben eigene Linien: ' + Object.keys(AB.linien).join(', '));
 /* Die Oger sind vollständig — damit ist „eine Einheit je Art" bei ihnen eine
    echte Wahl zwischen sechs verschiedenen Spielweisen. */
-['oger', 'goblin'].forEach(function (art) {
+['oger', 'goblin', 'direwolf'].forEach(function (art) {
   ok(GD.units.filter(function (u) { return u.art === art; })
      .every(function (u) { return !!AB.linien[u.id]; }),
      'jede Einheit der Art „' + GD.artName(art) + '" hat eigene Linien');
@@ -1157,8 +1158,8 @@ ok(pw2 && pw2.stufe === 2 && pw2.offers.every(function (o) { return AB.linien.sh
    'der Aufstieg bietet die nächste Stufe jeder Linie an');
 ok(!R.skipPassive, 'eine Passive lässt sich nicht auslassen — es gibt keinen Weg daran vorbei');
 ok(R.choosePassive(pRun, 0) && !R.passivWahl(pRun), 'die Wahl muss getroffen werden');
-ok(R.passivIds(R.member('sturmwolf')).length === 0 &&
-   R.passivIds({ id: 'sturmwolf', rank: 2 }).length === 2,
+ok(R.passivIds(R.member('skelettritter')).length === 0 &&
+   R.passivIds({ id: 'skelettritter', rank: 2 }).length === 2,
    'Einheiten ohne eigene Linien behalten die festen Passiven nach Rang');
 
 /* ------------------------------------------------- Debug-Übersicht */
