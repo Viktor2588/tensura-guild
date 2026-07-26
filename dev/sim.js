@@ -256,6 +256,24 @@ ok(!dopplungR, 'kein Start-Relikt wird zweimal angeboten (' + dopplungR + ' Dopp
 ok(!dopplungU, 'keine Start-Einheit wird zweimal angeboten (' + dopplungU + ')');
 ok(!ohneRelikt, 'jeder Anfang hat ein Relikt (' + ohneRelikt + ' ohne)');
 
+/* Der Start bleibt bescheiden — auch für einen Veteranen mit allem Freigeschalteten. */
+function startStufen(alles) {
+  var meta = R.newMeta();
+  if (alles) meta.unlockedRelics = GD.relics.map(function (r) { return r.id; });
+  var zuHoch = 0;
+  for (var i = 0; i < 300; i++) {
+    R.create(i, meta).startwahl.offers.forEach(function (o) {
+      if ((GD.relic(o.relic).rarity || 1) > R.START_MAX_RARITAET) zuHoch++;
+    });
+  }
+  return zuHoch;
+}
+ok(!startStufen(false), 'kein Start-Relikt über „ungewöhnlich" (frischer Spieler)');
+ok(!startStufen(true), 'auch nicht mit allem Freigeschalteten');
+ok(GD.relics.filter(function (r) {
+  return !r.bedingung && (r.rarity || 1) <= R.START_MAX_RARITAET;
+}).length >= 4, 'es gibt genug Relikte dieser Stufen für vier verschiedene Anfänge');
+
 /* Aufbau statt Massenschlacht: der erste Kampf ist ein Duell. */
 function gegnerzahl(step) {
   var r = R.create(4242, R.newMeta());

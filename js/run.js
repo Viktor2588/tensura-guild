@@ -117,6 +117,11 @@
      Währung ist jeder Kauf ein verzichteter Aufstieg — vorher waren die Läden
      mit Gold bezahlt und damit fast gratis. */
   var PREIS_EINHEIT = 130, PREIS_ITEM = 3, PREIS_RELIKT = 340, PREIS_RANG = 260;
+
+  /* Der Start bleibt bescheiden: höchstens ungewöhnliche Relikte. Ein
+     legendäres in der ersten Wahl nimmt dem Run seine Kurve — das Starke soll
+     erspielt werden, nicht ausgewürfelt. */
+  var START_MAX_RARITAET = 2;
   function ertrag(x) { return Math.round(x * WACHSTUM); }
 
   /* Gegnerhärte je Stufe — greift auf denselben mult wie die Begegnung selbst. */
@@ -362,7 +367,12 @@
           var ab = AB.get(pid);
           if (ab) kw = kw.concat(ab.keywords || [], ab.amplifies || []);
         });
-        var offen = relPool.filter(function (r) { return !r.bedingung && !vergeben[r.id]; });
+        var offen = relPool.filter(function (r) {
+          return !r.bedingung && !vergeben[r.id] && (r.rarity || 1) <= START_MAX_RARITAET;
+        });
+        /* Sollte der Topf je zu klein werden, lieber ein selteneres Relikt als
+           gar keins — mit den jetzigen Daten tritt das nicht ein. */
+        if (!offen.length) offen = relPool.filter(function (r) { return !r.bedingung && !vergeben[r.id]; });
         var passend = offen.filter(function (r) {
           return (r.keywords || []).concat(r.amplifies || []).some(function (k) { return kw.indexOf(k) >= 0; });
         });
@@ -1121,6 +1131,7 @@
     rankName: rankName, rankCost: rankCost,
     BEDROHUNG: BEDROHUNG, bedrohung: bedrohung, bedrohungsFaktor: bedrohungsFaktor, regel: regel,
     regelnTest: regeln, rollTest: roll, EINSTIEG: EINSTIEG, EINSTIEG_HAERTE: EINSTIEG_HAERTE,
+    START_MAX_RARITAET: START_MAX_RARITAET,
     itemSlots: itemSlots, aktivSlots: aktivSlots, passivSlots: passivSlots, praedatorSlots: praedatorSlots,
     buy: buy, eventChoose: eventChoose, camp: camp,
     equip: equip, unequip: unequip, move: move, bench: bench, deploy: deploy, entlassen: entlassen,
