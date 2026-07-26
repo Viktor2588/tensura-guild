@@ -525,6 +525,13 @@ sie deshalb aufsuchte — obwohl sie nur normale Beute zahlen. Nach der Korrektu
 im Bot zeigte sich die Regel als viel zu hart (25 → 11 %), sie trifft jetzt nur
 jeden zweiten Kampfknoten in Akt 2.
 
+Nachgetragen: **der Speicherstand-Schlüssel war nie angehoben worden.** Ein
+Stand aus Phase 10 ließ die Startansicht abstürzen (`startwahl.offers` enthielt
+Strings statt Paaren) — wer das Spiel schon einmal geöffnet hatte, sah die neue
+Fassung überhaupt nicht. Jetzt `tensura-guild-v3`, alte Schlüssel werden beim
+Laden entsorgt, und die Meta hängt an einem eigenen, versionslosen Schlüssel,
+damit Freischaltungen einen Formatwechsel überleben.
+
 Ergebnis `dev/balance.js 500`: 47 % frisch, 47 % voll freigeschaltet, Ø 4,8
 Einheiten. Bedrohungsleiter **47/37/29/25/21/15** — erstmals sauber monoton.
 

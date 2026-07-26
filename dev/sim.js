@@ -1205,6 +1205,21 @@ EN.events.forEach(function (ev) {
 });
 ok(!eKaputt.length, 'jede Ereignisoption läuft fehlerfrei' + (eKaputt.length ? ' — ' + eKaputt.join(' | ') : ''));
 
+/* Ein Speicherstand im alten Format darf die neue Fassung nicht blockieren:
+   vor dem Versionswechsel liess er den Startbildschirm abstuerzen. */
+var altesFormat = JSON.stringify({
+  seed: 5, rngState: 5, act: 1, step: 0, threat: 0,
+  gold: 60, magicules: 40, lives: 5, relics: [], bag: [], chronik: [],
+  meta: R.newMeta(), team: [], bank: [], uidSeq: 3,
+  startwahl: { verbleibend: 3, offers: ['gobta', 'sturmwolf', 'gobkyu'] }, pending: null
+});
+var altRun = R.deserialize(altesFormat);
+ok(!(altRun.startwahl.offers || []).every(function (o) { return o && GD.unit(o.unit); }),
+   'ein Startdraft im alten Format ist als unbrauchbar erkennbar');
+ok(R.deserialize(R.serialize(R.create(7, R.newMeta()))).startwahl.offers
+   .every(function (o) { return GD.unit(o.unit) && GD.relic(o.relic); }),
+   'ein frischer Startdraft überlebt Speichern und Laden vollständig');
+
 /* Speichern */
 var save = fertigerRun(1234);
 save.magicules = 321; save.relics.push('kern_des_zorns');

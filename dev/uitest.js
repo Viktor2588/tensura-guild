@@ -232,8 +232,13 @@ ok($('#menu-chronik').children.length > 0, 'die Chronik protokolliert den Run');
 
 /* ------------------------------------------------------ Speicherstand */
 head('Speicherstand');
-ok(win.localStorage.getItem('tensura-guild-v2'), 'der Run wird gespeichert');
-var gespeichert = JSON.parse(win.localStorage.getItem('tensura-guild-v2'));
+ok(win.localStorage.getItem('tensura-guild-v3'), 'der Run wird gespeichert');
+/* Die Meta hängt an einem versionslosen Schlüssel — sie überlebt Formatwechsel. */
+ok(win.localStorage.getItem('tensura-guild-meta'), 'die Meta liegt getrennt vom Run');
+win.localStorage.setItem('tensura-guild-v2', '{"kaputt":true}');
+win.Run.load();
+ok(!win.localStorage.getItem('tensura-guild-v2'), 'ein Speicherstand alter Version wird beim Laden entsorgt');
+var gespeichert = JSON.parse(win.localStorage.getItem('tensura-guild-v3'));
 ok(gespeichert.team.length === run.team.length, 'der Trupp steckt im Speicherstand');
 ok(gespeichert.team[0].rank === run.team[0].rank, 'der Rang überlebt das Speichern');
 

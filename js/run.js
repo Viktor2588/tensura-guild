@@ -1021,7 +1021,18 @@
 
   /* ---- Speichern ----------------------------------------------------------- */
 
-  var KEY = 'tensura-guild-v2';
+  /* Version im Schlüssel: Phase 11 hat das Format unvereinbar geändert (Gold
+     entfällt, der Startdraft ist ein Paar aus Einheit und Relikt, Passive werden
+     gewählt). Ein alter Stand ließ die Startansicht abstürzen — der Spieler sah
+     die neue Fassung nie. Beim Anheben verfällt der laufende Run — die Meta
+     bleibt, sie hängt an einem eigenen, versionslosen Schlüssel. */
+  var KEY = 'tensura-guild-v3';
+  var ALTE_KEYS = ['tensura-guild', 'tensura-guild-v2'];
+  /* Die Meta hängt bewusst NICHT an der Version: Freischaltungen und
+     Bedrohungsstufe sind über Runs hinweg verdient und dürfen bei einem
+     Formatwechsel nicht verfallen. */
+  var META_KEY = 'tensura-guild-meta';
+  var ALTE_META = ['tensura-guild-v2-meta', 'tensura-guild-meta-v2'];
 
   /* Der Belohnungsbildschirm muss ein Neuladen überleben — sonst ist die
      Belohnung weg, obwohl das Gold schon gutgeschrieben war. Vom Kampf wird
@@ -1072,18 +1083,28 @@
   }
   function load() {
     try {
+      ALTE_KEYS.forEach(function (k) { localStorage.removeItem(k); });
       var raw = localStorage.getItem(KEY);
-      return raw ? deserialize(raw) : null;
+      if (!raw) return null;
+      var run = deserialize(raw);
+      /* Letzte Sicherung: was sich nicht sauber auflösen lässt, wird verworfen
+         statt halb angezeigt. */
+      if (run.startwahl && !(run.startwahl.offers || []).every(function (o) {
+        return o && GD.unit(o.unit);
+      })) return null;
+      return run;
     } catch (e) { return null; }
   }
   function loadMeta() {
     try {
-      var raw = localStorage.getItem(KEY + '-meta');
+      var raw = localStorage.getItem(META_KEY);
+      /* Einmalige Übernahme aus der alten Fassung. */
+      for (var i = 0; !raw && i < ALTE_META.length; i++) raw = localStorage.getItem(ALTE_META[i]);
       return raw ? JSON.parse(raw) : newMeta();
     } catch (e) { return newMeta(); }
   }
   function saveMeta(meta) {
-    try { localStorage.setItem(KEY + '-meta', JSON.stringify(meta)); } catch (e) {}
+    try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (e) {}
   }
   function clear() { try { localStorage.removeItem(KEY); } catch (e) {} }
 
