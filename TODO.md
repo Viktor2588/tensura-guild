@@ -13,6 +13,11 @@ Abgearbeitet in Phase 8:
 - [x] Boss-Pools auf je vier gefüllt (Orklord Geld, Razen, Roy Valentine)
 - [x] Boss-Eskalation, weil allein stehende Bosse sonst eine Ja/Nein-Frage sind
 
+Abgearbeitet in Phase 9:
+
+- [x] Bedrohungsstufen sind Regeln statt Prozentzahlen: Überzahl, Nachschub,
+      Kriegsrecht, Belagerung, Sturmgott — kumulativ, gemessen 48/35/24/16/11/6 %
+
 Offen:
 
 - 38 Einheiten haben noch keine eigenen Linien. Das System steht (`AB.linien`),
@@ -27,4 +32,3 @@ Offen:
   macht. Pool 2 liegt sauber bei 61–65 %.
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
-- Bedrohungsstufen sollten nicht reine Gegner boni sein, sei kreativ hier.

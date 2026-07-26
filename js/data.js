@@ -103,6 +103,7 @@
       aktiv: 'Feuert im Kampf, sobald die Abklingzeit abgelaufen ist, und ERSETZT in dem Zug den normalen Angriff. Sind mehrere bereit, wird die mit der längsten Abklingzeit gewählt — Fähigkeiten mit einer Lagebedingung ("nur wenn jemand verwundet ist") warten, bis diese Lage da ist.',
       passiv: 'Wirkt dauerhaft im Hintergrund, ohne Abklingzeit. Schaltet mit dem Rang frei.',
       abklingzeit: 'Zahl der eigenen Züge, die zwischen zwei Einsätzen dieser Fähigkeit liegen müssen.',
+      bedrohungsstufe: 'Die Langzeitschicht: Nach jedem Sieg geht die nächste Stufe auf, und jede schaltet EINE neue Regel frei — nicht bloß mehr Gegnerwerte. Überzahl stellt einen Nachzügler dazu, Nachschub lässt den vordersten Gegner einmal wiederauferstehen, Kriegsrecht macht den Händler karg, Belagerung stellt überall Elite hin, Sturmgott nimmt zwei Leben und lässt Bosse doppelt so schnell eskalieren. Die Regeln sind kumulativ. Eine Prozentzahl verlangt einen stärkeren Trupp, eine Regel einen anderen.',
       eskalation: 'Bosse treten allein an und werden mit jedem ihrer Züge 6 % stärker. Ein Bosskampf ist deshalb ein Tempo-Check: wer nicht abräumt, verliert allmählich. Ohne diese Eskalation entscheidet sich ein Kampf gegen einen einzelnen Gegner in der ersten Runde.',
       praedator: 'Nach jedem gewonnenen Kampf darf ein besiegter Gegner verschlungen werden: seine Fähigkeit wandert dauerhaft in eine Einheit. Slots gibt es erst ab Rang B.',
       itemslot: 'Wie viele Ausrüstungsstücke diese Einheit tragen kann. Hängt am Rang: C 1, B 2, A 3, S 5.',

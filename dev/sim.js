@@ -415,7 +415,65 @@ var hart = R.create(1, meta4);
 ok(hart.threat === 5, 'eine freigeschaltete Stufe wird übernommen');
 ok(hart.lives === 3 && R.create(1, R.newMeta()).lives === 5,
    'Stufe 5 nimmt zwei der fünf Leben');
-ok(hart.gold < 60, 'Stufe 2 kürzt das Startgold');
+/* Jede Stufe muss eine Regel tragen, nicht nur eine Prozentzahl. */
+ok(R.BEDROHUNG.slice(1).every(function (b) { return !!b.regel; }),
+   'jede Bedrohungsstufe ab 1 schaltet eine benannte Regel frei');
+ok(R.BEDROHUNG.slice(1).map(function (b) { return b.regel; })
+   .every(function (r, i, alle) { return alle.indexOf(r) === i; }),
+   'keine Regel doppelt');
+ok(R.regel({ threat: 4 }, 'ueberzahl') && R.regel({ threat: 4 }, 'belagerung') &&
+   !R.regel({ threat: 4 }, 'sturmgott'),
+   'Regeln sind kumulativ bis zur eigenen Stufe');
+ok(!R.regel({ threat: 0 }, 'ueberzahl'), 'auf Stufe 0 gilt keine Regel');
+
+/* Überzahl: ein Gegner mehr je Begegnung, aber nicht beim Boss. */
+function feldGroesse(t, typ, enc) {
+  var r = R.create(1, R.newMeta()); r.threat = t;
+  var n = 0;
+  var alt = R.choose;
+  return R.regelnTest(r, { type: typ }, EN.build(enc, 1)).length;
+}
+var encT = EN.forAct(1)[0];
+ok(feldGroesse(1, 'kampf', encT) === feldGroesse(0, 'kampf', encT) + 1,
+   'Überzahl stellt einen Gegner mehr auf');
+ok(feldGroesse(1, 'boss', EN.bossById('b_charybdis')) ===
+   feldGroesse(0, 'boss', EN.bossById('b_charybdis')),
+   'der Boss bleibt allein');
+
+/* Nachschub: normale Gegner stehen einmal wieder auf, Bosse nicht. */
+function hatNachschub(t, typ, enc) {
+  var r = R.create(1, R.newMeta()); r.threat = t;
+  return R.regelnTest(r, { type: typ }, EN.build(enc, 1))
+    .some(function (f) { return (f.effects || []).some(function (e) { return e.name === 'Nachschub'; }); });
+}
+ok(hatNachschub(2, 'kampf', encT) && !hatNachschub(1, 'kampf', encT),
+   'Nachschub greift ab Stufe 2');
+ok(!hatNachschub(5, 'boss', EN.bossById('b_charybdis')), 'Bosse stehen nicht wieder auf');
+
+/* Sturmgott: Bosse eskalieren doppelt. */
+function bossWut(t) {
+  var r = R.create(1, R.newMeta()); r.threat = t;
+  return R.regelnTest(r, { type: 'boss' }, EN.build(EN.bossById('b_charybdis'), 1))[0].enrage;
+}
+ok(bossWut(5) === bossWut(4) * 2, 'Sturmgott verdoppelt die Boss-Eskalation');
+
+/* Belagerung: aus jedem Kampfknoten wird eine Elite, zur normalen Beute. */
+function knotenTypen(t) {
+  var r = R.create(77, R.newMeta()); r.threat = t;
+  r.phase = 'karte'; r.startwahl = null; r.team = [R.member('gobta')];
+  var typen = [];
+  for (var st = 0; st < R.STEPS.length; st++) { r.step = st; r.act = 1; typen = typen.concat(
+    (function () { var o = []; r.options = null; R.rollTest(r); return r.options.map(function (x) { return x.type; }); })()); }
+  return typen;
+}
+ok(knotenTypen(4).indexOf('kampf') < 0 && knotenTypen(3).indexOf('kampf') >= 0,
+   'Belagerung macht aus jedem Kampfknoten eine Elite');
+
+/* Kriegsrecht: karges Angebot im Laden, teurere Ränge. */
+var krieg = fertigerRun(9001); krieg.threat = 3;
+ok(R.regel(krieg, 'kriegsrecht'), 'Stufe 3 schaltet Kriegsrecht');
+ok(R.rankCost(krieg.team[0], krieg) > R.rankCost(krieg.team[0], { threat: 0 }),
+   'unter Kriegsrecht kosten Ränge mehr');
 while (hart.phase === 'start') R.chooseStart(hart, 0);
 ok(R.rankCost(hart.team[0], hart) > R.rankCost(hart.team[0]), 'Stufe 3 verteuert die Ränge');
 
@@ -425,8 +483,9 @@ var leicht = EN.build(enc0, R.bedrohungsFaktor({ threat: 0 }, { type: 'kampf' })
 var schwer = EN.build(enc0, R.bedrohungsFaktor({ threat: 5 }, { type: 'kampf' }));
 ok(schwer[0].hp > leicht[0].hp && schwer[0].atk > leicht[0].atk,
    'Stufe 5 macht Gegner stärker (' + leicht[0].hp + ' -> ' + schwer[0].hp + ' Leben)');
-ok(R.bedrohungsFaktor({ threat: 5 }, { type: 'elite' }) >
-   R.bedrohungsFaktor({ threat: 5 }, { type: 'kampf' }), 'Stufe 5 trifft Elite härter');
+ok(R.bedrohungsFaktor({ threat: 5 }, { type: 'elite' }) ===
+   R.bedrohungsFaktor({ threat: 5 }, { type: 'kampf' }),
+   'die Werteschraube trifft Elite und Kampf gleich — den Unterschied machen die Regeln');
 ok(R.bedrohungsFaktor({ threat: 0 }, { type: 'boss' }) ===
    R.bedrohungsFaktor({ threat: 0 }, { type: 'kampf' }),
    'Stufe 0 behandelt Boss und normalen Kampf gleich');

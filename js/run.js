@@ -63,15 +63,37 @@
      andere Schraube, nicht nur die Gegnerwerte. Freigeschaltet wird sie, indem
      man auf der aktuellen Stufe gewinnt.                                      */
 
+  /* Jede Stufe schaltet EINE Regel frei, die das Spiel verändert — nicht bloß
+     eine Prozentzahl. Prozentzahlen verlangen einen stärkeren Trupp; Regeln
+     verlangen einen anderen. Die Regeln sind kumulativ, die Werteschraube läuft
+     nur noch leise nebenher. */
   var BEDROHUNG = [
-    { stufe: 0, name: 'Jura-Wald', text: 'Der normale Weg.' },
-    { stufe: 1, name: 'Unruhige Grenze', text: 'Alle Gegner +2,5 % Leben und Angriff.' },
-    { stufe: 2, name: 'Aufmarsch', text: 'Gegner +5 % und 20 Gold weniger zum Start.' },
-    { stufe: 3, name: 'Krieg', text: 'Gegner +7,5 %, dazu kosten Rangaufstiege 12 % mehr Magicule.' },
-    { stufe: 4, name: 'Untergang', text: 'Gegner +10 % — der letzte Akt wird zur Wand.' },
-    { stufe: 5, name: 'Sturmgott', text: 'Gegner +12,5 %, Elite und Bosse zusätzlich, und nur drei statt fünf Leben.' }
+    { stufe: 0, name: 'Jura-Wald', regel: null,
+      text: 'Der normale Weg.' },
+    { stufe: 1, name: 'Überzahl', regel: 'ueberzahl',
+      text: 'Jede Begegnung bringt einen Gegner mehr mit. Fläche und Konter gewinnen dadurch, ' +
+            'reiner Einzelzielschaden verliert.' },
+    { stufe: 2, name: 'Nachschub', regel: 'nachschub',
+      text: 'Jeder normale Gegner steht einmal mit 30 % Leben wieder auf — Bosse nicht. ' +
+            'Wer nur exekutiert, räumt nicht mehr ab; Gift, Brand und Blutung tragen weiter.' },
+    { stufe: 3, name: 'Kriegsrecht', regel: 'kriegsrecht',
+      text: 'Der Händler bietet nur noch EINE Einheit an statt drei, und Rangaufstiege kosten ' +
+            '15 % mehr Magicule. Du gewinnst weitgehend mit dem Trupp, den du gedraftet hast.' },
+    { stufe: 4, name: 'Belagerung', regel: 'belagerung',
+      text: 'Auf JEDEM Kampfknoten steht eine Elite — zur Beute eines normalen ' +
+            'Kampfes. Dazu gibt das Lager 15 % weniger — es gibt keinen ruhigen Knoten mehr.' },
+    { stufe: 5, name: 'Sturmgott', regel: 'sturmgott',
+      text: 'Nur drei Leben statt fünf, und Bosse eskalieren doppelt so schnell. Jetzt zählt Tempo.' }
   ];
   function bedrohung(i) { return BEDROHUNG[Math.max(0, Math.min(BEDROHUNG.length - 1, i || 0))]; }
+  /* Gilt die Regel auf der Stufe dieses Runs? Kumulativ: Stufe 4 hat auch 1–3. */
+  function regel(run, name) {
+    var t = run.threat || 0;
+    for (var i = 1; i < BEDROHUNG.length; i++) {
+      if (BEDROHUNG[i].regel === name) return t >= i;
+    }
+    return false;
+  }
 
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
@@ -92,10 +114,8 @@
     if (!t) return GRUNDHAERTE;
     /* Klein halten: die Kurve ist steil, 20 % mehr Gegnerwerte kippen fast jeden
        Run. Gemessen mit `node dev/balance.js 500 --stufe N`. */
-    var f = GRUNDHAERTE + 0.025 * Math.min(t, 5);
-    if (t >= 5 && node.type === 'boss') f *= 1.05;
-    if (t >= 5 && node.type === 'elite') f *= 1.07;
-    return f;
+    /* Nur noch ein leiser Anstieg: die Regeln oben tragen die Härte. */
+    return GRUNDHAERTE + 0.012 * Math.min(t, 5);
   }
 
   /* ---- Meta (überlebt den Tod) ------------------------------------------- */
@@ -142,7 +162,7 @@
   function rankCost(m, run) {
     if (m.rank >= 3) return 0;
     var k = RANK_COST[m.rank];
-    if (run && (run.threat || 0) >= 3) k = Math.round(k * 1.12);   // Stufe 3: teurere Ränge
+    if (run && regel(run, 'kriegsrecht')) k = Math.round(k * 1.15);
     return k;
   }
 
@@ -275,7 +295,7 @@
     var run = {
       seed: seed >>> 0, rngState: seed >>> 0, meta: meta, threat: t,
       act: 1, step: 0, phase: 'karte', over: false, won: false,
-      gold: t >= 2 ? 40 : 60, magicules: 0, lives: t >= 5 ? 3 : 5,
+      gold: 60, magicules: 0, lives: t >= 5 ? 3 : 5,
       team: [], bank: [], relics: [],
       options: null, node: null, pending: null, wahl: null, chronik: []
     };
@@ -390,9 +410,16 @@
     var types = STEPS[run.step];
     run.options = types.map(function (type) {
       if (type === 'kampf' || type === 'elite') {
+        /* Belagerung: Elite-Gegner an einem normalen Knoten — aber zu normaler
+           Beute. Mit der Elite-Belohnung war die Stufe gemessen LEICHTER als die
+           darunter (23 gegen 17 % Siege): die bessere Beute zahlte die härteren
+           Gegner mehr als zurück. */
+        var belagert = type === 'kampf' && regel(run, 'belagerung');
+        if (belagert) type = 'elite';
         var pool = type === 'elite' ? EN.elitesForAct(st) : EN.forAct(st);
         var e = root.RNG.pick(rng, pool);
-        return { type: type, name: e.name, encounter: e };
+        return { type: type, name: (belagert ? 'Belagerung: ' : '') + e.name,
+                 encounter: e, belagert: belagert };
       }
       if (type === 'boss') {
         var b = bossOf(run);
@@ -420,17 +447,71 @@
     return fight(run, node);
   }
 
+  /* Nachschub: normale Gegner stehen einmal wieder auf. Als Effekt an der
+     Kampfdefinition, nicht als Sonderfall in combat.js — die Engine soll von
+     Bedrohungsstufen nichts wissen. */
+  var NACHZUEGLER = 0.5;
+  var NACHSCHUB_LEBEN = 0.3;
+
+  var NACHSCHUB = { hook: 'onDeath', name: 'Nachschub',
+    text: 'Steht einmal mit 30 % Leben wieder auf.', keywords: ['heilung'],
+    fn: function (c) {
+      if (c.self._auf) return;
+      c.self._auf = 1;
+      c.self.hp = Math.round(c.self.maxHp * NACHSCHUB_LEBEN);
+      c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name,
+                   side: c.self.side, hp: c.self.hp });
+    } };
+
+  /* Was die Bedrohungsstufe am fertigen Gegnerfeld ändert. */
+  function regeln(run, node, foes) {
+    if (regel(run, 'ueberzahl') && node.type !== 'boss') {
+      /* Ein Nachzügler, keine zweite Begegnung: ein voller Extragegner halbierte
+         gemessen die Siegquote (46 -> 14 %). Bei NACHZUEGLER = 0.5 bleibt die
+         Wirkung — mehr Ziele, also zählen Fläche und Konter — ohne die Stufe zu
+         einer Wand zu machen. */
+      var letzter = foes[foes.length - 1], nach = {};
+      for (var x in letzter) nach[x] = letzter[x];
+      nach.name = letzter.name + ' (Nachzügler)';
+      nach.hp = Math.max(1, Math.round(letzter.hp * NACHZUEGLER));
+      nach.atk = Math.max(1, Math.round(letzter.atk * NACHZUEGLER));
+      nach.def = Math.round(letzter.def * NACHZUEGLER);
+      foes = foes.concat([nach]);
+    }
+    if (regel(run, 'nachschub') && node.type !== 'boss') {
+      /* Nur der vorderste Gegner kommt zurück. Auf alle angewandt kostete die
+         Regel gemessen 17 Punkte Siegquote statt der gewollten 7 — die Zahl der
+         zusätzlichen Körper wiegt schwerer als deren Leben. */
+      foes = foes.map(function (f, i) {
+        if (i) return f;
+        var k = {};
+        for (var x in f) k[x] = f[x];
+        k.effects = (f.effects || []).concat([NACHSCHUB]);
+        return k;
+      });
+    }
+    if (regel(run, 'sturmgott') && node.type === 'boss') {
+      foes = foes.map(function (f) {
+        var k = {};
+        for (var x in f) k[x] = f[x];
+        k.enrage = (f.enrage || 0) * 2;
+        return k;
+      });
+    }
+    return foes;
+  }
+
   function fight(run, node) {
     var rng = rngOf(run);
     var seed = Math.floor(rng() * 0xffffffff);
     commit(run, rng);
-    var foes = EN.build(node.encounter, bedrohungsFaktor(run, node));
+    var foes = regeln(run, node, EN.build(node.encounter, bedrohungsFaktor(run, node)));
     var res = C.simulate(run.team.map(resolve), foes, seed, { relics: run.relics.map(GD.relic) });
     run.phase = 'kampf';
     run.pending = { result: res, node: node, rewards: null, devour: null };
 
     if (res.winner === 'player') {
-      var gold = ertrag(node.encounter.gold);
+      var gold = ertrag(node.encounter.gold * (node.belagert ? 0.55 : 1));
       run.gold += gold;
       run.magicules += ertrag(25 + inhaltsStufe(run) * 15);
       run.pending.gold = gold;
@@ -480,7 +561,7 @@
   function rollRewards(run, node) {
     var rng = rngOf(run);
     var out = [];
-    var stark = node.type === 'elite' || node.type === 'boss';
+    var stark = (node.type === 'elite' || node.type === 'boss') && !node.belagert;
     /* Elite und Boss würfeln eine Stufe höher — dafür geht man das Risiko ein. */
     var akt = inhaltsStufe(run) + (stark ? 1 : 0);
     themenWahl(run, rng, unitPool(run), akt, 2).forEach(function (u) {
@@ -650,10 +731,14 @@
     var rng = rngOf(run);
     var offers = [];
     var st = inhaltsStufe(run);
-    themenWahl(run, rng, unitPool(run), st, 3).forEach(function (u) {
-      offers.push({ kind: 'unit', id: u.id, name: u.name, price: 70 + u.cost * 8,
-                    text: unitText(u), rarity: u.rarity });
-    });
+    /* Kriegsrecht: EIN Angebot statt drei. Ganz ohne Einheiten war die Stufe
+       gemessen härter als die nächsthöhere (13 gegen 20 % Siege) — die Kurve lief
+       rückwärts, weil ein Trupp, dem eine Rolle fehlt, gar nicht mehr aufholt. */
+    themenWahl(run, rng, unitPool(run), st, regel(run, 'kriegsrecht') ? 1 : 3)
+      .forEach(function (u) {
+        offers.push({ kind: 'unit', id: u.id, name: u.name, price: 70 + u.cost * 8,
+                      text: unitText(u), rarity: u.rarity });
+      });
     themenWahl(run, rng, GD.items, st, 2).forEach(function (it) {
       offers.push({ kind: 'item', id: it.id, name: it.name, price: it.cost,
                     text: itemText(it), rarity: it.rarity });
@@ -752,9 +837,12 @@
 
   function camp(run, i) {
     if (run.phase !== 'lager' || run.pending.done) return false;
-    if (i === 0) run.gold += ertrag(60);
-    else if (i === 1) run.magicules += ertrag(120);
-    else api.buffRandom(run, { hp: 30, atk: 4 });
+    /* Belagerung nimmt auch die Erholung — sonst ist der Schritt von Stufe 3
+       auf 4 gemessen nur zwei Punkte wert. */
+    var f = regel(run, 'belagerung') ? 0.85 : 1;
+    if (i === 0) run.gold += Math.round(ertrag(60) * f);
+    else if (i === 1) run.magicules += Math.round(ertrag(120) * f);
+    else api.buffRandom(run, { hp: Math.round(30 * f), atk: Math.round(4 * f) });
     run.pending.done = true;
     return true;
   }
@@ -934,7 +1022,8 @@
     passivIds: passivIds, hatLinien: hatLinien,
     chooseStart: chooseStart,
     rankName: rankName, rankCost: rankCost,
-    BEDROHUNG: BEDROHUNG, bedrohung: bedrohung, bedrohungsFaktor: bedrohungsFaktor,
+    BEDROHUNG: BEDROHUNG, bedrohung: bedrohung, bedrohungsFaktor: bedrohungsFaktor, regel: regel,
+    regelnTest: regeln, rollTest: roll,
     itemSlots: itemSlots, aktivSlots: aktivSlots, passivSlots: passivSlots, praedatorSlots: praedatorSlots,
     buy: buy, eventChoose: eventChoose, camp: camp,
     equip: equip, unequip: unequip, move: move, bench: bench, deploy: deploy, entlassen: entlassen,

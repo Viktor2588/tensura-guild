@@ -314,3 +314,8 @@ table.dbg i.ab { color: #e77; }
                 text-transform: uppercase; opacity: .6; margin-top: .1rem; }
 .marke.chaos { background: #7a3b8c; }
 .marke.antichaos { background: #2f7f6a; }
+
+/* Aktive Bedrohungsregeln: klein, aber immer sichtbar. */
+.regeln { display: flex; flex-wrap: wrap; gap: .25rem; margin: .3rem 0; }
+.regel { font-size: .7rem; padding: .1rem .4rem; border-radius: 999px;
+         background: #a33a; color: #fff; letter-spacing: .02em; }

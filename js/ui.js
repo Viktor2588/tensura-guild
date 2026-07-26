@@ -186,7 +186,7 @@
   }
 
   function zeichneKarte() {
-    var html = bossVorschau(run.act) + '<h2>Wohin?</h2><div class="karten">';
+    var html = regelListe(false) + bossVorschau(run.act) + '<h2>Wohin?</h2><div class="karten">';
     run.options.forEach(function (o, i) {
       var klasse = o.type === 'boss' ? 'karte boss' : o.type === 'elite' ? 'karte elite' : 'karte';
       var unter = o.encounter ? gegnerVorschau(o.encounter)
@@ -232,8 +232,20 @@
       html += '<button class="' + (b.stufe === run.threat ? 'haupt' : '') + '" data-a="stufe" data-i="' +
         b.stufe + '"' + tip(b.stufe + ' · ' + b.name, b.text) + '>' + b.stufe + '</button>';
     });
-    return html + '</div><p class="hinweis">' + esc(R.bedrohung(run.threat).name) + ' — ' +
-      esc(R.bedrohung(run.threat).text) + '</p>';
+    return html + '</div>' + regelListe(true);
+  }
+
+  /* Welche Regeln gelten gerade? Ohne diese Liste ist die Stufe eine Zahl im
+     Kopf der Seite und der Spieler merkt erst im Kampf, was anders ist. */
+  function regelListe(lang) {
+    if (!run.threat) return '';
+    var aktiv = R.BEDROHUNG.filter(function (b) { return b.regel && b.stufe <= run.threat; });
+    if (!aktiv.length) return '';
+    return '<div class="regeln">' + aktiv.map(function (b) {
+      return '<span class="regel"' + tip(b.stufe + ' · ' + b.name, b.text) + '>' +
+        esc(b.name) + '</span>';
+    }).join('') + '</div>' +
+      (lang ? '<p class="hinweis">' + esc(R.bedrohung(run.threat).text) + '</p>' : '');
   }
 
   function zeichneStart() {

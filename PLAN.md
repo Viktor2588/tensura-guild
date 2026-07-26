@@ -119,6 +119,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 6 | Politur: Kampf-Animation, Meta-Freischaltungen, Save/Resume | — | ✅ |
 | 7 | TODO.md: zwei Akte mit Boss-Pools, Debug-Übersicht, Chaos-Mechanik und wählbare Passive je Einheit | Shion spielt sich sichtbar anders als über Werte allein | ✅ Shion, 39 Einheiten offen |
 | 8 | Einheiten-Synergie: „verwundbar" als Trupp-Marke, Blutung, Soueis sechzehn Passive, größere Boss-Pools | Ein Assassine macht den ganzen Trupp stärker, nicht nur sich | ✅ Souei, 38 Einheiten offen |
+| 9 | Bedrohungsstufen als Regeln statt Prozentzahlen | Jede Stufe verlangt ein anderes Spiel, nicht nur einen stärkeren Trupp | ✅ |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -408,6 +409,42 @@ gemeinsamen Regler `BOSS_HAERTE` in `enemies.js`, gemessen mit `dev/balance.js`:
 
 Ergebnis `dev/balance.js 400`: 50 % Siege frisch, 51 % mit allem
 Freigeschalteten, Builds zwischen 36 und 63 %.
+
+### Phase 9 (2026-07-26): Bedrohungsstufen sind jetzt Regeln
+
+Vorher war jede Stufe dieselbe Schraube: +2,5 % Gegnerwerte, +5 %, +7,5 %. Das
+verlangt einen stärkeren Trupp, aber kein anderes Spiel. Jetzt schaltet jede
+Stufe **eine benannte Regel** frei, kumulativ, und die Werteschraube läuft nur
+noch leise nebenher (0,012 statt 0,025 je Stufe):
+
+| Stufe | Regel | Was sie verschiebt |
+|---|---|---|
+| 1 | **Überzahl** — ein Nachzügler je Begegnung, halbe Werte | Fläche und Konter auf, Einzelziel ab |
+| 2 | **Nachschub** — der vorderste Gegner steht einmal mit 30 % auf | Exekution allein reicht nicht mehr |
+| 3 | **Kriegsrecht** — ein Einheitenangebot statt drei, Ränge +15 % | der gedraftete Trupp muss tragen |
+| 4 | **Belagerung** — überall Elite zu normaler Beute, Lager −15 % | kein ruhiger Knoten mehr |
+| 5 | **Sturmgott** — drei Leben, Bosse eskalieren doppelt | Tempo statt Aushalten |
+
+Gemessen `dev/balance.js 500 --stufe N`: **48 / 35 / 24 / 16 / 11 / 6 %**.
+
+Drei Fehlschläge auf dem Weg, alle an derselben Ursache — eine Regel wiegt
+schwerer, als sie klingt:
+
+1. **Ein voller Extragegner halbierte die Siegquote** (46 → 14 % auf Stufe 1
+   allein). Der Nachzügler hat jetzt halbe Werte; die Wirkung bleibt, die Wand
+   ist weg.
+2. **Nachschub auf allen Gegnern** kostete 17 Punkte statt der gewollten 7 — die
+   Zahl der zusätzlichen Körper wiegt schwerer als deren Leben. Jetzt kommt nur
+   der vorderste zurück.
+3. **Belagerung war LEICHTER als die Stufe darunter** (23 gegen 17 %): die
+   Elite-Beute zahlte die härteren Gegner mehr als zurück, und der Bot wich über
+   seine Wegwahl aus. Jetzt Elite-Gegner zu normaler Beute, auf beiden Akten,
+   plus 15 % weniger aus dem Lager. Erste Korrektur schoss über (Lager halbiert
+   → 4 %), 0,85 trifft.
+
+Der zweite und dritte Punkt sind derselbe Befund wie schon bei den Bossen: **die
+Kurve lässt sich nicht am Reißbrett schätzen.** Jede dieser Regeln sah auf dem
+Papier nach „ein bisschen härter" aus.
 
 Weitere offene Punkte:
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"

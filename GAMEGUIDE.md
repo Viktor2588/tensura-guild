@@ -2,9 +2,24 @@
 
 ## Bedrohungsstufen
 
-Gewinnst du einen Run, geht die nächste Bedrohungsstufe auf — bis Stufe 5. Die
-Wahl triffst du auf dem Startbildschirm. Jede Stufe zieht eine andere Schraube
-an: härtere Gegner, weniger Startgold, teurere Ränge, am Ende ein Leben weniger.
+Die Langzeitschicht. Nach jedem Sieg geht die nächste Stufe auf, und **jede
+schaltet eine Regel frei — keine Prozentzahl.** Eine Prozentzahl verlangt einen
+stärkeren Trupp, eine Regel verlangt einen anderen. Die Regeln sind kumulativ.
+
+| Stufe | Name | Regel | Was sie vom Spiel verlangt |
+|---|---|---|---|
+| 0 | Jura-Wald | — | Der normale Weg. |
+| 1 | Überzahl | Jede Begegnung bringt einen Nachzügler mit (halbe Werte) | Fläche und Konter werden wertvoll, reiner Einzelzielschaden verliert |
+| 2 | Nachschub | Der vorderste Gegner steht einmal mit 30 % Leben wieder auf | Exekution allein räumt nicht mehr ab — Gift, Brand und Blutung tragen weiter |
+| 3 | Kriegsrecht | Der Händler bietet nur noch eine Einheit statt drei, Ränge kosten 15 % mehr | Du gewinnst weitgehend mit dem Trupp, den du gedraftet hast |
+| 4 | Belagerung | Auf jedem Kampfknoten steht eine Elite — zur Beute eines normalen Kampfes, und das Lager gibt 15 % weniger | Kein ruhiger Knoten mehr; die Route wird zur Überlebensfrage |
+| 5 | Sturmgott | Nur drei Leben statt fünf, Bosse eskalieren doppelt so schnell | Tempo: wer den Boss nicht schnell legt, verliert ihn |
+
+Welche Regeln gerade gelten, steht über der Karte.
+
+Gemessen mit `node dev/balance.js 500 --stufe N`: 48 / 35 / 24 / 16 / 11 / 6 %
+Siegquote. Die Werteschraube läuft nur noch leise nebenher (+1,2 % je Stufe) —
+die Härte kommt aus den Regeln.
 
 ## Der Start
 
