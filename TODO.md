@@ -90,4 +90,4 @@ Balance und Werkzeug:
 - Wie kann ich die Bedrohungstufe erhöhen?
 - Mir fehlt noch das Donnerelement
 - Die Stärke von Items & relikten ist nicht sauber gebalanced. Manche items fühlen sich viel zu stark an dafür das sie ungewühnlich sind & mache legendary items fühlen sich zu schwach an.
-- 
+- Erste begegnung sollte immer ein kampf sein.
