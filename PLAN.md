@@ -110,8 +110,12 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 4 | Content: 40 Einheiten mit eigener Signatur, 31 Pool-Aktive, 27 Passive, 37 Relikte, 68 Gegner, 5 Bosse, 5 Akte | Pool trägt 10 Runs ohne Wiederholungsgefühl | ✅ |
 | 5 | `dev/balance.js`: Winrate pro Build, tote & dominante Kombos markieren | Kein Build unter 25 % / über 75 % Winrate | ⚠️ siehe unten |
 | 6 | Politur: Kampf-Animation, Meta-Freischaltungen, Save/Resume | — | ✅ |
+| 7 | TODO.md: zwei Akte mit Boss-Pools, Debug-Übersicht, Chaos-Mechanik und wählbare Passive je Einheit | Shion spielt sich sichtbar anders als über Werte allein | [~] in Bearbeitung |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
+
+Phase 7 läuft im Worktree `/home/viktor/tensura/worktree/phase-7-todo`
+(Branch `phase-7-todo`).
 
 ### Stand 2026-07-25
 

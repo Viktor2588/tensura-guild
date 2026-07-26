@@ -292,3 +292,21 @@ dialog { max-height: 85vh; overflow-y: auto; }
 .bed.an { color: var(--gruen); }
 .bed.aus { color: var(--rot); }
 .chip.schlaeft { opacity: .55; }
+
+/* Debug-Übersicht: dichte Tabelle, bewusst grau — sie ist Werkzeug, nicht Spiel. */
+.dbg-schalter { float: right; font-size: .75rem; padding: .15rem .5rem; }
+.dbg-schalter.an { background: var(--gut, #2b6); color: #fff; }
+.debugbox { background: #0003; border: 1px solid #fff2; border-radius: 6px;
+            padding: .5rem .6rem; margin: .4rem 0 .8rem; font-size: .8rem; }
+.dbg-kopf { margin: 0 0 .5rem; opacity: .85; }
+.dbg-einheit { border-top: 1px solid #fff1; padding-top: .4rem; margin-top: .4rem; }
+.dbg-einheit h4 { margin: 0 0 .3rem; font-size: .85rem; }
+.dbg-einheit h4 small { opacity: .6; font-weight: normal; }
+table.dbg { border-collapse: collapse; width: 100%; }
+table.dbg th, table.dbg td { text-align: right; padding: .1rem .35rem; font-variant-numeric: tabular-nums; }
+table.dbg th:first-child { text-align: left; opacity: .75; font-weight: normal; }
+table.dbg tr:last-child td { font-weight: bold; }
+table.dbg i { font-style: normal; font-size: .7rem; opacity: .8; }
+table.dbg i.auf { color: #6d6; }
+table.dbg i.ab { color: #e77; }
+.dbg-extra { margin: .15rem 0; opacity: .75; }

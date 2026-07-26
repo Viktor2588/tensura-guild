@@ -131,7 +131,7 @@
     var el = $('pfad');
     if (!el) return;
     if (run.over) { el.innerHTML = ''; return; }
-    var boss = EN.boss(run.act);
+    var boss = R.boss(run);
     var html = '<span class="pfad-akt"' + tip('Akt ' + run.act + ' von ' + R.AKTE,
       'Jeder Akt hat ' + R.STEPS.length + ' Knoten und endet mit seinem Boss.') +
       '>Akt ' + run.act + '/' + R.AKTE + '</span>';
@@ -212,7 +212,7 @@
   /* Wer den Boss des Akts kennt, kann darauf hinbauen — deshalb steht er von
      Anfang an da, samt Fähigkeiten. */
   function bossVorschau(akt) {
-    var b = EN.boss(akt);
+    var b = R.boss(run, akt);
     if (!b) return '';
     return '<p class="hinweis">Am Ende von Akt ' + akt + ' wartet <b' +
       tip('BOSS: ' + b.name, gegnerDetails(b)) + '>' + esc(b.name) + '</b>.</p>';
@@ -388,7 +388,7 @@
   function ergebnisHtml(p) {
     var html = '';
     if (p.result.winner === 'player') {
-      html += '<p class="gut">Sieg! +' + p.gold + ' Gold, +' + (25 + run.act * 15) + ' Magicule.</p>';
+      html += '<p class="gut">Sieg! +' + p.gold + ' Gold, +' + R.ertrag(25 + R.inhaltsStufe(run) * 15) + ' Magicule.</p>';
       if (p.devour && p.devour.length) {
         var moeglich = run.team.filter(function (m) { return m.devoured.length < R.praedatorSlots(m); });
         html += '<h3' + tip('Prädator', G.begriffe.praedator) + '>Prädator</h3>';
@@ -724,6 +724,100 @@
     return html;
   }
 
+  /* ------------------------------------------------ Debug-Übersicht */
+
+  /* Warum ist diese Einheit so stark, wie sie ist? Vier Zwischenstände je Wert
+     — Basis, Rang, Ausrüstung, Kampf — und dahinter, was den letzten Sprung
+     verursacht hat. Die Kampfspalte kommt aus combat.js selbst (`nurAufbau`),
+     nicht aus einer Zweitrechnung, die irgendwann etwas anderes behauptet. */
+
+  var debugAn = false;
+  try { debugAn = localStorage.getItem('tensura-debug') === '1'; } catch (e) {}
+
+  var WERTE = [['hp', '❤', 'maxHp'], ['atk', '⚔', 'atk'], ['def', '🛡', 'def'], ['spd', '⚡', 'spd']];
+
+  function delta(a, b) {
+    var d = b - a;
+    return d === 0 ? '' : '<i class="' + (d > 0 ? 'auf' : 'ab') + '">' + (d > 0 ? '+' : '') + d + '</i>';
+  }
+
+  function debugZeile(name, hilfe, werte, vorher) {
+    var html = '<tr><th' + tip(name, hilfe) + '>' + esc(name) + '</th>';
+    WERTE.forEach(function (w, i) {
+      html += '<td>' + werte[i] + (vorher ? ' ' + delta(vorher[i], werte[i]) : '') + '</td>';
+    });
+    return html + '</tr>';
+  }
+
+  function debugEinheit(a) {
+    var basis = [a.basis.hp, a.basis.atk, a.basis.def, a.basis.spd];
+    var rang = [a.rang.hp, a.rang.atk, a.rang.def, a.rang.spd];
+    var aus = [a.aus.hp, a.aus.atk, a.aus.def, a.aus.spd];
+    var kmp = [a.kampf.maxHp, a.kampf.atk, a.kampf.def, a.kampf.spd];
+
+    var html = '<div class="dbg-einheit"><h4>' + esc(a.basis.name) +
+      ' <span class="rang rang-' + R.rankName(a.m) + '">' + R.rankName(a.m) + '</span>' +
+      ' <small>Platz ' + (run.team.indexOf(a.m) + 1) + ' · ' +
+      esc(GD.rolleName(a.basis.tags[1])) + '</small></h4>' +
+      '<table class="dbg"><tr><th>Stufe</th>' +
+      WERTE.map(function (w) { return '<th>' + w[1] + '</th>'; }).join('') + '</tr>';
+    html += debugZeile('Basis', 'Rohwerte aus data.js — ohne alles.', basis, null);
+    html += debugZeile('Rang ' + R.rankName(a.m),
+      'Jeder Rang gibt +30 % Leben und Angriff, +1 Rüstung, +1 Tempo.', rang, basis);
+    html += debugZeile('Ausrüstung',
+      'Angelegte Ausrüstung und dauerhafte Ereignis-Boni.\n\n' +
+      (a.m.items.map(function (id) { return GD.item(id).name; }).join(', ') || 'nichts angelegt') +
+      (a.m.bonus ? '\nEreignis-Boni: ' + JSON.stringify(a.m.bonus) : ''), aus, rang);
+    html += debugZeile('Im Kampf',
+      'Relikte, Resonanz und alle Passiven mit Hook onStart — der Zustand, mit dem ' +
+      'die erste Runde beginnt.', kmp, aus);
+    html += '</table>';
+
+    /* Alles, was kein Grundwert ist, aber im Kampf zählt. */
+    var extra = [];
+    var k = a.kampf;
+    if (k.status.schild) extra.push('Schild ' + Math.round(k.status.schild));
+    if (k.regen) extra.push('Regeneration ' + k.regen);
+    if (k.lifesteal) extra.push('Lebensraub ' + Math.round(k.lifesteal * 100) + ' %');
+    if (k.heilfaktor) extra.push('Heilung ×' + (1 + k.heilfaktor).toFixed(2));
+    if (k.schildfaktor) extra.push('Schild ×' + (1 + k.schildfaktor).toFixed(2));
+    if (k.pierce) extra.push('Rüstungsdurchdringung ' + Math.round(k.pierce * 100) + ' %');
+    if (k.durchschlag) extra.push('geht durch Schilde');
+    if (extra.length) html += '<p class="dbg-extra">' + esc(extra.join(' · ')) + '</p>';
+
+    html += '<p class="dbg-extra">⚡ ' + (k.actives.map(function (x) {
+      return esc(x.name) + ' (' + x.cd + ')';
+    }).join(' · ') || '—') + '</p>';
+    html += '<p class="dbg-extra">◈ ' + (k.effects.map(function (x) {
+      return esc(x.name || '?');
+    }).join(' · ') || '—') + '</p>';
+    if (k.keywords.length) {
+      html += '<p class="dbg-extra">🔑 ' + esc(k.keywords.map(kwName).join(' · ')) + '</p>';
+    }
+    return html + '</div>';
+  }
+
+  function debugHtml() {
+    if (!debugAn) return '';
+    if (!run.team.length) return '<div class="debugbox"><p class="hinweis">Kein Trupp.</p></div>';
+    var a = R.analyse(run);
+    var reso = Object.keys(a[0].resonanz);
+    var wirksam = run.relics.map(GD.relic).filter(function (r) {
+      return !r.bedingung || r.bedingung(run);
+    });
+    var schlafend = run.relics.map(GD.relic).filter(function (r) {
+      return r.bedingung && !r.bedingung(run);
+    });
+    var html = '<div class="debugbox"><p class="dbg-kopf">' +
+      'Resonanz: <b>' + (reso.length ? esc(kwName(reso[0])) + ' — ' + esc(C.RESONANZ[reso[0]]) : 'keine') + '</b>' +
+      ' · Relikte aktiv: ' + wirksam.length + '/' + run.relics.length +
+      (schlafend.length ? ' (schläft: ' + esc(schlafend.map(function (r) { return r.name; }).join(', ')) + ')' : '') +
+      ' · Truppstärke ' + a.reduce(function (s, x) { return s + x.kampf.maxHp + 6 * x.kampf.atk; }, 0) +
+      '</p>';
+    a.forEach(function (x) { html += debugEinheit(x); });
+    return html + '</div>';
+  }
+
   function zeichneUnten() {
     zeichneWahl();
     $('synergien').innerHTML = synergienHtml();
@@ -731,7 +825,12 @@
     var frei = GD.ARTEN.filter(function (a) { return R.freieArt(run, a); });
     var html = '<h3' + tip('Aufstellung', G.begriffe.aufstellung + '\n\n' + G.begriffe.art) +
       '>Trupp — vorn zuerst getroffen (' + run.team.length + '/' + R.TEAM_MAX + ')' +
-      ' · eine Einheit je Art</h3>' +
+      ' · eine Einheit je Art' +
+      '<button class="dbg-schalter' + (debugAn ? ' an' : '') + '" data-a="debug"' +
+      tip('Debug-Übersicht', 'Zeigt für jede Einheit, woher jeder Punkt kommt: Basis, Rang, ' +
+        'Ausrüstung, und was Relikte, Resonanz und Passive im Kampf daraus machen.') +
+      '>🔬 Debug</button></h3>' +
+      debugHtml() +
       aufstellungHtml() +
       '<p class="hinweis">Freie Arten: ' + (frei.length
         ? frei.map(function (a2) {
@@ -853,6 +952,11 @@
       render(); speichern();
     },
     ablegen: function (d) { R.unequip(run, d.uid, d.id); render(); speichern(); },
+    debug: function () {
+      debugAn = !debugAn;
+      try { localStorage.setItem('tensura-debug', debugAn ? '1' : '0'); } catch (e) {}
+      render();
+    },
     neu: function () { neuerRun(); },
     speichern: function () { speichern(); $('menu').close(); },
     'menu-zu': function () { $('menu').close(); }

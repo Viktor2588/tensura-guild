@@ -66,13 +66,15 @@ EN.encounters.concat(EN.bosses).forEach(function (e) {
 });
 ok(!stumm.length, 'jeder eingesetzte Gegner hat eine aktive Fähigkeit' +
    (stumm.length ? ': ' + stumm.join(', ') : ''));
-var AKTE = [];
-for (var ai = 1; ai <= R.AKTE; ai++) AKTE.push(ai);
-ok(AKTE.every(function (a) { return EN.forAct(a).length >= 12 && EN.elitesForAct(a).length >= 4; }),
-   'jeder der ' + R.AKTE + ' Akte hat mindestens 12 normale und 4 Elite-Begegnungen');
-ok(AKTE.every(function (a) { return !!EN.boss(a); }), 'jeder Akt hat einen Boss');
-ok(AKTE.every(function (a) { return EN.events.filter(function (e) { return e.act === a; }).length >= 3; }),
-   'jeder Akt hat eigene Story-Ereignisse');
+/* Inhaltsstufen, nicht Akte: die fuenf Stufen verteilen sich auf zwei Akte. */
+var STUFEN = [];
+R.STUFEN.forEach(function (s) { s.forEach(function (x) { STUFEN.push(x); }); });
+ok(STUFEN.every(function (a) { return EN.forAct(a).length >= 12 && EN.elitesForAct(a).length >= 4; }),
+   'jede der ' + STUFEN.length + ' Inhaltsstufen hat mindestens 12 normale und 4 Elite-Begegnungen');
+ok([1, 2].every(function (p) { return EN.bossPool(p).length >= 2; }), 'beide Boss-Pools haben mindestens zwei Bosse');
+ok(EN.bosses.every(function (b) { return b.units.length === 1; }), 'Bosse treten allein an');
+ok(STUFEN.every(function (a) { return EN.events.filter(function (e) { return e.act === a; }).length >= 3; }),
+   'jede Inhaltsstufe hat eigene Story-Ereignisse');
 
 /* Jede Art muss auch spielbar sein, sonst blockiert die Regel "eine je Art". */
 var proArt = {};
@@ -710,6 +712,22 @@ GD.items.forEach(function (it) {
 });
 ok(!kaputtI.length, 'jede Ausrüstung läuft fehlerfrei' + (kaputtI.length ? ' — ' + kaputtI.join(' | ') : ''));
 
+/* ------------------------------------------------- Debug-Übersicht */
+head('Debug-Übersicht');
+var dRun = fertigerRun(4242);
+dRun.team = [R.member('gobta')];
+dRun.team[0].rank = 2;
+dRun.team[0].items = ['langschwert'];
+var d0 = R.analyse(dRun)[0];
+ok(d0.rang.atk > d0.basis.atk, 'die Rangstufe hebt den Angriff über die Basis');
+ok(d0.aus.atk === d0.rang.atk + 10, 'die Ausrüstungsstufe zählt das Langschwert dazu');
+ok(d0.kampf.atk === d0.aus.atk, 'ohne Relikte ändert die Kampfstufe nichts am Angriff');
+dRun.relics = ['kern_des_zorns', 'barriere_stein'];
+var d1 = R.analyse(dRun)[0];
+ok(d1.kampf.atk > d1.aus.atk, 'ein Relikt schlägt erst in der Kampfstufe durch');
+ok(d1.kampf.status.schild > 0, 'onStart-Passive und Relikte sind in der Kampfstufe schon gewirkt');
+ok(d1.aus.atk === d0.aus.atk, 'die Ausrüstungsstufe bleibt davon unberührt');
+
 /* ------------------------------------------------------------- Run */
 head('Run');
 var run = fertigerRun(777);
@@ -732,8 +750,11 @@ ok(R.addUnit(aRun, 'shion'), 'eine andere Art wird aufgenommen');
 ok(!R.addUnit(aRun, 'gobta'), 'auch dieselbe Einheit kein zweites Mal');
 ok(R.unitPool(aRun).every(function (u) { return ['slime', 'goblin', 'oger'].indexOf(u.art) < 0; }),
    'der Angebotspool enthält keine belegten Arten');
-R.entlassen(aRun, aRun.team[1].uid);
+/* Nicht über den Platz suchen: Frontlinie rückt beim Anwerben nach vorn. */
+R.entlassen(aRun, aRun.team.filter(function (m) { return m.id === 'gobta'; })[0].uid);
 ok(R.addUnit(aRun, 'gobkyu'), 'nach dem Entlassen ist die Art wieder frei');
+ok(R.addUnit(aRun, 'kaefergarde') && aRun.team[0].id === 'kaefergarde',
+   'eine angeworbene Frontlinien-Einheit steht sofort auf Platz 1');
 
 /* Ränge */
 var rRun = fertigerRun(9);

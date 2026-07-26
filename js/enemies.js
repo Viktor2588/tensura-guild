@@ -353,12 +353,18 @@
     enc(5, 'Elite: Blutmond über Ruberios', ['vampirfuerstin', 'vampirfuerstin', 'blutmagier', 'saare'], 135, true, 1.9)
   ];
 
+  /* Bosse treten allein an — kein Gefolge, das den Schaden verteilt. Dafür ist
+     `hpMult` da: das Leben ersetzt die weggefallenen Begleiter, der Angriff
+     nicht. Ein Boss mit dreifachem Angriff wäre kein Boss, sondern ein Würfel.
+
+     Zwei Pools statt fünf fester Bosse: pro Run wird je einer gezogen, also
+     sieht kein Run dieselbe Paarung zweimal. */
   var bosses = [
-    { act: 1, name: 'Charybdis', units: ['charybdis', 'giftspinne', 'giftspinne'], gold: 80, mult: 1 },
-    { act: 2, name: 'Clayman', units: ['clayman', 'gruftghul', 'knochenmagier'], gold: 120, mult: 1.1 },
-    { act: 3, name: 'Milim Nava', units: ['milim_boss', 'daemonenbrut', 'erzdaemon'], gold: 200, mult: 1.2 },
-    { act: 4, name: 'Hinata Sakaguchi', units: ['hinata', 'tempelritter', 'exorzist'], gold: 300, mult: 1.15 },
-    { act: 5, name: 'Luminous Valentine', units: ['luminous', 'roy_valentine', 'vampirfuerstin'], gold: 420, mult: 1.2 }
+    { id: 'b_charybdis', pool: 1, name: 'Charybdis', units: ['charybdis'], gold: 140, mult: 1.15, hpMult: 2.0 },
+    { id: 'b_clayman', pool: 1, name: 'Clayman', units: ['clayman'], gold: 150, mult: 1.1, hpMult: 1.8 },
+    { id: 'b_milim', pool: 1, name: 'Milim Nava', units: ['milim_boss'], gold: 170, mult: 0.85, hpMult: 1.5 },
+    { id: 'b_hinata', pool: 2, name: 'Hinata Sakaguchi', units: ['hinata'], gold: 340, mult: 1.05, hpMult: 1.8 },
+    { id: 'b_luminous', pool: 2, name: 'Luminous Valentine', units: ['luminous'], gold: 400, mult: 1, hpMult: 1.7 }
   ];
 
   /* ---- Ereignisse: api liefert run.js, damit die Daten dumm bleiben ------- */
@@ -695,7 +701,7 @@
       return {
         id: d.id, name: d.name, tags: d.tags, effects: d.effects, actives: aktiveVon(id),
         resistenz: d.resistenz || 0,
-        hp: Math.round(d.hp * m), atk: Math.round(d.atk * m),
+        hp: Math.round(d.hp * m * (e.hpMult || 1)), atk: Math.round(d.atk * m),
         def: Math.round(d.def * m), spd: d.spd
       };
     });
@@ -709,6 +715,7 @@
     /* Aktgebundene Ereignisse plus die aktübergreifenden. */
     eventsForAct: function (a) { return events.filter(function (e) { return !e.act || e.act === a; }); },
     elitesForAct: function (a) { return encounters.filter(function (e) { return e.act === a && e.elite; }); },
-    boss: function (a) { return bosses.filter(function (b) { return b.act === a; })[0]; }
+    bossPool: function (n) { return bosses.filter(function (b) { return b.pool === n; }); },
+    bossById: function (id) { return byId(bosses, id); }
   };
 })(globalThis);

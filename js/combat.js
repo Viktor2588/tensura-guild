@@ -252,6 +252,13 @@
     });
     log.push({ t: 0, type: 'setup', roster: roster });
 
+    /* Nur aufbauen, nicht kämpfen: die Debug-Übersicht liest damit exakt die
+       Einheiten, mit denen der Kampf auch wirklich beginnt — Relikte, Resonanz
+       und alle onStart-Passiven schon eingerechnet. Ein zweiter Rechenweg für
+       die Anzeige würde früher oder später etwas anderes behaupten als der
+       Kampf. */
+    if (opts.nurAufbau) return { roster: roster, einheiten: units, resonanz: res, log: log };
+
     /* ---- Zug -------------------------------------------------------------- */
 
     function pickTarget(u) {

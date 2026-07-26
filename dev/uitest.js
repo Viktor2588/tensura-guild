@@ -73,6 +73,16 @@ klick($$('.aufstellung .platz')[2]);
 var nachherOrder = run.team.map(function (m) { return m.uid; });
 ok(nachherOrder[0] === vorherOrder[2] && nachherOrder[2] === vorherOrder[0],
    'der zweite Klick tauscht die beiden Plätze');
+
+/* Debug-Übersicht: aus, bis man sie einschaltet — dann eine Tabelle je Einheit. */
+ok(!$('.debugbox'), 'die Debug-Übersicht ist standardmäßig aus');
+klick($('.dbg-schalter'));
+ok($$('.debugbox table.dbg').length === run.team.length,
+   'eingeschaltet zeigt sie für jede Einheit eine Tabelle');
+ok($$('.debugbox table.dbg')[0].rows.length === 5,
+   'jede Tabelle hat Kopf plus Basis, Rang, Ausrüstung und Kampf');
+klick($('.dbg-schalter'));
+ok(!$('.debugbox'), 'ein zweiter Klick schaltet sie wieder aus');
 ok(!$('.aufstellung .platz.gewaehlt'), 'nach dem Tausch ist nichts mehr ausgewählt');
 
 /* ----------------------------------------------------------------- HUD */

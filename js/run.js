@@ -26,10 +26,21 @@
     ['boss']
   ];
   var TEAM_MAX = 6, BANK_MAX = 3;
-  /* Fünf Akte: Jura-Wald, Höhlen und Orks, Falmuth, die Westliche Heilige
-     Kirche, Ruberios — also die Handlung bis zum Ende der dritten Anime-
-     Staffel. */
-  var AKTE = 5;
+  /* Zwei Akte, je ein Boss. Der Inhalt bleibt fünfstufig — Jura-Wald, Höhlen und
+     Orks, Falmuth, die Westliche Heilige Kirche, Ruberios —, aber die Stufe
+     steigt jetzt INNERHALB des Akts mit dem Schritt statt mit der Aktnummer.
+     Ohne diese Trennung wären mit zwei Akten drei Fünftel aller Gegner,
+     Ereignisse und Elite-Begegnungen tot. */
+  var AKTE = 2;
+  var STUFEN = [[1, 2], [3, 4, 5]];
+
+  /* Inhaltsstufe 1–5: steuert Gegner, Ereignisse, Raritätsgewichte und
+     Einheitenkosten. Überall dort, wo früher `run.act` stand. */
+  function inhaltsStufe(run, step) {
+    var s = STUFEN[Math.min(Math.max(run.act, 1), AKTE) - 1];
+    var i = Math.floor((step === undefined ? run.step : step) * s.length / STEPS.length);
+    return s[Math.min(i, s.length - 1)];
+  }
 
   /* Rang C=0, B=1, A=2, S=3 */
   var RANK_NAME = ['C', 'B', 'A', 'S'];
@@ -66,6 +77,14 @@
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
   var GRUNDHAERTE = 1.02;
+
+  /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
+     weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
+     mehr Gold und Magicule abwerfen, sonst steht auf Stufe 5 ein Trupp auf Rang
+     C. Ein Knopf statt dreissig nachgezogener Zahlen — gemessen mit
+     `node dev/balance.js 400`. */
+  var WACHSTUM = 6.5;      // gemessen: 50 % Siege (frisch), 10,4 Rangstufen
+  function ertrag(x) { return Math.round(x * WACHSTUM); }
 
   /* Gegnerhärte je Stufe — greift auf denselben mult wie die Begegnung selbst. */
   function bedrohungsFaktor(run, node) {
@@ -201,6 +220,34 @@
     return out;
   }
 
+  /* ---- Debug-Übersicht ----------------------------------------------------
+     Woher kommt welcher Punkt? Vier Stufen, jede eine echte Zwischenrechnung:
+       basis   Rohwerte aus data.js
+       rang    + Rangbonus
+       aus     + Ausrüstung und dauerhafte Ereignis-Boni  (= resolve)
+       kampf   + Relikte, Resonanz und alle onStart-Passiven
+     Die letzte Stufe kommt aus combat.js selbst, nicht aus einer Kopie davon.  */
+
+  var PUPPE = { id: 'puppe', name: 'Trainingspuppe', tags: ['bestie', 'front'],
+                hp: 1, atk: 1, def: 0, spd: 1, actives: [], effects: [], keywords: [] };
+
+  function analyse(run) {
+    var defs = run.team.map(resolve);
+    var auf = C.simulate(defs, [PUPPE], 1,
+      { relics: run.relics.map(GD.relic), nurAufbau: true });
+    var kampf = auf.einheiten.filter(function (u) { return u.side === 'player'; });
+    return run.team.map(function (m, i) {
+      return {
+        m: m,
+        basis: GD.unit(m.id),
+        rang: resolve({ uid: m.uid, id: m.id, rank: m.rank, items: [], actives: m.actives, devoured: [] }),
+        aus: defs[i],
+        kampf: kampf[i],
+        resonanz: auf.resonanz.player
+      };
+    });
+  }
+
   /* Welche Resonanzen der Trupp gerade hätte — dieselbe Zählung wie im Kampf,
      damit die Anzeige nicht etwas anderes verspricht als der Kampf einlöst. */
   function resonanzen(run) {
@@ -221,6 +268,11 @@
       team: [], bank: [], relics: [],
       options: null, node: null, pending: null, wahl: null, chronik: []
     };
+    /* Je Akt ein Boss, gezogen aus seinem Pool. Steht von Anfang an fest, damit
+       die Vorschau ab dem ersten Knoten den echten Gegner zeigt. */
+    var brng = rngOf(run);
+    run.bosse = [1, 2].map(function (p) { return root.RNG.pick(brng, EN.bossPool(p)).id; });
+    commit(run, brng);
     /* Kein gesetzter Held: der ganze Starttrupp wird gedraftet, dreimal eine
        aus drei. Rimuru liegt als legendäre Einheit mit im Pool. */
     run.phase = 'start';
@@ -313,23 +365,30 @@
   }
   function freieArt(run, art) { return belegteArten(run).indexOf(art) < 0; }
 
+  /* Der Boss dieses Akts — feststehend, nicht je Aufruf neu gewürfelt. */
+  function bossOf(run, akt) {
+    var id = (run.bosse || [])[(akt || run.act) - 1];
+    return (id && EN.bossById(id)) || EN.bossPool(akt || run.act)[0];
+  }
+
   function roll(run) {
     var rng = rngOf(run);
+    var st = inhaltsStufe(run);
     /* Nach dem letzten Akt gibt es keine Begegnungen mehr — dann nicht würfeln. */
-    if (!EN.forAct(run.act).length) { run.options = []; return; }
+    if (!EN.forAct(st).length) { run.options = []; return; }
     var types = STEPS[run.step];
     run.options = types.map(function (type) {
       if (type === 'kampf' || type === 'elite') {
-        var pool = type === 'elite' ? EN.elitesForAct(run.act) : EN.forAct(run.act);
+        var pool = type === 'elite' ? EN.elitesForAct(st) : EN.forAct(st);
         var e = root.RNG.pick(rng, pool);
         return { type: type, name: e.name, encounter: e };
       }
       if (type === 'boss') {
-        var b = EN.boss(run.act);
+        var b = bossOf(run);
         return { type: 'boss', name: 'BOSS: ' + b.name, encounter: b };
       }
       if (type === 'event') {
-        return { type: 'event', name: 'Ereignis', event: root.RNG.pick(rng, EN.eventsForAct(run.act)) };
+        return { type: 'event', name: 'Ereignis', event: root.RNG.pick(rng, EN.eventsForAct(st)) };
       }
       if (type === 'shop') return { type: 'shop', name: 'Händler' };
       return { type: 'lager', name: 'Lager' };
@@ -360,9 +419,9 @@
     run.pending = { result: res, node: node, rewards: null, devour: null };
 
     if (res.winner === 'player') {
-      var gold = node.encounter.gold;
+      var gold = ertrag(node.encounter.gold);
       run.gold += gold;
-      run.magicules += 25 + run.act * 15;
+      run.magicules += ertrag(25 + inhaltsStufe(run) * 15);
       run.pending.gold = gold;
       run.pending.rewards = rollRewards(run, node);
       run.pending.devour = res.fallen.filter(function (f) { return f.side === 'enemy'; })
@@ -385,7 +444,8 @@
   /* ---- Belohnungen -------------------------------------------------------- */
 
   function unitPool(run) {
-    var maxCost = run.act === 1 ? 3 : run.act === 2 ? 4 : 5;
+    var st = inhaltsStufe(run);
+    var maxCost = st <= 2 ? 3 : st === 3 ? 4 : 5;
     var belegt = belegteArten(run);
     return run.meta.unlockedUnits.map(GD.unit).filter(function (u) {
       return u && u.cost <= maxCost && belegt.indexOf(u.art) < 0;
@@ -411,7 +471,7 @@
     var out = [];
     var stark = node.type === 'elite' || node.type === 'boss';
     /* Elite und Boss würfeln eine Stufe höher — dafür geht man das Risiko ein. */
-    var akt = run.act + (stark ? 1 : 0);
+    var akt = inhaltsStufe(run) + (stark ? 1 : 0);
     themenWahl(run, rng, unitPool(run), akt, 2).forEach(function (u) {
       out.push({ kind: 'unit', id: u.id, name: u.name, text: unitText(u), rarity: u.rarity });
     });
@@ -422,8 +482,8 @@
     }
     var it = themenWahl(run, rng, GD.items, akt, 1)[0];
     out.push({ kind: 'item', id: it.id, name: it.name, text: itemText(it), rarity: it.rarity });
-    out.push({ kind: 'gold', name: (stark ? 70 : 40) + ' Gold + ' + (stark ? 90 : 60) + ' Magicule',
-               gold: stark ? 70 : 40, mag: stark ? 90 : 60 });
+    out.push({ kind: 'gold', name: ertrag(stark ? 70 : 40) + ' Gold + ' + ertrag(stark ? 90 : 60) + ' Magicule',
+               gold: ertrag(stark ? 70 : 40), mag: ertrag(stark ? 90 : 60) });
     commit(run, rng);
     return out;
   }
@@ -445,7 +505,12 @@
     var u = GD.unit(id);
     if (!u || !freieArt(run, u.art)) return false;      // eine Einheit je Art
     var m = member(id);
-    if (run.team.length < TEAM_MAX) run.team.push(m);
+    /* ponytail: Frontlinie rückt beim Anwerben direkt auf Platz 1 — Abkürzung
+       aus TODO.md, damit man zum Testen nicht jedes Mal von Hand umstellt.
+       Wieder auf `push` setzen, sobald die Aufstellung Spielerentscheidung ist. */
+    if (run.team.length < TEAM_MAX) {
+      if (u.tags[1] === 'front') run.team.unshift(m); else run.team.push(m);
+    }
     else if (run.bank.length < BANK_MAX) run.bank.push(m);
     else return false;
     return true;
@@ -499,7 +564,7 @@
     var rng = rngOf(run);
     var frei = AB.pool.filter(function (a) { return m.actives.indexOf(a.id) < 0; });
     /* Höherer Rang würfelt aus einem besseren Topf — Rang S sieht öfter Legendäres. */
-    var stufe = run.act + m.rank - 1;
+    var stufe = inhaltsStufe(run) + m.rank - 1;
     var eigen = AB.keywords(abilities(m));
     var offers = waehle(rng, frei.filter(function (a) {
       return (a.keywords || []).concat(a.amplifies || []).some(function (k) { return eigen[k]; });
@@ -533,17 +598,18 @@
   function shopOffers(run) {
     var rng = rngOf(run);
     var offers = [];
-    themenWahl(run, rng, unitPool(run), run.act, 3).forEach(function (u) {
+    var st = inhaltsStufe(run);
+    themenWahl(run, rng, unitPool(run), st, 3).forEach(function (u) {
       offers.push({ kind: 'unit', id: u.id, name: u.name, price: 70 + u.cost * 8,
                     text: unitText(u), rarity: u.rarity });
     });
-    themenWahl(run, rng, GD.items, run.act, 2).forEach(function (it) {
+    themenWahl(run, rng, GD.items, st, 2).forEach(function (it) {
       offers.push({ kind: 'item', id: it.id, name: it.name, price: it.cost,
                     text: itemText(it), rarity: it.rarity });
     });
     var rels = relicPool(run);
     if (rels.length) {
-      var r = themenWahl(run, rng, rels, run.act, 1)[0];
+      var r = themenWahl(run, rng, rels, st, 1)[0];
       /* Fester Preis. Die Seltenheit sagt, wie stark etwas ist, nicht wie teuer:
          sonst wird jede Freischaltung zur Geldstrafe — gemessen kaufte ein
          Veteran ein Achtel weniger Relikte als ein Anfänger und verlor dadurch
@@ -582,17 +648,17 @@
   var api = {
     grantRelic: function (run) {
       var rng = rngOf(run), pool = relicPool(run);
-      if (pool.length) run.relics.push(waehle(rng, pool, run.act, 1)[0].id);
+      if (pool.length) run.relics.push(waehle(rng, pool, inhaltsStufe(run), 1)[0].id);
       commit(run, rng);
     },
     grantItem: function (run) {
       var rng = rngOf(run);
-      (run.bag = run.bag || []).push(waehle(rng, GD.items, run.act, 1)[0].id);
+      (run.bag = run.bag || []).push(waehle(rng, GD.items, inhaltsStufe(run), 1)[0].id);
       commit(run, rng);
     },
     grantUnit: function (run) {
       var rng = rngOf(run), pool = unitPool(run);
-      if (pool.length) addUnit(run, waehle(rng, pool, run.act, 1)[0].id);
+      if (pool.length) addUnit(run, waehle(rng, pool, inhaltsStufe(run), 1)[0].id);
       commit(run, rng);
     },
     /* Gratisaufstieg: trifft die niedrigste Einheit, damit es sich immer lohnt. */
@@ -635,8 +701,8 @@
 
   function camp(run, i) {
     if (run.phase !== 'lager' || run.pending.done) return false;
-    if (i === 0) run.gold += 60;
-    else if (i === 1) run.magicules += 120;
+    if (i === 0) run.gold += ertrag(60);
+    else if (i === 1) run.magicules += ertrag(120);
     else api.buffRandom(run, { hp: 30, atk: 4 });
     run.pending.done = true;
     return true;
@@ -761,7 +827,7 @@
     return JSON.stringify({
       seed: run.seed, rngState: run.rngState, act: run.act, step: run.step, threat: run.threat,
       gold: run.gold, magicules: run.magicules, lives: run.lives, relics: run.relics,
-      bag: run.bag || [], chronik: run.chronik, meta: run.meta,
+      bag: run.bag || [], chronik: run.chronik, meta: run.meta, bosse: run.bosse,
       team: run.team, bank: run.bank, uidSeq: uidSeq, startwahl: run.startwahl,
       pending: schlankesPending(run)
     });
@@ -770,7 +836,7 @@
     var d = JSON.parse(raw);
     var run = create(d.seed, d.meta);
     run.team = []; run.bank = [];
-    ['rngState', 'act', 'step', 'threat', 'gold', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank']
+    ['rngState', 'act', 'step', 'threat', 'gold', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank', 'bosse']
       .forEach(function (k) { if (d[k] !== undefined) run[k] = d[k]; });
     uidSeq = Math.max(uidSeq, d.uidSeq || 0);
     run.pending = null; run.wahl = null;
@@ -819,7 +885,8 @@
     equip: equip, unequip: unequip, move: move, bench: bench, deploy: deploy, entlassen: entlassen,
     find: find, addUnit: addUnit, swap: swap, unitPool: unitPool, relicPool: relicPool,
     belegteArten: belegteArten, freieArt: freieArt, waehle: waehle, gewicht: gewicht,
-    buildTeile: buildTeile, resonanzen: resonanzen,
+    inhaltsStufe: inhaltsStufe, boss: bossOf, STUFEN: STUFEN, ertrag: ertrag,
+    buildTeile: buildTeile, resonanzen: resonanzen, analyse: analyse,
     save: save, load: load, clear: clear, loadMeta: loadMeta, saveMeta: saveMeta,
     serialize: serialize, deserialize: deserialize,
     TEAM_MAX: TEAM_MAX, BANK_MAX: BANK_MAX, STEPS: STEPS, RANK_NAME: RANK_NAME, AKTE: AKTE
