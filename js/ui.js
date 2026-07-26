@@ -110,6 +110,10 @@
   function hudTips() {
     var paare = [['hud-mag', 'Magicule', G.begriffe.magicule],
                  ['hud-leben', 'Verbleibende Niederlagen', G.begriffe.leben]];
+    paare.push(['hud-stufe', 'Bedrohungsstufe', G.begriffe.bedrohungsstufe +
+      '\n\nSie steigt, sobald du einen Run auf der aktuellen Stufe GEWINNST — ' +
+      'ein verlorener Run ändert nichts. Umstellen kannst du sie im Menü unter ' +
+      '„Fortschritt"; das setzt den laufenden Run neu auf.']);
     paare.forEach(function (p) {
       var el = $(p[0]).parentNode;
       el.dataset.tip = p[1];
@@ -122,6 +126,10 @@
     $('hud-ort').textContent = (run.over ? 'Run beendet'
       : 'Akt ' + run.act + ' · Knoten ' + (run.step + 1) + '/' + R.STEPS.length) +
       (run.threat ? ' · Stufe ' + run.threat : '');
+    var st = R.bedrohung(run.threat || 0);
+    var offen = run.meta.threat || 0;
+    $('hud-stufe').innerHTML = st.stufe +
+      (offen > (run.threat || 0) ? '<i class="hoeher">+' + (offen - run.threat) + '</i>' : '');
     $('hud-mag').textContent = run.magicules;
     $('hud-leben').textContent = run.lives;
     zeichnePfad();
@@ -1111,6 +1119,9 @@
     'zum-markt': function () { R.zumMarkt(run); replay = null; render(); speichern(); },
     weiter: function () { R.advance(run); replay = null; render(); speichern(); },
     stufe: function (d) {
+      if (!run.over && run.step + run.act > 1 &&
+          !confirm('Die Stufe zu wechseln setzt den laufenden Run neu auf. Fortfahren?')) return;
+      var menu = $('menu'); if (menu && menu.open) menu.close();
       var neu = Math.min(+d.i, run.meta.threat || 0);
       run.meta.threatGewaehlt = neu;
       R.saveMeta(run.meta);
@@ -1193,11 +1204,27 @@
         }).join('') + '</div>';
     }
 
+    /* Die Stufenwahl gehört hierher und nicht nur in den Startbildschirm: dort
+       sieht man sie einen Augenblick und danach nie wieder. */
+    var wahl = '<div class="reihe">' + R.BEDROHUNG.map(function (b2) {
+      if (b2.stufe > (meta.threat || 0)) {
+        return '<button disabled' + tip(b2.stufe + ' · ' + b2.name,
+          'Noch verschlossen. Gewinne einen Run auf Stufe ' + (meta.threat || 0) +
+          ', dann geht diese auf.') + '>🔒 ' + b2.stufe + '</button>';
+      }
+      return '<button class="' + (b2.stufe === run.threat ? 'haupt' : '') +
+        '" data-a="stufe" data-i="' + b2.stufe + '"' +
+        tip(b2.stufe + ' · ' + b2.name, b2.text +
+          '\n\nUmstellen setzt den laufenden Run neu auf.') + '>' + b2.stufe + '</button>';
+    }).join('') + '</div>';
+
     return '<p class="hinweis">' + run.meta.runs + ' Runs · ' + run.meta.wins + ' Siege · ' +
       'weitester Weg: ' + (meta.best || 0) + ' Knoten</p>' +
       '<h4>Bedrohungsstufe ' + stufe.stufe + ' — ' + esc(stufe.name) + '</h4>' +
       balken(meta.threat || 0, R.BEDROHUNG.length - 1) +
-      '<p class="hinweis">' + esc(stufe.text) + '</p>' +
+      '<p class="hinweis">' + esc(stufe.text) + '</p>' + wahl +
+      '<p class="hinweis">Die Stufe steigt, sobald du einen Run <b>gewinnst</b>. ' +
+      'Ein verlorener Run ändert nichts.</p>' +
       '<h4>Einheiten</h4>' + balken(meta.unlockedUnits.length, GD.units.length) +
       liste(meta.unlockedUnits, GD.units, function (u) {
         var sig = AB.get(u.signature);

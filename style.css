@@ -381,3 +381,7 @@ table.dbg i.ab { color: #e77; }
 .fortschritt i { display: block; height: 100%; background: linear-gradient(90deg, var(--lila), var(--gold)); }
 .fortschritt b { position: absolute; inset: 0; display: flex; align-items: center;
                  justify-content: center; font-size: .7rem; text-shadow: 0 0 3px #000; }
+
+/* Kopfzeile: freie, aber nicht gewählte Bedrohungsstufen. */
+#hud-stufe .hoeher { font-style: normal; font-size: .65rem; color: var(--gold);
+                     vertical-align: super; margin-left: .1rem; }

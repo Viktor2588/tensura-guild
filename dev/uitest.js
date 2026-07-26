@@ -305,6 +305,14 @@ head('Menü und Glossar');
 klick($('#btn-menu'));
 ok($$('#menu-glossar dt').length >= 40, 'das Glossar listet alle Begriffe');
 /* Fortschritt: was über die Runs hinweg verdient wurde. */
+/* Die Stufenwahl muss im Menü erreichbar sein — im Startbildschirm sieht man
+   sie einen Augenblick und danach nie wieder. */
+ok($$('#menu-meta [data-a=stufe]').length + $$('#menu-meta button[disabled]').length ===
+   win.Run.BEDROHUNG.length,
+   'das Menü zeigt jede Bedrohungsstufe, freie wie verschlossene');
+ok($$('#menu-meta button[disabled]').length > 0, 'verschlossene sind als solche erkennbar');
+ok(/gewinnst/.test(text('#menu-meta')), 'und es steht dabei, wie die Stufe steigt');
+ok(!!$('#hud-stufe'), 'die Kopfzeile zeigt die Bedrohungsstufe dauerhaft');
 ok($$('#menu-meta .fortschritt').length === 3,
    'der Fortschritt zeigt Balken für Bedrohungsstufe, Einheiten und Relikte');
 ok(/\d+ \/ \d+/.test(text('#menu-meta')), 'mit Zahlen daran');

@@ -1220,7 +1220,15 @@
       var raw = localStorage.getItem(META_KEY);
       /* Einmalige Übernahme aus der alten Fassung. */
       for (var i = 0; !raw && i < ALTE_META.length; i++) raw = localStorage.getItem(ALTE_META[i]);
-      return raw ? JSON.parse(raw) : newMeta();
+      if (!raw) return newMeta();
+      var meta = JSON.parse(raw);
+      /* Ohne ausdrückliche Wahl gilt die höchste freigeschaltete Stufe. Sonst
+         bleibt `threatGewaehlt` auf 0 stehen und jeder Run läuft still auf der
+         niedrigsten Stufe weiter, obwohl längst eine höhere offen ist. */
+      if (meta.threatGewaehlt === undefined || meta.threatGewaehlt === null) {
+        meta.threatGewaehlt = meta.threat || 0;
+      }
+      return meta;
     } catch (e) { return newMeta(); }
   }
   function saveMeta(meta) {

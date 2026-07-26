@@ -551,6 +551,29 @@ ok(R.regel({ threat: 4 }, 'ueberzahl') && R.regel({ threat: 4 }, 'belagerung') &
    'Regeln sind kumulativ bis zur eigenen Stufe');
 ok(!R.regel({ threat: 0 }, 'ueberzahl'), 'auf Stufe 0 gilt keine Regel');
 
+/* Ein Sieg hebt die Stufe — und die Wahl zieht mit, sonst spielt der nächste
+   Run still auf der alten weiter. */
+var sRunM = R.newMeta();
+var sieger2 = fertigerRun(4711, sRunM);
+sieger2.act = R.AKTE; sieger2.step = R.STEPS.length - 1;
+R.advance(sieger2);
+ok(sieger2.won && sRunM.threat === 1, 'ein gewonnener Run schaltet die nächste Stufe frei');
+ok(sRunM.threatGewaehlt === 1, 'und stellt sie gleich ein');
+ok(R.create(1, sRunM).threat === 1, 'der nächste Run startet dort');
+
+/* Eine Niederlage ändert nichts. */
+var vMeta = R.newMeta();
+var verlierer = fertigerRun(4712, vMeta);
+verlierer.lives = 1;
+verlierer.act = 1; verlierer.step = 0;
+verlierer.phase = 'karte';
+var vorThreat = vMeta.threat;
+verlierer.lives = 0; R.advance(verlierer);
+ok(vMeta.threat === vorThreat, 'eine Niederlage hebt die Stufe nicht');
+
+/* Alter Speicherstand ohne ausdrückliche Wahl: die höchste offene Stufe gilt. */
+ok(R.newMeta().threatGewaehlt === 0, 'ein frischer Speicherstand steht auf 0');
+
 /* Überzahl: ein Gegner mehr je Begegnung, aber nicht beim Boss. */
 function feldGroesse(t, typ, enc) {
   var r = R.create(1, R.newMeta()); r.threat = t;

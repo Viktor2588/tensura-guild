@@ -63,6 +63,8 @@ Abgearbeitet in Phase 15:
 - [x] Linien für die restlichen vier Oger: Benimaru (Brand), Shuna (Heilung
       und Schild), Hakuro (Klinge und Exekution), Kurobe (Schmiede). Damit hat
       die ganze Art Linien — 96 Linien-Passive insgesamt.
+- [x] Bedrohungsstufe sichtbar: dauerhaft in der Kopfzeile, umstellbar im
+      Menü. `threatGewaehlt` fällt nicht mehr hinter `threat` zurück.
 
 Offen:
 
@@ -94,7 +96,6 @@ Balance und Werkzeug:
 - Anfänger/Veteran-Abstand bei 12 Punkten (50 gegen 62 % Siege).
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
-- Wie kann ich die Bedrohungstufe erhöhen?
 - Mir fehlt noch das Donnerelement
 - Die Stärke von Items & relikten ist nicht sauber gebalanced. Manche items fühlen sich viel zu stark an dafür das sie ungewühnlich sind & mache legendary items fühlen sich zu schwach an.
 - Erste begegnung sollte immer ein kampf sein.

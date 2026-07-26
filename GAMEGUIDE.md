@@ -15,7 +15,13 @@ stärkeren Trupp, eine Regel verlangt einen anderen. Die Regeln sind kumulativ.
 | 4 | Belagerung | Auf jedem Kampfknoten steht eine Elite — zur Beute eines normalen Kampfes, und das Lager gibt 15 % weniger | Kein ruhiger Knoten mehr; die Route wird zur Überlebensfrage |
 | 5 | Sturmgott | Nur drei Leben statt fünf, Bosse eskalieren doppelt so schnell | Tempo: wer den Boss nicht schnell legt, verliert ihn |
 
-Welche Regeln gerade gelten, steht über der Karte.
+Welche Regeln gerade gelten, steht über der Karte, und die **aktuelle Stufe
+steht dauerhaft in der Kopfzeile** (⚠). Ein kleines `+1` daneben heißt: eine
+höhere ist frei, du spielst aber gerade eine niedrigere.
+
+**Die Stufe steigt, sobald du einen Run gewinnst** — ein verlorener Run ändert
+nichts. Umstellen kannst du sie jederzeit im Menü unter *Fortschritt*; das setzt
+den laufenden Run neu auf.
 
 Gemessen mit `node dev/balance.js 500 --stufe N`: 48 / 35 / 24 / 16 / 11 / 6 %
 Siegquote. Die Werteschraube läuft nur noch leise nebenher (+1,2 % je Stufe) —
