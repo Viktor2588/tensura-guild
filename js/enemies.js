@@ -243,8 +243,13 @@
             c.applyStatus(c.self, 'schild', 120);
             c.self.lifesteal += 0.25;
           }),
-        faehigkeit('onDamaged', 'Fleischwall', 'Heilt sich bei jedem erlittenen Treffer um 2 % seines maximalen Lebens.',
-          ['heilung'], function (c) { c.heal(c.self, c.self.maxHp * 0.02, 'Fleischwall'); }),
+        /* Er war gemessen der leichteste Boss im Spiel (89 %): zäh, aber harmlos.
+           Weniger Selbstheilung, dafür wächst sein Angriff mit jedem Treffer. */
+        faehigkeit('onDamaged', 'Fleischwall', 'Heilt sich bei jedem erlittenen Treffer um 1 % seines maximalen Lebens und schlägt danach 4 % härter zu.',
+          ['heilung'], function (c) {
+            c.heal(c.self, c.self.maxHp * 0.01, 'Fleischwall');
+            c.self.atk = Math.round(c.self.atk * 1.04);
+          }),
         faehigkeit('onKill', 'Verschlinger', 'Jeder erlegte Gegner gibt ihm dauerhaft +18 % Angriff.',
           ['exekution'], function (c) { scale(c.self, { atk: 0.18 }); })
       ] },
@@ -391,7 +396,7 @@
      gebauten Referenztrupp — der war stärker als das, womit ein Spieler beim
      Boss wirklich ankommt, und die Siegquote fiel gemessen von 49 auf 14 %.
      Nachgezogen wird deshalb hier, gegen `node dev/balance.js`. */
-  var BOSS_HAERTE = 0.6;      // gemessen: 49 % Siege (frisch)
+  var BOSS_HAERTE = 1;
 
   /* Bosse treten allein an — kein Gefolge, das den Schaden verteilt. Dafür ist
      `hpMult` da: das Leben ersetzt die weggefallenen Begleiter, der Angriff
@@ -400,14 +405,14 @@
      Zwei Pools statt fünf fester Bosse: pro Run wird je einer gezogen, also
      sieht kein Run dieselbe Paarung zweimal. */
   var bosses = [
-    { id: 'b_charybdis', pool: 1, name: 'Charybdis', units: ['charybdis'], beute: 140, mult: 1.5, hpMult: 3 },
-    { id: 'b_clayman', pool: 1, name: 'Clayman', units: ['clayman'], beute: 150, mult: 1.44, hpMult: 2.73 },
-    { id: 'b_milim', pool: 1, name: 'Milim Nava', units: ['milim_boss'], beute: 170, mult: 0.71, hpMult: 1.25 },
-    { id: 'b_orklord', pool: 1, name: 'Geld, der Orklord', units: ['orklord'], beute: 150, mult: 1.37, hpMult: 2.46 },
-    { id: 'b_hinata', pool: 2, name: 'Hinata Sakaguchi', units: ['hinata'], beute: 340, mult: 1.62, hpMult: 3.08 },
-    { id: 'b_luminous', pool: 2, name: 'Luminous Valentine', units: ['luminous'], beute: 400, mult: 1.19, hpMult: 2.13 },
-    { id: 'b_razen', pool: 2, name: 'Razen der Hofmagier', units: ['razen'], beute: 320, mult: 1.28, hpMult: 2.43 },
-    { id: 'b_roy', pool: 2, name: 'Roy Valentine', units: ['roy_valentine'], beute: 330, mult: 2.66, hpMult: 5.32 }
+    { id: 'b_charybdis', pool: 1, name: 'Charybdis', units: ['charybdis'], beute: 140, mult: 1.97, hpMult: 3.92 },
+    { id: 'b_clayman', pool: 1, name: 'Clayman', units: ['clayman'], beute: 150, mult: 2.17, hpMult: 4.16 },
+    { id: 'b_milim', pool: 1, name: 'Milim Nava', units: ['milim_boss'], beute: 170, mult: 0.91, hpMult: 1.63 },
+    { id: 'b_orklord', pool: 1, name: 'Geld, der Orklord', units: ['orklord'], beute: 150, mult: 3.1, hpMult: 2.4 },
+    { id: 'b_hinata', pool: 2, name: 'Hinata Sakaguchi', units: ['hinata'], beute: 340, mult: 1.93, hpMult: 3.66 },
+    { id: 'b_luminous', pool: 2, name: 'Luminous Valentine', units: ['luminous'], beute: 400, mult: 1.0, hpMult: 1.79 },
+    { id: 'b_razen', pool: 2, name: 'Razen der Hofmagier', units: ['razen'], beute: 320, mult: 1.15, hpMult: 2.18 },
+    { id: 'b_roy', pool: 2, name: 'Roy Valentine', units: ['roy_valentine'], beute: 330, mult: 2.23, hpMult: 3.99 }
   ];
 
   /* ---- Ereignisse: api liefert run.js, damit die Daten dumm bleiben ------- */

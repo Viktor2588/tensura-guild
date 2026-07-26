@@ -1184,9 +1184,10 @@ ok(R.rankName(held) === 'B' && R.itemSlots(held) === 2 && R.aktivSlots(held) ===
    'Rang B: 2 Item-Slots, weiterhin eine Aktive, 1 passive');
 ok(R.resolve(held).atk > werteC, 'der Aufstieg erhöht die Werte');
 var pw0 = R.passivWahl(rRun);
-ok(pw0 && pw0.offers.length === 3, 'nach dem Aufstieg stehen drei Passive zur Wahl');
-ok(pw0.offers.some(function (o) { return o.linie === 'eigen'; }),
-   'eine davon ist die eigene nächste Passive der Einheit');
+ok(pw0 && pw0.offers.length === 4, 'nach dem Aufstieg stehen vier Passive zur Wahl');
+ok(['angriff', 'mechanik', 'unterstuetzung', 'defensive'].every(function (k) {
+  return pw0.offers.some(function (o) { return o.linie === k; });
+}), 'je eine aus Angriff, Mechanik, Unterstützung und Defensive');
 ok(!R.rankUp(rRun, held.uid), 'kein zweiter Aufstieg, solange die Wahl offen ist');
 var gewaehlt = pw0.offers[0].id;
 ok(R.choosePassive(rRun, 0), 'eine Passive wird gewählt');
@@ -1231,12 +1232,25 @@ function neigung(id) {
      GD.unit(id).name + ': das Angebot trifft ihre Linie (' +
      Object.keys(ang).filter(passt).length + ' verschiedene passende)');
 });
-/* Die eigene nächste Passive muss immer dabei sein — sie trägt die Identität. */
+/* Zufällig statt statisch: dieselbe Einheit sieht über mehrere Runs
+   verschiedene Angebote — vorher stand immer dieselbe feste Passive da. */
 ['gabiru', 'quellenpriesterin', 'rigurd'].forEach(function (id) {
-  var ang = aufstiegsAngebote(id, 6);
-  ok(ang[GD.unit(id).passives[0]] === 6,
-     GD.unit(id).name + ': ihre eigene nächste Passive steht in jedem Angebot');
+  var ang = aufstiegsAngebote(id, 12);
+  ok(Object.keys(ang).length >= 6,
+     GD.unit(id).name + ': das Angebot streut über die Runs (' +
+     Object.keys(ang).length + ' verschiedene in 12 Aufstiegen)');
+  ok(Object.keys(ang).every(function (aid) { return AB.kategorie(aid); }),
+     GD.unit(id).name + ': jede angebotene Passive hat eine Kategorie');
 });
+/* Und jede Kategorie kommt vor. */
+var katGesehen = {};
+['gabiru', 'quellenpriesterin', 'rigurd', 'gobta'].forEach(function (id) {
+  Object.keys(aufstiegsAngebote(id, 8)).forEach(function (aid) {
+    katGesehen[AB.kategorie(aid)] = 1;
+  });
+});
+ok(['angriff', 'mechanik', 'unterstuetzung', 'defensive'].every(function (k) { return katGesehen[k]; }),
+   'über mehrere Einheiten kommt jede Kategorie im Angebot vor');
 /* Linien-Passive einer Einheit dürfen nie bei einer anderen auftauchen. */
 var fremdeLinien = [];
 ['gabiru', 'quellenpriesterin', 'rigurd', 'gobta'].forEach(function (id) {

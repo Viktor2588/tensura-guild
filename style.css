@@ -374,3 +374,10 @@ table.dbg i.ab { color: #e77; }
 .ergebnis h2 { margin: 0 0 .2rem; }
 .ergebnis .beute { font-size: 1.5rem; font-weight: 700; color: var(--gold); margin: .2rem 0; }
 .ergebnis .hinweis { margin: .15rem 0; }
+
+/* Fortschrittsbalken in der Meta-Übersicht. */
+.fortschritt { position: relative; height: 1.1rem; background: #fff1; border-radius: 6px;
+               overflow: hidden; margin: .25rem 0; }
+.fortschritt i { display: block; height: 100%; background: linear-gradient(90deg, var(--lila), var(--gold)); }
+.fortschritt b { position: absolute; inset: 0; display: flex; align-items: center;
+                 justify-content: center; font-size: .7rem; text-shadow: 0 0 3px #000; }

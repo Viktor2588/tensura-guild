@@ -137,7 +137,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.14;   // Namensweihe trifft jetzt immer; gemessen 49 % Siege (frisch)
+  var GRUNDHAERTE = 0.86;
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -823,6 +823,8 @@
      Warteschlange statt Einzelfeld: der Startdraft wirbt drei Einheiten
      hintereinander an, da liegen sofort mehrere Wahlen offen.                 */
 
+  var KATEGORIEN = ['angriff', 'mechanik', 'unterstuetzung', 'defensive'];
+
   function passivAngebot(run, m, beiAnwerbung) {
     var hab = m.passives || [];
     var offers;
@@ -834,25 +836,30 @@
       (run.pwahlen = run.pwahlen || []).push({ uid: m.uid, stufe: stufe, offers: offers });
       return;
     }
-    /* Ohne eigene Linien: die nächste feste Passive der Einheit plus zwei aus
-       der geteilten Bibliothek. Seit die Aktive nicht mehr gewählt wird, wäre
-       der Aufstieg sonst gar keine Entscheidung mehr. Bei der Anwerbung gibt es
-       nichts zu wählen — Rang C hat keinen Passiv-Slot. */
+    /* Ohne eigene Linien: eine Passive aus JEDER Kategorie, zufällig gezogen.
+       Vorher stand die feste nächste Passive der Einheit im Angebot — dieselbe
+       Einheit entwickelte sich damit in jedem Run gleich. Bei der Anwerbung
+       gibt es nichts zu wählen: Rang C hat keinen Passiv-Slot. */
     if (beiAnwerbung || m.rank < 1) return;
     m.durfteWaehlen = 1;
-    var eigen = GD.unit(m.id).passives[m.rank - 1];
-    offers = [];
-    if (eigen && hab.indexOf(eigen) < 0) offers.push({ linie: 'eigen', linieName: 'Eigene Linie', id: eigen });
     var rng = rngOf(run);
     var kw = AB.keywords(abilities(m));
     var frei = AB.passives.filter(function (p) {
-      return !AB.linien_ids[p.id] && hab.indexOf(p.id) < 0 && p.id !== eigen;
+      return !AB.linien_ids[p.id] && hab.indexOf(p.id) < 0;
     });
-    var passend = frei.filter(function (p) {
-      return (p.keywords || []).concat(p.amplifies || []).some(function (k) { return kw[k]; });
+    offers = [];
+    KATEGORIEN.forEach(function (kat) {
+      var inKat = frei.filter(function (p) { return AB.kategorie(p.id) === kat; });
+      if (!inKat.length) return;
+      /* Innerhalb der Kategorie zieht das Thema der Einheit vor: eine Gift-
+         Einheit sieht eher Gift. Die Kategorie selbst steht aber fest. */
+      var passend = inKat.filter(function (p) {
+        return (p.keywords || []).concat(p.amplifies || []).some(function (k) { return kw[k]; });
+      });
+      var p = waehle(rng, passend.length && rng() < 0.7 ? passend : inKat,
+                     inhaltsStufe(run) + m.rank - 1, 1)[0];
+      if (p) offers.push({ linie: kat, linieName: AB.LINIEN_NAME[kat], id: p.id });
     });
-    waehle(rng, passend.length >= 2 ? passend : frei, inhaltsStufe(run) + m.rank - 1, 3 - offers.length)
-      .forEach(function (p) { offers.push({ linie: 'bibliothek', linieName: 'Bibliothek', id: p.id }); });
     commit(run, rng);
     if (offers.length) (run.pwahlen = run.pwahlen || []).push({ uid: m.uid, stufe: m.rank, offers: offers });
   }

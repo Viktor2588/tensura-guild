@@ -64,8 +64,8 @@
     passiv('quelle', 'Quelle des Waldes', 'onStart', ['heilung'], [], 'Gibt allen Verbündeten Regeneration 3',
       function (c) { c.allies().forEach(function (u) { u.regen += 3; }); }),
     passiv('dornenhaut', 'Stachelhaut', 'onDamaged', ['konter'], [],
-      'Angreifer erleiden 10 Schaden plus ein Drittel des eigenen Angriffs zurück',
-      function (c) { var f = c.foes()[0]; if (f) c.deal(f, 10 + c.self.atk * 0.35, 'Dornen'); }),
+      'Angreifer erleiden 8 Schaden plus ein Viertel des eigenen Angriffs zurück',
+      function (c) { var f = c.foes()[0]; if (f) c.deal(f, 8 + c.self.atk * 0.25, 'Dornen'); }),
     passiv('konterstoss', 'Reflexkonter', 'onDamaged', ['konter'], [], '40 % Chance auf einen Gegenangriff',
       chance(0.4, function (c) { var f = c.foes()[0]; if (f) c.deal(f, c.self.atk * 0.7, 'Konterstoß'); })),
     passiv('windschritt', 'Gedankenbeschleunigung', 'onStart', ['tempo'], [], '+15 % Tempo',
@@ -332,6 +332,31 @@
       defensive: ['souei_def1', 'souei_def2', 'souei_def3', 'souei_def4']
     }
   };
+  /* ---- Kategorien der Bibliothek ------------------------------------------
+     Dieselben vier Arten wie in den Linien: Angriff (Werte und Schaden),
+     Mechanik (erzeugt oder nutzt einen Zustand), Unterstützung (wirkt auf den
+     Trupp), Defensive (hält die eigene Einheit am Leben). Der Aufstieg bietet
+     eine aus JEDER Art an — sonst ist die Wahl nur „welche Zahl ist größer".  */
+  var KATEGORIE = {
+    /* Angriff: mehr Schaden, ohne Umweg über einen Zustand. */
+    erstschlag: 'angriff', panzerbrecher: 'angriff', kriegsherz: 'angriff',
+    scharfrichter: 'angriff', henkersblick: 'angriff', blutrausch: 'angriff',
+    massenschlaechter: 'angriff', schwungmeister: 'angriff', rachsucht: 'angriff',
+    /* Mechanik: legt einen Zustand an oder schlägt daraus Kapital. */
+    giftbrut: 'mechanik', giftzahn: 'mechanik', glutkern: 'mechanik', aschehaut: 'mechanik',
+    frostkern: 'mechanik', frostschneide: 'mechanik', verderber: 'mechanik',
+    fluchweber: 'mechanik', kettenschlag: 'mechanik',
+    /* Unterstützung: wirkt auf Verbündete, nicht nur auf einen selbst. */
+    bannerherz: 'unterstuetzung', quelle: 'unterstuetzung', jagdruf: 'unterstuetzung',
+    rachegeist: 'unterstuetzung', seelenband: 'unterstuetzung', trophaenjaeger: 'unterstuetzung',
+    lebenskraft: 'unterstuetzung',
+    /* Defensive: hält die eigene Einheit stehen. */
+    schildwall: 'defensive', bollwerkmeister: 'defensive', regenerator: 'defensive',
+    lebensraub: 'defensive', zaeh: 'defensive', wiederkehr: 'defensive',
+    dornenhaut: 'defensive', konterstoss: 'defensive', windschritt: 'defensive'
+  };
+  function kategorie(id) { return KATEGORIE[id] || null; }
+
   /* Nachschlagwerk: welche Passive gehört zur Linie einer Einheit? Damit sie
      nicht als Bibliotheks-Angebot bei einer anderen Einheit auftaucht. */
   var linien_ids = {};
@@ -341,7 +366,7 @@
     });
   });
 
-  var LINIEN_NAME = { angriff: 'Angriff', mechanik: 'Chaos-Mechanik',
+  var LINIEN_NAME = { angriff: 'Angriff', mechanik: 'Mechanik',
                       unterstuetzung: 'Unterstützung', defensive: 'Defensive' };
 
   /* Die vier Angebote einer Stufe — eines je Linie. */
@@ -868,6 +893,7 @@
   root.Abilities = {
     passives: passives, pool: pool, signatures: signatures, alle: alle,
     linien: linien, linien_ids: linien_ids, istEigen: istEigen,
+    KATEGORIE: KATEGORIE, kategorie: kategorie,
     LINIEN_NAME: LINIEN_NAME, linienAngebot: linienAngebot,
     CHAOS_JE_RANG: CHAOS_JE_RANG, MARKE_JE_RANG: MARKE_JE_RANG,
     get: byId,

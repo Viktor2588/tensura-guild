@@ -64,7 +64,7 @@
     schild: 'Alle Schilde sind 15 % stärker',
     heilung: 'Alle Heilung wirkt 15 % stärker',
     tempo: 'Der ganze Trupp ist 6 % schneller',
-    konter: 'Jede Einheit wirft 4 plus 10 % ihres Angriffs auf Angreifer zurück',
+    konter: 'Jede Einheit wirft 3 plus 7 % ihres Angriffs auf Angreifer zurück',
     exekution: '+15 % Schaden gegen Ziele unter 35 % Leben',
     flaeche: '+8 % Schaden, solange mindestens zwei Gegner stehen',
     chaos: 'Chaos und Antichaos streuen die Werte um ein Viertel weiter',
@@ -306,7 +306,7 @@
         if (r.schild) u.schildfaktor += 0.15;
         if (r.heilung) u.heilfaktor += 0.15;
         if (r.konter) u.effects.push({ hook: 'onDamaged', name: 'Resonanz: Konter',
-          fn: function (c) { var f = c.foes()[0]; if (f) c.deal(f, 4 + c.self.atk * 0.1, 'Konter-Resonanz'); } });
+          fn: function (c) { var f = c.foes()[0]; if (f) c.deal(f, 3 + c.self.atk * 0.07, 'Konter-Resonanz'); } });
       });
       mine.forEach(function (u) { fire(u, 'onStart', ctx(u, {})); });
     }

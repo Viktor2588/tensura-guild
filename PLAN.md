@@ -125,6 +125,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 11 | Aufbau statt Ausrüstung: ein Anfang aus vier Paaren, eine Währung, Tags statt Textwänden | Der erste Kampf ist ein Duell, und jeder Kauf ist ein verzichteter Aufstieg | ✅ |
 | 12 | Unbegrenzte Stapel, Knoten als Arten statt Gegnerlisten, Kampfherausforderung | Die Wahl auf der Karte ist ein Risiko, keine Vorabinformation | ✅ |
 | 13 | Belohnung ist nur noch Magicule; nach jedem Kampf öffnet der Markt samt Verkauf per Ziehen | Was der Kampf einbringt, wird sofort zu einer Entscheidung | ✅ |
+| 14 | Entwicklung würfelt eine Passive je Kategorie, Meta-Fortschritt sichtbar, Bosse eingefangen | Der Aufstieg ist jede Runde eine andere Frage | ✅ |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -628,6 +629,39 @@ trifft, stieg die Siegquote um vier Punkte — ausgeglichen über `GRUNDHAERTE`
 Dabei fiel eine Schwäche im Prüfwerkzeug auf: `dev/uitest.js` zog seinen Seed aus
 `Math.random`, war also bei jedem Lauf ein anderer Test. Ein Fehlschlag ließ sich
 nicht nachstellen und war beim nächsten Lauf weg. Jetzt fester Seed.
+
+### Phase 14 (2026-07-26): zufällige Entwicklung, sichtbarer Fortschritt, Bosse
+
+- **Die Bibliothek ist kategorisiert.** Alle 34 geteilten Passiven tragen jetzt
+  eine der vier Arten: Angriff (9), Mechanik (9), Unterstützung (7), Defensive
+  (9). Der Aufstieg bietet **eine aus jeder Art** an, zufällig gezogen, mit einer
+  Neigung zum Thema der Einheit (65 %). Vorher stand die feste nächste Passive
+  aus `data.js` im Angebot — dieselbe Einheit entwickelte sich in jedem Run gleich.
+- **Meta-Fortschritt im Menü:** Balken und Listen für Bedrohungsstufe, Einheiten
+  und Relikte, jeder Eintrag mit Tooltip. Vorher war die Freischaltung eine Zeile
+  beim Tod und danach unsichtbar.
+
+**Bosse waren die leichtesten Kämpfe des Akts.** Im echten Run gemessen
+(`dev/balance.js` weist die Siegquote jetzt je Boss aus) standen sie bei
+83–100 %, nur Roy Valentine bei 44 % — während der Run insgesamt bei 51 % lag.
+Der Spieler starb also an gewöhnlichen Knoten und spazierte durch das Finale.
+Der alte Notizzettel („Clayman leicht, Milim hart") war längst überholt.
+
+Nachgezogen mit einem Tuner, der jeden Boss gegen die Messung im echten Run
+schiebt statt gegen einen von Hand gebauten Referenztrupp — der war beim letzten
+Versuch die Fehlerquelle. Ergebnis: **69–82 %** über alle acht.
+
+Ein Boss brauchte mehr als eine Zahl: **Geld, der Orklord** blieb bei 89 %, weil
+sein Kit ihn zäh, aber harmlos machte — Multiplikatoren skalieren Leben und
+Angriff gleichmäßig und ändern daran nichts. Sein Fleischwall heilt jetzt halb so
+viel, lässt seinen Angriff dafür mit jedem erlittenen Treffer wachsen.
+
+Konter (vorher 84 %) ist kein Ausreißer mehr: Stachelhaut, Dornenkranz und die
+Konter-Resonanz werfen weniger zurück. Er liegt jetzt gleichauf mit Heilung und
+Brand.
+
+Ergebnis `dev/balance.js 600`: 50 % frisch, 62 % voll freigeschaltet,
+Bedrohungsleiter 50/40/…/31/…/16.
 
 Weitere offene Punkte:
 - Der Abstand zwischen Anfänger und Veteran ist auf 12 Punkte gewachsen

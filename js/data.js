@@ -316,9 +316,9 @@
       jeder(function (x) { x.lifesteal += 0.15; }), ['heilung']),
     relic('heilsegen', 'Heilsegen', 2, 'Alle Einheiten +4 Regeneration',
       jeder(function (x) { x.regen += 4; }), ['heilung']),
-    relic('dornenhaut_relikt', 'Dornenkranz', 2, 'Angreifer erleiden 8 Schaden plus 20 % des eigenen Angriffs zurück',
+    relic('dornenhaut_relikt', 'Dornenkranz', 2, 'Angreifer erleiden 6 Schaden plus 14 % des eigenen Angriffs zurück',
       anhaengen('onDamaged', 'Dornen', function (c) {
-        var f = c.foes()[0]; if (f) c.deal(f, 8 + c.self.atk * 0.2, 'Dornen');
+        var f = c.foes()[0]; if (f) c.deal(f, 6 + c.self.atk * 0.14, 'Dornen');
       }), ['konter']),
     relic('rachegeist_relikt', 'Rachegeist', 2, 'Stirbt ein Verbündeter: alle +4 Angriff',
       anhaengen('onAllyDeath', 'Rachegeist', function (c) { c.self.atk += 4; })),

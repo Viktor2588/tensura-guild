@@ -304,6 +304,13 @@ ok(win.Run.darfEntlassen({ phase: 'markt', pending: { markt: [] } }),
 head('Menü und Glossar');
 klick($('#btn-menu'));
 ok($$('#menu-glossar dt').length >= 40, 'das Glossar listet alle Begriffe');
+/* Fortschritt: was über die Runs hinweg verdient wurde. */
+ok($$('#menu-meta .fortschritt').length === 3,
+   'der Fortschritt zeigt Balken für Bedrohungsstufe, Einheiten und Relikte');
+ok(/\d+ \/ \d+/.test(text('#menu-meta')), 'mit Zahlen daran');
+ok($$('#menu-meta .chip').length === run.meta.unlockedUnits.length + run.meta.unlockedRelics.length,
+   'und listet jede freigeschaltete Einheit und jedes Relikt einzeln auf');
+ok($$('#menu-meta .chip[data-tip]').length > 0, 'jeder Eintrag erklärt sich im Tooltip');
 ok($$('#menu-glossar h4').length >= 5, 'das Glossar ist in Abschnitte geteilt');
 ok($('#menu-chronik').children.length > 0, 'die Chronik protokolliert den Run');
 

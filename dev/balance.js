@@ -168,6 +168,12 @@ function play(seed, voll) {
          reicht. Genau die Entscheidung, die das Spiel jetzt vom Spieler will. */
       /* Denselben Weg wie ein Spieler: erst das Ergebnis bestätigen, dann in der
          Verwaltung einkaufen. Gezählt wird beim Bestätigen, sonst doppelt. */
+      if (run.node && run.node.type === 'boss' && !p._gezaehlt) {
+        p._gezaehlt = 1;
+        var bn = run.node.name;
+        bossKampf[bn] = (bossKampf[bn] || 0) + 1;
+        if (p.result.winner === 'player') bossSieg[bn] = (bossSieg[bn] || 0) + 1;
+      }
       if (p.markt && run.phase === 'kampf') {
         if (p.bestanden !== undefined) {
           run._pruefN = (run._pruefN || 0) + 1;
@@ -218,6 +224,7 @@ function play(seed, voll) {
 
 var siege = 0, akte = {}, schritteSum = 0, rangSum = 0, teamSum = 0;
 var pruefGesamt = 0, pruefOk = 0;
+var bossKampf = {}, bossSieg = {};
 var kaeufe = {}, unbezahlbar = 0, kostenSum = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
 var ohneFront = 0, ohneStuetze = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
 var proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {}, proResonanz = {};
@@ -285,6 +292,11 @@ function tabelle(titel, map, nameFn, minN) {
 console.log('=== ' + N + ' Runs' + (VOLL ? ', volle Freischaltung' : ', frischer Spieler') +
   (STUFE ? ', Bedrohungsstufe ' + STUFE : '') + (STELLEN ? '' : ', ohne Aufstellung') + ' ===');
 console.log('Siege: ' + siege + ' (' + Math.round(siege / N * 100) + '%)');
+console.log('Bosse (Siegquote im echten Run):');
+Object.keys(bossKampf).sort().forEach(function (b) {
+  console.log('  ' + b.replace('BOSS: ', '').padEnd(24) +
+    String(Math.round((bossSieg[b] || 0) / bossKampf[b] * 100)).padStart(3) + '%  (' + bossKampf[b] + ')');
+});
 console.log('Kampfherausforderungen: ' + pruefGesamt + ', davon gehalten ' +
   (pruefGesamt ? Math.round(pruefOk / pruefGesamt * 100) : 0) + ' %');
 console.log('Ø erreichte Knoten: ' + (schritteSum / N).toFixed(1) + ' von ' + (R.AKTE * R.STEPS.length));

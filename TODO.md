@@ -49,17 +49,25 @@ Abgearbeitet in Phase 12/13:
 - [x] Verkaufen per Ziehen (Pointer Events, auch auf Touch)
 - [x] Händler-Knoten entfernt
 
+Abgearbeitet in Phase 14:
+
+- [x] Entwicklung bietet zufällig an, eine aus jeder Art — die Bibliothek ist
+      in Angriff, Mechanik, Unterstützung und Defensive einsortiert
+- [x] Meta-Progression im Menü: Balken und Listen für Bedrohungsstufe,
+      Einheiten und Relikte
+- [x] Boss-Balance eingefangen: 69–82 % statt 44–100 %, im echten Run gemessen
+- [x] Konter ist kein Ausreißer mehr
+
 Offen:
 
-- Anfänger/Veteran-Abstand auf 12 Punkte gewachsen (48 gegen 60 % Siege).
-- Konter-Builds bei 76 % knapp über dem Zielband.
-
-- 38 Einheiten haben noch keine eigenen Linien (`AB.linien`). Shion und Souei sind die Vorlagen — vier Linien à vier Stufen je Einheit.
-- Der Aufstiegs-Pool aus 34 aktiven Fähigkeiten wird vom Spieler & gegner nicht gezogen. jeder Kampfeinheit hat nur eine Aktive fähikgeit mit passiven Fähgikeiten
-- Angebotene/kaufbare Einheiten haben zufällige ausgesuchte Passive nur beim entwickeln suchenw wir aktiv aus welche neue passive dazukommt.
-- Boss-Balance in Pool 1 streut (Clayman leicht, Milim hart) — Claymans
-  Selbstheilung war für Boss plus Gefolge entworfen.
+- **38 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Shion und Souei
+  sind die Vorlagen — vier Linien à vier Stufen je Einheit. Der größte Brocken.
+- **Der Aufstiegs-Pool aus 34 aktiven Fähigkeiten ist totes Gewicht.** Weder
+  Spieler noch Gegner ziehen daraus mehr als eine Aktive. Entweder in Passive
+  umbauen oder als reines Gegner-Repertoire führen und ausdünnen.
+- **Angebotene Einheiten sollen zufällig vorausgewählte Passive mitbringen.**
+  Die Entwicklung ist jetzt zufällig, der Startzustand einer gekauften Einheit
+  noch nicht.
+- Anfänger/Veteran-Abstand bei 12 Punkten (50 gegen 62 % Siege).
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
-- Bitte Die Meta progression anzeigen was alles freigeschaltet wurde
-- Bitte die Fähigkeiten die man per entwiclung bekommt nicht statisch sondern random anbieten. Eine aus jeder Art.

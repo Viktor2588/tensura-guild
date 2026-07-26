@@ -1171,6 +1171,46 @@
     }).join('');
   }
 
+  /* Was über die Runs hinweg verdient wurde. Ohne diese Übersicht ist die
+     Meta-Freischaltung eine Zeile beim Tod und danach unsichtbar — man weiß
+     weder, was man schon hat, noch wie viel überhaupt kommt. */
+  function metaHtml() {
+    var meta = run.meta;
+    var uOffen = GD.units.filter(function (u) { return meta.unlockedUnits.indexOf(u.id) < 0; });
+    var rOffen = GD.relics.filter(function (r) { return meta.unlockedRelics.indexOf(r.id) < 0; });
+    var stufe = R.bedrohung(meta.threat || 0);
+
+    function balken(hab, gesamt) {
+      var p = Math.round(hab / gesamt * 100);
+      return '<div class="fortschritt"><i style="width:' + p + '%"></i>' +
+        '<b>' + hab + ' / ' + gesamt + '</b></div>';
+    }
+    function liste(ids, alle, hol) {
+      return '<div class="liste">' + alle.filter(function (x) { return ids.indexOf(x.id) >= 0; })
+        .map(function (x) {
+          return '<span class="chip rar-rand-' + (x.rarity || 1) + '"' +
+            tip(x.name, hol(x)) + '>' + esc(x.name) + '</span>';
+        }).join('') + '</div>';
+    }
+
+    return '<p class="hinweis">' + run.meta.runs + ' Runs · ' + run.meta.wins + ' Siege · ' +
+      'weitester Weg: ' + (meta.best || 0) + ' Knoten</p>' +
+      '<h4>Bedrohungsstufe ' + stufe.stufe + ' — ' + esc(stufe.name) + '</h4>' +
+      balken(meta.threat || 0, R.BEDROHUNG.length - 1) +
+      '<p class="hinweis">' + esc(stufe.text) + '</p>' +
+      '<h4>Einheiten</h4>' + balken(meta.unlockedUnits.length, GD.units.length) +
+      liste(meta.unlockedUnits, GD.units, function (u) {
+        var sig = AB.get(u.signature);
+        return GD.artName(u.art) + ' · ' + GD.rolleName(u.tags[1]) + '\n' + sig.name + ': ' + sig.text;
+      }) +
+      (uOffen.length ? '<p class="hinweis">Noch verschlossen: ' + uOffen.length +
+        ' Einheiten. Jeder beendete Run schaltet eine frei.</p>' : '<p class="gut">Alle Einheiten frei.</p>') +
+      '<h4>Relikte</h4>' + balken(meta.unlockedRelics.length, GD.relics.length) +
+      liste(meta.unlockedRelics, GD.relics, function (r) { return r.text; }) +
+      (rOffen.length ? '<p class="hinweis">Noch verschlossen: ' + rOffen.length + ' Relikte.</p>'
+        : '<p class="gut">Alle Relikte frei.</p>');
+  }
+
   function neuerRun() {
     var meta = R.loadMeta();
     R.clear();
@@ -1273,6 +1313,7 @@
       $('menu-info').textContent = 'Runs: ' + run.meta.runs + ' · Siege: ' + run.meta.wins +
         ' · freigeschaltet: ' + run.meta.unlockedUnits.length + ' Einheiten, ' +
         run.meta.unlockedRelics.length + ' Relikte.';
+      $('menu-meta').innerHTML = metaHtml();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
       $('menu').showModal();
