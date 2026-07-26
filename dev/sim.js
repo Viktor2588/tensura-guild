@@ -1037,6 +1037,28 @@ ok(R.addUnit(aRun, 'shion'), 'eine andere Art wird aufgenommen');
 ok(!R.addUnit(aRun, 'gobta'), 'auch dieselbe Einheit kein zweites Mal');
 ok(R.unitPool(aRun).every(function (u) { return ['slime', 'goblin', 'oger'].indexOf(u.art) < 0; }),
    'der Angebotspool enthält keine belegten Arten');
+/* Entlassen: nur außerhalb des Kampfes, und es gibt ein Viertel zurück. */
+var eRun = fertigerRun(555);
+eRun.magicules = 0;
+var opfer = eRun.team[eRun.team.length - 1];
+opfer.rank = 2;
+(eRun.bag = eRun.bag || []).push('kurzschwert');
+R.equip(eRun, opfer.uid, 'kurzschwert');
+var wert = R.entlassenWert(opfer);
+ok(wert > 0, 'eine Einheit hat einen Rückgabewert (' + wert + ')');
+eRun.phase = 'kampf';
+ok(!R.darfEntlassen(eRun) && !R.entlassen(eRun, opfer.uid),
+   'im Kampf lässt sich niemand entlassen');
+eRun.phase = 'karte';
+var vorher = eRun.team.length;
+ok(R.entlassen(eRun, opfer.uid), 'außerhalb des Kampfes schon');
+ok(eRun.team.length === vorher - 1, 'die Einheit ist weg');
+ok(eRun.magicules === wert, 'und ein Viertel des Einsatzes kommt zurück');
+ok((eRun.bag || []).indexOf('kurzschwert') >= 0, 'ihre Ausrüstung landet wieder im Beutel');
+var solo = fertigerRun(556);
+solo.team = solo.team.slice(0, 1);
+ok(!R.entlassen(solo, solo.team[0].uid), 'die letzte Einheit lässt sich nicht entlassen');
+
 /* Nicht über den Platz suchen: Frontlinie rückt beim Anwerben nach vorn. */
 R.entlassen(aRun, aRun.team.filter(function (m) { return m.id === 'gobta'; })[0].uid);
 ok(R.addUnit(aRun, 'gobkyu'), 'nach dem Entlassen ist die Art wieder frei');

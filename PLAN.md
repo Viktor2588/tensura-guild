@@ -502,6 +502,8 @@ Sieben Punkte aus `TODO.md`.
   dreier Einheiten. Erster Kampf 1 gegen 1, die ersten sieben Knoten mit weniger
   und schwächeren Gegnern (`EINSTIEG`, `EINSTIEG_HAERTE`).
 - **Eine Währung.** Gold und Magicule waren dieselbe Zahl in zwei Beuteln.
+- **Entlassen** nur außerhalb des Kampfes und gegen 25 % des Einsatzes
+  (Anwerbepreis plus Rangkosten); die Ausrüstung geht zurück in den Beutel.
 
 Das Zusammenlegen der Währungen war der teuerste Teil, in drei Stufen:
 

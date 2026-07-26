@@ -50,6 +50,10 @@ ist ein verzichteter Aufstieg von C auf B plus die Hälfte des nächsten.
 | Namensweihe (ein Rang, günstiger) | 260 |
 | Ausrüstung | das Dreifache ihres Grundwerts |
 
+Zurück bekommst du etwas nur beim **Entlassen**: ein Viertel dessen, was in der
+Einheit steckt (Anwerbung plus Rangaufstiege), und ihre Ausrüstung wandert in
+den Beutel. Während eines Kampfes geht das nicht.
+
 ## Der Run
 
 Den Boss des laufenden Akts siehst du von Anfang an — mit allen Fähigkeiten im

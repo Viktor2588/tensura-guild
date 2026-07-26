@@ -678,16 +678,33 @@
     return true;
   }
 
+  /* Was in dieser Einheit steckt: die Rangaufstiege plus der Ladenpreis, den sie
+     gekostet hätte. Ausrüstung nicht — die wandert zurück in den Beutel. */
+  function investiert(m) {
+    var summe = PREIS_EINHEIT + GD.unit(m.id).cost * 45;
+    for (var r = 0; r < m.rank; r++) summe += RANK_COST[r];
+    return summe;
+  }
+  var RUECKGABE = 0.25;
+  function entlassenWert(m) { return Math.round(investiert(m) * RUECKGABE); }
+
+  /* Nur außerhalb des Kampfes: mitten in einer laufenden Auflösung wäre der
+     Trupp ein anderer als der, der gerade kämpft. */
+  function darfEntlassen(run) {
+    return !run.over && run.phase !== 'kampf';
+  }
+
   function entlassen(run, uid) {
-    var i = run.team.map(function (m) { return m.uid; }).indexOf(uid);
-    if (i >= 0) {
-      if (run.team.length <= 1) return false;          // ohne Trupp kein Kampf
-      run.team.splice(i, 1);
-      return true;
-    }
-    var j = run.bank.map(function (m) { return m.uid; }).indexOf(uid);
-    if (j < 0) return false;
-    run.bank.splice(j, 1);
+    if (!darfEntlassen(run)) return false;
+    var m = find(run, uid);
+    if (!m) return false;
+    var i = run.team.map(function (x) { return x.uid; }).indexOf(uid);
+    if (i >= 0 && run.team.length <= 1) return false;   // ohne Trupp kein Kampf
+    /* Ausrüstung zurück in den Beutel, ein Viertel des Einsatzes zurück. */
+    m.items.slice().forEach(function (iid) { unequip(run, uid, iid); });
+    run.magicules += entlassenWert(m);
+    if (i >= 0) run.team.splice(i, 1);
+    else run.bank.splice(run.bank.map(function (x) { return x.uid; }).indexOf(uid), 1);
     return true;
   }
 
@@ -1084,6 +1101,7 @@
     buy: buy, eventChoose: eventChoose, camp: camp,
     equip: equip, unequip: unequip, move: move, bench: bench, deploy: deploy, entlassen: entlassen,
     find: find, addUnit: addUnit, swap: swap, unitPool: unitPool, relicPool: relicPool,
+    entlassenWert: entlassenWert, darfEntlassen: darfEntlassen,
     belegteArten: belegteArten, freieArt: freieArt, waehle: waehle, gewicht: gewicht,
     inhaltsStufe: inhaltsStufe, boss: bossOf, STUFEN: STUFEN, ertrag: ertrag,
     buildTeile: buildTeile, resonanzen: resonanzen, analyse: analyse,

@@ -795,7 +795,15 @@
     } else {
       html += '<button data-a="einsetzen" data-uid="' + m.uid + '">Einsetzen</button>';
     }
-    html += '<button data-a="entlassen" data-uid="' + m.uid + '">Entlassen</button>';
+    var zurueck = R.entlassenWert(m);
+    html += '<button data-a="entlassen" data-uid="' + m.uid + '"' +
+      (R.darfEntlassen(run) ? '' : ' disabled') +
+      tip('Entlassen', R.darfEntlassen(run)
+        ? 'Gibt ' + zurueck + ' Magicule zurück — ein Viertel dessen, was in dieser Einheit ' +
+          'steckt (Anwerbung und Rangaufstiege). Ausrüstung wandert zurück in den Beutel, ' +
+          'die Art wird wieder frei.'
+        : 'Während eines Kampfes lässt sich niemand entlassen.') +
+      '>Entlassen — +' + zurueck + '✦</button>';
     html += '<button class="' + (kannAufsteigen ? 'haupt' : '') + '" data-a="aufstieg" data-uid="' + m.uid + '"' +
       (kannAufsteigen ? '' : ' disabled') +
       tip(m.rank >= 3 ? 'Höchster Rang' : 'Aufstieg auf Rang ' + R.RANK_NAME[m.rank + 1],
@@ -1045,7 +1053,8 @@
     einsetzen: function (d) { R.deploy(run, d.uid); render(); speichern(); },
     entlassen: function (d) {
       var m = R.find(run, d.uid);
-      if (m && confirm(GD.unit(m.id).name + ' entlassen? Die Art wird dadurch wieder frei.')) {
+      if (m && confirm(GD.unit(m.id).name + ' entlassen? Gibt ' + R.entlassenWert(m) +
+          ' Magicule zurück, die Art wird wieder frei.')) {
         R.entlassen(run, d.uid); render(); speichern();
       }
     },
