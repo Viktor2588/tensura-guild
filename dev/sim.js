@@ -427,8 +427,11 @@ ok(frueh.every(function (id) {
 /* Bosse widerstehen Erstarrung — sonst gewinnt Frost jeden Einzelkampf. */
 /* Linien-Einheiten tragen ohne ausdrückliche Wahl KEINE Passiven — der
    Frostträger muss sie also bekommen. */
-var frostM = R.member('ranga');
-frostM.rank = 3; frostM.passives = ['ranga_mec1', 'ranga_mec3', 'ranga_mec4'];
+/* Frost lebt seit dem Umbau von Schattenwolf und Ranga nur noch in der
+   Bibliothek und bei den Gegnern — der Träger bekommt ihn also von dort. */
+var frostM = R.member('schattenwolf');
+frostM.rank = 3; frostM.durfteWaehlen = 1;
+frostM.passives = ['frostkern', 'frostschneide'];
 var frostTeam = [R.resolve(frostM)];
 var trefferBoss = 0, trefferNormal = 0, widerstand = 0;
 for (var fb = 0; fb < 30; fb++) {
@@ -1078,6 +1081,30 @@ ok(C.RESONANZ.schatten && C.RESONANZ.dunkelheit && C.RESONANZ.licht,
    'alle drei Elemente haben eine Resonanz');
 ok(!C.STATUS_CAP.schatten && !C.STATUS_CAP.dunkelheit,
    'auch sie stapeln unbegrenzt');
+
+/* Donner: lädt auf und entlädt sich ab der Schwelle in die ganze Reihe. */
+var donnerM = mitPassiven('ranga', 3, ['ranga_mec1', 'ranga_mec2', 'ranga_mec4']);
+var donnerLog = C.simulate([donnerM],
+  EN.build({ units: ['felsgolem', 'felsgolem', 'felsgolem'], mult: 6 }, 1), 5).log;
+ok(donnerLog.some(function (l) { return l.type === 'entladung'; }),
+   'Donner entlädt sich ab der Schwelle');
+var ent = donnerLog.filter(function (l) { return l.type === 'entladung'; })[0];
+/* Rangas drei Donner-Passiven lösen die Resonanz aus, die die Schwelle um 2
+   senkt — deshalb hier 4 statt 6. */
+ok(ent && ent.stapel >= C.DONNER_SCHWELLE - 2,
+   'und zwar erst ab ' + (C.DONNER_SCHWELLE - 2) + ' Stapeln (mit Resonanz, sonst ' +
+   C.DONNER_SCHWELLE + ')');
+var ohneReso = C.simulate([mitPassiven('ranga', 3, ['ranga_mec1'])],
+  EN.build({ units: ['felsgolem', 'felsgolem', 'felsgolem'], mult: 6 }, 1), 5).log
+  .filter(function (l) { return l.type === 'entladung'; })[0];
+ok(!ohneReso || ohneReso.stapel >= C.DONNER_SCHWELLE,
+   'ohne Resonanz erst ab ' + C.DONNER_SCHWELLE + ' Stapeln');
+/* Die Entladung trifft die ganze Reihe, nicht nur den Träger. */
+var nachEnt = donnerLog.slice(donnerLog.indexOf(ent))
+  .filter(function (l) { return l.type === 'hit' && l.source === 'Entladung'; });
+ok(nachEnt.length >= 2, 'sie schlägt in mehrere Gegner (' + nachEnt.length + ' Treffer)');
+ok(donnerLog.filter(function (l) { return l.type === 'entladung'; }).length >= 2,
+   'und die Ladung beginnt danach von vorn');
 
 head('Verwundbar, Blutung und Boss-Eskalation');
 

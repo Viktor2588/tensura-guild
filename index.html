@@ -1,4 +1,17 @@
 <!DOCTYPE html>
+<!--
+  Tensura Guild braucht KEINEN Build. Die acht Skripte unten sind klassische
+  Skripte: sie haengen ihre Schnittstelle an globalThis und verlassen sich auf
+  ihre Reihenfolge. Ein Bundler macht daraus ES-Module und bricht damit.
+
+  So starten:
+      index.html doppelklicken            (file:// genuegt)
+      npm start   bzw.  bun run start     -> http://localhost:8080
+
+  NICHT `bun index.html` — das startet Buns Dev-Server mit Hot-Reload, der die
+  Skripte bundelt und mit einem eigenen Fehler abbricht:
+  "Failed to load bundled module ... this is a bug in Bun's bundler".
+-->
 <html lang="de">
 <head>
 <meta charset="utf-8">

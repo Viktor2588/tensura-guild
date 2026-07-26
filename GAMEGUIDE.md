@@ -292,6 +292,7 @@ Jede Fähigkeit trägt Schlüsselwörter: was sie **erzeugt** (Quelle) und was s
 | Schatten | je Stapel 7 % Chance, einem Treffer GANZ auszuweichen (max. 60 %) | – |
 | Dunkelheit | je Stapel 7 % weniger Schaden, den das Ziel AUSTEILT (max. 60 %) | – |
 | Licht | heilt je Stapel 1,5 % pro Zug, löscht Dunkelheit, trägt durch Schatten | – |
+| Donner | lädt auf; ab 6 Stapeln entlädt er sich in die GANZE gegnerische Reihe | – |
 
 **Stapel sind unbegrenzt.** Wer eine Linie zu Ende baut, sieht das auch an der
 Zahl. Gedeckelt wird nur die Wirkung dort, wo sie sinnlos würde: der Chaos-Faktor
@@ -439,6 +440,18 @@ Drei Elemente, die etwas tun, das es sonst nirgends gibt:
   Es ist die Antwort auf beide Finsternis-Elemente.
 
 Der **Schattenwolf** trägt Schatten und Dunkelheit, **Shuna** das Licht.
+
+### Donner
+
+Das vierte neue Element arbeitet als einziges mit einer **Schwelle**: Donner
+bleibt liegen und tut nichts — bis sechs Stapel zusammenkommen. Dann **entlädt**
+er sich und trifft die **ganze Reihe** des Trägers für 1,2 % ihres maximalen
+Lebens je Stapel, und die Ladung beginnt von vorn. Gift und Brand ticken stetig,
+Verwundbar und Verderbnis wirken dauerhaft — Donner sammelt und schlägt zu.
+
+Deshalb lohnt es sich, **viele Gegner gleichzeitig** aufzuladen. **Ranga** trägt
+ihn, zusammen mit Schatten: er lädt die Reihe auf und steht selbst in Deckung.
+Die Donner-Resonanz senkt die Schwelle von sechs auf vier.
 
 ## Souei und die Marke
 

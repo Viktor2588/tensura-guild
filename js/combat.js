@@ -30,6 +30,12 @@
        licht        auf sich selbst — löscht Dunkelheit, heilt stetig, und die
                     eigenen Angriffe gehen durch fremde Schatten hindurch.
                     Das göttliche Licht ist die Antwort auf beide Schatten.    */
+  /* Donner lädt sich auf und ENTLÄDT sich dann: ab der Schwelle schlägt der
+     Blitz in die ganze gegnerische Reihe und die Ladung ist weg. Kein anderer
+     Zustand arbeitet mit einem Schwellenwert — Gift und Brand ticken stetig,
+     Verwundbar und Verderbnis wirken dauerhaft. */
+  var DONNER_SCHWELLE = 6, DONNER_SCHADEN = 0.012;
+
   var SCHATTEN_PRO_STAPEL = 0.07, SCHATTEN_MAX = 0.6;
   var DUNKELHEIT_PRO_STAPEL = 0.07, DUNKELHEIT_MAX = 0.6;
   var LICHT_HEILUNG = 0.015;
@@ -94,7 +100,8 @@
     blutung: 'Blutung reißt ein Viertel mehr Leben heraus',
     schatten: 'Jeder Schatten-Stapel weicht 9 % statt 7 % der Treffer aus',
     dunkelheit: 'Dunkelheit nimmt 9 % statt 7 % des gegnerischen Schadens',
-    licht: 'Licht heilt doppelt und löscht zwei Stapel Dunkelheit je Zug'
+    licht: 'Licht heilt doppelt und löscht zwei Stapel Dunkelheit je Zug',
+    donner: 'Die Entladung schlägt schon ab vier Stapeln statt ab sechs zu'
   };
   /* Eine Stelle, die zählt — Kampf und Anzeige dürfen nicht auseinanderlaufen.
      Es resoniert nur die STÄRKSTE Linie: sonst sammelt ein Trupp mit neun
@@ -243,6 +250,7 @@
       return amount;
     }
 
+    var entlaedt = 0;
     function applyStatus(target, key, stacks) {
       if (!target || !alive(target) || stacks <= 0) return;
       /* Bosse schütteln Erstarrung meist ab — sonst gewinnt Frost jeden
@@ -261,6 +269,20 @@
       if (key === 'schild') target.status.schild = Math.min(target.status.schild, target.maxHp * 0.6);
       log.push({ t: t, type: 'status', key: target.key, target: target.name, side: target.side,
                  status: key, stacks: Math.round(target.status[key]) });
+      /* Entladung: der Blitz springt auf die ganze Reihe des Trägers über. Das
+         Sperrflag verhindert, dass eine Entladung die nächste auslöst. */
+      var schwelle = DONNER_SCHWELLE - (gegen(target, 'donner') ? 2 : 0);
+      if (key === 'donner' && target.status.donner >= schwelle && !entlaedt) {
+        entlaedt = 1;
+        var ladung = target.status.donner;
+        target.status.donner = 0;
+        log.push({ t: t, type: 'entladung', key: target.key, unit: target.name,
+                   side: target.side, stapel: Math.round(ladung) });
+        living(target.side).forEach(function (u) {
+          deal(u, u.maxHp * DONNER_SCHADEN * ladung, 'Entladung', { pure: true });
+        });
+        entlaedt = 0;
+      }
     }
 
     function ctx(self, extra) {
@@ -344,6 +366,7 @@
          erste Barriere gelegt wird. */
       var r = res[side];
       mine.forEach(function (u) {
+        if (r.donner) u.donnerFrueh = 2;
         if (r.schatten) u.schattenPlus = 0.02;
         if (r.dunkelheit) u.dunkelPlus = 0.02;
         if (r.licht) u.lichtPlus = 1;
@@ -552,6 +575,7 @@
                   CHAOS_STREUUNG: CHAOS_STREUUNG, CHAOS_FEHLSCHLAG: CHAOS_FEHLSCHLAG,
                   VERWUNDBAR_PIERCE: VERWUNDBAR_PIERCE, BLUTUNG_PRO_STAPEL: BLUTUNG_PRO_STAPEL,
                   ENRAGE_CAP: ENRAGE_CAP,
+                  DONNER_SCHWELLE: DONNER_SCHWELLE, DONNER_SCHADEN: DONNER_SCHADEN,
                   SCHATTEN_PRO_STAPEL: SCHATTEN_PRO_STAPEL, SCHATTEN_MAX: SCHATTEN_MAX,
                   DUNKELHEIT_PRO_STAPEL: DUNKELHEIT_PRO_STAPEL, LICHT_HEILUNG: LICHT_HEILUNG,
                   RESONANZ_SCHWELLE: RESONANZ_SCHWELLE, resonanz: resonanz };

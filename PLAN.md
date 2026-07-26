@@ -137,6 +137,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 17 | Bruchpunkt-Prüfstand für Linien, dazu die vier Sturmwölfe | Auch defensive Linien werden endlich fair gemessen | ✅ 15 von 40 |
 | 18 | Linien für die fünf Echsenmenschen — die Hälfte des Rosters ist erreicht | Zwanzig Einheiten mit eigener Handschrift | ✅ 20 von 40 |
 | 19 | Schatten, Dunkelheit und göttliches Licht; Schattenwolf umgebaut | Ausweichen und gedämpfter Gegnerschaden — zwei neue Achsen | ✅ |
+| 20 | Donner mit Schwelle und Entladung; Ranga umgebaut | Aufladen statt ticken — der erste Zustand mit Schwellenwert | ✅ |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -822,6 +823,28 @@ Messung stand an der falschen Stelle*:
    sank nie, und die Heilung hatte nichts zu tun.
 
 Ergebnis `dev/balance.js 600`: 50 % frisch, 61 % voll; `GRUNDHAERTE` 0.97 → 1.00.
+
+### Phase 20 (2026-07-26): Donner
+
+Das vierte neue Element, und das einzige mit einer **Schwelle**: Donner bleibt
+liegen und tut nichts, bis sechs Stapel zusammenkommen. Dann entlädt er sich und
+trifft die **ganze Reihe** des Trägers für 1,2 % ihres maximalen Lebens je
+Stapel, und die Ladung beginnt von vorn. Gift und Brand ticken stetig,
+Verwundbar und Verderbnis wirken dauerhaft — Donner sammelt und schlägt zu. Das
+belohnt es, viele Gegner gleichzeitig aufzuladen. Die Resonanz senkt die Schwelle
+auf vier.
+
+**Ranga** ist von Frost auf Donner und Schatten umgebaut — Signatur „Schwarzer
+Blitz" lädt jetzt statt zu lähmen, alle sechzehn Linien neu. Damit trägt keine
+Signatur mehr Frost; es lebt in der Bibliothek (`frostkern`, `frostschneide`),
+im Aufstiegs-Pool und bei den Gegnern weiter. Die Frost-Tests ziehen ihren
+Träger jetzt von dort.
+
+Ein Detail, das beim Schreiben der Entladung auffiel: sie kann sich selbst
+auslösen — der Schaden tötet, `onDeath` legt neuen Donner an, und das ruft die
+nächste Entladung. Ein Sperrflag verhindert die Kette.
+
+Ergebnis `dev/balance.js 600`: 50 % frisch, 62 % voll; `GRUNDHAERTE` 1.00 → 1.02.
 
 Weitere offene Punkte:
 - Der Abstand zwischen Anfänger und Veteran ist auf 12 Punkte gewachsen

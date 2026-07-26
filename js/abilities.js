@@ -1057,8 +1057,10 @@
       'Gobwa erleidet 25 % weniger Schaden',
       function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.25); }),
 
-    /* ---- Rangas Linien: der Schwarze Blitz ---------------------------------
-       Der Sturmwolf-Lord. Sein Blitz springt weiter und lähmt, was er trifft.  */
+    /* ---- Rangas Linien: Donner und Schatten -------------------------------
+       Der Sturmwolf-Lord lädt seine Ziele auf, bis der Blitz in die ganze Reihe
+       fährt — und steht dabei selbst im Schatten. Frost bleibt der Bibliothek
+       und den Gegnern.                                                        */
 
     passiv('ranga_ang1', 'Blitzschlag', 'onHit', [], [],
       '+22 % Schaden auf jeden Treffer',
@@ -1066,48 +1068,44 @@
     passiv('ranga_ang2', 'Sturmgewalt', 'onHit', [], ['tempo'],
       '+4 % Schaden je Punkt Tempo über 30',
       function (c) { c.dmg *= 1 + Math.max(0, c.self.spd - 30) * 0.04; }),
-    passiv('ranga_ang3', 'Kettenblitz', 'onHit', ['flaeche'], [],
-      '35 % Chance, dass der Blitz für 55 % auf ein zweites Ziel überspringt',
-      chance(0.35, function (c) {
-        var f = c.foes().filter(function (x) { return x !== c.target; })[0];
-        if (f) c.deal(f, c.self.atk * 0.55, 'Kettenblitz');
-      })),
-    passiv('ranga_ang4', 'Gewitterfront', 'onHit', ['flaeche'], [],
-      '25 % Chance, zusätzlich alle anderen Gegner für 50 % zu treffen',
+    passiv('ranga_ang3', 'Geladene Klaue', 'onHit', [], ['donner'],
+      '+7 % Schaden je Donner-Stapel, den das Ziel schon trägt',
+      function (c) { c.dmg *= 1 + 0.07 * (c.target.status.donner || 0); }),
+    passiv('ranga_ang4', 'Gewitterfront', 'onHit', ['donner', 'flaeche'], [],
+      '25 % Chance, allen anderen Gegnern 2 Donner zu laden',
       chance(0.25, function (c) {
         c.foes().forEach(function (f) {
-          if (f !== c.target) c.deal(f, c.self.atk * 0.5, 'Gewitterfront');
+          if (f !== c.target) c.applyStatus(f, 'donner', 2);
         });
       })),
 
-    passiv('ranga_mec1', 'Statische Ladung', 'onHit', ['frost'], [],
-      '18 % Chance, das Ziel für einen Zug zu lähmen',
-      chance(0.18, function (c) { c.applyStatus(c.target, 'erstarrung', 1); })),
-    passiv('ranga_mec2', 'Überschlag', 'onHit', [], ['frost'],
-      '+50 % Schaden gegen gelähmte Ziele',
-      function (c) { if (c.target.status.erstarrung > 0) c.dmg *= 1.5; }),
-    passiv('ranga_mec3', 'Entladung', 'onKill', ['frost', 'flaeche'], [],
-      'Jeder erlegte Gegner lähmt alle übrigen mit 30 % Chance',
+    passiv('ranga_mec1', 'Statische Ladung', 'onHit', ['donner'], [],
+      'Jeder Treffer lädt 2 Donner — ab sechs Stapeln entlädt sich der Blitz in die ganze Reihe',
+      function (c) { c.applyStatus(c.target, 'donner', 2); }),
+    passiv('ranga_mec2', 'Überschlag', 'onHit', ['donner', 'flaeche'], [],
+      'Jeder Treffer lädt zusätzlich 1 Donner auf einem zweiten Gegner',
       function (c) {
-        c.foes().forEach(function (f) {
-          if (c.rng() < 0.3) c.applyStatus(f, 'erstarrung', 1);
-        });
+        var f = c.foes().filter(function (x) { return x !== c.target; })[0];
+        if (f) c.applyStatus(f, 'donner', 1);
       }),
-    passiv('ranga_mec4', 'Sturmherr', 'onTurnStart', ['frost'], [],
-      'In jedem Zug 22 % Chance, den vordersten Gegner zu lähmen',
-      chance(0.22, function (c) {
-        var f = c.foes()[0]; if (f) c.applyStatus(f, 'erstarrung', 1);
-      })),
+    passiv('ranga_mec3', 'Entladung', 'onKill', ['donner', 'flaeche'], [],
+      'Jeder erlegte Gegner lädt allen übrigen 3 Donner',
+      function (c) {
+        c.foes().forEach(function (f) { c.applyStatus(f, 'donner', 3); });
+      }),
+    passiv('ranga_mec4', 'Sturmherr', 'onTurnStart', ['donner', 'flaeche'], [],
+      'Lädt in jedem Zug allen Gegnern 1 Donner',
+      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'donner', 1); }); }),
 
     passiv('ranga_unt1', 'Sturmwind', 'onStart', ['tempo'], [],
       'Alle Verbündeten erhalten +12 % Tempo',
       function (c) { c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.12); }); }),
-    passiv('ranga_unt2', 'Leitblitz', 'onStart', [], ['frost'],
-      'Der ganze Trupp verursacht +30 % Schaden gegen gelähmte Ziele',
+    passiv('ranga_unt2', 'Leitblitz', 'onStart', ['donner'], [],
+      'Jeder Treffer des Trupps lädt 1 Donner',
       function (c) {
         c.allies().forEach(function (u) {
           c.addEffect(u, { hook: 'onHit', name: 'Leitblitz', fn: function (k) {
-            if (k.target.status.erstarrung > 0) k.dmg *= 1.3;
+            k.applyStatus(k.target, 'donner', 1);
           } });
         });
       }),
@@ -1116,12 +1114,13 @@
       function (c) {
         c.allies().forEach(function (u) { u.atk += 8; u.spd = Math.round(u.spd * 1.08); });
       }),
-    passiv('ranga_unt4', 'Auge des Sturms', 'onStart', ['frost'], [],
-      'Jeder Treffer des Trupps lähmt mit 12 % Chance',
+    passiv('ranga_unt4', 'Auge des Sturms', 'onStart', ['schatten'], ['donner'],
+      'Alle Verbündeten beginnen mit 3 Schatten und verursachen +5 % Schaden je Donner-Stapel am Ziel',
       function (c) {
         c.allies().forEach(function (u) {
+          c.applyStatus(u, 'schatten', 3);
           c.addEffect(u, { hook: 'onHit', name: 'Auge des Sturms', fn: function (k) {
-            if (k.rng() < 0.12) k.applyStatus(k.target, 'erstarrung', 1);
+            k.dmg *= 1 + 0.05 * (k.target.status.donner || 0);
           } });
         });
       }),
@@ -1129,19 +1128,17 @@
     passiv('ranga_def1', 'Windfell', 'onStart', ['tempo'], [],
       '+20 % Tempo und +3 Rüstung',
       function (c) { c.self.spd = Math.round(c.self.spd * 1.2); c.self.def += 3; }),
-    passiv('ranga_def2', 'Blitzreflexe', 'onDamaged', ['konter'], [],
-      '30 % Chance auf einen Gegenangriff mit 80 %',
-      chance(0.3, function (c) {
-        var f = c.foes()[0]; if (f) c.deal(f, c.self.atk * 0.8, 'Blitzreflexe');
-      })),
-    passiv('ranga_def3', 'Schattenschritt', 'onStart', [], [],
-      'Ranga erleidet 20 % weniger Schaden',
-      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.2); }),
-    passiv('ranga_def4', 'Herr der Stürme', 'onStart', ['tempo', 'schild'], [],
-      '+40 % Tempo und Schild 30',
+    passiv('ranga_def2', 'Blitzreflexe', 'onDamaged', ['konter', 'donner'], [],
+      'Wer ihn trifft, fängt sich 2 Donner ein',
+      function (c) { var f = c.foes()[0]; if (f) c.applyStatus(f, 'donner', 2); }),
+    passiv('ranga_def3', 'Schattenschritt', 'onStart', ['schatten'], [],
+      'Beginnt den Kampf mit 4 Schatten — jeder Stapel weicht Treffern ganz aus',
+      function (c) { c.applyStatus(c.self, 'schatten', 4); }),
+    passiv('ranga_def4', 'Herr der Stürme', 'onStart', ['tempo', 'schatten'], [],
+      '+40 % Tempo und 5 Schatten',
       function (c) {
         c.self.spd = Math.round(c.self.spd * 1.4);
-        c.applyStatus(c.self, 'schild', 30);
+        c.applyStatus(c.self, 'schatten', 5);
       }),
 
     /* ---- Sturmwolfs Linien: die Jagd ---------------------------------------
@@ -2213,15 +2210,15 @@
       }),
 
     /* --- Sturmwölfe --- */
-    aktiv('sig_ranga', 'Schwarzer Blitz', 2, ['flaeche', 'frost'],
-      '140 % Schaden, der für 60 % auf ein zweites Ziel überspringt. Der Blitzschlag lähmt dieses zweite Ziel zu 25 %.',
+    aktiv('sig_ranga', 'Schwarzer Blitz', 2, ['donner', 'schatten', 'flaeche'],
+      '140 % Schaden und 2 Donner, der für 60 % auf ein zweites Ziel überspringt und dort ' +
+      '1 Donner lädt. Ranga selbst hüllt sich dabei in 1 Schatten.',
       function (c) {
         c.attack(1.4);
+        c.applyStatus(c.target, 'donner', 2);
         var f = c.foes().filter(function (x) { return x !== c.target; })[0];
-        if (f) {
-          c.attack(0.6, f);
-          if (c.rng() < 0.25) c.applyStatus(f, 'erstarrung', 1);
-        }
+        if (f) { c.attack(0.6, f); c.applyStatus(f, 'donner', 1); }
+        c.applyStatus(c.self, 'schatten', 1);
       }),
     aktiv('sig_sturmwolf', 'Hetzbiss', 3, ['exekution'],
       '120 % Schaden auf das schwächste Ziel. Stirbt es dabei, folgt sofort ein zweiter Biss.',

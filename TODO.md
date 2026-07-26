@@ -92,6 +92,8 @@ Abgearbeitet in Phase 19:
       ausgeteilten Schaden), göttliches Licht (heilt, löscht Dunkelheit,
       trägt durch Schatten)
 - [x] Schattenwolf von Frost auf Schatten und Dunkelheit umgebaut
+- [x] Donnerelement: lädt auf, entlädt sich ab der Schwelle in die ganze Reihe
+- [x] Ranga von Frost auf Donner und Schatten umgebaut
 
 Offen:
 
@@ -125,7 +127,6 @@ Balance und Werkzeug:
 - Anfänger/Veteran-Abstand bei 12 Punkten (50 gegen 62 % Siege).
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
-- Mir fehlt noch das Donnerelement
 - Die Stärke von Items & relikten ist nicht sauber gebalanced. Manche items fühlen sich viel zu stark an dafür das sie ungewühnlich sind & mache legendary items fühlen sich zu schwach an.
 - Erste begegnung sollte immer ein kampf sein.
 - Relikt freischalten sollte schneller gehen
