@@ -45,3 +45,8 @@ Offen:
   macht. Pool 2 liegt sauber bei 61–65 %.
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
+- Chaos sollte standardmäßig das gegnerische Ziel debuffen & nicht buffen
+- Es sollte nicht Möglich sein, entwicklungsfähigkeiten(passive) auszulassen. Die infromation das diese den ganzen run anhalten ist unnötig
+- Einheiten belohnungen sollten auf Tags verteilt sein, und nicht ein rießieger wall auf text sein wenn man über die belohnung hovert so teilt sich die Infos auf jeweilige häppchen auf. Möchte ich wissen was untot heißt? da bekomme ich den "untoten" tooltip über den tag damit ich das kurz nachschauen kann.
+- Spielmechanik: Es soll ein aufbauen sein. D.h. initial habe ich die Wahl aus einer Festen kombi aus einer Einheit mit einem start Relikt. Aus vier solcher Kombinationen kann ich wählen. Dementsprechen sollten die ersten zwei / drei kämpfe leicher / weniger gegner sein. (erster kampf sollte ein 1vs 1 sein).
+- Spielmechanik: Nach jedem Kampf bekomme ich Magicule. Das rekrutieren von Einheiten kostet Magicule. Das erwerben von Relikten & Items kostet magicule. Alles kostet magicule. Geld ist eine duplette die wir nicht brauchen. 
