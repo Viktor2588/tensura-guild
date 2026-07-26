@@ -25,6 +25,8 @@ die Härte kommt aus den Regeln.
 
 **Ein Anfang aus vier.** Jeder ist ein Paar: eine Einheit und ein Relikt, das zu
 ihren Schlüsselwörtern passt. Mehr hast du nicht — der Rest wird erkämpft.
+Weder Einheit noch Relikt kommen doppelt vor, damit jede der vier Karten
+wirklich eine andere Richtung ist.
 
 Die ersten Knoten sind entsprechend gestaffelt: **der erste Kampf ist ein
 1 gegen 1**, die nächsten gehen gegen zwei, dann drei, und die Gegner sind dabei

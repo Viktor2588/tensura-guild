@@ -349,6 +349,9 @@
     var pool = unitPool(run).filter(function (u) { return u.cost <= 3; });
     var relPool = relicPool(run);
     var einheiten = waehle(rng, pool, 1, 4);
+    /* Kein Relikt zweimal: zwei Anfänge mit demselben Relikt sind zwei Mal
+       dieselbe halbe Entscheidung. Vergeben wird über alle vier hinweg. */
+    var vergeben = {};
     run.startwahl = {
       offers: einheiten.map(function (u) {
         /* Ein Relikt, das die Schlüsselwörter der Einheit trifft — sonst ist
@@ -359,12 +362,12 @@
           var ab = AB.get(pid);
           if (ab) kw = kw.concat(ab.keywords || [], ab.amplifies || []);
         });
-        var passend = relPool.filter(function (r) {
-          if (r.bedingung) return false;
+        var offen = relPool.filter(function (r) { return !r.bedingung && !vergeben[r.id]; });
+        var passend = offen.filter(function (r) {
           return (r.keywords || []).concat(r.amplifies || []).some(function (k) { return kw.indexOf(k) >= 0; });
         });
-        var offen = relPool.filter(function (r) { return !r.bedingung; });
         var r = waehle(rng, passend.length ? passend : offen, 1, 1)[0];
+        if (r) vergeben[r.id] = 1;
         return { unit: u.id, relic: r ? r.id : null };
       })
     };

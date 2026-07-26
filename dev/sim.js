@@ -241,6 +241,21 @@ ok(R.chooseStart(dRun, 0), 'die Wahl gelingt');
 ok(dRun.team.length === 1 && dRun.relics.length === 1 && dRun.phase === 'karte' && dRun.options,
    'danach steht eine Einheit mit einem Relikt auf der Karte');
 
+/* Kein Relikt und keine Einheit doppelt: sonst ist eine der vier Karten
+   strategisch dieselbe Entscheidung wie eine andere. */
+var dopplungR = 0, dopplungU = 0, ohneRelikt = 0;
+for (var ds2 = 0; ds2 < 400; ds2++) {
+  var probe = R.create(ds2, R.newMeta()).startwahl.offers;
+  var rel = probe.map(function (o) { return o.relic; });
+  var uni = probe.map(function (o) { return o.unit; });
+  if (rel.some(function (x) { return !x; })) ohneRelikt++;
+  rel.forEach(function (x, i) { if (rel.indexOf(x) !== i) dopplungR++; });
+  uni.forEach(function (x, i) { if (uni.indexOf(x) !== i) dopplungU++; });
+}
+ok(!dopplungR, 'kein Start-Relikt wird zweimal angeboten (' + dopplungR + ' Dopplungen in 400 Runs)');
+ok(!dopplungU, 'keine Start-Einheit wird zweimal angeboten (' + dopplungU + ')');
+ok(!ohneRelikt, 'jeder Anfang hat ein Relikt (' + ohneRelikt + ' ohne)');
+
 /* Aufbau statt Massenschlacht: der erste Kampf ist ein Duell. */
 function gegnerzahl(step) {
   var r = R.create(4242, R.newMeta());
