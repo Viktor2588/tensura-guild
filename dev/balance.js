@@ -108,7 +108,7 @@ function play(seed, voll) {
       }
     });
     // aufsteigen, sobald bezahlbar: vorderste Einheit zuerst
-    for (var j = 0; j < run.team.length && !run.wahl; j++) {
+    for (var j = 0; j < run.team.length && !run.wahl && !R.passivWahl(run); j++) {
       var m = run.team[j];
       if (R.rankCost(m) && run.magicules >= R.rankCost(m)) { R.rankUp(run, m.uid); break; }
     }
@@ -127,6 +127,20 @@ function play(seed, voll) {
       R.chooseStart(run, bs);
       continue;
     }
+    if (R.passivWahl(run)) {
+      /* Passive wählen, die zum bisherigen Build passt — sonst blockiert die
+         offene Wahl jeden weiteren Aufstieg. */
+      var pkw = teamKeywords(run), pw = R.passivWahl(run);
+      var pBest = 0, pScore = -1;
+      pw.offers.forEach(function (o, i) {
+        var ab = AB.get(o.id), sc = 1;
+        (ab.keywords || []).concat(ab.amplifies || [])
+          .forEach(function (k) { if (pkw[k]) sc += pkw[k].quellen + pkw[k].verstaerker; });
+        if (sc > pScore) { pScore = sc; pBest = i; }
+      });
+      R.choosePassive(run, pBest);
+      continue;
+    }
     if (run.wahl) {
       /* Fähigkeit wählen, die zum bisherigen Build passt. */
       var kw = teamKeywords(run);
@@ -142,7 +156,7 @@ function play(seed, voll) {
     if (run.phase === 'karte') {
       haushalten();
       if (STELLEN) aufstellen();
-      if (run.wahl) continue;
+      if (run.wahl || R.passivWahl(run)) continue;
       R.choose(run, route(run, rng));
       continue;
     }

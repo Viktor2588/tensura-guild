@@ -122,8 +122,17 @@
     if (d.hp < 1) d.hp = 1;
   }
   function member(id) {
-    return { uid: 'm' + (++uidSeq), id: id, rank: 0, items: [], actives: [], devoured: [] };
+    return { uid: 'm' + (++uidSeq), id: id, rank: 0, items: [], actives: [], devoured: [], passives: [] };
   }
+
+  /* Welche Passiven trägt das Mitglied? Einheiten mit eigenen Linien tragen
+     genau das, was der Spieler gewählt hat; alle anderen weiter die drei festen
+     aus data.js, die mit dem Rang aufschalten. */
+  function passivIds(m) {
+    if (AB.linien[m.id]) return (m.passives || []).slice();
+    return GD.unit(m.id).passives.slice(0, PASSIV_SLOTS[m.rank]);
+  }
+  function hatLinien(m) { return !!AB.linien[m.id]; }
 
   function itemSlots(m) { return ITEM_SLOTS[m.rank]; }
   function aktivSlots(m) { return AKTIV_SLOTS[m.rank]; }
@@ -156,8 +165,9 @@
       if (a) { d.actives.push(a); d.keywords = d.keywords.concat(a.keywords || []); }
     });
 
-    /* Passive: die ersten N der eigenen Liste, N = Rang. */
-    base.passives.slice(0, PASSIV_SLOTS[r]).forEach(function (id) {
+    /* Passive: bei Einheiten mit eigenen Linien die selbst gewählten, sonst die
+       ersten N der festen Liste, N = Rang. */
+    passivIds(m).forEach(function (id) {
       var p = AB.get(id);
       if (p) {
         d.effects.push(p);
@@ -192,7 +202,7 @@
     [base.signature].concat(m.actives).slice(0, AKTIV_SLOTS[m.rank]).forEach(function (id) {
       var a = AB.get(id); if (a) out.push(a);
     });
-    base.passives.slice(0, PASSIV_SLOTS[m.rank]).forEach(function (id) {
+    passivIds(m).forEach(function (id) {
       var p = AB.get(id); if (p) out.push(p);
     });
     m.devoured.slice(0, PRAEDATOR_SLOTS[m.rank]).forEach(function (eid) {
@@ -240,7 +250,8 @@
       return {
         m: m,
         basis: GD.unit(m.id),
-        rang: resolve({ uid: m.uid, id: m.id, rank: m.rank, items: [], actives: m.actives, devoured: [] }),
+        rang: resolve({ uid: m.uid, id: m.id, rank: m.rank, items: [], actives: m.actives,
+                        devoured: [], passives: m.passives }),
         aus: defs[i],
         kampf: kampf[i],
         resonanz: auf.resonanz.player
@@ -513,6 +524,7 @@
     }
     else if (run.bank.length < BANK_MAX) run.bank.push(m);
     else return false;
+    passivAngebot(run, m);
     return true;
   }
 
@@ -554,6 +566,7 @@
     run.magicules -= cost;
     m.rank++;
     run.chronik.push('Aufstieg: ' + GD.unit(m.id).name + ' auf Rang ' + rankName(m));
+    passivAngebot(run, m);
 
     /* Der neue aktive Slot will gefüllt werden — drei Angebote zur Wahl.
        Zwei davon liegen auf der Linie der Einheit selbst: was ihre Signatur und
@@ -590,6 +603,44 @@
   function skipActive(run) {
     if (!run.wahl) return false;
     run.wahl = null;
+    return true;
+  }
+
+  /* ---- Wählbare Passive ---------------------------------------------------
+     Einheiten mit eigenen Linien (AB.linien) bekommen bei der Anwerbung und bei
+     jedem Aufstieg vier Angebote — eines je Linie: Angriff, Mechanik,
+     Unterstützung, Defensive. Damit ist die Passive eine Entscheidung statt
+     einer Folge des Rangs.
+
+     Warteschlange statt Einzelfeld: der Startdraft wirbt drei Einheiten
+     hintereinander an, da liegen sofort mehrere Wahlen offen.                 */
+
+  function passivAngebot(run, m) {
+    if (!hatLinien(m)) return;
+    var stufe = (m.passives || []).length + 1;
+    var offers = AB.linienAngebot(m.id, stufe)
+      .filter(function (o) { return (m.passives || []).indexOf(o.id) < 0; });
+    if (!offers.length) return;
+    (run.pwahlen = run.pwahlen || []).push({ uid: m.uid, stufe: stufe, offers: offers });
+  }
+
+  function passivWahl(run) { return (run.pwahlen || [])[0] || null; }
+
+  function choosePassive(run, i) {
+    var w = passivWahl(run);
+    if (!w) return false;
+    var o = w.offers[i];
+    var m = find(run, w.uid);
+    if (!o || !m) return false;
+    m.passives = (m.passives || []).concat(o.id);
+    run.pwahlen.shift();
+    run.chronik.push('Passive: ' + GD.unit(m.id).name + ' wählt ' + AB.get(o.id).name);
+    return true;
+  }
+  /* Auch hier darf man verzichten — sonst ist eine schlechte Stufe ein Zwang. */
+  function skipPassive(run) {
+    if (!passivWahl(run)) return false;
+    run.pwahlen.shift();
     return true;
   }
 
@@ -828,6 +879,7 @@
       seed: run.seed, rngState: run.rngState, act: run.act, step: run.step, threat: run.threat,
       gold: run.gold, magicules: run.magicules, lives: run.lives, relics: run.relics,
       bag: run.bag || [], chronik: run.chronik, meta: run.meta, bosse: run.bosse,
+      pwahlen: run.pwahlen || [],
       team: run.team, bank: run.bank, uidSeq: uidSeq, startwahl: run.startwahl,
       pending: schlankesPending(run)
     });
@@ -840,6 +892,7 @@
       .forEach(function (k) { if (d[k] !== undefined) run[k] = d[k]; });
     uidSeq = Math.max(uidSeq, d.uidSeq || 0);
     run.pending = null; run.wahl = null;
+    run.pwahlen = d.pwahlen || [];
     run.startwahl = d.startwahl || null;
     if (run.startwahl) { run.phase = 'start'; return run; }
     if (d.pending) {
@@ -877,6 +930,8 @@
     create: create, newMeta: newMeta, resolve: resolve, member: member, abilities: abilities,
     choose: choose, advance: advance, takeReward: takeReward, devour: devour,
     rankUp: rankUp, chooseActive: chooseActive, skipActive: skipActive,
+    passivWahl: passivWahl, choosePassive: choosePassive, skipPassive: skipPassive,
+    passivIds: passivIds, hatLinien: hatLinien,
     chooseStart: chooseStart,
     rankName: rankName, rankCost: rankCost,
     BEDROHUNG: BEDROHUNG, bedrohung: bedrohung, bedrohungsFaktor: bedrohungsFaktor,

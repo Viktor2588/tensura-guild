@@ -29,6 +29,10 @@
   }
   function chance(p, fn) { return function (c) { if (c.rng() < p) fn(c); }; }
 
+  /* Entwicklungsstufen: C Oger, B Teufel, A Verdorbener Teufel, S Ultimativer
+     Teufel. Die Zahl der Chaos-Stapel ist die eine Stelle, an der das hängt. */
+  var CHAOS_JE_RANG = [1, 2, 3, 5];
+
   /* ---- Passive Bibliothek: geteilt, jede Einheit trägt drei davon --------- */
 
   var passives = [
@@ -122,8 +126,125 @@
       function (c) { c.heal(c.self, c.self.maxHp * 0.2, 'Trophäenjäger'); }),
 
     passiv('kriegsherz', 'Kampfgeist', 'onStart', [], [], '+5 Angriff, +3 Rüstung',
-      function (c) { c.self.atk += 5; c.self.def += 3; })
+      function (c) { c.self.atk += 5; c.self.def += 3; }),
+
+    /* ---- Shions Linien ----------------------------------------------------
+       Vier Linien, vier Stufen: Angriff (Chaos in Werte), Mechanik (das Chaos
+       selbst), Unterstützung (Antichaos für den Trupp), Defensive (Oger-Fleisch).
+       Beim Anwerben und bei jedem Aufstieg wählt der Spieler eine aus vier —
+       eine je Linie, auf der Stufe, die dem Rang entspricht.
+
+       Der Hook `onChaos` feuert, sobald Shion Chaos anlegt; `c.stapel` ist die
+       Menge NACH der Meisterschaft.                                           */
+
+    passiv('shion_ang1', 'Chaosrausch', 'onChaos', ['chaos'], [],
+      'Jeder angelegte Chaos-Stapel gibt Shion für den Rest des Kampfes +3 % Angriff und +2 % Tempo',
+      function (c) {
+        c.self.atk = Math.round(c.self.atk * (1 + 0.03 * c.stapel));
+        c.self.spd = Math.round(c.self.spd * (1 + 0.02 * c.stapel));
+      }),
+    passiv('shion_ang2', 'Wutspirale', 'onChaos', ['chaos'], [],
+      'Wie Chaosrausch, aber +5 % Angriff je Stapel — unter der Hälfte ihres Lebens +10 %',
+      function (c) {
+        var p = c.self.hp < c.self.maxHp * 0.5 ? 0.1 : 0.05;
+        c.self.atk = Math.round(c.self.atk * (1 + p * c.stapel));
+      }),
+    passiv('shion_ang3', 'Schlachtruf des Chaos', 'onChaos', ['chaos'], [],
+      'Jeder angelegte Chaos-Stapel gibt dem ganzen Trupp +2 % Angriff',
+      function (c) {
+        c.allies().forEach(function (u) { u.atk = Math.round(u.atk * (1 + 0.02 * c.stapel)); });
+      }),
+    passiv('shion_ang4', 'Verzerrter Titan', 'onHit', [], ['chaos'],
+      '+4 % Schaden je Chaos-Stapel, den das Ziel gerade trägt',
+      function (c) { c.dmg *= 1 + 0.04 * (c.target.status.chaos || 0); }),
+
+    passiv('shion_mec1', 'Chaosmeisterschaft', 'onStart', [], ['chaos'],
+      'Shion legt 50 % mehr Chaos-Stapel an, als die Fähigkeit angibt',
+      function (c) { c.self.chaosmeister = Math.max(c.self.chaosmeister || 1, 1.5); }),
+    passiv('shion_mec2', 'Instabile Klinge', 'onChaos', ['chaos'], [],
+      'Dieselbe Menge Chaos geht zusätzlich auf einen zweiten Gegner',
+      function (c) {
+        var f = c.foes().filter(function (x) { return x !== c.ziel; })[0];
+        if (f) c.applyStatus(f, 'chaos', c.stapel);
+      }),
+    /* Der Verstärker gehört dem ganzen Trupp, nicht nur Shion: gemessen war die
+       Mechanik-Linie als Einzelbonus exakt so stark wie gar keine Passive. */
+    passiv('shion_mec3', 'Entropiebruch', 'onStart', [], ['chaos'],
+      'Der ganze Trupp verursacht +6 % Schaden je Chaos-Stapel, den das Ziel trägt',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Entropiebruch', fn: function (k) {
+            k.dmg *= 1 + 0.06 * (k.target.status.chaos || 0);
+          } });
+        });
+      }),
+    passiv('shion_mec4', 'Gesetzlosigkeit', 'onStart', ['chaos'], [],
+      'Chaos, das Shion anlegt, baut sich nicht mehr ab — es bleibt bis zum Ende des Kampfes liegen',
+      function (c) { c.self.gesetzlos = 1; }),
+
+    passiv('shion_unt1', 'Realitätswarp', 'onStart', ['chaos'], [],
+      'Jeder von Shion angelegte Chaos-Stapel legt dem eigenen Trupp ebenso viel Antichaos an — dieselbe Streuung, aber nur nach oben',
+      function (c) { c.self.antichaosWarp = Math.max(c.self.antichaosWarp || 0, 1); }),
+    passiv('shion_unt2', 'Ordnung aus Unordnung', 'onChaos', ['chaos', 'heilung'], [],
+      'Jeder angelegte Stapel gibt allen Verbündeten +1 Regeneration',
+      function (c) { c.allies().forEach(function (u) { u.regen += Math.max(1, Math.round(c.stapel)); }); }),
+    passiv('shion_unt3', 'Geteilte Wut', 'onStart', ['chaos'], [],
+      'Der Realitätswarp legt doppelt so viel Antichaos an',
+      function (c) { c.self.antichaosWarp = (c.self.antichaosWarp || 0) + 1; }),
+    passiv('shion_unt4', 'Wille der Herrin', 'onStart', ['chaos', 'schild'], [],
+      'Der ganze Trupp startet mit 3 Antichaos und Schild 30',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.applyStatus(u, 'antichaos', 3);
+          c.applyStatus(u, 'schild', 30);
+        });
+      }),
+
+    passiv('shion_def1', 'Ogerschild', 'onStart', [], [],
+      '+20 % maximales Leben, je Oger im Trupp weitere +2 %',
+      function (c) {
+        var oger = c.allies().filter(function (u) { return u.tags.indexOf('oger') >= 0; }).length;
+        var add = Math.round(c.self.maxHp * (0.2 + 0.02 * oger));
+        c.self.maxHp += add; c.self.hp += add;
+      }),
+    passiv('shion_def2', 'Fleisch des Kriegers', 'onStart', ['schild'], [],
+      '+6 Rüstung und Schild 40',
+      function (c) { c.self.def += 6; c.applyStatus(c.self, 'schild', 40); }),
+    passiv('shion_def3', 'Unsterblicher Zorn', 'onDeath', ['chaos', 'heilung'], [],
+      'Shion steht einmal mit 35 % Leben wieder auf und legt allen Gegnern 3 Chaos an',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.35);
+        c.foes().forEach(function (f) { c.applyStatus(f, 'chaos', 3); });
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      }),
+    passiv('shion_def4', 'Chaosbollwerk', 'onStart', [], [],
+      'Kein einzelner Treffer nimmt Shion mehr als 12 % ihres maximalen Lebens',
+      function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.12); })
   ];
+
+  /* Vier Linien à vier Stufen. Die Stufe entspricht dem Rang: bei der Anwerbung
+     Stufe 1, dann je Aufstieg die nächste. Wer hier nicht steht, bekommt weiter
+     die drei festen Passiven aus data.js. */
+  var linien = {
+    shion: {
+      angriff: ['shion_ang1', 'shion_ang2', 'shion_ang3', 'shion_ang4'],
+      mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4'],
+      unterstuetzung: ['shion_unt1', 'shion_unt2', 'shion_unt3', 'shion_unt4'],
+      defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4']
+    }
+  };
+  var LINIEN_NAME = { angriff: 'Angriff', mechanik: 'Chaos-Mechanik',
+                      unterstuetzung: 'Unterstützung', defensive: 'Defensive' };
+
+  /* Die vier Angebote einer Stufe — eines je Linie. */
+  function linienAngebot(unitId, stufe) {
+    var l = linien[unitId];
+    if (!l) return [];
+    return Object.keys(l).map(function (k) {
+      return { linie: k, linieName: LINIEN_NAME[k], id: l[k][Math.min(stufe, l[k].length) - 1] };
+    });
+  }
 
   /* ---- Aktive Fähigkeiten zur Auswahl beim Aufstieg ----------------------- */
 
@@ -238,8 +359,24 @@
       function (c) { c.attack(c.target.status.brand > 0 ? 2 : 0.9); c.applyStatus(c.target, 'brand', 2); }),
     aktiv('kopfgeld', 'Kopfgeld', 4, ['exekution'],
       '130 % Schaden. Stirbt das Ziel, ist die Fähigkeit sofort wieder bereit.',
-      function (c) { c.attack(1.3); if (c.target.hp <= 0) c.aktive.bereit = 0; })
+      function (c) { c.attack(1.3); if (c.target.hp <= 0) c.aktive.bereit = 0; }),
+
+    /* Chaos im Pool: ohne diese drei hätte die Linie nur Shions Signatur, und
+       ihr Aufstiegsangebot fiele auf beliebige Fähigkeiten zurück. */
+    aktiv('wirrsal', 'Wirrsal', 3, ['chaos'], '110 % Schaden und 2 Chaos',
+      function (c) { c.attack(1.1); c.chaos(c.target, 2); }),
+    aktiv('entropiewelle', 'Entropiewelle', 5, ['chaos', 'flaeche'],
+      '60 % Schaden und je 2 Chaos auf alle Gegner',
+      function (c) { c.foes().forEach(function (f) { c.attack(0.6, f); c.chaos(f, 2); }); },
+      mehrereGegner),
+    aktiv('gesetzlos', 'Gesetzloser Schnitt', 4, [], null,
+      function (c) { c.attack(1.2 + 0.15 * (c.target.status.chaos || 0)); },
+      function (c) { return (c.target.status.chaos || 0) > 0; })
   ];
+  /* Verstärker-Angabe getrennt, weil `aktiv()` sie nicht kennt. */
+  pool[pool.length - 1].amplifies = ['chaos'];
+  pool[pool.length - 1].text = '120 % Schaden, plus 15 % je Chaos-Stapel auf dem Ziel. ' +
+    'Wartet, bis überhaupt Chaos liegt.';
 
   /* ---- Signaturen: genau eine je Einheit, nicht im Pool -------------------
      Jede hat zwei Teile: eine Grundwirkung und eine Bedingung, die sich lohnt.
@@ -303,11 +440,15 @@
           });
         }
       }),
-    aktiv('sig_shion', 'Chaosbrecher', 4, [],
-      '250 % Schaden, trifft aber nur zu 75 %. Ein Fehlschlag gibt Shion dauerhaft +25 % Angriff — sie wird wütend.',
+    /* Shions Signatur skaliert nicht über eine Zahl, sondern über den Rang:
+       Oger → Teufel → Verdorbener Teufel → Ultimativer Teufel. */
+    aktiv('sig_shion', 'Chaosschlag', 3, ['chaos'],
+      '160 % Schaden und legt Chaos an — 1 Stapel auf Rang C, 2 auf B, 3 auf A, 5 auf S. ' +
+      'Jeder Stapel würfelt Angriff, Rüstung und Tempo des Ziels in jeder Runde neu aus ' +
+      'und lässt seine Fähigkeiten zu 5 % je Stapel verpuffen.',
       function (c) {
-        if (c.rng() < 0.75) c.attack(2.5);
-        else { c.attack(0.2); c.self.atk = Math.round(c.self.atk * 1.25); }
+        c.attack(1.6);
+        c.chaos(c.target, CHAOS_JE_RANG[c.self.rank || 0]);
       }),
     aktiv('sig_souei', 'Stahlfaden', 3, ['frost'],
       'Drei Angriffe mit je 70 %. Der letzte fesselt das Ziel zu 40 % und lässt es aussetzen.',
@@ -580,7 +721,13 @@
     giftzahn: 3, aschehaut: 3, konterstoss: 3, lebensraub: 3, bannerherz: 3,
     zaeh: 3, jagdruf: 3, seelenband: 3,
     fluchweber: 4, frostschneide: 4, scharfrichter: 4, panzerbrecher: 4, kettenschlag: 4,
-    wiederkehr: 5
+    wiederkehr: 5,
+    wirrsal: 2, entropiewelle: 4, gesetzlos: 3,
+    /* Shions Linien: die Stufe ist die Raritaet — Stufe 1 ungewoehnlich, Stufe 4 legendaer. */
+    shion_ang1: 2, shion_mec1: 2, shion_unt1: 2, shion_def1: 2,
+    shion_ang2: 3, shion_mec2: 3, shion_unt2: 3, shion_def2: 3,
+    shion_ang3: 4, shion_mec3: 4, shion_unt3: 4, shion_def3: 4,
+    shion_ang4: 5, shion_mec4: 5, shion_unt4: 5, shion_def4: 5
   };
 
   var RARITAET_NAME = ['', 'üblich', 'ungewöhnlich', 'selten', 'episch', 'legendär'];
@@ -597,6 +744,8 @@
 
   root.Abilities = {
     passives: passives, pool: pool, signatures: signatures, alle: alle,
+    linien: linien, LINIEN_NAME: LINIEN_NAME, linienAngebot: linienAngebot,
+    CHAOS_JE_RANG: CHAOS_JE_RANG,
     get: byId,
     RARITAET_NAME: RARITAET_NAME, RARITAET_GEWICHT: RARITAET_GEWICHT,
     rarName: function (r) { return RARITAET_NAME[r] || ''; },

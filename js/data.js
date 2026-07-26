@@ -66,7 +66,9 @@
       brand: 'Verursacht 2 Schaden je Stapel pro Zug des Ziels und HALBIERT jede Heilung an ihm. Baut sich um 1 pro Zug ab. Höchstens 8 Stapel.',
       erstarrung: 'Das Ziel setzt seinen nächsten Zug komplett aus. Stapelt nicht: ein Zug, mehr nicht. Bosse schütteln Erstarrung zu 60 % ab.',
       verderbnis: 'Der Fluch: das Ziel erleidet +10 % Schaden je Stapel, aus jeder Quelle. Baut sich um 1 pro Zug ab. Höchstens 5 Stapel (also +50 %).',
-      schild: 'Fängt Schaden ab, bevor Leben verloren geht, und baut sich NICHT von selbst ab. Höchstens 60 % des maximalen Lebens. Gift und Brand gehen hindurch.'
+      schild: 'Fängt Schaden ab, bevor Leben verloren geht, und baut sich NICHT von selbst ab. Höchstens 60 % des maximalen Lebens. Gift und Brand gehen hindurch.',
+      chaos: 'Unberechenbarkeit statt Schaden: Wer Chaos trägt, würfelt zu Beginn jedes eigenen Zuges Angriff, Rüstung und Tempo neu aus — je Stapel um bis zu 6 % nach oben ODER unten. Dazu verpufft jede aktive Fähigkeit mit 5 % Chance je Stapel und ist trotzdem abgeklungen. Baut sich um 1 pro Zug ab, höchstens 10 Stapel.',
+      antichaos: 'Die invertierte Seite des Chaos: dieselbe Streuung, aber nur nach oben. Je Stapel bis zu 6 % mehr Angriff, Rüstung und Tempo, neu gewürfelt in jedem eigenen Zug, und kein Fehlschlag. Baut sich um 1 pro Zug ab, höchstens 10 Stapel.'
     },
     keywords: {
       gift: 'Schaden über Zeit, der sich stapelt. Stark gegen Gegner mit viel Leben und Rüstung.',
@@ -78,7 +80,8 @@
       konter: 'Schaden zurück an den Angreifer. Skaliert mit der Zahl der Treffer, die man einsteckt.',
       exekution: 'Quellen sind Fähigkeiten, die gezielt auf schwache Ziele gehen; Verstärker schlagen extra hart gegen Angeschlagene zu. Zusammen räumen sie ab, sobald der erste Gegner wackelt.',
       flaeche: 'Trifft mehrere Gegner gleichzeitig. Stark gegen Gruppen, schwach gegen Bosse.',
-      tempo: 'Mehr Züge. Jeder zusätzliche Zug ist ein zusätzlicher Angriff und eine schnellere Abklingzeit.'
+      tempo: 'Mehr Züge. Jeder zusätzliche Zug ist ein zusätzlicher Angriff und eine schnellere Abklingzeit.',
+      chaos: 'Streuung statt Schaden. Quellen legen dem Gegner Chaos an — schwankende Werte und verpuffende Fähigkeiten. Verstärker schlagen härter zu, je mehr Stapel liegen. Shions Linie, aber der Trupp kann sie mittragen.'
     },
     raritaeten: {
       1: 'Üblich. Grundsolide Werte ohne Eigenheit — das Rückgrat der ersten Akte.',

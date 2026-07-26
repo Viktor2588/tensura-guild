@@ -26,7 +26,8 @@ Die einzige Entscheidung im Kampf ist die, die **vorher** getroffen wurde. Das
 zwingt die ganze Spieltiefe in Roster/Synergie/Ausrüstung — genau da, wo der
 Wiederspielwert herkommt.
 
-Ein Run: 3 Akte à ~8 Knoten, 25–35 Minuten.
+Ein Run: 2 Akte à 8 Knoten, je ein Boss aus seinem Pool. Die Gegner laufen
+weiter über fünf Inhaltsstufen — die steigen innerhalb des Akts mit dem Schritt.
 
 ## 2. Fähigkeits-System (das Herzstück)
 
@@ -63,6 +64,12 @@ an (*„je Gift-Fähigkeit im Trupp +7 % Angriff"*).
 Fähigkeiten, Ausrüstung, Relikte zusammengezählt — schalten einen Trupp-Bonus
 frei (`Combat.RESONANZ`). Es resoniert nur die stärkste Linie, sonst sammelt ein
 Trupp mit neun Relikten alle Boni nebenbei ein. Gilt für beide Seiten.
+
+**Wählbare Passive.** Einheiten mit eigenen Linien (`AB.linien`) bekommen bei
+der Anwerbung und bei jedem Aufstieg vier Angebote — eines je Linie: Werte-
+Angriff, eigene Mechanik, Unterstützung, Defensive. Vier Linien à vier Stufen,
+sechzehn Passive je Einheit. Wer keine Linien hat, behält die drei festen aus
+`data.js`. Shion ist die Vorlage; die übrigen 39 Einheiten sind offen.
 
 **Prädator** — nach einem Sieg darf *ein* Gegner verschlungen werden: seine
 Fähigkeit wandert dauerhaft in eine Einheit. Prädator-Slots gibt es ab Rang B.
@@ -110,7 +117,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 4 | Content: 40 Einheiten mit eigener Signatur, 31 Pool-Aktive, 27 Passive, 37 Relikte, 68 Gegner, 5 Bosse, 5 Akte | Pool trägt 10 Runs ohne Wiederholungsgefühl | ✅ |
 | 5 | `dev/balance.js`: Winrate pro Build, tote & dominante Kombos markieren | Kein Build unter 25 % / über 75 % Winrate | ⚠️ siehe unten |
 | 6 | Politur: Kampf-Animation, Meta-Freischaltungen, Save/Resume | — | ✅ |
-| 7 | TODO.md: zwei Akte mit Boss-Pools, Debug-Übersicht, Chaos-Mechanik und wählbare Passive je Einheit | Shion spielt sich sichtbar anders als über Werte allein | [~] in Bearbeitung |
+| 7 | TODO.md: zwei Akte mit Boss-Pools, Debug-Übersicht, Chaos-Mechanik und wählbare Passive je Einheit | Shion spielt sich sichtbar anders als über Werte allein | ✅ Shion, 39 Einheiten offen |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -297,9 +304,75 @@ Knoten des Akts mit ihren Wahlmöglichkeiten, aktueller Position und dem Boss am
 Ende. Und die Aufstellung geht in zwei Tipps (erste Einheit, zweite Einheit,
 getauscht) statt mit vier Pfeilklicks; `Run.swap` dazu.
 
+### Phase 7 (2026-07-26): zwei Akte, Chaos, wählbare Passive
+
+Vier Punkte aus `TODO.md`, alle gemessen.
+
+1. **Zwei Akte statt fünf.** `AKTE = 2`, aber die fünf Inhaltsstufen bleiben —
+   sie steigen jetzt innerhalb des Akts mit dem Schritt (`Run.inhaltsStufe`,
+   Tabelle `STUFEN`). Ohne diese Trennung wären drei Fünftel aller Gegner,
+   Ereignisse und Elite-Begegnungen tot gewesen. Bosse treten allein an, gezogen
+   aus zwei Pools; `hpMult` an der Begegnung ersetzt das weggefallene Gefolge,
+   ohne den Angriff mitzuverdreifachen.
+
+   Der eigentliche Aufwand war wieder die Kalibrierung: 16 Knoten mit dem
+   Einkommen für 40 ergaben **0 % Siege**. Ein Knopf statt dreißig nachgezogener
+   Zahlen — `WACHSTUM` multipliziert Gold und Magicule. Gemessen 2,5 → 3 %,
+   4 → 21 %, 6 → 44 %, 8 → 58 %; bei **6,5** stehen 49 % Siege und 10,4
+   Rangstufen, also fast genau die Kurve der alten Fünf-Akt-Fassung (9,5).
+
+2. **Debug-Übersicht** (🔬 über dem Trupp). Vier Zwischenstände je Wert: Basis →
+   Rang → Ausrüstung → Kampf, mit Delta je Zeile, dazu Schild, Regeneration,
+   Lebensraub, Heil- und Schildfaktor, Durchdringung, Fähigkeiten und
+   Schlüsselwörter. Die letzte Spalte kommt aus `combat.js` selbst
+   (`simulate(..., { nurAufbau: true })` gibt die aufgebauten Einheiten zurück),
+   nicht aus einer Zweitrechnung — sonst behauptet die Anzeige irgendwann etwas
+   anderes als der Kampf.
+
+3. **Chaos.** Kein Schaden über Zeit, sondern Unberechenbarkeit: Angriff,
+   Rüstung und Tempo des Trägers werden zu Beginn jedes eigenen Zuges neu
+   ausgewürfelt (±6 % je Stapel), aktive Fähigkeiten verpuffen mit 5 % je Stapel.
+   `antichaos` ist dieselbe Mechanik nach oben. Shions Signatur legt Stapel nach
+   Entwicklungsstufe an: C 1, B 2, A 3, S 5 (`AB.CHAOS_JE_RANG`).
+
+4. **Wählbare Passive.** `AB.linien` hält je Einheit vier Linien à vier Stufen —
+   Werte-Angriff, eigene Mechanik, Unterstützung, Defensive. Beim Anwerben und
+   bei jedem Aufstieg wählt der Spieler eine aus vier; die Wahlen liegen in einer
+   Warteschlange (`run.pwahlen`), weil der Startdraft drei Einheiten hintereinander
+   anwirbt. Einheiten ohne Linien behalten die drei festen Passiven.
+
+Gemessen an einem festen Trupp gegen Stufe-3-Begegnungen (800 Kämpfe je Zeile,
+Restleben als das feinere Maß):
+
+| Shion Rang S mit | Siege | Restleben |
+|---|---|---|
+| ohne Passive | 53 % | 23 % |
+| Mechanik 3+4 | 57 % | 26 % |
+| Angriff 1+2 / Mechanik 1+2 | 61 % | 27–28 % |
+| Defensive 1+2 | 67 % | 37 % |
+| Angriff 3+4 | 69 % | 34 % |
+| Unterstützung 1+2 | 73 % | 42 % |
+| Defensive 3+4 | 76 % | 48 % |
+| Unterstützung 3+4 | 80 % | 54 % |
+| eine je Linie gemischt | **85 %** | 54 % |
+| viermal Mechanik | 68 % | 33 % |
+
+Zwei Befunde daraus, beide eingearbeitet: die Mechanik-Linie war in der ersten
+Fassung **exakt so stark wie gar keine Passive** (53 %) — ein Verstärker, der nur
+Shion selbst gilt, verschwindet in einem Trupp aus fünf. Entropiebruch hängt
+jetzt am ganzen Trupp, und Kettenreaktion (zu situativ) wurde zu Gesetzlosigkeit:
+Chaos baut sich nicht mehr ab. Und: **Mischen schlägt Durchziehen** (85 gegen
+68 %) — genau die Entscheidung, die vier Linien haben sollen.
+
+Ergebnis `dev/balance.js 400`: 49 % Siege frisch, 52 % mit allem
+Freigeschalteten, Builds zwischen 44 und 63 %.
+
 Weitere offene Punkte:
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
+- 39 Einheiten haben noch keine eigenen Linien; das System steht, der Inhalt
+  fehlt. Siehe `TODO.md`.
+- Boss-Pool 2 hat nur zwei Einträge — jeder zweite Run endet gegen denselben.
 
 ## 5. Risiken
 

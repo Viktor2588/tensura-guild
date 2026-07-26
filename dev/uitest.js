@@ -83,6 +83,7 @@ ok($$('.debugbox table.dbg')[0].rows.length === 5,
    'jede Tabelle hat Kopf plus Basis, Rang, Ausrüstung und Kampf');
 klick($('.dbg-schalter'));
 ok(!$('.debugbox'), 'ein zweiter Klick schaltet sie wieder aus');
+
 ok(!$('.aufstellung .platz.gewaehlt'), 'nach dem Tausch ist nichts mehr ausgewählt');
 
 /* ----------------------------------------------------------------- HUD */
@@ -217,6 +218,23 @@ ok(win.localStorage.getItem('tensura-guild-v2'), 'der Run wird gespeichert');
 var gespeichert = JSON.parse(win.localStorage.getItem('tensura-guild-v2'));
 ok(gespeichert.team.length === run.team.length, 'der Trupp steckt im Speicherstand');
 ok(gespeichert.team[0].rank === run.team[0].rank, 'der Rang überlebt das Speichern');
+
+/* Wählbare Passive: vier Karten, eine je Linie. Shion wird angeworben, damit
+   der Fall auch dann greift, wenn der Startdraft sie nicht angeboten hat. */
+head('Wählbare Passive');
+if (win.Run.freieArt(run, 'oger')) win.Run.addUnit(run, 'shion');
+else { win.Run.entlassen(run, run.team.filter(function (m) {
+  return win.GameData.unit(m.id).art === 'oger'; })[0].uid);
+  win.Run.addUnit(run, 'shion'); }
+win.UI.render();
+var pkarten = $$('#wahl .karte');
+ok(pkarten.length === 4, 'beim Anwerben stehen vier Passive zur Wahl');
+ok(pkarten.every(function (k) { return k.querySelector('.linie'); }),
+   'jede Karte nennt ihre Linie');
+var shionM = run.team.filter(function (m) { return m.id === 'shion'; })[0];
+klick(pkarten[0]);
+ok(shionM.passives.length === 1 && !$('#wahl .karte'),
+   'der Klick wählt die Passive und schließt die Wahl');
 
 console.log('\n' + pass + '/' + (pass + fail) + ' ok');
 process.exit(fail ? 1 : 0);

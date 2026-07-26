@@ -48,7 +48,7 @@ ok(GD.units.every(function (u) { return GD.ARTEN.indexOf(u.art) >= 0; }), 'jede 
 ok(GD.units.concat(EN.all).every(function (u) {
   return u.tags.filter(function (t) { return C.ROLES.indexOf(t) >= 0; }).length === 1;
 }), 'jede Einheit hat genau eine Rolle');
-var HOOKS = ['onStart', 'onTurnStart', 'onHit', 'onDamaged', 'onKill', 'onDeath', 'onAllyDeath'];
+var HOOKS = ['onStart', 'onTurnStart', 'onHit', 'onDamaged', 'onKill', 'onDeath', 'onAllyDeath', 'onChaos'];
 ok(AB.passives.every(function (p) { return HOOKS.indexOf(p.hook) >= 0; }), 'jede Passive hängt an einem bekannten Hook');
 ok(AB.pool.concat(AB.signatures).every(function (a) { return a.cd >= 1 && a.cd <= 6; }), 'Abklingzeiten liegen zwischen 1 und 6');
 ok(AB.alle.every(function (a) { return a.id && a.name && a.text && typeof a.fn === 'function'; }),
@@ -711,6 +711,106 @@ GD.items.forEach(function (it) {
   try { C.simulate([R.resolve(m)], foes, 7); } catch (e) { kaputtI.push(it.id + ': ' + e.message); }
 });
 ok(!kaputtI.length, 'jede Ausrüstung läuft fehlerfrei' + (kaputtI.length ? ' — ' + kaputtI.join(' | ') : ''));
+
+/* --------------------------------------------- Chaos und Shions Linien */
+head('Chaos');
+
+function shion(rank, passives) {
+  var m = R.member('shion');
+  m.rank = rank; m.passives = passives || [];
+  return R.resolve(m);
+}
+/* Ein Sandsack, der nichts tut: so misst man die Wirkung und nicht den Kampf. */
+function sandsack(hp, extra) {
+  var d = { id: 'sandsack', name: 'Sandsack', tags: ['bestie', 'front'],
+            hp: hp || 4000, atk: 1, def: 0, spd: 12, actives: [], effects: [], keywords: [] };
+  for (var k in (extra || {})) d[k] = extra[k];
+  return d;
+}
+function stapelNach(rank) {
+  var log = C.simulate([shion(rank)], [sandsack()], 5).log;
+  var chaos = log.filter(function (l) { return l.type === 'status' && l.status === 'chaos'; });
+  return chaos.length ? chaos[0].stacks : 0;
+}
+ok(stapelNach(0) === AB.CHAOS_JE_RANG[0] && stapelNach(3) === AB.CHAOS_JE_RANG[3],
+   'Chaosschlag legt Stapel nach Rang an: C ' + stapelNach(0) + ', S ' + stapelNach(3));
+ok(stapelNach(3) > stapelNach(0), 'die Entwicklungsstufe ist an den Stapeln ablesbar');
+
+var chaosLog = C.simulate([shion(3)], [sandsack()], 5).log
+  .filter(function (l) { return l.type === 'chaos'; });
+ok(chaosLog.length > 3, 'der Träger würfelt seine Werte in jeder Runde neu (' + chaosLog.length + ' Würfe)');
+ok(chaosLog.some(function (l) { return l.atk !== chaosLog[0].atk; }),
+   'und der Wurf fällt nicht jedes Mal gleich aus');
+ok(chaosLog.every(function (l) { return l.atk > 0 && l.atk < 200; }),
+   'die Streuung bleibt in einem lesbaren Rahmen');
+
+/* Fehlschlag: ein Gegner mit vollem Chaos verliert Fähigkeiten. */
+var mitAktive = sandsack(9000, { actives: [AB.get('wuchtschlag')], spd: 30 });
+var chaosOpfer = C.simulate([shion(3, ['shion_mec1'])], [mitAktive], 9).log;
+ok(chaosOpfer.some(function (l) { return l.type === 'fehlschlag'; }),
+   'unter Chaos verpuffen aktive Fähigkeiten');
+
+/* Meisterschaft: 50 % mehr Stapel aus derselben Fähigkeit. */
+function ersterStapel(passives) {
+  var l = C.simulate([shion(3, passives)], [sandsack()], 5).log
+    .filter(function (x) { return x.type === 'status' && x.status === 'chaos'; });
+  return l.length ? l[0].stacks : 0;
+}
+ok(ersterStapel(['shion_mec1']) > ersterStapel([]),
+   'Chaosmeisterschaft legt mehr Stapel an (' + ersterStapel([]) + ' → ' + ersterStapel(['shion_mec1']) + ')');
+
+/* Realitätswarp: dieselbe Menge als Antichaos auf den eigenen Trupp. */
+var warp = C.simulate([shion(3, ['shion_unt1'])], [sandsack()], 5).log;
+ok(warp.some(function (l) { return l.type === 'status' && l.status === 'antichaos'; }),
+   'der Realitätswarp legt dem eigenen Trupp Antichaos an');
+ok(!C.simulate([shion(3)], [sandsack()], 5).log
+    .some(function (l) { return l.type === 'status' && l.status === 'antichaos'; }),
+   'ohne den Realitätswarp gibt es kein Antichaos');
+
+/* Ogerschild wächst mit der Zahl der Oger im Trupp. */
+function shionHp(mit) {
+  var team = [shion(0, ['shion_def1'])];
+  if (mit) team.push(R.resolve(R.member('benimaru')));
+  return C.simulate(team, [sandsack()], 3, { nurAufbau: true }).einheiten[0].maxHp;
+}
+ok(shionHp(true) > shionHp(false),
+   'Ogerschild wird mit jedem weiteren Oger stärker (' + shionHp(false) + ' → ' + shionHp(true) + ')');
+
+/* Chaosbollwerk deckelt jeden einzelnen Treffer. */
+var brecher = sandsack(9000, { atk: 400, spd: 40 });
+function haerteste(passives) {
+  return C.simulate([shion(0, passives)], [brecher], 12).log
+    .filter(function (l) { return l.type === 'hit' && l.side === 'player'; })
+    .reduce(function (a, l) { return Math.max(a, l.dmg); }, 0);
+}
+ok(haerteste(['shion_def4']) < haerteste([]),
+   'Chaosbollwerk deckelt den härtesten Treffer (' + haerteste([]) + ' → ' + haerteste(['shion_def4']) + ')');
+
+head('Wählbare Passive');
+var pRun = fertigerRun(31337);
+pRun.team = []; pRun.bank = []; pRun.pwahlen = [];
+ok(R.addUnit(pRun, 'shion'), 'Shion lässt sich anwerben');
+var pw = R.passivWahl(pRun);
+ok(pw && pw.offers.length === 4, 'beim Anwerben liegen vier Passive zur Wahl');
+ok(Object.keys(AB.LINIEN_NAME).every(function (l) {
+  return pw.offers.some(function (o) { return o.linie === l; });
+}), 'je eine aus Angriff, Mechanik, Unterstützung und Defensive');
+ok(pw.offers.every(function (o) { return AB.linien.shion[o.linie][0] === o.id; }),
+   'auf Stufe 1 wird die erste Stufe jeder Linie angeboten');
+var shionM = pRun.team[0];
+R.choosePassive(pRun, 0);
+ok(shionM.passives.length === 1 && !R.passivWahl(pRun), 'die Wahl landet an der Einheit');
+ok(R.resolve(shionM).effects.some(function (e) { return e.id === shionM.passives[0]; }),
+   'und wirkt sofort im Kampf');
+pRun.magicules = 9000;
+R.rankUp(pRun, shionM.uid);
+var pw2 = R.passivWahl(pRun);
+ok(pw2 && pw2.stufe === 2 && pw2.offers.every(function (o) { return AB.linien.shion[o.linie][1] === o.id; }),
+   'der Aufstieg bietet die nächste Stufe jeder Linie an');
+ok(R.skipPassive(pRun) && !R.passivWahl(pRun), 'man darf auch verzichten');
+ok(R.passivIds(R.member('gobta')).length === 0 &&
+   R.passivIds({ id: 'gobta', rank: 2 }).length === 2,
+   'Einheiten ohne eigene Linien behalten die festen Passiven nach Rang');
 
 /* ------------------------------------------------- Debug-Übersicht */
 head('Debug-Übersicht');

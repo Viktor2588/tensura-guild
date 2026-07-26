@@ -19,15 +19,21 @@ Den Boss des laufenden Akts siehst du von Anfang an — mit allen Fähigkeiten i
 Tooltip. Wer weiß, dass Charybdis Flächenschaden austeilt und Gift streut, baut
 anders als jemand, der es erst am achten Knoten erfährt.
 
-**5 Akte à 8 Knoten** — die Handlung bis zum Ende der dritten Anime-Staffel:
+**2 Akte à 8 Knoten**, je einer mit Boss am Ende. Die Gegner laufen dabei
+weiter über alle fünf Inhaltsstufen der Handlung — sie steigen jetzt nur
+*innerhalb* des Akts statt mit der Aktnummer:
 
-| Akt | Wo | Boss |
-|---|---|---|
-| 1 | Jura-Wald | Charybdis |
-| 2 | Höhlen, Orks und Gruften | Clayman |
-| 3 | Falmuth und die Dämonen | Milim Nava |
-| 4 | Die Westliche Heilige Kirche | Hinata Sakaguchi |
-| 5 | Nacht über Ruberios | Luminous Valentine |
+| Akt | Knoten | Wo | Boss aus Pool |
+|---|---|---|---|
+| 1 | 1–4 | Jura-Wald | — |
+| 1 | 5–8 | Höhlen, Orks und Gruften | Charybdis · Clayman · Milim Nava |
+| 2 | 1–3 | Falmuth und die Dämonen | — |
+| 2 | 4–6 | Die Westliche Heilige Kirche | — |
+| 2 | 7–8 | Nacht über Ruberios | Hinata Sakaguchi · Luminous Valentine |
+
+Welcher Boss kommt, wird beim Run-Start aus seinem Pool gezogen und steht ab
+dem ersten Knoten in der Vorschau. **Bosse treten allein an** — kein Gefolge,
+das den Schaden verteilt, dafür deutlich mehr Leben.
 
 An jedem Knoten wählst du zwischen **drei Wegen** — und die Vorschau zeigt dir
 vorher, welche Gegner dort stehen, welche Werte sie haben und welche Fähigkeiten
@@ -154,6 +160,7 @@ Jede Fähigkeit trägt Schlüsselwörter: was sie **erzeugt** (Quelle) und was s
 | Exekution | mehr Schaden gegen angeschlagene Ziele | – |
 | Fläche | trifft mehrere Gegner | – |
 | Tempo | schnellere Züge | – |
+| Chaos | Werte des Ziels würfeln jede Runde neu, Fähigkeiten verpuffen | 10 |
 
 Ein Build ist erst rund, wenn **Quellen und Verstärker zusammenkommen** — die
 Anzeige markiert ihn dann grün. Zwei Quellen plus ein Verstärker sind die
@@ -253,3 +260,34 @@ Rollen, Arten und Begriffe wie Rang, Prädator oder Aufstellung.
 - Verderbnis stapelt nur bis 5, Frost nur bis 2 — der Rest ist verschenkt.
 - Rang S auf der vordersten Einheit plus *Anführerkrone* ist eine eigene
   Strategie: fünf Item-Slots auf einem Körper.
+
+## Chaos und Shions Linien
+
+**Chaos** ist kein Schaden, sondern Unberechenbarkeit. Wer Chaos trägt, würfelt
+zu Beginn jedes eigenen Zuges Angriff, Rüstung und Tempo neu aus — je Stapel um
+bis zu 6 % nach oben *oder* unten —, und jede aktive Fähigkeit verpufft mit 5 %
+Chance je Stapel, ohne dass die Abklingzeit ausbleibt. Der Tooltip an der
+Chaos-Marke zeigt den Wurf der laufenden Runde.
+
+**Antichaos** ist dieselbe Mechanik, invertiert: dieselbe Streuung, aber nur
+nach oben und ohne Fehlschlag.
+
+Shions Signatur **Chaosschlag** legt Chaos nach ihrer Entwicklungsstufe an —
+C Oger 1 Stapel, B Teufel 2, A Verdorbener Teufel 3, S Ultimativer Teufel 5.
+Sie ist damit die erste Einheit mit **wählbaren Passiven**: vier Linien à vier
+Stufen, insgesamt sechzehn.
+
+| Linie | Worum es geht | Stufe 1 |
+|---|---|---|
+| Angriff | Chaos in eigene Werte umsetzen | Chaosrausch |
+| Chaos-Mechanik | das Chaos selbst schärfen | Chaosmeisterschaft |
+| Unterstützung | Antichaos für den Trupp | Realitätswarp |
+| Defensive | Oger-Fleisch | Ogerschild |
+
+Beim Anwerben und bei **jedem Aufstieg** wählst du **eine aus vier** — eine je
+Linie, auf der Stufe, die dem Rang entspricht. Verzichten ist erlaubt. Gemessen
+lohnt sich das Mischen: eine Shion mit je einer Passiven aus verschiedenen
+Linien steht deutlich besser da als eine, die eine Linie durchzieht.
+
+Alle anderen Einheiten behalten vorerst ihre drei festen Passiven, die mit dem
+Rang aufschalten.

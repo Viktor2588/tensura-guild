@@ -310,3 +310,7 @@ table.dbg i { font-style: normal; font-size: .7rem; opacity: .8; }
 table.dbg i.auf { color: #6d6; }
 table.dbg i.ab { color: #e77; }
 .dbg-extra { margin: .15rem 0; opacity: .75; }
+.karte .linie { display: block; font-size: .7rem; letter-spacing: .04em;
+                text-transform: uppercase; opacity: .6; margin-top: .1rem; }
+.marke.chaos { background: #7a3b8c; }
+.marke.antichaos { background: #2f7f6a; }

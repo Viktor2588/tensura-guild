@@ -14,7 +14,16 @@
 
   var TICK_CAP = 3000;                                   // Patt-Bremse
   /* Ohne Obergrenzen läuft alles davon, was pro Treffer stapelt. */
-  var STATUS_CAP = { verderbnis: 5, gift: 12, brand: 8, erstarrung: 1 };
+  var STATUS_CAP = { verderbnis: 5, gift: 12, brand: 8, erstarrung: 1, chaos: 10, antichaos: 10 };
+
+  /* ---- Chaos --------------------------------------------------------------
+     Kein Schaden über Zeit, sondern Unberechenbarkeit: wer Chaos trägt, würfelt
+     zu Beginn jedes eigenen Zuges Angriff, Rüstung und Tempo neu aus, und seine
+     Fähigkeiten können schlicht verpuffen. Antichaos ist dasselbe Rad, aber nur
+     nach oben — die invertierte, positive Seite derselben Mechanik.            */
+  var CHAOS_STREUUNG = 0.06;      // je Stapel ±6 % auf Angriff, Rüstung, Tempo
+  var CHAOS_FEHLSCHLAG = 0.05;    // je Stapel 5 % Chance, dass eine Aktive verpufft
+  function chaosF(u, k) { return (u.chaos && u.chaos[k]) || 1; }
 
   /* ---- Resonanz ----------------------------------------------------------
      Drei Teile mit demselben Schlüsselwort im Trupp — Fähigkeiten, Ausrüstung,
@@ -34,7 +43,8 @@
     tempo: 'Der ganze Trupp ist 6 % schneller',
     konter: 'Jede Einheit wirft 4 plus 10 % ihres Angriffs auf Angreifer zurück',
     exekution: '+15 % Schaden gegen Ziele unter 35 % Leben',
-    flaeche: '+8 % Schaden, solange mindestens zwei Gegner stehen'
+    flaeche: '+8 % Schaden, solange mindestens zwei Gegner stehen',
+    chaos: 'Chaos und Antichaos streuen die Werte um ein Viertel weiter'
   };
   /* Eine Stelle, die zählt — Kampf und Anzeige dürfen nicht auseinanderlaufen.
      Es resoniert nur die STÄRKSTE Linie: sonst sammelt ein Trupp mit neun
@@ -71,7 +81,7 @@
       keywords: (def.keywords || []).slice(), resistenz: def.resistenz || 0,
       side: side, pos: pos, gauge: 0, status: {}, regen: 0, lifesteal: 0,
       heilfaktor: 0, schildfaktor: 0,
-      dmgTaken: 0, dmgDealt: 0
+      chaos: null, dmgTaken: 0, dmgDealt: 0
     };
   }
 
@@ -127,6 +137,9 @@
         if (absorbed >= 1) log.push({ t: t, type: 'schild', key: target.key, target: target.name, amount: Math.round(absorbed) });
         if (amount < 1) return 0;
       }
+      /* Deckel je Treffer — für Passive, die einen Körper unzerstörbar machen,
+         ohne ihm einfach mehr Leben zu geben. */
+      if (target.schadensdeckel) amount = Math.min(amount, target.maxHp * target.schadensdeckel);
       amount = Math.max(1, Math.round(amount));
       target.hp = Math.max(0, target.hp - amount);
       target.dmgTaken += amount;
@@ -186,7 +199,21 @@
         rng: rng, log: log, self: self, deal: deal, heal: heal, applyStatus: applyStatus,
         allies: function () { return living(self.side); },
         foes: function () { return living(other(self.side)); },
-        addEffect: function (u, e) { u.effects.push(e); }
+        addEffect: function (u, e) { u.effects.push(e); },
+        /* Chaos anlegen — eine Stelle, damit Meisterschaft, Realitätswarp und
+           der onChaos-Hook nicht an jeder einzelnen Fähigkeit hängen. */
+        chaos: function (ziel, stapel) {
+          var n = stapel * (self.chaosmeister || 1);
+          applyStatus(ziel, 'chaos', n);
+          if (self.gesetzlos) ziel.zaehesChaos = 1;      // baut sich nicht mehr ab
+          if (self.antichaosWarp) {
+            living(self.side).forEach(function (a) {
+              applyStatus(a, 'antichaos', n * self.antichaosWarp);
+            });
+          }
+          fire(self, 'onChaos', ctx(self, { ziel: ziel, stapel: n }));
+          return n;
+        }
       };
       for (var k in extra) c[k] = extra[k];
       return c;
@@ -204,7 +231,8 @@
       if (!target || !alive(target)) return 0;
       opt = opt || {};
       var pierce = Math.max(u.pierce || 0, opt.pierce || 0, u.role === 'magier' ? 0.6 : 0);
-      var base = u.atk * (mult || 1) - target.def * (1 - pierce);
+      var base = u.atk * chaosF(u, 'atk') * (mult || 1)
+        - target.def * chaosF(target, 'def') * (1 - pierce);
       var c = ctx(u, { attacker: u, target: target, dmg: base * (0.9 + rng() * 0.2) });
       fire(u, 'onHit', c);
       if (res[u.side].exekution && target.hp < target.maxHp * 0.35) c.dmg *= 1.15;
@@ -299,6 +327,21 @@
         u.status.brand--; if (!alive(u)) return;
       }
       if (u.status.verderbnis > 0) u.status.verderbnis--;
+      /* Der Würfelwurf der Runde: neue Werte, solange Chaos oder Antichaos liegt. */
+      var negC = u.status.chaos || 0, posC = u.status.antichaos || 0;
+      if (negC || posC) {
+        var streu = CHAOS_STREUUNG * (gegen(u, 'chaos') ? 1.25 : 1);
+        u.chaos = { stapel: negC };
+        ['atk', 'def', 'spd'].forEach(function (k) {
+          u.chaos[k] = 1 + rng() * streu * posC - (rng() * 2 - 1) * streu * negC;
+        });
+        log.push({ t: t, type: 'chaos', key: u.key, unit: u.name, side: u.side,
+                   stapel: Math.round(negC), anti: Math.round(posC),
+                   atk: Math.round(u.chaos.atk * 100), def: Math.round(u.chaos.def * 100),
+                   spd: Math.round(u.chaos.spd * 100) });
+        if (negC && !u.zaehesChaos) u.status.chaos--;
+        if (posC) u.status.antichaos--;
+      } else u.chaos = null;
       if (u.regen > 0) heal(u, u.regen, 'Regeneration');
       u.actives.forEach(function (a) { if (a.bereit > 0) a.bereit--; });
 
@@ -320,6 +363,14 @@
           heal(worst, u.atk * 1.5, u.name);
           return;
         }
+      }
+
+      /* Chaos lässt das Wirken misslingen: der Zug ist weg, die Abklingzeit läuft. */
+      if (aktive && u.chaos && u.chaos.stapel &&
+          rng() < CHAOS_FEHLSCHLAG * u.chaos.stapel) {
+        aktive.bereit = aktive.cd;
+        log.push({ t: t, type: 'fehlschlag', key: u.key, unit: u.name, side: u.side, name: aktive.name });
+        return;
       }
 
       if (aktive) {
@@ -344,7 +395,7 @@
       for (var i = 0; i < units.length; i++) {
         var u = units[i];
         if (!alive(u)) continue;
-        u.gauge += u.spd;
+        u.gauge += Math.max(1, u.spd * chaosF(u, 'spd'));
         if (u.gauge < 100) continue;
         u.gauge -= 100;
         act(u);
@@ -367,5 +418,6 @@
 
   root.Combat = { simulate: simulate, TICK_CAP: TICK_CAP, ROLES: ROLES, roleOf: roleOf,
                   STATUS_CAP: STATUS_CAP, RESONANZ: RESONANZ,
+                  CHAOS_STREUUNG: CHAOS_STREUUNG, CHAOS_FEHLSCHLAG: CHAOS_FEHLSCHLAG,
                   RESONANZ_SCHWELLE: RESONANZ_SCHWELLE, resonanz: resonanz };
 })(globalThis);

@@ -6,11 +6,12 @@
 
   var run = null;
   var replay = null;             // { res, i, u:{key->Anzeige}, zeilen, timer, fertig }
-  var STATUS_NAMEN = { gift: 'Gift', brand: 'Brand', erstarrung: 'Erstarrt', verderbnis: 'Verderbnis', schild: 'Schild' };
+  var STATUS_NAMEN = { gift: 'Gift', brand: 'Brand', erstarrung: 'Erstarrt', verderbnis: 'Verderbnis',
+                       schild: 'Schild', chaos: 'Chaos', antichaos: 'Antichaos' };
   var KEYWORD_NAMEN = {
     gift: 'Gift', brand: 'Brand', frost: 'Frost', verderbnis: 'Verderbnis',
     schild: 'Schild', heilung: 'Heilung', konter: 'Konter', tempo: 'Tempo',
-    exekution: 'Exekution', flaeche: 'Fläche'
+    exekution: 'Exekution', flaeche: 'Fläche', chaos: 'Chaos'
   };
   var TYP_TEXT = {
     kampf: 'Kampf', elite: 'Elite-Kampf', boss: 'Boss', shop: 'Händler',
@@ -283,6 +284,9 @@
     if (l.type === 'death' && u) { u.tot = true; u.hp = 0; }
     if (l.type === 'revive' && u) { u.tot = false; u.hp = l.hp; }
     if (l.type === 'status' && u) { u.status[l.status] = l.stacks; }
+    /* Der Würfelwurf der Runde gehört an die Einheit, nicht nur ins Log —
+       sonst schwanken die Zahlen und niemand sieht, woher. */
+    if (l.type === 'chaos' && u) { u.wurf = l; }
     if (l.type === 'schild' && u) { u.status.schild = Math.max(0, (u.status.schild || 0) - l.amount); }
 
     var text = null, klasse = l.side === 'player' ? 'feind' : 'spieler';
@@ -293,6 +297,9 @@
     else if (l.type === 'skip') text = esc(l.unit) + ' kann sich nicht rühren';
     else if (l.type === 'widersteht') text = esc(l.target) + ' schüttelt die Erstarrung ab';
     else if (l.type === 'revive') text = esc(l.unit) + ' steht wieder auf';
+    else if (l.type === 'chaos') text = '🎲 ' + esc(l.unit) + ': Angriff ' + l.atk + ' %, Rüstung ' +
+      l.def + ' %, Tempo ' + l.spd + ' %';
+    else if (l.type === 'fehlschlag') text = '✗ ' + esc(l.unit) + ': ' + esc(l.name) + ' verpufft im Chaos';
     else if (l.type === 'aktiv') { text = '⚡ ' + esc(l.unit) + ' setzt ' + esc(l.name) + ' ein';
                                    klasse = (l.side === 'player' ? 'spieler' : 'feind') + ' aktiv'; }
     else if (l.type === 'death') { text = esc(l.unit) + ' fällt'; klasse = 'tod'; }
@@ -303,7 +310,12 @@
   function kaempferHtml(u) {
     var marken = Object.keys(u.status).filter(function (k) { return u.status[k] > 0; })
       .map(function (k) {
-        return '<span class="marke ' + k + '"' + tip(STATUS_NAMEN[k] || k, G.zustaende[k]) + '>' +
+        var zusatz = '';
+        if ((k === 'chaos' || k === 'antichaos') && u.wurf) {
+          zusatz = '\n\nWurf dieser Runde: Angriff ' + u.wurf.atk + ' %, Rüstung ' +
+            u.wurf.def + ' %, Tempo ' + u.wurf.spd + ' % des Grundwerts.';
+        }
+        return '<span class="marke ' + k + '"' + tip(STATUS_NAMEN[k] || k, G.zustaende[k] + zusatz) + '>' +
           (STATUS_NAMEN[k] || k) + ' ' + Math.round(u.status[k]) + '</span>';
       }).join('');
     var pct = Math.max(0, Math.round(u.hp / u.maxHp * 100));
@@ -547,8 +559,36 @@
 
   /* ------------------------------------------------- Fähigkeitsauswahl */
 
+  /* Passive wählen: vier Angebote, eines je Linie. Die Linie steht dabei, sonst
+     ist es nur eine weitere Liste von vier Namen. */
+  function passivWahlHtml() {
+    var w = R.passivWahl(run);
+    if (!w) return '';
+    var m = R.find(run, w.uid);
+    if (!m) return '';
+    var html = '<div class="wahlbox"><h3>' + esc(GD.unit(m.id).name) + ' — Passive Stufe ' + w.stufe +
+      ' (Rang ' + R.rankName(m) + ')</h3>' +
+      '<p class="hinweis">Eine aus vier, eine je Linie. Die Wahl bleibt für den ganzen Run.</p>' +
+      '<div class="karten">';
+    w.offers.forEach(function (o, i) {
+      var a = AB.get(o.id);
+      html += '<button class="karte" data-a="pwahl" data-i="' + i + '"' +
+        tip(a.name + ' · ' + o.linieName, rarZeile(a.rarity, 'passive Fähigkeit') +
+          G.begriffe.passiv + '\n\nLinie: ' + o.linieName + '\nWirkung: ' + a.text +
+          ((a.keywords || []).concat(a.amplifies || []).length
+            ? '\n\nSchlüsselwörter: ' + (a.keywords || []).concat(a.amplifies || []).map(kwName).join(', ')
+            : '')) + '>' +
+        artHtml('skill') + rarHtml(a.rarity) +
+        '<span class="titel">◈ ' + esc(a.name) + '</span>' +
+        '<span class="linie">' + esc(o.linieName) + '</span>' +
+        '<span class="unter">' + esc(a.text) + '</span></button>';
+    });
+    return html + '</div><div class="reihe"><button data-a="pwahl-skip">Keine nehmen</button></div></div>';
+  }
+
   function zeichneWahl() {
-    if (!run.wahl) { $('wahl').innerHTML = ''; return; }
+    var pw = passivWahlHtml();
+    if (!run.wahl) { $('wahl').innerHTML = pw; return; }
     var m = R.find(run, run.wahl.uid);
     var html = '<div class="wahlbox"><h3>Aufstieg: ' + esc(GD.unit(m.id).name) + ' — Rang ' + R.rankName(m) +
       '</h3><p class="hinweis">Eine neue aktive Fähigkeit für den freien Slot. ' +
@@ -565,7 +605,7 @@
         '<span class="unter">' + esc(a.text) + '</span></button>';
     });
     html += '</div><div class="reihe"><button data-a="wahl-skip">Slot frei lassen</button></div></div>';
-    $('wahl').innerHTML = html;
+    $('wahl').innerHTML = pw + html;
   }
 
   /* --------------------------------------------------------- Team-Panel */
@@ -930,6 +970,8 @@
     lager: function (d) { R.camp(run, +d.i); render(); speichern(); },
     aufstieg: function (d) { R.rankUp(run, d.uid); render(); speichern(); },
     wahl: function (d) { R.chooseActive(run, +d.i); render(); speichern(); },
+    pwahl: function (d) { R.choosePassive(run, +d.i); render(); speichern(); },
+    'pwahl-skip': function () { R.skipPassive(run); render(); speichern(); },
     'wahl-skip': function () { R.skipActive(run); render(); speichern(); },
     platz: function (d) {
       if (!tauschUid || tauschUid === d.uid) tauschUid = tauschUid === d.uid ? null : d.uid;
