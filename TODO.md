@@ -49,3 +49,4 @@ Offen:
   Selbstheilung war für Boss plus Gefolge entworfen.
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
+- Bitte Die Meta progression anzeigen was alles freigeschaltet wurde
