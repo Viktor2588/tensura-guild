@@ -3,6 +3,7 @@
   "private": true,
   "description": "Roguelite-Truppenbau im Tensura-Universum. Das Spiel selbst hat keine Abhängigkeiten — jsdom braucht nur der UI-Test.",
   "scripts": {
+    "start": "node dev/serve.js",
     "test": "node dev/sim.js && node dev/uitest.js",
     "balance": "node dev/balance.js 600"
   },

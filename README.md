@@ -24,8 +24,24 @@ nächste eigene Passive frei. Rang S gibt zwei Item-Slots statt einem.
 
 ## Starten
 
-Kein Build, keine Abhängigkeiten. `index.html` im Browser öffnen — auch per
-Doppelklick über `file://`.
+Kein Build, keine Abhängigkeiten. Zwei Wege:
+
+```
+index.html doppelklicken          # file:// genügt
+npm start                         # http://localhost:8080
+```
+
+`npm start` legt einen winzigen statischen Server aus Node-Bordmitteln auf
+(`dev/serve.js`). Nötig ist er nicht — er ist nur bequemer, weil manche Browser
+auf `file://` sparsam mit `localStorage` umgehen.
+
+> **Nicht durch einen Bundler schicken.** Die acht Skripte in `index.html` laufen
+> so, wie sie dastehen: klassische Skripte, die ihre Schnittstelle an `globalThis`
+> hängen. Wer `bun index.html` benutzt, startet Buns Dev-Server mit Hot-Reload,
+> der daraus ES-Module macht — und meldet dann Fehler aus dem Bundler statt aus
+> dem Spiel (`Failed to load bundled module … this is a bug in Bun's bundler`).
+> Ein Produktions-Build (`bun build index.html`) funktioniert übrigens, wird aber
+> für nichts gebraucht.
 
 ## Dateien
 

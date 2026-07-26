@@ -78,6 +78,10 @@ Fähigkeit wandert dauerhaft in eine Einheit. Prädator-Slots gibt es ab Rang B.
 ## 3. Architektur
 
 Vanilla HTML/CSS/JS, kein Build, `file://`-tauglich, mobile-first, UI Deutsch.
+Die acht Skripte sind klassische Skripte, keine Module: sie hängen ihre
+Schnittstelle an `globalThis` und verlassen sich auf die Reihenfolge in
+`index.html`. Ein Bundler ist deshalb nicht nur unnötig, sondern eine eigene
+Fehlerquelle — `npm start` legt stattdessen `dev/serve.js` auf.
 Wie deine anderen Projekte — kein Framework, bis eins nachweislich fehlt.
 
 ```
