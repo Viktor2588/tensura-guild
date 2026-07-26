@@ -42,10 +42,9 @@ Abgearbeitet in Phase 11:
 
 Offen:
 
-- 38 Einheiten haben noch keine eigenen Linien (`AB.linien`). Shion und Souei
-  sind die Vorlagen — vier Linien à vier Stufen je Einheit.
-- Der Aufstiegs-Pool aus 34 aktiven Fähigkeiten wird vom Spieler nicht mehr
-  gezogen und lebt nur noch als Gegner-Repertoire.
+- 38 Einheiten haben noch keine eigenen Linien (`AB.linien`). Shion und Souei sind die Vorlagen — vier Linien à vier Stufen je Einheit.
+- Der Aufstiegs-Pool aus 34 aktiven Fähigkeiten wird vom Spieler & gegner nicht gezogen. jeder Kampfeinheit hat nur eine Aktive fähikgeit mit passiven Fähgikeiten
+- Angebotene/kaufbare Einheiten haben zufällige ausgesuchte Passive nur beim entwickeln suchenw wir aktiv aus welche neue passive dazukommt.
 - Boss-Balance in Pool 1 streut (Clayman leicht, Milim hart) — Claymans
   Selbstheilung war für Boss plus Gefolge entworfen.
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
