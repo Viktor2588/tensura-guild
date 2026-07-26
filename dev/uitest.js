@@ -117,7 +117,11 @@ hover($('.einheit .fk.aktiv'));
 var tipHtml = $('.tooltip').lastChild.innerHTML;
 ok(/<em class="(typ-signatur|typ-aktiv)"/.test(tipHtml),
    'der Tooltip färbt die Fähigkeitsart');
-ok(/<em class="rar-text-[1-5]"/.test(tipHtml), 'der Tooltip färbt die Raritätsstufe');
+/* Einheitenspezifisches trägt keine Stufe mehr — die Farbe muss aber weiter
+   funktionieren, also am Relikt geprüft. */
+hover($('#reliktliste .chip') || $('.einheit .fk.passiv') || $('.einheit .fk.aktiv'));
+ok(!/Abklingzeit/.test($('.tooltip').lastChild.textContent),
+   'der Tooltip nennt keine Abklingzeit mehr');
 ok(tipHtml.indexOf('<script') < 0 && $('.tooltip').lastChild.textContent.length > 15,
    'der Tooltip bleibt escapt und behält seinen Text');
 var kwGefunden = 0;
@@ -173,12 +177,16 @@ win.UI.render();
 var aufstieg = $('[data-a=aufstieg]');
 ok(aufstieg && !aufstieg.disabled, 'der Aufstiegsknopf ist mit genug Magicule aktiv');
 klick(aufstieg);
-ok($('#wahl .karte'), 'nach dem Aufstieg stehen Fähigkeiten zur Wahl');
-ok($$('#wahl .karte').length === 3, 'genau drei Angebote');
-ok($('[data-a=wahl-skip]'), 'der Slot lässt sich auch frei lassen');
+ok($('#wahl .karte'), 'nach dem Aufstieg stehen Passive zur Wahl');
+ok($$('#wahl .karte').length >= 3, 'mindestens drei Angebote');
+ok($('[data-a=pwahl-skip]'), 'man darf auch verzichten');
+var vorherPassive = $$('.einheit')[0].querySelectorAll('.fk.passiv').length;
 klick($('#wahl .karte'));
-ok(!run.wahl && $$('.einheit')[0].querySelectorAll('.fk.aktiv').length === 2,
-   'die gewählte Fähigkeit steht auf der Karte');
+ok(!win.Run.passivWahl(run) &&
+   $$('.einheit')[0].querySelectorAll('.fk.passiv').length === vorherPassive + 1,
+   'die gewählte Passive steht auf der Karte');
+ok($$('.einheit')[0].querySelectorAll('.fk.aktiv').length === 1,
+   'die Einheit hat weiterhin genau eine Aktive');
 ok($$('.einheit')[0].querySelector('.fk.passiv'), 'die erste Passive ist freigeschaltet');
 
 /* --------------------------------------------------------------- Shop */

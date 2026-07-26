@@ -83,52 +83,54 @@ besteht, sondern weil seine Fähigkeiten zusammenpassen.
 
 ## Ränge
 
-| Rang | Item-Slots | Aktive Fähigkeiten | Passive | Prädator | Kosten |
+| Rang | Item-Slots | Aktive | Passive | Prädator | Kosten |
 |---|---|---|---|---|---|
 | C | 1 | 1 (Signatur) | – | – | Start |
-| B | 2 | 2 | 1 | 1 | 140 ✦ |
-| A | 3 | 3 | 2 | 2 | 300 ✦ |
-| S | **5** | 4 | 3 | 3 | 560 ✦ |
+| B | 2 | 1 (Signatur) | 1 | 1 | 140 ✦ |
+| A | 3 | 1 (Signatur) | 2 | 2 | 300 ✦ |
+| S | **5** | 1 (Signatur) | 3 | 3 | 560 ✦ |
 
-Jeder Aufstieg gibt zusätzlich +30 % Leben und Angriff, +1 Rüstung, +1 Tempo.
-Beim Aufstieg wählst du **eine von drei** aktiven Fähigkeiten für den neuen Slot
-— oder lässt ihn frei, damit der Prädator ihn später füllt. Die nächste eigene
-Passive schaltet automatisch frei.
+**Die aktive Fähigkeit ist immer die Signatur — sie ändert sich nie.** Alles,
+was eine Einheit darüber hinaus lernt, ist passiv. Jeder Aufstieg gibt +30 %
+Leben und Angriff, +1 Rüstung, +1 Tempo, einen Item-Slot (auf S zwei), einen
+Prädator-Slot und **eine Passive zur Wahl**:
 
-Zwei der drei Angebote liegen auf der **Linie der Einheit selbst**: Shion mit
-ihren Konter-Passiven sieht Vergeltung und Dornenmantel, Gabiru sieht Gift und
-Flammen, ein Heiler sieht Lebensbund. Das dritte Angebot ist offen — nur so
-lässt sich eine Einheit bewusst gegen ihre Neigung bauen. Weil die Passiven erst
-mit dem Rang aufgehen, wird die Linie mit jedem Aufstieg schärfer.
+- Einheiten mit eigenen **Linien** (bisher Shion und Souei) wählen aus **vier** —
+  je eine aus Angriff, eigener Mechanik, Unterstützung und Defensive.
+- Alle anderen wählen aus **drei**: ihrer eigenen nächsten Passive plus zwei aus
+  der geteilten Bibliothek, die zu ihren Schlüsselwörtern passen.
+
+Verzichten ist erlaubt, kostet dann aber den Slot.
 
 Magicule sind knapp. Vier Einheiten auf Rang B oder eine auf S? Das ist die
 Frage, die jeden Run prägt.
 
 ## Aktiv und Passiv
 
-**Aktive Fähigkeiten** feuern im Kampf, sobald ihre Abklingzeit abgelaufen ist,
-und ersetzen in dem Zug den normalen Angriff. Liegt mehr als eine bereit, wird
-die mit der längsten Abklingzeit gewählt — also in aller Regel die stärkste.
+**Es gibt keine Abklingzeiten.** Die Signatur feuert in **jedem** Zug und ersetzt
+den normalen Angriff. Damit ist Tempo direkt Schlagkraft: jeder zusätzliche Zug
+ist ein zusätzlicher Einsatz.
 
-Manche warten aber auf ihre **Lage**, und das steht in ihrem Text: der Heilige
-Segen geht erst los, wenn jemand verwundet ist, das Todesurteil erst gegen ein
-angeschlagenes Ziel, der Klingensturm erst, wenn mindestens zwei Gegner stehen.
-Ohne diese Regel wäre die Wahl beim Aufstieg keine Entscheidung, sondern nur
-„nimm die mit der längsten Abklingzeit" — und dein Heiler würde einen
-unverletzten Trupp heilen, während der Gegner zuschlägt.
+Manche Signaturen warten aber auf ihre **Lage**, und das steht in ihrem Text: der
+Heilige Segen geht erst los, wenn jemand verwundet ist, das Todesurteil erst
+gegen ein angeschlagenes Ziel, der Klingensturm erst, wenn mindestens zwei Gegner
+stehen. Solange die Lage nicht da ist, schlägt die Einheit normal zu — sonst
+würde dein Heiler einen unverletzten Trupp heilen, während der Gegner zuschlägt.
 
-Jede Einheit startet mit ihrer **einzigartigen Signatur**, die es sonst nirgends
-gibt. Signaturen haben immer zwei Teile: eine Grundwirkung und eine Bedingung,
-die sich zu erfüllen lohnt. Benimarus *Kurenai* setzt 4 Brand — brannte das Ziel
-schon, springt die Flamme auf alle anderen über. Milims *Drachenfaust* ist sofort
-wieder bereit, wenn sie tötet. Shions *Chaosbrecher* trifft nur zu 75 %, aber
-jeder Fehlschlag macht sie dauerhaft wütender.
+Jede Einheit hat ihre **einzigartige Signatur**, die es sonst nirgends gibt.
+Signaturen haben immer zwei Teile: eine Grundwirkung und eine Bedingung, die sich
+zu erfüllen lohnt. Benimarus *Kurenai* setzt 4 Brand — brannte das Ziel schon,
+springt die Flamme auf alle anderen über. Shions *Chaosschlag* legt Chaos nach
+ihrer Entwicklungsstufe an, Soueis *Stahlfaden* markiert das Ziel für den ganzen
+Trupp. Signaturen tragen **keine Raritätsstufe** — sie stehen in keinem Angebot,
+also wäre die Stufe nur Farbe.
 
 **Passive** wirken dauerhaft: Gift bei jedem Treffer, Schild zu Kampfbeginn,
-Konterschaden, Wiederkehr nach dem Tod.
+Konterschaden, Wiederkehr nach dem Tod. Sie sind der ganze Fortschritt einer
+Einheit.
 
-Gegner setzen ebenfalls aktive Fähigkeiten ein — der Wuchtschlag eines Trolls
-trifft genauso hart wie deiner.
+Auch der **Prädator** liefert Passive: die Fähigkeit eines verschlungenen Gegners
+hängt sich als weitere Passive an.
 
 ## Aufstellung
 
@@ -180,7 +182,7 @@ Jede Fähigkeit trägt Schlüsselwörter: was sie **erzeugt** (Quelle) und was s
 | Konter | Schaden zurück an den Angreifer | – |
 | Exekution | mehr Schaden gegen angeschlagene Ziele | – |
 | Fläche | trifft mehrere Gegner | – |
-| Tempo | schnellere Züge | – |
+| Tempo | mehr Züge, also öfter die eigene Signatur | – |
 | Chaos | Werte des Ziels würfeln jede Runde neu, Fähigkeiten verpuffen | 10 |
 | Verwundbar | JEDER Angreifer schlägt 15 % je Stapel mehr Rüstung durch | 5 |
 | Blutung | gut 1 % des maximalen Lebens je Stapel pro Zug | 8 |

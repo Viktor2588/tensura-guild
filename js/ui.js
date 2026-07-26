@@ -65,7 +65,9 @@
     schild: 'kw-schild', heilung: 'kw-heilung', heilt: 'kw-heilung',
     konter: 'kw-konter', tempo: 'kw-tempo', flächen: 'kw-flaeche', fläche: 'kw-flaeche',
     exekution: 'kw-exekution',
-    signatur: 'typ-signatur', aktive: 'typ-aktiv', passive: 'typ-passiv', passiv: 'typ-passiv',
+    signatur: 'typ-signatur', aktive: 'typ-aktiv', aktiv: 'typ-aktiv',
+    passive: 'typ-passiv', passiv: 'typ-passiv',
+    chaos: 'kw-chaos', antichaos: 'kw-chaos', verwundbar: 'kw-verwundbar', blutung: 'kw-blutung',
     relikt: 'typ-relikt', ausrüstung: 'typ-item',
     üblich: 'rar-text-1', ungewöhnlich: 'rar-text-2', selten: 'rar-text-3',
     episch: 'rar-text-4', legendär: 'rar-text-5'
@@ -386,7 +388,7 @@
       var u = GD.unit(r.id), sig = AB.get(u.signature);
       var txt = GD.artName(u.art) + ' · ' + GD.rolleName(u.tags[1]) + '\n' +
         (G.rollen[u.tags[1]] || '') + '\n\n' +
-        'Signatur: ' + sig.name + ' (Abklingzeit ' + sig.cd + ') — ' + sig.text + '\n' +
+        'Signatur: ' + sig.name + ' — ' + sig.text + '\n' +
         'Passive ab Rang B/A/S: ' + u.passives.map(function (id) {
           var p2 = AB.get(id); return p2.name + ' (' + p2.text + ')';
         }).join(' · ');
@@ -500,7 +502,7 @@
     html += '<div class="karten">';
     run.pending.offers.forEach(function (o, i) {
       var frei = o.kind !== 'unit' || R.freieArt(run, GD.unit(o.id).art);
-      if (o.kind === 'rang') frei = run.team.some(function (m) { return m.rank < 3; }) && !run.wahl;
+      if (o.kind === 'rang') frei = run.team.some(function (m) { return m.rank < 3; }) && !R.passivWahl(run);
       var geht = !o.sold && run.gold >= o.price && frei;
       html += '<button class="karte' + (o.sold ? ' gewaehlt' : '') + '" data-a="kaufen" data-i="' + i + '"' +
         (geht ? '' : ' disabled') + belohnungTip(o) + '>' + artHtml(o.kind) +
@@ -602,25 +604,7 @@
   }
 
   function zeichneWahl() {
-    var pw = passivWahlHtml();
-    if (!run.wahl) { $('wahl').innerHTML = pw; return; }
-    var m = R.find(run, run.wahl.uid);
-    var html = '<div class="wahlbox"><h3>Aufstieg: ' + esc(GD.unit(m.id).name) + ' — Rang ' + R.rankName(m) +
-      '</h3><p class="hinweis">Eine neue aktive Fähigkeit für den freien Slot. ' +
-      'Frei lassen heißt: der Prädator kann ihn später füllen.</p><div class="karten">';
-    run.wahl.offers.forEach(function (id, i) {
-      var a = AB.get(id);
-      html += '<button class="karte" data-a="wahl" data-i="' + i + '"' +
-        tip(a.name, rarZeile(a.rarity, 'aktive Fähigkeit') +
-          'Abklingzeit ' + a.cd + ' Züge.\n' + a.text + '\n\n' +
-          (a.keywords.length ? 'Schlüsselwörter: ' + a.keywords.map(kwName).join(', ') + '\n' +
-            a.keywords.map(function (k) { return kwName(k) + ': ' + (G.keywords[k] || ''); }).join('\n')
-            : 'Ohne Schlüsselwort — reiner Schaden.')) + '>' +
-        artHtml('skill') + rarHtml(a.rarity) + '<span class="titel">' + esc(a.name) + ' · ' + a.cd + ' Züge</span>' +
-        '<span class="unter">' + esc(a.text) + '</span></button>';
-    });
-    html += '</div><div class="reihe"><button data-a="wahl-skip">Slot frei lassen</button></div></div>';
-    $('wahl').innerHTML = pw + html;
+    $('wahl').innerHTML = passivWahlHtml();
   }
 
   /* --------------------------------------------------------- Team-Panel */
@@ -682,7 +666,7 @@
     var d = R.resolve(m);
     var basis = GD.unit(m.id);
     var kosten = R.rankCost(m, run);
-    var kannAufsteigen = m.rank < 3 && run.magicules >= kosten && !run.wahl;
+    var kannAufsteigen = m.rank < 3 && run.magicules >= kosten && !R.passivWahl(run);
     var abs = R.abilities(m);
     var aktive = abs.filter(function (a) { return a.art === 'aktiv'; });
     var passive = abs.filter(function (a) { return a.art === 'passiv'; });
@@ -703,47 +687,58 @@
       '<span class="tag"' + tip('Rolle: ' + GD.rolleName(basis.tags[1]), G.rollen[basis.tags[1]]) + '>' +
       esc(GD.rolleName(basis.tags[1])) + '</span></div>';
 
+    /* Nur die Wörter, nicht ihre Erklärung: erklärt wird zentral an der
+       Einheitenkarte. Sonst steht dieselbe Definition an jeder der bis zu acht
+       Fähigkeiten einer Einheit. Gefärbt wird über TIP_STAMM. */
     function kwZeile(a) {
-      if (!a.keywords || !a.keywords.length) return '';
-      return '\n\nSchlüsselwörter: ' + a.keywords.map(kwName).join(', ') + '\n' +
-        a.keywords.map(function (k) { return kwName(k) + ': ' + (G.keywords[k] || ''); }).join('\n');
+      var ks = (a.keywords || []).concat(a.amplifies || []);
+      return ks.length ? '\n\n' + ks.map(kwName).join(' · ') : '';
     }
     html += '<div class="faehigkeiten">';
-    aktive.forEach(function (a, ix) {
-      var art = (ix === 0 ? 'Signatur' : 'Aktive Fähigkeit');
-      html += '<div class="fk aktiv rar-text-' + (a.rarity || 1) + '"' +
-        tip(a.name + ' · ' + art, rarZeile(a.rarity, art) +
-          (ix === 0 ? G.begriffe.signatur + '\n\n' : '') +
-          G.begriffe.aktiv + '\n\nAbklingzeit: ' + a.cd + ' eigene Züge.\nWirkung: ' + a.text +
-          kwZeile(a)) + '>⚡ ' + esc(a.name) + ' <span class="cd">' + a.cd + '</span></div>';
+    aktive.forEach(function (a) {
+      html += '<div class="fk aktiv' + (a.rarity ? ' rar-text-' + a.rarity : '') + '"' +
+        tip(a.name, 'Aktive Fähigkeit\n\n' + a.text + kwZeile(a)) +
+        '>⚡ ' + esc(a.name) + '</div>';
     });
-    for (var i = aktive.length; i < R.aktivSlots(m); i++) {
-      html += '<div class="fk leer"' + tip('Freier Slot',
-        'Hier passt noch eine aktive Fähigkeit hinein — aus dem Angebot beim nächsten Aufstieg ' +
-        'oder über den Prädator.') + '>⚡ freier Slot</div>';
-    }
     passive.forEach(function (a) {
-      html += '<div class="fk passiv rar-text-' + (a.rarity || 1) + '"' +
-        tip(a.name + ' · Passiv', rarZeile(a.rarity, 'passive Fähigkeit') +
-          G.begriffe.passiv + '\n\nWirkung: ' + a.text + kwZeile(a)) +
+      html += '<div class="fk passiv' + (a.rarity ? ' rar-text-' + a.rarity : '') + '"' +
+        tip(a.name, 'Passive Fähigkeit\n\n' + a.text + kwZeile(a)) +
         '>◈ ' + esc(a.name) + '</div>';
     });
-    var naechste = basis.passives[R.passivSlots(m)];
-    if (naechste && m.rank < 3) {
-      var np = AB.get(naechste);
-      html += '<div class="fk leer"' + tip('Noch verschlossen: ' + np.name,
-        'Schaltet mit dem Aufstieg auf Rang ' + R.RANK_NAME[m.rank + 1] + ' frei.\nWirkung: ' + np.text) +
-        '>◈ ' + esc(np.name) + ' (Rang ' + R.RANK_NAME[m.rank + 1] + ')</div>';
+    if (m.rank < 3) {
+      var wieviele = R.hatLinien(m) ? 'vier' : 'drei';
+      html += '<div class="fk leer"' + tip('Nächste Passive',
+        'Der Aufstieg auf Rang ' + R.RANK_NAME[m.rank + 1] + ' gibt eine Passive zur Wahl — ' +
+        'eine aus ' + wieviele + (R.hatLinien(m) ? ', je eine aus den vier Linien dieser Einheit.'
+          : ', darunter die nächste eigene Passive dieser Einheit.')) +
+        '>◈ Wahl auf Rang ' + R.RANK_NAME[m.rank + 1] + '</div>';
     }
     m.devoured.slice(0, R.praedatorSlots(m)).forEach(function (eid) {
       var e = EN.get(eid);
       (e.effects || []).forEach(function (ab) {
         html += '<div class="fk praedator"' +
-          tip(ab.name, (ab.text || '') + kwZeile(ab) + '\n\nVerschlungen von ' + e.name + '.') +
+          tip(ab.name, 'Passive Fähigkeit · verschlungen von ' + e.name + '\n\n' +
+            (ab.text || '') + kwZeile(ab)) +
           '>🍽 ' + esc(ab.name) + '</div>';
       });
     });
     html += '</div>';
+
+    /* Schlüsselwörter zentral an der Einheit erklärt, nicht an jeder Fähigkeit:
+       eine Einheit trägt bis zu acht Fähigkeiten, die dieselben Wörter benutzen. */
+    var eigeneKw = [];
+    abs.forEach(function (a) {
+      (a.keywords || []).concat(a.amplifies || []).forEach(function (k) {
+        if (eigeneKw.indexOf(k) < 0) eigeneKw.push(k);
+      });
+    });
+    if (eigeneKw.length) {
+      html += '<div class="kw-leiste">' + eigeneKw.map(function (k) {
+        return '<span class="kw-tag kw-' + k + '"' +
+          tip(kwName(k), (G.keywords[k] || '') +
+            (G.zustaende[k] ? '\n\n' + G.zustaende[k] : '')) + '>' + esc(kwName(k)) + '</span>';
+      }).join('') + '</div>';
+    }
 
     html += '<div class="liste">' + m.items.map(function (id) {
       var it = GD.item(id);
@@ -846,7 +841,7 @@
     if (extra.length) html += '<p class="dbg-extra">' + esc(extra.join(' · ')) + '</p>';
 
     html += '<p class="dbg-extra">⚡ ' + (k.actives.map(function (x) {
-      return esc(x.name) + ' (' + x.cd + ')';
+      return esc(x.name);
     }).join(' · ') || '—') + '</p>';
     html += '<p class="dbg-extra">◈ ' + (k.effects.map(function (x) {
       return esc(x.name || '?');
@@ -989,10 +984,8 @@
     event: function (d) { R.eventChoose(run, +d.i); render(); speichern(); },
     lager: function (d) { R.camp(run, +d.i); render(); speichern(); },
     aufstieg: function (d) { R.rankUp(run, d.uid); render(); speichern(); },
-    wahl: function (d) { R.chooseActive(run, +d.i); render(); speichern(); },
     pwahl: function (d) { R.choosePassive(run, +d.i); render(); speichern(); },
     'pwahl-skip': function () { R.skipPassive(run); render(); speichern(); },
-    'wahl-skip': function () { R.skipActive(run); render(); speichern(); },
     platz: function (d) {
       if (!tauschUid || tauschUid === d.uid) tauschUid = tauschUid === d.uid ? null : d.uid;
       else { R.swap(run, tauschUid, d.uid); tauschUid = null; speichern(); }

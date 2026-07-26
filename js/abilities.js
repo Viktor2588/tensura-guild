@@ -332,6 +332,15 @@
       defensive: ['souei_def1', 'souei_def2', 'souei_def3', 'souei_def4']
     }
   };
+  /* Nachschlagwerk: welche Passive gehört zur Linie einer Einheit? Damit sie
+     nicht als Bibliotheks-Angebot bei einer anderen Einheit auftaucht. */
+  var linien_ids = {};
+  Object.keys(linien).forEach(function (u) {
+    Object.keys(linien[u]).forEach(function (l) {
+      linien[u][l].forEach(function (id) { linien_ids[id] = u; });
+    });
+  });
+
   var LINIEN_NAME = { angriff: 'Angriff', mechanik: 'Chaos-Mechanik',
                       unterstuetzung: 'Unterstützung', defensive: 'Defensive' };
 
@@ -456,8 +465,11 @@
     aktiv('brandmal', 'Brandmal', 3, ['brand'], '90 % Schaden und 2 Brand — gegen brennende Ziele stattdessen 200 %',
       function (c) { c.attack(c.target.status.brand > 0 ? 2 : 0.9); c.applyStatus(c.target, 'brand', 2); }),
     aktiv('kopfgeld', 'Kopfgeld', 4, ['exekution'],
-      '130 % Schaden. Stirbt das Ziel, ist die Fähigkeit sofort wieder bereit.',
-      function (c) { c.attack(1.3); if (c.target.hp <= 0) c.aktive.bereit = 0; }),
+      '130 % Schaden. Stirbt das Ziel, folgt sofort ein zweiter Schlag auf den nächsten Gegner.',
+      function (c) {
+        c.attack(1.3);
+        if (c.target.hp <= 0) { var f = c.foes()[0]; if (f) c.attack(1.3, f); }
+      }),
 
     /* Chaos im Pool: ohne diese drei hätte die Linie nur Shions Signatur, und
        ihr Aufstiegsangebot fiele auf beliebige Fähigkeiten zurück. */
@@ -740,10 +752,10 @@
         c.self.atk = Math.round(c.self.atk * 1.08);
       }),
     aktiv('sig_milim', 'Drachenfaust', 3, ['exekution'],
-      '260 % Schaden. Stirbt das Ziel, ist die Faust sofort wieder bereit — Milim hört nicht auf.',
+      '260 % Schaden. Stirbt das Ziel, schlägt Milim sofort auf den nächsten ein — sie hört nicht auf.',
       function (c) {
         c.attack(2.6);
-        if (c.target.hp <= 0 && c.aktive) c.aktive.bereit = 0;
+        if (c.target.hp <= 0) { var f = c.foes()[0]; if (f) c.attack(2.6, f); }
       }),
     aktiv('sig_drachenwelpe', 'Glutatem', 3, ['brand'],
       '130 % Schaden und 3 Brand, gegen ein bereits brennendes Ziel 170 %. Brannte es schon, greift das Feuer mit 1 Brand auf ein zweites Ziel über.',
@@ -843,6 +855,11 @@
 
   var alle = passives.concat(pool, signatures);
   alle.forEach(function (a) { a.rarity = RARITAET[a.id] || 0; });
+  /* Einheitenspezifisches trägt keine Raritätsstufe: Signaturen und Linien-
+     Passive stehen nie in einem gewichteten Angebot, die Stufe wäre nur Farbe
+     ohne Bedeutung. */
+  function istEigen(id) { return !!linien_ids[id] || String(id).indexOf('sig_') === 0; }
+  alle.forEach(function (a) { if (istEigen(a.id)) a.rarity = 0; });
   function byId(id) {
     for (var i = 0; i < alle.length; i++) if (alle[i].id === id) return alle[i];
     return null;
@@ -850,7 +867,8 @@
 
   root.Abilities = {
     passives: passives, pool: pool, signatures: signatures, alle: alle,
-    linien: linien, LINIEN_NAME: LINIEN_NAME, linienAngebot: linienAngebot,
+    linien: linien, linien_ids: linien_ids, istEigen: istEigen,
+    LINIEN_NAME: LINIEN_NAME, linienAngebot: linienAngebot,
     CHAOS_JE_RANG: CHAOS_JE_RANG, MARKE_JE_RANG: MARKE_JE_RANG,
     get: byId,
     RARITAET_NAME: RARITAET_NAME, RARITAET_GEWICHT: RARITAET_GEWICHT,

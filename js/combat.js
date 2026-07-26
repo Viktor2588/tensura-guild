@@ -91,14 +91,17 @@
       key: (side === 'player' ? 'p' : 'e') + pos,
       hp: def.hp, maxHp: def.hp, atk: def.atk, def: def.def || 0, spd: def.spd,
       role: roleOf(def), effects: (def.effects || []).slice(),
-      /* Abklingzeiten sind Zustand, nicht Daten — deshalb eine eigene Kopie. */
+      /* Kopie, weil `wucht` je Kampf gelesen wird. `wucht` ist die alte
+         Abklingzeit: Fähigkeiten kühlen nicht mehr ab, aber die Zahl war schon
+         immer ein Maß für ihre Wucht und dient jetzt als Reihenfolge. */
       actives: (def.actives || []).map(function (a) {
-        return { id: a.id, name: a.name, cd: a.cd, fn: a.fn, wenn: a.wenn, bereit: 0 };
+        return { id: a.id, name: a.name, wucht: a.cd, fn: a.fn, wenn: a.wenn };
       }),
       keywords: (def.keywords || []).slice(), resistenz: def.resistenz || 0,
       side: side, pos: pos, gauge: 0, status: {}, regen: 0, lifesteal: 0,
       heilfaktor: 0, schildfaktor: 0,
-      chaos: null, enrage: def.enrage || 0, wut: 1, dmgTaken: 0, dmgDealt: 0
+      chaos: null, enrage: def.enrage || 0, wut: 1, verschlungen: def.verschlungen || 0,
+      dmgTaken: 0, dmgDealt: 0
     };
   }
 
@@ -338,17 +341,16 @@
       return foes[0];                                                         // Front
     }
 
-    /* Von den bereiten Fähigkeiten die mit der längsten Abklingzeit — die ist
-       in aller Regel die stärkste. Fähigkeiten mit `wenn` kommen nur dran, wenn
-       ihre Lage da ist: sonst heilt der Segen einen unverletzten Trupp und das
-       Todesurteil trifft ein volles Leben — und die Wahl beim Aufstieg wäre
-       nichts weiter als „nimm die mit der längsten Abklingzeit". */
+    /* Es gibt keine Abklingzeiten mehr: die Aktive feuert JEDE Runde und ersetzt
+       den Normalangriff. Spielereinheiten tragen genau eine (ihre Signatur),
+       Gegner dürfen mehrere haben — dann gewinnt die wuchtigste, deren
+       Lagebedingung gerade passt. Ohne `wenn` heilte der Segen einen
+       unverletzten Trupp und das Todesurteil träfe volles Leben. */
     function waehleAktive(u, target) {
       var best = null;
       u.actives.forEach(function (a) {
-        if (a.bereit > 0) return;
         if (a.wenn && !a.wenn({ self: u, target: target, allies: living(u.side), foes: living(other(u.side)) })) return;
-        if (!best || a.cd > best.cd) best = a;
+        if (!best || a.wucht > best.wucht) best = a;
       });
       return best;
     }
@@ -404,7 +406,6 @@
         if (posC) u.status.antichaos--;
       } else u.chaos = null;
       if (u.regen > 0) heal(u, u.regen, 'Regeneration');
-      u.actives.forEach(function (a) { if (a.bereit > 0) a.bereit--; });
 
       if (u.status.erstarrung > 0) {
         u.status.erstarrung--;
@@ -429,13 +430,11 @@
       /* Chaos lässt das Wirken misslingen: der Zug ist weg, die Abklingzeit läuft. */
       if (aktive && u.chaos && u.chaos.stapel &&
           rng() < CHAOS_FEHLSCHLAG * u.chaos.stapel) {
-        aktive.bereit = aktive.cd;
         log.push({ t: t, type: 'fehlschlag', key: u.key, unit: u.name, side: u.side, name: aktive.name });
         return;
       }
 
       if (aktive) {
-        aktive.bereit = aktive.cd;
         log.push({ t: t, type: 'aktiv', key: u.key, unit: u.name, side: u.side, name: aktive.name });
         aktive.fn(ctx(u, {
           attacker: u, target: target,

@@ -731,11 +731,18 @@
     hinata: ['hinrichtung', 'blitzfolge', 'panzerbruch'],
     luminous: ['rundumschlag', 'aderlass', 'frostnova']
   };
+  /* Eine Aktive je Einheit — dieselbe Regel wie beim Spieler. Wo die Tabelle
+     mehrere nennt, gewinnt die wuchtigste (die alte Abklingzeit ist das Maß).
+     Ohne diese Angleichung feuerten Gegner jede Runde ihre stärkste aus bis zu
+     drei, während der Spieler auf seine Signatur zurückfiel — gemessen zehn
+     Punkte Siegquote. */
   function aktiveVon(id) {
     var v = AKTIV[id];
     if (!v) return [];
-    return (typeof v === 'string' ? [v] : v).map(function (a) { return root.Abilities.get(a); })
+    var alle = (typeof v === 'string' ? [v] : v).map(function (a) { return root.Abilities.get(a); })
       .filter(Boolean);
+    if (alle.length < 2) return alle;
+    return [alle.reduce(function (a, b) { return b.cd > a.cd ? b : a; })];
   }
 
   /* Begegnung -> fertige Kampfdefinitionen, mit mult skaliert. */

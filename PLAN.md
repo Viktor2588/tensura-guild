@@ -44,14 +44,15 @@ Völker-Boni; wer einen Trupp baut, baut Fähigkeiten, keine Volkszählung.
 | A | 3 | 3 | 2 | 2 |
 | S | **5** | 4 | 3 | 3 |
 
-Die neue aktive Fähigkeit wählt der Spieler aus drei Angeboten oder lässt den
-Slot frei — dann kann ihn der Prädator füllen. Die Passiven gehören der Einheit
-und schalten automatisch auf.
+**Genau eine Aktive je Einheit: ihre Signatur.** Sie feuert in jedem Zug und
+ersetzt den Normalangriff — es gibt keine Abklingzeiten. Alles, was eine Einheit
+darüber hinaus lernt, ist passiv, und beim Aufstieg wird eine aus mehreren
+gewählt. Die Signatur ist damit die Handschrift der Einheit, die Passiven sind
+ihr Fortschritt.
 
-**Aktiv** = feuert im Kampf nach Ablauf der Abklingzeit und ersetzt den normalen
-Angriff. Liegt mehr als eine bereit, gewinnt die mit der längsten Abklingzeit —
-außer die Fähigkeit trägt ein `wenn(c)`, dann wartet sie auf ihre Lage
-(verwundeter Trupp, angeschlagenes Ziel, zwei Gegner). **Passiv** = hängt an
+**Aktiv** = feuert in jedem Zug und ersetzt den normalen Angriff. Trägt sie ein
+`wenn(c)`, wartet sie auf ihre Lage (verwundeter Trupp, angeschlagenes Ziel,
+zwei Gegner) und die Einheit schlägt solange normal zu. **Passiv** = hängt an
 einem Hook und wirkt dauerhaft.
 
 **Schlüsselwörter** tragen die Kombos: jede Fähigkeit erzeugt etwas (Quelle)
@@ -120,6 +121,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 7 | TODO.md: zwei Akte mit Boss-Pools, Debug-Übersicht, Chaos-Mechanik und wählbare Passive je Einheit | Shion spielt sich sichtbar anders als über Werte allein | ✅ Shion, 39 Einheiten offen |
 | 8 | Einheiten-Synergie: „verwundbar" als Trupp-Marke, Blutung, Soueis sechzehn Passive, größere Boss-Pools | Ein Assassine macht den ganzen Trupp stärker, nicht nur sich | ✅ Souei, 38 Einheiten offen |
 | 9 | Bedrohungsstufen als Regeln statt Prozentzahlen | Jede Stufe verlangt ein anderes Spiel, nicht nur einen stärkeren Trupp | ✅ |
+| 10 | Eine Aktive je Einheit, keine Abklingzeiten, Passive als einziger Fortschritt | Der Aufstieg ist eine Passiv-Entscheidung, die Signatur bleibt die Handschrift | ✅ |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -446,7 +448,46 @@ Der zweite und dritte Punkt sind derselbe Befund wie schon bei den Bossen: **die
 Kurve lässt sich nicht am Reißbrett schätzen.** Jede dieser Regeln sah auf dem
 Papier nach „ein bisschen härter" aus.
 
+### Phase 10 (2026-07-26): eine Aktive, keine Abklingzeit
+
+Auf Zuruf umgebaut, und der Umbau ging tiefer als die Anzeige, an der er begann:
+
+- **Keine Abklingzeiten.** Die Aktive feuert in jedem Zug. `cd` blieb als Feld
+  erhalten, heißt im Kampf jetzt `wucht` und dient nur noch als Reihenfolge, wo
+  eine Seite mehrere Aktive hat — die Zahl war schon immer ein Maß für Stärke.
+- **Eine Aktive je Einheit: die Signatur.** `AKTIV_SLOTS` ist [1,1,1,1]. Der
+  Aufstieg wählt keine Aktive mehr, sondern eine **Passive**: vier aus den Linien
+  (Shion, Souei) oder drei aus der Bibliothek plus der eigenen nächsten. Damit
+  fällt `run.wahl` ersatzlos weg, alles läuft über `run.pwahlen`.
+- **Keine Raritätsstufe** an Signaturen und Linien-Passiven — sie stehen in
+  keinem gewichteten Angebot, die Stufe wäre nur Farbe (`AB.istEigen`).
+- **Schlüsselwörter zentral an der Einheitenkarte**, nicht an jeder Fähigkeit.
+  Eine Einheit trägt bis zu acht Fähigkeiten, die dieselben Wörter benutzen; die
+  Definition stand achtmal da.
+
+Drei Dinge, die erst die Messung zeigte:
+
+1. **Gegner profitierten mehr als der Spieler.** Sie behielten ihre Liste aus bis
+   zu drei Aktiven und feuerten davon jede Runde die stärkste, während der
+   Spieler auf die Signatur zurückfiel: Siegquote 50 → 40 %. `EN.aktiveVon`
+   schneidet jetzt auf eine zu, dieselbe Regel für beide Seiten (→ 43 %), Rest
+   über `GRUNDHAERTE` 1.02 → 0.98 (→ 50 %).
+2. **Drei Relikte und ein Item hingen an Abklingzeit oder Anzahl der Aktiven**
+   (Taktgeber, Zwillingsseele, Zwillingsklinge) und waren schlagartig wirkungslos
+   — neu geschrieben statt gelöscht.
+3. **Tests maßen Summen statt Raten.** „Gezeichnetes Ziel" schien wirkungslos
+   (9929 gegen 9967 Schaden), weil der Sandsack mit der Passiven früher stirbt
+   und die Summe deshalb gleich bleibt. Je Treffer gemessen wirkt sie. Derselbe
+   Fehler steckte im Frost-Test.
+
+Ergebnis `dev/balance.js 400`: 50 % frisch, 45 % voll freigeschaltet, Builds
+41–60 %. Bedrohungsleiter 50/34/25/19/19/15 — Stufe 3 und 4 liegen gleichauf,
+verlangen aber Verschiedenes (karger Händler gegen Elite überall).
+
 Weitere offene Punkte:
+- Der Aufstiegs-Pool aus 34 Aktiven wird vom Spieler nicht mehr gezogen und lebt
+  nur noch als Gegner-Repertoire. Entweder in Passive umbauen oder bewusst als
+  Gegnerinhalt führen.
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
 - 38 Einheiten haben noch keine eigenen Linien; das System steht, der Inhalt

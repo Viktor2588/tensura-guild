@@ -108,7 +108,7 @@ function play(seed, voll) {
       }
     });
     // aufsteigen, sobald bezahlbar: vorderste Einheit zuerst
-    for (var j = 0; j < run.team.length && !run.wahl && !R.passivWahl(run); j++) {
+    for (var j = 0; j < run.team.length && !R.passivWahl(run); j++) {
       var m = run.team[j];
       if (R.rankCost(m) && run.magicules >= R.rankCost(m)) { R.rankUp(run, m.uid); break; }
     }
@@ -141,22 +141,10 @@ function play(seed, voll) {
       R.choosePassive(run, pBest);
       continue;
     }
-    if (run.wahl) {
-      /* Fähigkeit wählen, die zum bisherigen Build passt. */
-      var kw = teamKeywords(run);
-      var best = 0, bestScore = -1;
-      run.wahl.offers.forEach(function (id, i) {
-        var ab = AB.get(id), sc = 1;
-        (ab.keywords || []).forEach(function (k) { if (kw[k]) sc += kw[k].quellen + kw[k].verstaerker; });
-        if (sc > bestScore) { bestScore = sc; best = i; }
-      });
-      R.chooseActive(run, best);
-      continue;
-    }
     if (run.phase === 'karte') {
       haushalten();
       if (STELLEN) aufstellen();
-      if (run.wahl || R.passivWahl(run)) continue;
+      if (R.passivWahl(run)) continue;
       R.choose(run, route(run, rng));
       continue;
     }

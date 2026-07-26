@@ -18,8 +18,21 @@ Abgearbeitet in Phase 9:
 - [x] Bedrohungsstufen sind Regeln statt Prozentzahlen: Überzahl, Nachschub,
       Kriegsrecht, Belagerung, Sturmgott — kumulativ, gemessen 48/35/24/16/11/6 %
 
+Abgearbeitet in Phase 10:
+
+- [x] Keine Abklingzeiten mehr: die Signatur feuert jede Runde
+- [x] Eine Aktive je Einheit (die Signatur), alles Weitere ist passiv —
+      der Aufstieg wählt jetzt Passive statt Aktiver
+- [x] Einheitenspezifische Fähigkeiten (Signaturen, Linien-Passive) tragen
+      keine Raritätsstufe mehr
+- [x] Schlüsselwörter werden zentral an der Einheitenkarte erklärt statt an
+      jeder einzelnen Fähigkeit
+
 Offen:
 
+- Der Aufstiegs-Pool aus 34 aktiven Fähigkeiten wird vom Spieler nicht mehr
+  gezogen — er lebt nur noch als Gegner-Repertoire weiter. Entweder in Passive
+  umbauen oder bewusst als Gegnerinhalt führen.
 - 38 Einheiten haben noch keine eigenen Linien. Das System steht (`AB.linien`),
   Shion und Souei sind die Vorlagen — pro Einheit vier Linien à vier Stufen:
   Werte-Angriff, eigene Mechanik, Unterstützung, Defensive. Als Nächstes bieten

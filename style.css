@@ -214,10 +214,6 @@ dialog::backdrop { background: rgba(0,0,0,.65); }
 .fk.passiv { color: #a8e0b0; }
 .fk.praedator { color: var(--gold); }
 .fk.leer { color: #5b6079; font-style: italic; }
-.fk .cd {
-  font-size: .68rem; background: var(--bg3); border-radius: 3px;
-  padding: 0 .25rem; color: var(--grau);
-}
 
 .chip.leer { color: var(--grau); border-style: dashed; }
 
@@ -250,6 +246,8 @@ dialog::backdrop { background: rgba(0,0,0,.65); }
 .kw-schild { color: #e2e2e2; } .kw-heilung { color: var(--gruen); }
 .kw-konter { color: #f0857c; } .kw-tempo { color: #ffe08a; }
 .kw-flaeche { color: #b8a1ff; } .kw-exekution { color: var(--rot); }
+.kw-chaos { color: #c88ae0; } .kw-verwundbar { color: #ff9db0; }
+.kw-blutung { color: #e05b6b; }
 .typ-signatur { color: var(--gold); } .typ-aktiv { color: var(--lila); }
 .typ-passiv { color: #7fb3d5; } .typ-relikt { color: var(--gold); }
 .typ-item { color: #c9b48a; }
@@ -319,3 +317,8 @@ table.dbg i.ab { color: #e77; }
 .regeln { display: flex; flex-wrap: wrap; gap: .25rem; margin: .3rem 0; }
 .regel { font-size: .7rem; padding: .1rem .4rem; border-radius: 999px;
          background: #a33a; color: #fff; letter-spacing: .02em; }
+
+/* Schlüsselwörter der Einheit: einmal zentral statt an jeder Fähigkeit. */
+.kw-leiste { display: flex; flex-wrap: wrap; gap: .25rem; margin: .3rem 0 .2rem; }
+.kw-tag { font-size: .7rem; padding: .05rem .4rem; border-radius: 999px;
+          border: 1px solid currentColor; opacity: .9; }

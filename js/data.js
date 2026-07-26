@@ -82,7 +82,7 @@
       konter: 'Schaden zurück an den Angreifer. Skaliert mit der Zahl der Treffer, die man einsteckt.',
       exekution: 'Quellen sind Fähigkeiten, die gezielt auf schwache Ziele gehen; Verstärker schlagen extra hart gegen Angeschlagene zu. Zusammen räumen sie ab, sobald der erste Gegner wackelt.',
       flaeche: 'Trifft mehrere Gegner gleichzeitig. Stark gegen Gruppen, schwach gegen Bosse.',
-      tempo: 'Mehr Züge. Jeder zusätzliche Zug ist ein zusätzlicher Angriff und eine schnellere Abklingzeit.',
+      tempo: 'Mehr Züge. Da die Signatur in jedem Zug feuert, ist jeder zusätzliche Zug ein zusätzlicher Einsatz.',
       verwundbar: 'Die Trupp-Marke. Quellen setzen sie, Verstärker docken daran an — und zwar für ALLE Einheiten, nicht nur für die, die markiert hat. Das ist das Schlüsselwort für Trupps, die um einen Assassinen herum gebaut sind.',
       blutung: 'Schaden über Zeit nach dem maximalen Leben des Ziels. Skaliert gegen Bosse, wo Gift und Brand mit ihren festen Zahlen abfallen.',
       chaos: 'Streuung statt Schaden. Quellen legen dem Gegner Chaos an — schwankende Werte und verpuffende Fähigkeiten. Verstärker schlagen härter zu, je mehr Stapel liegen. Shions Linie, aber der Trupp kann sie mittragen.'
@@ -98,14 +98,12 @@
       gold: 'Wird beim Händler ausgegeben: Einheiten, Ausrüstung, gelegentlich ein Relikt. Kämpfe und Ereignisse bringen Gold.',
       magicule: 'Die Währung der Ränge. Nur damit steigen Einheiten von C auf B, A und S auf.',
       leben: 'Verlorene Kämpfe. Sind alle Leben aufgebraucht, endet der Run — der Kampf selbst kostet keine dauerhaften Werte. Fünf Leben auf fünf Akte, auf Bedrohungsstufe 5 nur drei.',
-      rang: 'C → B → A → S. Jeder Aufstieg gibt +30 % Leben und Angriff, einen Item-Slot (S: zwei), eine aktive Fähigkeit zur Wahl, die nächste eigene Passive und einen Prädator-Slot.',
-      signatur: 'Die einzigartige aktive Fähigkeit dieser Einheit. Gibt es bei keiner anderen und ist nie im Aufstiegs-Angebot.',
-      aktiv: 'Feuert im Kampf, sobald die Abklingzeit abgelaufen ist, und ERSETZT in dem Zug den normalen Angriff. Sind mehrere bereit, wird die mit der längsten Abklingzeit gewählt — Fähigkeiten mit einer Lagebedingung ("nur wenn jemand verwundet ist") warten, bis diese Lage da ist.',
-      passiv: 'Wirkt dauerhaft im Hintergrund, ohne Abklingzeit. Schaltet mit dem Rang frei.',
-      abklingzeit: 'Zahl der eigenen Züge, die zwischen zwei Einsätzen dieser Fähigkeit liegen müssen.',
+      rang: 'C → B → A → S. Jeder Aufstieg gibt +30 % Leben und Angriff, einen Item-Slot (S: zwei), eine Passive zur Wahl und einen Prädator-Slot. Die aktive Fähigkeit bleibt immer die Signatur.',
+      aktiv: 'Jede Einheit hat genau eine: ihre Signatur. Sie feuert in JEDEM Zug und ersetzt den normalen Angriff. Trägt sie eine Lagebedingung ("nur wenn jemand verwundet ist"), schlägt die Einheit stattdessen normal zu, bis die Lage da ist.',
+      passiv: 'Wirkt dauerhaft im Hintergrund. Alles, was eine Einheit über ihre Signatur hinaus lernt, ist passiv — beim Aufstieg wird eine aus mehreren gewählt.',
       bedrohungsstufe: 'Die Langzeitschicht: Nach jedem Sieg geht die nächste Stufe auf, und jede schaltet EINE neue Regel frei — nicht bloß mehr Gegnerwerte. Überzahl stellt einen Nachzügler dazu, Nachschub lässt den vordersten Gegner einmal wiederauferstehen, Kriegsrecht macht den Händler karg, Belagerung stellt überall Elite hin, Sturmgott nimmt zwei Leben und lässt Bosse doppelt so schnell eskalieren. Die Regeln sind kumulativ. Eine Prozentzahl verlangt einen stärkeren Trupp, eine Regel einen anderen.',
       eskalation: 'Bosse treten allein an und werden mit jedem ihrer Züge 6 % stärker. Ein Bosskampf ist deshalb ein Tempo-Check: wer nicht abräumt, verliert allmählich. Ohne diese Eskalation entscheidet sich ein Kampf gegen einen einzelnen Gegner in der ersten Runde.',
-      praedator: 'Nach jedem gewonnenen Kampf darf ein besiegter Gegner verschlungen werden: seine Fähigkeit wandert dauerhaft in eine Einheit. Slots gibt es erst ab Rang B.',
+      praedator: 'Nach jedem gewonnenen Kampf darf ein besiegter Gegner verschlungen werden: seine Fähigkeit wandert als zusätzliche Passive dauerhaft in eine Einheit. Slots gibt es erst ab Rang B.',
       itemslot: 'Wie viele Ausrüstungsstücke diese Einheit tragen kann. Hängt am Rang: C 1, B 2, A 3, S 5.',
       quelle: 'Eine Fähigkeit, die diesen Zustand erzeugt.',
       verstaerker: 'Eine Fähigkeit, die diesen Zustand ausnutzt — mehr Schaden gegen Ziele, die ihn tragen.',
@@ -413,9 +411,9 @@
         });
       }, [], [],
       function (run) { return raenge(run).some(function (r) { return r >= 2; }); }),
-    relic('zwillingsseele', 'Zwillingsseele', 4, 'Einheiten mit zwei oder mehr aktiven Fähigkeiten +22 % Angriff',
-      jeder(function (x) { if ((x.actives || []).length >= 2) scale(x, { atk: 0.22 }); }), [], [],
-      function (run) { return raenge(run).some(function (r) { return r >= 1; }); }),
+    relic('zwillingsseele', 'Zwillingsseele', 4, 'Einheiten mit einer verschlungenen Fähigkeit +30 % Angriff',
+      jeder(function (x) { if (x.verschlungen) scale(x, { atk: 0.3 }); }), [], [],
+      function (run) { return run.team.some(function (m) { return (m.devoured || []).length; }); }),
     relic('rangbanner', 'Rangbanner', 4, 'Je Einheit ab Rang A erhalten alle +8 % Leben',
       function (m) {
         var n = m.filter(function (x) { return (x.rank || 0) >= 2; }).length;
@@ -445,10 +443,8 @@
       jeder(function (x) { if (!(x.rank || 0)) scale(x, { hp: 0.35, atk: 0.35 }); }), [], [],
       function (run) { return raenge(run).some(function (r) { return r === 0; }); }),
 
-    relic('taktgeber', 'Taktgeber', 5, 'Alle aktiven Fähigkeiten kühlen einen Zug schneller ab',
-      jeder(function (x) {
-        (x.actives || []).forEach(function (a) { a.cd = Math.max(1, a.cd - 1); });
-      }))
+    relic('taktgeber', 'Taktgeber', 5, 'Alle Einheiten +18 % Tempo — und damit öfter am Zug',
+      jeder(function (x) { scale(x, { spd: 0.18 }); }), ['tempo'])
   ];
 
   /* ---- Ausrüstung ---------------------------------------------------------- */
@@ -463,7 +459,7 @@
     { id: 'plattenpanzer', rarity: 2, name: 'Plattenpanzer', cost: 70, stats: { hp: 55, def: 5 },
       text: '+55 Leben und +5 Rüstung. Für die vorderste Einheit gedacht.' },
     { id: 'stiefel', rarity: 1, name: 'Windstiefel', cost: 40, stats: { spd: 6 },
-      text: '+6 Tempo. Mehr Tempo heißt mehr Züge und schnellere Abklingzeiten.' },
+      text: '+6 Tempo. Mehr Tempo heißt mehr Züge — und damit öfter die eigene Signatur.' },
     { id: 'amulett', rarity: 2, name: 'Magicule-Amulett', cost: 55, stats: { atk: 6, spd: 3 },
       text: '+6 Angriff und +3 Tempo.' },
     { id: 'giftklinge', rarity: 3, name: 'Giftklinge', cost: 60, stats: { atk: 4 },
@@ -540,10 +536,10 @@
         c.self.hp += 15 * r;
       })] },
     { id: 'zwillingsklinge', rarity: 4, name: 'Zwillingsklinge', cost: 80, stats: {},
-      text: 'Je aktiver Fähigkeit der Trägerin +6 Angriff und +2 Tempo — lohnt sich erst ab Rang B.',
+      text: 'Je Passive der Trägerin +5 Angriff und +2 Tempo — lohnt sich erst ab Rang B.',
       effects: [eff('onStart', 'Zwillingsklinge', function (c) {
-        var n = c.self.actives.length;
-        c.self.atk += 6 * n;
+        var n = c.self.effects.filter(function (e) { return e.art === 'passiv'; }).length;
+        c.self.atk += 5 * n;
         c.self.spd += 2 * n;
       })] },
     { id: 'heilkelch', rarity: 3, name: 'Kelch der Quelle', cost: 55, stats: { hp: 20 },
@@ -569,11 +565,7 @@
   /* Die Signatur ist so selten wie ihre Einheit teuer ist — eine Zahl weniger,
      die auseinanderlaufen kann. Rimuru (Kosten 0) ist der Held: legendär. */
   var KOSTEN_ZU_RARITAET = { 0: 5, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 };
-  units.forEach(function (unit) {
-    unit.rarity = KOSTEN_ZU_RARITAET[unit.cost];
-    var sig = root.Abilities.get(unit.signature);
-    if (sig) sig.rarity = unit.rarity;
-  });
+  units.forEach(function (unit) { unit.rarity = KOSTEN_ZU_RARITAET[unit.cost]; });
 
   function byId(list, id) {
     for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];

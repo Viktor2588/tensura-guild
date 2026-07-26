@@ -46,7 +46,7 @@
   var RANK_NAME = ['C', 'B', 'A', 'S'];
   var RANK_COST = [140, 300, 560];                // C->B, B->A, A->S
   var ITEM_SLOTS = [1, 2, 3, 5];                  // S gibt zwei statt einem
-  var AKTIV_SLOTS = [1, 2, 3, 4];                 // Slot 1 ist immer die Signatur
+  var AKTIV_SLOTS = [1, 1, 1, 1];                 // genau eine: die Signatur, jede Runde
   var PASSIV_SLOTS = [0, 1, 2, 3];                // schalten automatisch frei
   var PRAEDATOR_SLOTS = [0, 1, 2, 3];             // verschlungene Gegnerfähigkeiten
 
@@ -81,7 +81,7 @@
             '15 % mehr Magicule. Du gewinnst weitgehend mit dem Trupp, den du gedraftet hast.' },
     { stufe: 4, name: 'Belagerung', regel: 'belagerung',
       text: 'Auf JEDEM Kampfknoten steht eine Elite — zur Beute eines normalen ' +
-            'Kampfes. Dazu gibt das Lager 15 % weniger — es gibt keinen ruhigen Knoten mehr.' },
+            'Kampfes. Dazu gibt das Lager 30 % weniger — es gibt keinen ruhigen Knoten mehr.' },
     { stufe: 5, name: 'Sturmgott', regel: 'sturmgott',
       text: 'Nur drei Leben statt fünf, und Bosse eskalieren doppelt so schnell. Jetzt zählt Tempo.' }
   ];
@@ -98,7 +98,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.02;
+  var GRUNDHAERTE = 0.98;   // ohne Abklingzeiten schlagen beide Seiten haerter zu
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -115,7 +115,12 @@
     /* Klein halten: die Kurve ist steil, 20 % mehr Gegnerwerte kippen fast jeden
        Run. Gemessen mit `node dev/balance.js 500 --stufe N`. */
     /* Nur noch ein leiser Anstieg: die Regeln oben tragen die Härte. */
-    return GRUNDHAERTE + 0.012 * Math.min(t, 5);
+    var f = GRUNDHAERTE + 0.012 * Math.min(t, 5);
+    /* Eine Elite mit vier Körpern ist gegen einen Flächen-Trupp keine Strafe,
+       sondern ein Angebot — deshalb bekommt der belagerte Knoten zusätzlich
+       Werte. Ohne das lag Stufe 4 gemessen ÜBER Stufe 3. */
+    if (node && node.belagert) f *= 1.1;
+    return f;
   }
 
   /* ---- Meta (überlebt den Tod) ------------------------------------------- */
@@ -149,8 +154,14 @@
      genau das, was der Spieler gewählt hat; alle anderen weiter die drei festen
      aus data.js, die mit dem Rang aufschalten. */
   function passivIds(m) {
-    if (AB.linien[m.id]) return (m.passives || []).slice();
-    return GD.unit(m.id).passives.slice(0, PASSIV_SLOTS[m.rank]);
+    var gewaehlt = m.passives || [];
+    if (AB.linien[m.id]) return gewaehlt.slice();
+    /* Wer noch nie vor einer Wahl stand, trägt die feste Liste aus data.js —
+       das hält alte Speicherstände und die Testhelfer am Leben, die einer
+       Einheit einfach einen Rang setzen. Sobald einmal gewählt werden durfte,
+       zählt nur noch die Wahl; sonst wäre Verzichten folgenlos. */
+    if (!m.durfteWaehlen) return GD.unit(m.id).passives.slice(0, PASSIV_SLOTS[m.rank]);
+    return gewaehlt.slice(0, PASSIV_SLOTS[m.rank]);
   }
   function hatLinien(m) { return !!AB.linien[m.id]; }
 
@@ -178,9 +189,9 @@
       actives: [], effects: [], keywords: []
     };
 
-    /* Aktive: Signatur zuerst, dann die beim Aufstieg gewählten. */
-    var aktiv = [base.signature].concat(m.actives).slice(0, AKTIV_SLOTS[r]);
-    aktiv.forEach(function (id) {
+    /* Genau eine Aktive: die Signatur. Sie feuert in jedem Zug und ersetzt den
+       Normalangriff — alles andere, was eine Einheit lernt, ist passiv. */
+    [base.signature].forEach(function (id) {
       var a = AB.get(id);
       if (a) { d.actives.push(a); d.keywords = d.keywords.concat(a.keywords || []); }
     });
@@ -203,6 +214,7 @@
       d.keywords = d.keywords.concat(it.keywords || [], it.amplifies || []);
     });
 
+    if (m.devoured.slice(0, PRAEDATOR_SLOTS[r]).length) d.verschlungen = 1;
     m.devoured.slice(0, PRAEDATOR_SLOTS[r]).forEach(function (eid) {
       var e = EN.get(eid);
       (e && e.effects || []).forEach(function (ef) {
@@ -219,7 +231,7 @@
   function abilities(m) {
     var base = GD.unit(m.id);
     var out = [];
-    [base.signature].concat(m.actives).slice(0, AKTIV_SLOTS[m.rank]).forEach(function (id) {
+    [base.signature].forEach(function (id) {
       var a = AB.get(id); if (a) out.push(a);
     });
     passivIds(m).forEach(function (id) {
@@ -511,7 +523,7 @@
     run.pending = { result: res, node: node, rewards: null, devour: null };
 
     if (res.winner === 'player') {
-      var gold = ertrag(node.encounter.gold * (node.belagert ? 0.55 : 1));
+      var gold = ertrag(node.encounter.gold * (node.belagert ? 0.45 : 1));
       run.gold += gold;
       run.magicules += ertrag(25 + inhaltsStufe(run) * 15);
       run.pending.gold = gold;
@@ -605,7 +617,7 @@
     }
     else if (run.bank.length < BANK_MAX) run.bank.push(m);
     else return false;
-    passivAngebot(run, m);
+    passivAngebot(run, m, true);
     return true;
   }
 
@@ -641,7 +653,7 @@
 
   function rankUp(run, uid, gratis) {
     var m = find(run, uid);
-    if (!m || m.rank >= 3 || run.wahl) return false;
+    if (!m || m.rank >= 3 || passivWahl(run)) return false;
     var cost = gratis ? 0 : rankCost(m, run);
     if (run.magicules < cost) return false;
     run.magicules -= cost;
@@ -649,41 +661,6 @@
     run.chronik.push('Aufstieg: ' + GD.unit(m.id).name + ' auf Rang ' + rankName(m));
     passivAngebot(run, m);
 
-    /* Der neue aktive Slot will gefüllt werden — drei Angebote zur Wahl.
-       Zwei davon liegen auf der Linie der Einheit selbst: was ihre Signatur und
-       ihre Passiven erzeugen oder verstärken, bekommt sie auch beim Aufstieg
-       angeboten. Sonst wertet jede Einheit dasselbe auf und alle Builds sehen
-       gleich aus. Das dritte Angebot bleibt offen — sonst gibt es keinen Weg,
-       eine Einheit bewusst gegen ihre Neigung zu bauen. */
-    var rng = rngOf(run);
-    var frei = AB.pool.filter(function (a) { return m.actives.indexOf(a.id) < 0; });
-    /* Höherer Rang würfelt aus einem besseren Topf — Rang S sieht öfter Legendäres. */
-    var stufe = inhaltsStufe(run) + m.rank - 1;
-    var eigen = AB.keywords(abilities(m));
-    var offers = waehle(rng, frei.filter(function (a) {
-      return (a.keywords || []).concat(a.amplifies || []).some(function (k) { return eigen[k]; });
-    }), stufe, 2);
-    var rest = frei.filter(function (a) { return offers.indexOf(a) < 0; });
-    offers = offers.concat(waehle(rng, rest, stufe, 3 - offers.length));
-    run.wahl = { uid: uid, offers: offers.map(function (a) { return a.id; }) };
-    commit(run, rng);
-    return true;
-  }
-
-  function chooseActive(run, i) {
-    if (!run.wahl) return false;
-    var m = find(run, run.wahl.uid);
-    var id = run.wahl.offers[i];
-    if (!m || !id) return false;
-    if (1 + m.actives.length >= aktivSlots(m)) { run.wahl = null; return false; }   // Signatur belegt Slot 1
-    m.actives.push(id);
-    run.wahl = null;
-    return true;
-  }
-  /* Slot freilassen: dann kann ihn später der Prädator füllen. */
-  function skipActive(run) {
-    if (!run.wahl) return false;
-    run.wahl = null;
     return true;
   }
 
@@ -696,13 +673,38 @@
      Warteschlange statt Einzelfeld: der Startdraft wirbt drei Einheiten
      hintereinander an, da liegen sofort mehrere Wahlen offen.                 */
 
-  function passivAngebot(run, m) {
-    if (!hatLinien(m)) return;
-    var stufe = (m.passives || []).length + 1;
-    var offers = AB.linienAngebot(m.id, stufe)
-      .filter(function (o) { return (m.passives || []).indexOf(o.id) < 0; });
-    if (!offers.length) return;
-    (run.pwahlen = run.pwahlen || []).push({ uid: m.uid, stufe: stufe, offers: offers });
+  function passivAngebot(run, m, beiAnwerbung) {
+    var hab = m.passives || [];
+    var offers;
+    if (hatLinien(m)) {
+      var stufe = hab.length + 1;
+      offers = AB.linienAngebot(m.id, stufe)
+        .filter(function (o) { return hab.indexOf(o.id) < 0; });
+      if (!offers.length) return;
+      (run.pwahlen = run.pwahlen || []).push({ uid: m.uid, stufe: stufe, offers: offers });
+      return;
+    }
+    /* Ohne eigene Linien: die nächste feste Passive der Einheit plus zwei aus
+       der geteilten Bibliothek. Seit die Aktive nicht mehr gewählt wird, wäre
+       der Aufstieg sonst gar keine Entscheidung mehr. Bei der Anwerbung gibt es
+       nichts zu wählen — Rang C hat keinen Passiv-Slot. */
+    if (beiAnwerbung || m.rank < 1) return;
+    m.durfteWaehlen = 1;
+    var eigen = GD.unit(m.id).passives[m.rank - 1];
+    offers = [];
+    if (eigen && hab.indexOf(eigen) < 0) offers.push({ linie: 'eigen', linieName: 'Eigene Linie', id: eigen });
+    var rng = rngOf(run);
+    var kw = AB.keywords(abilities(m));
+    var frei = AB.passives.filter(function (p) {
+      return !AB.linien_ids[p.id] && hab.indexOf(p.id) < 0 && p.id !== eigen;
+    });
+    var passend = frei.filter(function (p) {
+      return (p.keywords || []).concat(p.amplifies || []).some(function (k) { return kw[k]; });
+    });
+    waehle(rng, passend.length >= 2 ? passend : frei, inhaltsStufe(run) + m.rank - 1, 3 - offers.length)
+      .forEach(function (p) { offers.push({ linie: 'bibliothek', linieName: 'Bibliothek', id: p.id }); });
+    commit(run, rng);
+    if (offers.length) (run.pwahlen = run.pwahlen || []).push({ uid: m.uid, stufe: m.rank, offers: offers });
   }
 
   function passivWahl(run) { return (run.pwahlen || [])[0] || null; }
@@ -839,7 +841,7 @@
     if (run.phase !== 'lager' || run.pending.done) return false;
     /* Belagerung nimmt auch die Erholung — sonst ist der Schritt von Stufe 3
        auf 4 gemessen nur zwei Punkte wert. */
-    var f = regel(run, 'belagerung') ? 0.85 : 1;
+    var f = regel(run, 'belagerung') ? 0.7 : 1;
     if (i === 0) run.gold += Math.round(ertrag(60) * f);
     else if (i === 1) run.magicules += Math.round(ertrag(120) * f);
     else api.buffRandom(run, { hp: Math.round(30 * f), atk: Math.round(4 * f) });
@@ -979,7 +981,7 @@
     ['rngState', 'act', 'step', 'threat', 'gold', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank', 'bosse']
       .forEach(function (k) { if (d[k] !== undefined) run[k] = d[k]; });
     uidSeq = Math.max(uidSeq, d.uidSeq || 0);
-    run.pending = null; run.wahl = null;
+    run.pending = null;
     run.pwahlen = d.pwahlen || [];
     run.startwahl = d.startwahl || null;
     if (run.startwahl) { run.phase = 'start'; return run; }
@@ -1017,7 +1019,7 @@
   root.Run = {
     create: create, newMeta: newMeta, resolve: resolve, member: member, abilities: abilities,
     choose: choose, advance: advance, takeReward: takeReward, devour: devour,
-    rankUp: rankUp, chooseActive: chooseActive, skipActive: skipActive,
+    rankUp: rankUp,
     passivWahl: passivWahl, choosePassive: choosePassive, skipPassive: skipPassive,
     passivIds: passivIds, hatLinien: hatLinien,
     chooseStart: chooseStart,
