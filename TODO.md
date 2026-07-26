@@ -62,3 +62,4 @@ Offen:
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
 - Bitte Die Meta progression anzeigen was alles freigeschaltet wurde
+- Bitte die Fähigkeiten die man per entwiclung bekommt nicht statisch sondern random anbieten. Eine aus jeder Art.
