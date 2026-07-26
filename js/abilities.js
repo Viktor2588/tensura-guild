@@ -312,7 +312,342 @@
       function (c) { var f = c.foes()[0]; if (f) c.applyStatus(f, 'verwundbar', 1); }),
     passiv('souei_def4', 'Nebelform', 'onStart', [], ['verwundbar'],
       'Souei erleidet 30 % weniger Schaden, solange er in Deckung der Marke kämpft',
-      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.3); })
+      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.3); }),
+
+    /* ---- Benimarus Linien: Brand und Fläche -------------------------------
+       Der Feldherr. Er setzt das Feld in Brand und schlägt Kapital daraus — für
+       sich und für den Trupp.                                                 */
+
+    passiv('ben_ang1', 'Glutzorn', 'onHit', [], ['brand'],
+      '+7 % Schaden je Brand-Stapel auf dem Ziel',
+      function (c) { c.dmg *= 1 + 0.07 * (c.target.status.brand || 0); }),
+    passiv('ben_ang2', 'Feuertaufe', 'onHit', [], ['brand'],
+      'Gegen brennende Ziele +30 % Schaden, und die halbe Rüstung zählt nicht',
+      function (c) {
+        if (!(c.target.status.brand > 0)) return;
+        c.dmg *= 1.3;
+        c.self.pierce = Math.max(c.self.pierce || 0, 0.5);
+      }),
+    passiv('ben_ang3', 'Aschesturm', 'onHit', ['flaeche'], ['brand'],
+      '30 % Chance, zusätzlich jeden brennenden Gegner für 45 % zu treffen',
+      chance(0.3, function (c) {
+        c.foes().forEach(function (f) {
+          if (f !== c.target && f.status.brand > 0) c.deal(f, c.self.atk * 0.45, 'Aschesturm');
+        });
+      })),
+    passiv('ben_ang4', 'Entfesseltes Kurenai', 'onKill', ['brand', 'flaeche'], [],
+      'Jeder erlegte Gegner setzt allen übrigen 3 Brand und gibt Benimaru +12 % Angriff',
+      function (c) {
+        c.foes().forEach(function (f) { c.applyStatus(f, 'brand', 3); });
+        c.self.atk = Math.round(c.self.atk * 1.12);
+      }),
+
+    passiv('ben_mec1', 'Flammenmeister', 'onHit', ['brand'], [],
+      'Brennt das Ziel bereits, legt jeder Treffer 2 Brand nach',
+      function (c) { if (c.target.status.brand > 0) c.applyStatus(c.target, 'brand', 2); }),
+    passiv('ben_mec2', 'Zunder', 'onHit', ['brand', 'flaeche'], [],
+      '40 % Chance, das Feuer mit 2 Brand auf einen zweiten Gegner zu tragen',
+      chance(0.4, function (c) {
+        var f = c.foes().filter(function (x) { return x !== c.target; })[0];
+        if (f) c.applyStatus(f, 'brand', 2);
+      })),
+    passiv('ben_mec3', 'Dauerbrand', 'onHit', ['brand'], [],
+      'Brand auf Benimarus Zielen baut sich nicht mehr ab',
+      function (c) { c.target.brandBleibt = 1; }),
+    passiv('ben_mec4', 'Höllenlohe', 'onHit', [], ['brand'],
+      'Brand richtet auf Benimarus Zielen doppelten Schaden an',
+      function (c) { c.target.brandFaktor = Math.max(c.target.brandFaktor || 1, 2); }),
+
+    passiv('ben_unt1', 'Feldherr', 'onStart', [], [],
+      'Alle Verbündeten erhalten +12 % Angriff',
+      function (c) { c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.12); }); }),
+    passiv('ben_unt2', 'Brandzeichen', 'onStart', ['brand'], [],
+      'Jeder Treffer des ganzen Trupps legt 1 Brand an',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Brandzeichen', fn: function (k) {
+            k.applyStatus(k.target, 'brand', 1);
+          } });
+        });
+      }),
+    passiv('ben_unt3', 'Sengende Reihen', 'onStart', [], ['brand'],
+      'Der ganze Trupp verursacht +5 % Schaden je Brand-Stapel auf dem Ziel',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Sengende Reihen', fn: function (k) {
+            k.dmg *= 1 + 0.05 * (k.target.status.brand || 0);
+          } });
+        });
+      }),
+    passiv('ben_unt4', 'Kriegsherr', 'onStart', ['tempo'], [],
+      'Alle Verbündeten erhalten +18 % Angriff und +10 % Tempo',
+      function (c) {
+        c.allies().forEach(function (u) {
+          u.atk = Math.round(u.atk * 1.18);
+          u.spd = Math.round(u.spd * 1.1);
+        });
+      }),
+
+    passiv('ben_def1', 'Flammenhaut', 'onDamaged', ['brand', 'konter'], [],
+      'Wer Benimaru trifft, fängt mit 2 Brand Feuer',
+      function (c) { var f = c.foes()[0]; if (f) c.applyStatus(f, 'brand', 2); }),
+    passiv('ben_def2', 'Glutpanzer', 'onStart', ['schild'], [],
+      '+5 Rüstung und Schild 40',
+      function (c) { c.self.def += 5; c.applyStatus(c.self, 'schild', 40); }),
+    passiv('ben_def3', 'Ascheleib', 'onDamaged', ['heilung'], ['brand'],
+      'Brennt der Angreifer, heilt Benimaru sich um 3 % seines maximalen Lebens',
+      function (c) {
+        var f = c.foes()[0];
+        if (f && f.status.brand > 0) c.heal(c.self, c.self.maxHp * 0.03, 'Ascheleib');
+      }),
+    passiv('ben_def4', 'Wiedergeburt aus Asche', 'onDeath', ['brand', 'heilung'], [],
+      'Steht einmal mit 40 % Leben wieder auf und setzt alle Gegner mit 5 Brand in Flammen',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.4);
+        c.foes().forEach(function (f) { c.applyStatus(f, 'brand', 5); });
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* ---- Shunas Linien: Heilung und Schild --------------------------------
+       Die Priesterin hält den Trupp am Leben. Ihre Angriffslinie ist bewusst
+       die schwächste — dafür ist keine Unterstützung dichter.                 */
+
+    passiv('shu_ang1', 'Segensklinge', 'onHit', [], [],
+      '+25 % Schaden, solange Shuna über 80 % ihres Lebens steht',
+      function (c) { if (c.self.hp > c.self.maxHp * 0.8) c.dmg *= 1.25; }),
+    passiv('shu_ang2', 'Läuterung', 'onHit', [], ['gift', 'brand', 'frost', 'verderbnis'],
+      '+35 % Schaden gegen Ziele, die irgendeinen Zustand tragen',
+      function (c) {
+        var s2 = c.target.status;
+        if (s2.gift > 0 || s2.brand > 0 || s2.erstarrung > 0 || s2.verderbnis > 0) c.dmg *= 1.35;
+      }),
+    passiv('shu_ang3', 'Zorn der Priesterin', 'onHit', [], ['heilung'],
+      '+40 % Schaden, solange kein Verbündeter unter 70 % Leben steht',
+      function (c) {
+        if (c.allies().every(function (u) { return u.hp > u.maxHp * 0.7; })) c.dmg *= 1.4;
+      }),
+    passiv('shu_ang4', 'Heiliger Zorn', 'onHit', [], [],
+      '+9 % Schaden je lebendem Verbündeten',
+      function (c) { c.dmg *= 1 + 0.09 * c.allies().length; }),
+
+    passiv('shu_mec1', 'Gnadenquelle', 'onStart', [], ['heilung'],
+      'Jede Heilung im Trupp wirkt um 50 % stärker',
+      function (c) { c.allies().forEach(function (u) { u.heilfaktor += 0.5; }); }),
+    passiv('shu_mec2', 'Bollwerk des Glaubens', 'onStart', [], ['schild'],
+      'Jeder Schild im Trupp ist um 40 % stärker',
+      function (c) { c.allies().forEach(function (u) { u.schildfaktor += 0.4; }); }),
+    passiv('shu_mec3', 'Überfluss', 'onStart', ['schild'], ['heilung'],
+      'Heilung über das Maximum hinaus wird beim ganzen Trupp zu Schild',
+      function (c) { c.allies().forEach(function (u) { u.ueberheilung = Math.max(u.ueberheilung || 0, 1); }); }),
+    passiv('shu_mec4', 'Ewige Quelle', 'onStart', ['heilung'], [],
+      'Alle Verbündeten erhalten +8 Regeneration',
+      function (c) { c.allies().forEach(function (u) { u.regen += 8; }); }),
+
+    passiv('shu_unt1', 'Schutzkreis', 'onStart', ['schild'], [],
+      'Alle Verbündeten starten mit Schild 30',
+      function (c) { c.allies().forEach(function (u) { c.applyStatus(u, 'schild', 30); }); }),
+    passiv('shu_unt2', 'Reinigung', 'onTurnStart', ['heilung'], [],
+      'Nimmt dem ganzen Trupp in jedem Zug einen Stapel Gift und einen Brand',
+      function (c) {
+        c.allies().forEach(function (u) {
+          if (u.status.gift > 0) u.status.gift--;
+          if (u.status.brand > 0) u.status.brand--;
+        });
+      }),
+    passiv('shu_unt3', 'Lebensband', 'onAllyDeath', ['heilung'], [],
+      'Stirbt ein Verbündeter, heilen alle übrigen 25 % ihres maximalen Lebens',
+      function (c) { c.allies().forEach(function (u) { c.heal(u, u.maxHp * 0.25, 'Lebensband'); }); }),
+    passiv('shu_unt4', 'Göttlicher Segen', 'onStart', ['heilung'], [],
+      'Alle Verbündeten erhalten +20 % maximales Leben',
+      function (c) {
+        c.allies().forEach(function (u) {
+          var add = Math.round(u.maxHp * 0.2);
+          u.maxHp += add; u.hp += add;
+        });
+      }),
+
+    passiv('shu_def1', 'Gebetsschild', 'onStart', ['schild'], [],
+      'Shuna startet mit Schild 50',
+      function (c) { c.applyStatus(c.self, 'schild', 50); }),
+    passiv('shu_def2', 'Unantastbar', 'onStart', [], [],
+      'Shuna erleidet 22 % weniger Schaden',
+      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.22); }),
+    passiv('shu_def3', 'Letzte Bitte', 'onDeath', ['heilung'], [],
+      'Steht einmal mit 50 % Leben wieder auf und heilt den Trupp um 20 %',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.5);
+        c.allies().forEach(function (u) { c.heal(u, u.maxHp * 0.2, 'Letzte Bitte'); });
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      }),
+    passiv('shu_def4', 'Heiliger Hain', 'onTurnStart', ['heilung'], [],
+      'Heilt sich in jedem Zug um 5 % ihres maximalen Lebens',
+      function (c) { c.heal(c.self, c.self.maxHp * 0.05, 'Heiliger Hain'); }),
+
+    /* ---- Hakuros Linien: Klinge und Exekution -----------------------------
+       Der alte Schwertmeister. Er räumt Angeschlagene ab und bringt dem Trupp
+       bei, dasselbe zu tun.                                                   */
+
+    passiv('hak_ang1', 'Klingengeist', 'onStart', ['tempo'], [],
+      '+8 Angriff und +3 Tempo',
+      function (c) { c.self.atk += 8; c.self.spd += 3; }),
+    passiv('hak_ang2', 'Schwertmeister', 'onHit', [], [],
+      '+20 % Schaden, und zusätzliche 40 % der Rüstung zählen nicht',
+      function (c) {
+        c.dmg *= 1.2;
+        c.self.pierce = Math.max(c.self.pierce || 0, 0.4);
+      }),
+    passiv('hak_ang3', 'Todeshieb', 'onHit', [], ['exekution'],
+      '+80 % Schaden gegen Ziele unter 40 % ihres Lebens',
+      function (c) { if (c.target.hp < c.target.maxHp * 0.4) c.dmg *= 1.8; }),
+    passiv('hak_ang4', 'Hundert Schnitte', 'onHit', ['flaeche'], [],
+      '30 % Chance auf einen zweiten Schnitt für 60 %',
+      chance(0.3, function (c) { c.deal(c.target, c.self.atk * 0.6, 'Hundert Schnitte'); })),
+
+    passiv('hak_mec1', 'Auge des Meisters', 'onStart', [], [],
+      'Ignoriert 75 % der gegnerischen Rüstung',
+      function (c) { c.self.pierce = Math.max(c.self.pierce || 0, 0.75); }),
+    passiv('hak_mec2', 'Gnadenstoß', 'onKill', ['exekution'], [],
+      'Nach jedem erlegten Gegner folgt sofort ein Schlag mit 120 % auf den nächsten',
+      function (c) {
+        var f = c.foes()[0];
+        if (f) c.deal(f, c.self.atk * 1.2, 'Gnadenstoß');
+      }),
+    passiv('hak_mec3', 'Blutspur', 'onKill', ['exekution'], [],
+      'Jeder erlegte Gegner gibt dauerhaft +20 % Angriff',
+      function (c) { c.self.atk = Math.round(c.self.atk * 1.2); }),
+    passiv('hak_mec4', 'Schnitter', 'onHit', ['exekution'], [],
+      'Ziele unter 20 % Leben verlieren zusätzlich 10 % ihres maximalen Lebens',
+      function (c) {
+        if (c.target.hp < c.target.maxHp * 0.2) {
+          c.deal(c.target, c.target.maxHp * 0.1, 'Schnitter', { pure: true });
+        }
+      }),
+
+    passiv('hak_unt1', 'Lehrmeister', 'onStart', [], [],
+      'Alle Verbündeten erhalten +5 Angriff',
+      function (c) { c.allies().forEach(function (u) { u.atk += 5; }); }),
+    passiv('hak_unt2', 'Schule des Schwertes', 'onStart', [], [],
+      'Der ganze Trupp ignoriert 30 % der gegnerischen Rüstung',
+      function (c) {
+        c.allies().forEach(function (u) { u.pierce = Math.max(u.pierce || 0, 0.3); });
+      }),
+    passiv('hak_unt3', 'Gemeinsamer Schnitt', 'onStart', [], ['exekution'],
+      'Der ganze Trupp verursacht +25 % Schaden gegen Ziele unter 40 % Leben',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Gemeinsamer Schnitt', fn: function (k) {
+            if (k.target.hp < k.target.maxHp * 0.4) k.dmg *= 1.25;
+          } });
+        });
+      }),
+    passiv('hak_unt4', 'Vermächtnis', 'onDeath', [], [],
+      'Fällt Hakuro, erhalten alle Verbündeten +25 % Angriff',
+      function (c) { c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.25); }); }),
+
+    passiv('hak_def1', 'Ausweichschritt', 'onStart', ['tempo'], [],
+      '+25 % Tempo',
+      function (c) { c.self.spd = Math.round(c.self.spd * 1.25); }),
+    passiv('hak_def2', 'Parade', 'onDamaged', ['konter'], [],
+      '35 % Chance auf einen Gegenangriff mit 80 %',
+      chance(0.35, function (c) {
+        var f = c.foes()[0]; if (f) c.deal(f, c.self.atk * 0.8, 'Parade');
+      })),
+    passiv('hak_def3', 'Alter Fuchs', 'onStart', [], [],
+      'Kein einzelner Treffer nimmt Hakuro mehr als 15 % seines maximalen Lebens',
+      function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.15); }),
+    passiv('hak_def4', 'Unbeugsam', 'onDeath', [], [],
+      'Steht einmal mit 30 % Leben wieder auf und schlägt danach 40 % härter zu',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1;
+        c.self.hp = Math.round(c.self.maxHp * 0.3);
+        c.self.atk = Math.round(c.self.atk * 1.4);
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* ---- Kurobes Linien: die Schmiede -------------------------------------
+       Die einzige Linie, die an der AUSRÜSTUNG hängt: was der Trupp trägt,
+       macht Kurobe stärker und umgekehrt. Damit bekommt der Beutel endlich
+       eine eigene Build-Achse.                                               */
+
+    passiv('kur_ang1', 'Scharfschliff', 'onStart', [], [],
+      '+5 Angriff je eigenem Ausrüstungsstück',
+      function (c) { c.self.atk += 5 * c.self.itemZahl; }),
+    passiv('kur_ang2', 'Meisterklinge', 'onHit', [], [],
+      '+8 % Schaden je eigenem Ausrüstungsstück',
+      function (c) { c.dmg *= 1 + 0.08 * c.self.itemZahl; }),
+    passiv('kur_ang3', 'Gehärtet', 'onStart', [], [],
+      '+12 % Angriff je eigenem Ausrüstungsstück',
+      function (c) { c.self.atk = Math.round(c.self.atk * (1 + 0.12 * c.self.itemZahl)); }),
+    passiv('kur_ang4', 'Legierung', 'onHit', [], [],
+      '+35 % Schaden, sobald Kurobe mindestens drei Ausrüstungsstücke trägt',
+      function (c) { if (c.self.itemZahl >= 3) c.dmg *= 1.35; }),
+
+    passiv('kur_mec1', 'Schmiedefeuer', 'onStart', [], [],
+      'Jeder Verbündete erhält +4 Angriff je eigenem Ausrüstungsstück',
+      function (c) { c.allies().forEach(function (u) { u.atk += 4 * (u.itemZahl || 0); }); }),
+    passiv('kur_mec2', 'Nachschärfen', 'onStart', [], [],
+      'Jeder Verbündete erhält +14 Leben je eigenem Ausrüstungsstück',
+      function (c) {
+        c.allies().forEach(function (u) {
+          var add = 14 * (u.itemZahl || 0);
+          u.maxHp += add; u.hp += add;
+        });
+      }),
+    passiv('kur_mec3', 'Zweitklinge', 'onStart', [], [],
+      'Kurobes Ausrüstung zählt für alle Schmiede-Boni doppelt',
+      function (c) { c.self.itemZahl *= 2; }),
+    passiv('kur_mec4', 'Waffenmeister', 'onStart', [], [],
+      'Jeder Verbündete erhält +2 Rüstung und +6 % Angriff je eigenem Ausrüstungsstück',
+      function (c) {
+        c.allies().forEach(function (u) {
+          u.def += 2 * (u.itemZahl || 0);
+          u.atk = Math.round(u.atk * (1 + 0.06 * (u.itemZahl || 0)));
+        });
+      }),
+
+    passiv('kur_unt1', 'Rüstmeister', 'onStart', [], [],
+      'Alle Verbündeten erhalten +4 Rüstung',
+      function (c) { c.allies().forEach(function (u) { u.def += 4; }); }),
+    passiv('kur_unt2', 'Kriegsschmiede', 'onStart', [], [],
+      'Alle Verbündeten erhalten +10 % Angriff',
+      function (c) { c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.1); }); }),
+    passiv('kur_unt3', 'Bannerträger', 'onStart', [], [],
+      'Alle Verbündeten erhalten +15 % maximales Leben',
+      function (c) {
+        c.allies().forEach(function (u) {
+          var add = Math.round(u.maxHp * 0.15);
+          u.maxHp += add; u.hp += add;
+        });
+      }),
+    passiv('kur_unt4', 'Schmied der Legenden', 'onStart', ['schild'], [],
+      'Alle Verbündeten erhalten +12 % Angriff, +12 % Leben und Schild 20',
+      function (c) {
+        c.allies().forEach(function (u) {
+          u.atk = Math.round(u.atk * 1.12);
+          var add = Math.round(u.maxHp * 0.12);
+          u.maxHp += add; u.hp += add;
+          c.applyStatus(u, 'schild', 20);
+        });
+      }),
+
+    passiv('kur_def1', 'Amboss', 'onStart', [], [],
+      '+7 Rüstung — jeder eingehende Treffer wird um so viel kleiner',
+      function (c) { c.self.def += 7; }),
+    passiv('kur_def2', 'Gehärteter Leib', 'onStart', [], [],
+      '+25 % maximales Leben',
+      function (c) {
+        var add = Math.round(c.self.maxHp * 0.25);
+        c.self.maxHp += add; c.self.hp += add;
+      }),
+    passiv('kur_def3', 'Werkstattschild', 'onStart', ['schild'], [],
+      'Schild 30, plus 18 je eigenem Ausrüstungsstück',
+      function (c) { c.applyStatus(c.self, 'schild', 30 + 18 * c.self.itemZahl); }),
+    passiv('kur_def4', 'Unzerbrechlich', 'onStart', [], [],
+      'Kein einzelner Treffer nimmt Kurobe mehr als 14 % seines maximalen Lebens',
+      function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.14); })
   ];
 
   /* Vier Linien à vier Stufen. Die Stufe entspricht dem Rang: bei der Anwerbung
@@ -330,6 +665,30 @@
       mechanik: ['souei_mec1', 'souei_mec2', 'souei_mec3', 'souei_mec4'],
       unterstuetzung: ['souei_unt1', 'souei_unt2', 'souei_unt3', 'souei_unt4'],
       defensive: ['souei_def1', 'souei_def2', 'souei_def3', 'souei_def4']
+    },
+    benimaru: {
+      angriff: ['ben_ang1', 'ben_ang2', 'ben_ang3', 'ben_ang4'],
+      mechanik: ['ben_mec1', 'ben_mec2', 'ben_mec3', 'ben_mec4'],
+      unterstuetzung: ['ben_unt1', 'ben_unt2', 'ben_unt3', 'ben_unt4'],
+      defensive: ['ben_def1', 'ben_def2', 'ben_def3', 'ben_def4']
+    },
+    shuna: {
+      angriff: ['shu_ang1', 'shu_ang2', 'shu_ang3', 'shu_ang4'],
+      mechanik: ['shu_mec1', 'shu_mec2', 'shu_mec3', 'shu_mec4'],
+      unterstuetzung: ['shu_unt1', 'shu_unt2', 'shu_unt3', 'shu_unt4'],
+      defensive: ['shu_def1', 'shu_def2', 'shu_def3', 'shu_def4']
+    },
+    hakuro: {
+      angriff: ['hak_ang1', 'hak_ang2', 'hak_ang3', 'hak_ang4'],
+      mechanik: ['hak_mec1', 'hak_mec2', 'hak_mec3', 'hak_mec4'],
+      unterstuetzung: ['hak_unt1', 'hak_unt2', 'hak_unt3', 'hak_unt4'],
+      defensive: ['hak_def1', 'hak_def2', 'hak_def3', 'hak_def4']
+    },
+    kurobe: {
+      angriff: ['kur_ang1', 'kur_ang2', 'kur_ang3', 'kur_ang4'],
+      mechanik: ['kur_mec1', 'kur_mec2', 'kur_mec3', 'kur_mec4'],
+      unterstuetzung: ['kur_unt1', 'kur_unt2', 'kur_unt3', 'kur_unt4'],
+      defensive: ['kur_def1', 'kur_def2', 'kur_def3', 'kur_def4']
     }
   };
   /* ---- Kategorien der Bibliothek ------------------------------------------

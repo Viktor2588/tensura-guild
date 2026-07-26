@@ -58,11 +58,18 @@ Abgearbeitet in Phase 14:
 - [x] Boss-Balance eingefangen: 69–82 % statt 44–100 %, im echten Run gemessen
 - [x] Konter ist kein Ausreißer mehr
 
+Abgearbeitet in Phase 15:
+
+- [x] Linien für die restlichen vier Oger: Benimaru (Brand), Shuna (Heilung
+      und Schild), Hakuro (Klinge und Exekution), Kurobe (Schmiede). Damit hat
+      die ganze Art Linien — 96 Linien-Passive insgesamt.
+
 Offen:
 
-1. **38 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Shion und
-   Souei sind die Vorlagen — vier Linien à vier Stufen je Einheit, also
-   16 Passive. Der größte Brocken; Content-Arbeit, keine Mechanik.
+1. **34 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Sechs sind
+   fertig (alle Oger). Vier Linien à vier Stufen je Einheit, also 16 Passive.
+   Als Nächstes bietet sich eine ganze Art an, nicht einzelne Einheiten — erst
+   dann wird „eine Einheit je Art" auch dort zur Entscheidung.
 
 2. **Den Aufstiegs-Pool in Passive umbauen.** *(entschieden)* Die 34 aktiven
    Fähigkeiten sind totes Gewicht, seit jede Einheit nur noch ihre Signatur

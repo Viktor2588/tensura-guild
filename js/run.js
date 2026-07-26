@@ -137,7 +137,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 0.86;
+  var GRUNDHAERTE = 0.9;    // sechs Oger mit Linien; gemessen 50 % Siege (frisch)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -279,6 +279,7 @@
       d.keywords = d.keywords.concat(it.keywords || [], it.amplifies || []);
     });
 
+    d.itemZahl = m.items.length;              // Kurobes Linie rechnet damit
     if (m.devoured.slice(0, PRAEDATOR_SLOTS[r]).length) d.verschlungen = 1;
     m.devoured.slice(0, PRAEDATOR_SLOTS[r]).forEach(function (eid) {
       var e = EN.get(eid);

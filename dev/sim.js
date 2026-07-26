@@ -1081,7 +1081,40 @@ ok(pw && pw.offers.length === 4, 'beim Anwerben liegen vier Passive zur Wahl');
 ok(Object.keys(AB.LINIEN_NAME).every(function (l) {
   return pw.offers.some(function (o) { return o.linie === l; });
 }), 'je eine aus Angriff, Mechanik, Unterstützung und Defensive');
-ok(Object.keys(AB.linien).length >= 2, 'mehr als eine Einheit hat eigene Linien: ' + Object.keys(AB.linien).join(', '));
+ok(Object.keys(AB.linien).length >= 6, 'sechs Einheiten haben eigene Linien: ' + Object.keys(AB.linien).join(', '));
+/* Die Oger sind vollständig — damit ist „eine Einheit je Art" bei ihnen eine
+   echte Wahl zwischen sechs verschiedenen Spielweisen. */
+ok(GD.units.filter(function (u) { return u.art === 'oger'; })
+   .every(function (u) { return !!AB.linien[u.id]; }),
+   'jeder Oger hat eigene Linien');
+/* Jede Linien-Passive muss im Kampf laufen — 96 Stück, einmal durchgespielt. */
+var kaputteLinie = [];
+Object.keys(AB.linien).forEach(function (uid) {
+  Object.keys(AB.linien[uid]).forEach(function (lin) {
+    AB.linien[uid][lin].forEach(function (pid) {
+      var m = R.member(uid); m.rank = 3; m.passives = [pid];
+      m.items = ['kurzschwert', 'lederpanzer'];
+      try {
+        for (var s = 0; s < 3; s++) {
+          C.simulate([R.resolve(m), def('gobta', 1)], EN.build(EN.forAct(2)[s], 1), s);
+        }
+      } catch (e) { kaputteLinie.push(pid + ': ' + e.message); }
+    });
+  });
+});
+ok(!kaputteLinie.length, 'jede der ' +
+   Object.keys(AB.linien).length * 16 + ' Linien-Passiven läuft fehlerfrei im Kampf' +
+   (kaputteLinie.length ? ': ' + kaputteLinie.join(' | ') : ''));
+/* Kurobes Linie hängt an der Ausrüstung — die Zahl muss im Kampf ankommen. */
+var kMit = R.member('kurobe'); kMit.rank = 3; kMit.passives = ['kur_ang1'];
+kMit.items = ['kurzschwert', 'lederpanzer', 'stiefel'];
+var kOhne = R.member('kurobe'); kOhne.rank = 3; kOhne.passives = ['kur_ang1'];
+function atkVon(m) {
+  return C.simulate([R.resolve(m)], [sandsack()], 1, { nurAufbau: true }).einheiten[0].atk;
+}
+ok(atkVon(kMit) > atkVon(kOhne),
+   'Kurobes Schmiede rechnet mit der angelegten Ausrüstung (' +
+   atkVon(kOhne) + ' → ' + atkVon(kMit) + ' Angriff)');
 ok(Object.keys(AB.linien).every(function (id) {
   return Object.keys(AB.linien[id]).every(function (l) { return AB.linien[id][l].length === 4; });
 }), 'jede Linie jeder Einheit hat genau vier Stufen');

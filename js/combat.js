@@ -108,6 +108,7 @@
       side: side, pos: pos, gauge: 0, status: {}, regen: 0, lifesteal: 0,
       heilfaktor: 0, schildfaktor: 0,
       chaos: null, enrage: def.enrage || 0, wut: 1, verschlungen: def.verschlungen || 0,
+      itemZahl: def.itemZahl || 0,
       dmgTaken: 0, dmgDealt: 0
     };
   }
@@ -194,7 +195,12 @@
       if (!u || !alive(u)) return 0;
       amount *= 1 + (u.heilfaktor || 0);                 // Verstärker für Heilungs-Builds
       if (u.status.brand > 0) amount *= 0.5;             // Brand halbiert Heilung
-      amount = Math.max(0, Math.min(Math.round(amount), u.maxHp - u.hp));
+      amount = Math.round(amount);
+      var zuviel = Math.max(0, amount - (u.maxHp - u.hp));
+      amount = Math.max(0, Math.min(amount, u.maxHp - u.hp));
+      /* Was über das Maximum hinausgeht, kann zu Schild werden — sonst
+         verpufft jede Heilung an einem vollen Trupp. */
+      if (zuviel > 0 && u.ueberheilung) applyStatus(u, 'schild', zuviel * u.ueberheilung);
       if (!amount) return 0;
       u.hp += amount;
       log.push({ t: t, type: 'heal', key: u.key, target: u.name, side: u.side,
@@ -387,8 +393,10 @@
         u.status.gift--; if (!alive(u)) return;
       }
       if (u.status.brand > 0) {
-        deal(u, u.status.brand * 2 * (gegen(u, 'brand') ? 1.2 : 1), 'Brand', { pure: true });
-        u.status.brand--; if (!alive(u)) return;
+        deal(u, u.status.brand * 2 * (u.brandFaktor || 1) * (gegen(u, 'brand') ? 1.2 : 1),
+             'Brand', { pure: true });
+        if (!u.brandBleibt) u.status.brand--;
+        if (!alive(u)) return;
       }
       if (u.status.blutung > 0) {
         deal(u, u.maxHp * BLUTUNG_PRO_STAPEL * u.status.blutung *

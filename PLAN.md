@@ -130,6 +130,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 12 | Unbegrenzte Stapel, Knoten als Arten statt Gegnerlisten, Kampfherausforderung | Die Wahl auf der Karte ist ein Risiko, keine Vorabinformation | ✅ |
 | 13 | Belohnung ist nur noch Magicule; nach jedem Kampf öffnet der Markt samt Verkauf per Ziehen | Was der Kampf einbringt, wird sofort zu einer Entscheidung | ✅ |
 | 14 | Entwicklung würfelt eine Passive je Kategorie, Meta-Fortschritt sichtbar, Bosse eingefangen | Der Aufstieg ist jede Runde eine andere Frage | ✅ |
+| 15 | Linien für die restlichen vier Oger — die erste Art ist vollständig | Sechs Oger, sechs Spielweisen, aber nur einer darf mit | ✅ 6 von 40 |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -666,6 +667,40 @@ Brand.
 
 Ergebnis `dev/balance.js 600`: 50 % frisch, 62 % voll freigeschaltet,
 Bedrohungsleiter 50/40/…/31/…/16.
+
+### Phase 15 (2026-07-26): die Oger sind vollständig
+
+Vier Einheiten, je vier Linien à vier Stufen — **64 neue Passive**, zusammen mit
+Shion und Souei jetzt 96. Damit hat die erste Art ihre Tiefe, und die Regel „eine
+Einheit je Art" wird bei den Ogern zur Wahl zwischen sechs Spielweisen:
+
+| Oger | Linie | Kern |
+|---|---|---|
+| Shion | Chaos | Werte des Gegners würfeln neu, Fähigkeiten verpuffen |
+| Souei | Verwundbar | markiert für den ganzen Trupp |
+| Benimaru | Brand und Fläche | zündet das Feld an und schlägt daraus Kapital |
+| Shuna | Heilung und Schild | dichteste Unterstützung, schwächster Angriff |
+| Hakuro | Klinge und Exekution | räumt Angeschlagene ab, lehrt es dem Trupp |
+| Kurobe | Schmiede | rechnet mit der **Ausrüstung** des Trupps |
+
+Kurobe öffnet dabei eine Achse, die es bisher nicht gab: seine Linie skaliert mit
+der Zahl angelegter Ausrüstungsstücke. Damit bekommt der Beutel erstmals eine
+eigene Build-Bedeutung statt nur Werte.
+
+Drei kleine Haken in `combat.js` waren nötig, alle nach dem Muster bestehender
+Felder (`zaehesChaos`, `offeneWunde`): `brandBleibt` und `brandFaktor` für
+Benimarus Mechanik, `ueberheilung` für Shunas Überfluss, `itemZahl` für Kurobe.
+
+Gemessen an einem Prüfstand, der überhaupt unterscheidet (Rang 2, Stufe-4-Gegner,
+300 Kämpfe je Zelle) zeigte sich ein Muster, das nicht am Inhalt liegt, sondern
+an der Kurve: **Defensivlinien dominieren auf niedrigem Rang** (36–48 % gegen
+17 % Grundwert), Unterstützung und Mechanik zahlen erst später. Zwei frühere
+Prüfstände waren wertlos, weil sie gesättigt waren — bei Rang 3 mit voller
+Ausrüstung gewinnt jede Variante zu 100 %.
+
+Ergebnis `dev/balance.js 600`: 50 % frisch, 63 % voll freigeschaltet, Bosse
+65–84 %. `GRUNDHAERTE` von 0.86 auf 0.90, weil sechs ausgebaute Oger den Trupp
+messbar stärker machen.
 
 Weitere offene Punkte:
 - Der Abstand zwischen Anfänger und Veteran ist auf 12 Punkte gewachsen
