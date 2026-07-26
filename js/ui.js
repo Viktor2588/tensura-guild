@@ -578,7 +578,14 @@
       var it = GD.item(o.id);
       return esc(it.text || '') + '<br>Landet im Beutel; anlegen kannst du es unten am Trupp.';
     }
-    if (o.kind === 'rang') return esc(o.text) + '<br>Billiger als der reguläre Aufstieg.';
+    if (o.kind === 'rang') {
+      var m = R.find(run, o.uid);
+      if (!m) return esc(o.text) + '<br>Das Ziel ist nicht mehr im Trupp — der Posten verfällt.';
+      return esc(o.text) + '<br>Regulär kostet dieser Aufstieg ' + R.rankCost(m, run) +
+        ' ✦; hier sind es ' + o.price + ' ✦.' +
+        '<br>Er bringt wie jeder Aufstieg +30 % Leben und Angriff, einen Item-Slot, ' +
+        'einen Prädator-Slot und eine Passive zur Wahl.';
+    }
     return esc(o.text || '');
   }
 
@@ -586,18 +593,13 @@
     var html = '<h3>Markt — ' + run.magicules + ' ✦</h3>' +
       '<p class="hinweis">Was der Kampf eingebracht hat, gibst du hier aus. ' +
       'Verkaufen: Gegenstand, Relikt oder Einheit auf die Fläche unten ziehen.</p>';
-    if (offers.some(function (o) { return o.kind === 'rang' && !o.sold; })) {
-      var kandidaten = run.team.filter(function (m) { return m.rank < 3; });
-      html += '<div class="reihe"><span class="hinweis">Namensweihe für:</span>' +
-        '<select id="rang-ziel">' + kandidaten.map(function (m) {
-          return '<option value="' + m.uid + '">' + esc(GD.unit(m.id).name) + ' (' +
-            R.rankName(m) + ' → ' + R.RANK_NAME[m.rank + 1] + ')</option>';
-        }).join('') + '</select></div>';
-    }
     html += '<div class="karten markt">';
     offers.forEach(function (o, i) {
       var frei = o.kind !== 'unit' || R.freieArt(run, GD.unit(o.id).art);
-      if (o.kind === 'rang') frei = run.team.some(function (m) { return m.rank < 3; }) && !R.passivWahl(run);
+      if (o.kind === 'rang') {
+        var zielM = R.find(run, o.uid);
+        frei = !!zielM && zielM.rank < 3 && !R.passivWahl(run);
+      }
       var geht = !o.sold && run.magicules >= o.price && frei;
       html += '<button class="karte' + (o.sold ? ' gewaehlt' : '') + '" data-a="kaufen" data-i="' + i + '"' +
         (geht ? '' : ' disabled') + '>' + artHtml(o.kind) +
@@ -1117,11 +1119,7 @@
       render(); speichern();
     },
     start: function (d) { R.chooseStart(run, +d.i); render(); speichern(); },
-    kaufen: function (d) {
-      var ziel = $('rang-ziel');
-      R.buy(run, +d.i, ziel ? ziel.value : null);
-      render(); speichern();
-    },
+    kaufen: function (d) { R.buy(run, +d.i); render(); speichern(); },
     event: function (d) { R.eventChoose(run, +d.i); render(); speichern(); },
     lager: function (d) { R.camp(run, +d.i); render(); speichern(); },
     aufstieg: function (d) { R.rankUp(run, d.uid); render(); speichern(); },

@@ -21,6 +21,13 @@ var dom = new JSDOM(fs.readFileSync(path.join(wurzel, 'index.html'), 'utf8'), {
 });
 var win = dom.window, doc = win.document;
 
+/* Fester Seed: der Run zieht seinen Startwert aus Math.random. Ohne das ist
+   jeder Testlauf ein anderer, und ein Fehlschlag lässt sich nicht nachstellen —
+   genau so ist einer durchgerutscht und beim nächsten Lauf verschwunden. */
+win.Math.random = (function (z) {
+  return function () { z = (z * 1103515245 + 12345) % 2147483648; return z / 2147483648; };
+})(20260726);
+
 /* jsdom kennt showModal nicht — für den Test genügt ein offenes <dialog>. */
 win.HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
 win.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
@@ -184,6 +191,15 @@ if (sieg) {
   klick($('[data-a=zum-markt]'));
   ok(run.phase === 'markt', 'danach steht die Verwaltung');
   ok($$('#team .einheit').length > 0, 'mit dem Trupp darunter');
+  /* Die Namensweihe nennt ihr ausgelostes Ziel und braucht keine Auswahl mehr. */
+  ok(!$('#rang-ziel'), 'für die Namensweihe gibt es keinen Zielwähler mehr');
+  var weiheKarte = karten().filter(function (k) { return /Namensweihe/.test(k.textContent); })[0];
+  if (weiheKarte) {
+    ok(/Namensweihe: \w/.test(weiheKarte.querySelector('.titel').textContent),
+       'sie nennt die ausgeloste Einheit im Titel');
+    ok(/Rang/.test(weiheKarte.querySelector('.beschreibung').textContent),
+       'und den Rangsprung in der Beschreibung');
+  }
   var posten = karten().filter(function (k) { return k.dataset.a === 'kaufen'; });
   ok(posten.length >= 3, 'der Markt bietet mindestens drei Posten (' + posten.length + ')');
   ok(posten.every(function (k) { return k.querySelector('.art') && k.querySelector('.beschreibung'); }),

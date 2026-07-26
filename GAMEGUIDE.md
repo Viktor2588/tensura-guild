@@ -60,6 +60,18 @@ Magicule, steht dabei, wie viele.
 Es gibt **keinen Händler-Knoten** mehr auf der Karte — der wäre doppelt. Die
 freien Slots sind Kämpfe geworden.
 
+### Namensweihe
+
+Ein Rangaufstieg für **80 % des regulären Preises** — aber du suchst die Einheit
+nicht aus. Das Ziel wird beim Aufbau des Markts **ausgelost** und steht für diese
+Verwaltung fest; es steht im Titel des Postens. Weil der Preis am Rang des Ziels
+hängt, kostet ein Sprung auf S mehr als einer auf B (112 / 240 / 448 ✦).
+
+Das macht sie zur Wette statt zur Abkürzung: Fällt das Los auf die Einheit, die
+du ohnehin hochziehen wolltest, ist es ein Schnäppchen. Sonst hebst du den Rang
+regulär — oder nimmst sie trotzdem, weil billig billig ist. Verkaufst du das
+Ziel, verfällt der Posten.
+
 ### Verkaufen
 
 Einheit, Ausrüstung oder Relikt auf die **Verkaufsfläche ziehen** — sie steht
@@ -79,7 +91,7 @@ ist ein verzichteter Aufstieg von C auf B plus die Hälfte des nächsten.
 | Rang C → B / B → A / A → S | 140 / 300 / 560 |
 | Einheit im Laden | 130 + 45 je Kostenpunkt |
 | Relikt im Laden | 340 |
-| Namensweihe (ein Rang, günstiger) | 260 |
+| Namensweihe (ein Rang, günstiger) | 80 % des regulären Rangpreises |
 | Ausrüstung | das Dreifache ihres Grundwerts |
 
 Zurück bekommst du etwas nur beim **Entlassen**: ein Viertel dessen, was in der

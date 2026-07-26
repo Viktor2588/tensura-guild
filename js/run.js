@@ -137,7 +137,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.08;   // Markt nach jedem Kampf; gemessen 50 % Siege (frisch)
+  var GRUNDHAERTE = 1.14;   // Namensweihe trifft jetzt immer; gemessen 49 % Siege (frisch)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -155,7 +155,9 @@
   /* Preise in derselben Liga wie die Rangkosten (140/300/560). Mit nur einer
      Währung ist jeder Kauf ein verzichteter Aufstieg — vorher waren die Läden
      mit Gold bezahlt und damit fast gratis. */
-  var PREIS_EINHEIT = 130, PREIS_ITEM = 3, PREIS_RELIKT = 340, PREIS_RANG = 260;
+  var PREIS_EINHEIT = 130, PREIS_ITEM = 3, PREIS_RELIKT = 340;
+  /* Anteil am regulären Rangpreis (140/300/560) — die Weihe bleibt günstiger. */
+  var PREIS_RANG_FAKTOR = 0.8;
 
   /* Der Start bleibt bescheiden: höchstens ungewöhnliche Relikte. Ein
      legendäres in der ersten Wahl nimmt dem Run seine Kurve — das Starke soll
@@ -906,11 +908,21 @@
       offers.push({ kind: 'relic', id: r.id, name: r.name, price: PREIS_RELIKT,
                     text: r.text, rarity: r.rarity });
     }
-    /* Dritte Goldsenke neben Einheit und Ausrüstung: ein Rang, sonst nur für
-       Magicule zu haben. Damit ist jeder Kauf ein Verzicht auf zwei andere. */
-    if (run.team.some(function (m) { return m.rank < 3; })) {
-      offers.push({ kind: 'rang', name: 'Namensweihe', price: PREIS_RANG,
-                    text: 'Hebt eine Einheit deiner Wahl einen Rang, ohne Magicule' });
+    /* Namensweihe: ein Rang unter dem regulären Preis — aber NICHT für eine
+       Einheit deiner Wahl. Das Ziel wird beim Aufbau des Markts gezogen und
+       steht für diesen Bildschirm fest. Wer sie will, nimmt sie für die Einheit,
+       die das Los bestimmt hat; sonst hebt man den Rang eben regulär.
+       Der Preis hängt am Rang des Ziels: ein Sprung auf S kostet mehr als einer
+       auf B. */
+    var faehig = run.team.filter(function (m) { return m.rank < 3; });
+    if (faehig.length) {
+      var ziel = root.RNG.pick(rng, faehig);
+      offers.push({ kind: 'rang', uid: ziel.uid,
+                    name: 'Namensweihe: ' + GD.unit(ziel.id).name,
+                    price: Math.round(RANK_COST[ziel.rank] * PREIS_RANG_FAKTOR),
+                    text: 'Hebt ' + GD.unit(ziel.id).name + ' von Rang ' + RANK_NAME[ziel.rank] +
+                          ' auf ' + RANK_NAME[ziel.rank + 1] + '. Das Ziel ist ausgelost und ' +
+                          'steht für diese Verwaltung fest.' });
     }
     commit(run, rng);
     return offers;
@@ -922,9 +934,10 @@
     if (!o || o.sold || run.magicules < o.price) return false;
     if (o.kind === 'unit' && !addUnit(run, o.id)) return false;
     if (o.kind === 'rang') {
-      var ziel = uid ? find(run, uid)
-        : run.team.filter(function (m) { return m.rank < 3; })[0];
-      if (!ziel || !rankUp(run, ziel.uid, true)) return false;
+      /* Das Ziel steht im Angebot. Ist es inzwischen verkauft oder schon auf S,
+         verfällt der Posten — nachgewürfelt wird nicht. */
+      var ziel = find(run, o.uid);
+      if (!ziel || ziel.rank >= 3 || !rankUp(run, ziel.uid, true)) return false;
     }
     if (o.kind === 'relic') run.relics.push(o.id);
     if (o.kind === 'item') (run.bag = run.bag || []).push(o.id);
@@ -1228,6 +1241,7 @@
     belegteArten: belegteArten, freieArt: freieArt, waehle: waehle, gewicht: gewicht,
     inhaltsStufe: inhaltsStufe, boss: bossOf, STUFEN: STUFEN, ertrag: ertrag,
     PRUEFUNGEN: PRUEFUNGEN, pruefung: pruefung, TYP_NAME: TYP_NAME,
+    PREIS_RANG_FAKTOR: PREIS_RANG_FAKTOR, RANK_COST: RANK_COST,
     buildTeile: buildTeile, resonanzen: resonanzen, analyse: analyse,
     save: save, load: load, clear: clear, loadMeta: loadMeta, saveMeta: saveMeta,
     serialize: serialize, deserialize: deserialize,

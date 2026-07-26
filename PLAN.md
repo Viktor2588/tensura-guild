@@ -616,6 +616,19 @@ Nachgetragen: **zwei Laufzeitfehler, beide beim Neuladen.**
 Der Fuzz und ein Renderlauf über alle Phasen aus geladenem Stand sind seither
 sauber.
 
+Nachgetragen: **Namensweihe lost ihr Ziel aus.** Vorher hob sie eine Einheit
+deiner Wahl zum Festpreis — also immer die teuerste, was die Wahl trivial machte.
+Jetzt wird das Ziel beim Aufbau des Markts gezogen und steht für diese Verwaltung
+fest, und der Preis hängt am Rang des Ziels (80 % des regulären). Nebenbei kam
+heraus, dass sie vorher oft gar nicht griff: der Bot bot sie stets der vordersten
+Einheit an, und war die schon auf S, verfiel der Kauf stillschweigend. Seit sie
+trifft, stieg die Siegquote um vier Punkte — ausgeglichen über `GRUNDHAERTE`
+1.08 → 1.14.
+
+Dabei fiel eine Schwäche im Prüfwerkzeug auf: `dev/uitest.js` zog seinen Seed aus
+`Math.random`, war also bei jedem Lauf ein anderer Test. Ein Fehlschlag ließ sich
+nicht nachstellen und war beim nächsten Lauf weg. Jetzt fester Seed.
+
 Weitere offene Punkte:
 - Der Abstand zwischen Anfänger und Veteran ist auf 12 Punkte gewachsen
   (48 gegen 60 %) — der Markt nach jedem Kampf belohnt einen großen Reliktpool

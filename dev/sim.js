@@ -330,17 +330,40 @@ ok(dGeladen.phase === 'start' && dGeladen.startwahl, 'ein Speicherstand mitten i
 head('Eine Währung');
 ok(R.create(1, R.newMeta()).gold === undefined, 'ein Run kennt kein Gold mehr');
 var kRun = fertigerRun(88);
-kRun.magicules = 1000;
-kRun.phase = 'shop';
-kRun.pending = { offers: [{ kind: 'rang', name: 'Namensweihe', price: 130 }] };
-var vorRang = kRun.team[1].rank;
-ok(R.buy(kRun, 0, kRun.team[1].uid), 'die Namensweihe ist bezahlbar');
-ok(kRun.team[1].rank === vorRang + 1, 'sie hebt genau die gewählte Einheit einen Rang');
-ok(kRun.magicules === 870, 'und kostet Magicule wie alles andere');
-/* Sie bleibt sinnvoll, weil sie unter dem normalen Rangpreis liegt. */
-ok(130 < R.rankCost({ rank: 0 }), 'die Namensweihe ist billiger als ein regulärer Aufstieg');
-ok(R.passivWahl(kRun) && R.passivWahl(kRun).uid === kRun.team[1].uid,
-   'auch dabei wird eine neue Passive gewählt');
+kRun.magicules = 4000;
+var weihe = R.marktOffers(kRun, { type: 'kampf' }, false)
+  .filter(function (o) { return o.kind === 'rang'; })[0];
+ok(!!weihe && !!weihe.uid, 'die Namensweihe nennt ihr Ziel');
+var zielM = R.find(kRun, weihe.uid);
+ok(!!zielM && zielM.rank < 3, 'das Ziel ist eine aufstiegsfähige Einheit aus dem Trupp');
+ok(weihe.price === Math.round(R.RANK_COST[zielM.rank] * R.PREIS_RANG_FAKTOR),
+   'der Preis hängt am Rang des Ziels (' + weihe.price + ' ✦ auf Rang ' + R.rankName(zielM) + ')');
+ok(weihe.price < R.rankCost(zielM), 'und liegt unter dem regulären Aufstieg');
+
+/* Fest je Verwaltung: derselbe Markt nennt immer dasselbe Ziel. */
+kRun.pending = { markt: [weihe] };
+kRun.phase = 'markt';
+var vorRang = zielM.rank, vorMag = kRun.magicules;
+ok(R.buy(kRun, 0), 'die Namensweihe ist bezahlbar');
+ok(zielM.rank === vorRang + 1, 'sie hebt genau die ausgeloste Einheit');
+ok(kRun.magicules === vorMag - weihe.price, 'und kostet Magicule wie alles andere');
+
+/* Höherer Rang, höherer Preis. */
+var p0 = Math.round(R.RANK_COST[0] * R.PREIS_RANG_FAKTOR);
+var p2 = Math.round(R.RANK_COST[2] * R.PREIS_RANG_FAKTOR);
+ok(p2 > p0, 'ein Sprung auf S kostet mehr als einer auf B (' + p0 + ' gegen ' + p2 + ' ✦)');
+
+/* Ist das Ziel weg, verfällt der Posten — nachgewürfelt wird nicht. */
+var wRun = fertigerRun(89);
+wRun.magicules = 4000;
+var w2 = R.marktOffers(wRun, { type: 'kampf' }, false)
+  .filter(function (o) { return o.kind === 'rang'; })[0];
+wRun.pending = { markt: [w2] }; wRun.phase = 'markt';
+while (R.passivWahl(wRun)) R.choosePassive(wRun, 0);
+R.entlassen(wRun, w2.uid);
+ok(!R.buy(wRun, 0), 'ein verkauftes Ziel lässt die Namensweihe verfallen');
+ok(R.passivWahl(kRun) && R.passivWahl(kRun).uid === weihe.uid,
+   'auch die Namensweihe verlangt die Wahl einer Passive');
 R.choosePassive(kRun, 0);
 
 /* Ein Ereignis, das einen Rang schenkt, muss auch ohne Magicule wirken. */
