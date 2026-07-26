@@ -254,16 +254,34 @@
     var html = stufenHtml() + bossVorschau(1) + '<h2>Womit fängst du an?</h2>' +
       '<p class="hinweis">Eine Einheit und ein Relikt — mehr hast du nicht. ' +
       'Der Rest wird erkämpft.</p><div class="karten">';
+    /* Zwei getrennte Blöcke statt einer gemischten Liste: sonst steht die
+       Wirkung der Signatur direkt neben der des Relikts und niemand sieht,
+       welcher Effekt woher kommt. Die Herkunft steht als Überschrift dabei. */
     w.offers.forEach(function (o, i) {
       var u = GD.unit(o.unit), sig = AB.get(u.signature);
       var rel = o.relic ? GD.relic(o.relic) : null;
-      html += '<button class="karte" data-a="start" data-i="' + i + '">' +
-        artHtml('unit') + '<span class="titel">' + esc(u.name) +
-        (rel ? ' + ' + esc(rel.name) : '') + '</span>' +
-        '<div class="kw-leiste">' + belohnungTags({ kind: 'unit', id: o.unit }) +
-        (rel ? belohnungTags({ kind: 'relic', id: o.relic }) : '') + '</div>' +
-        '<span class="unter">' + esc(sig.text) + '</span>' +
-        (rel ? '<span class="unter">' + esc(rel.text) + '</span>' : '') + '</button>';
+      html += '<button class="karte paar" data-a="start" data-i="' + i + '">' +
+        '<div class="paar-teil teil-einheit">' +
+          '<span class="herkunft"' + tip('Einheit',
+            'Die Einheit selbst: ihre Werte, ihre Rolle in der Aufstellung und ihre ' +
+            'Signatur. Sie kämpft, steigt im Rang auf und lernt Passive dazu.') +
+            '>Einheit</span>' +
+          '<span class="titel">' + esc(u.name) + '</span>' +
+          '<div class="kw-leiste">' + belohnungTags({ kind: 'unit', id: o.unit }) + '</div>' +
+          '<span class="unter"><b>' + esc(sig.name) + ':</b> ' + esc(sig.text) + '</span>' +
+        '</div>';
+      if (rel) {
+        html += '<div class="paar-teil teil-relikt">' +
+          '<span class="herkunft"' + tip('Relikt',
+            'Wirkt auf den GANZEN Trupp und den ganzen Run — auch auf Einheiten, die ' +
+            'erst später dazustoßen. Es kämpft nicht selbst und steigt nicht auf.') +
+            '>Relikt</span>' +
+          '<span class="titel">' + esc(rel.name) + '</span>' +
+          '<div class="kw-leiste">' + belohnungTags({ kind: 'relic', id: o.relic }) + '</div>' +
+          '<span class="unter">' + esc(rel.text) + '</span>' +
+        '</div>';
+      }
+      html += '</button>';
     });
     return $('view').innerHTML = html + '</div>';
   }

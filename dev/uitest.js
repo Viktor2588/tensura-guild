@@ -51,6 +51,17 @@ ok(karten().every(function (k) { return k.querySelector('.titel') && k.querySele
    'jede Wahlkarte nennt Namen und Tags');
 ok(karten().every(function (k) { return k.querySelectorAll('.kw-tag').length >= 4; }),
    'die Infos stecken in einzelnen Tags statt in einer Textwand');
+/* Einheit und Relikt müssen als getrennte Blöcke erkennbar sein. */
+ok(karten().every(function (k) {
+  return k.querySelector('.teil-einheit') && k.querySelector('.teil-relikt');
+}), 'jede Karte trennt Einheit und Relikt in eigene Blöcke');
+ok(karten().every(function (k) {
+  var h = Array.prototype.map.call(k.querySelectorAll('.herkunft'), function (e) { return e.textContent; });
+  return h[0] === 'Einheit' && h[1] === 'Relikt';
+}), 'jeder Block sagt, woher sein Effekt kommt');
+ok(karten().every(function (k) {
+  return k.querySelector('.teil-einheit .unter') && k.querySelector('.teil-relikt .unter');
+}), 'jeder Block trägt seine eigene Wirkungsbeschreibung');
 klick(karten()[0]);
 ok(run.phase === 'karte' && run.team.length === 1 && run.relics.length === 1,
    'nach der Wahl steht eine Einheit mit einem Relikt auf der Karte');
