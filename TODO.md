@@ -60,14 +60,30 @@ Abgearbeitet in Phase 14:
 
 Offen:
 
-- **38 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Shion und Souei
-  sind die Vorlagen — vier Linien à vier Stufen je Einheit. Der größte Brocken.
-- **Der Aufstiegs-Pool aus 34 aktiven Fähigkeiten ist totes Gewicht.** Weder
-  Spieler noch Gegner ziehen daraus mehr als eine Aktive. Entweder in Passive
-  umbauen oder als reines Gegner-Repertoire führen und ausdünnen.
-- **Angebotene Einheiten sollen zufällig vorausgewählte Passive mitbringen.**
-  Die Entwicklung ist jetzt zufällig, der Startzustand einer gekauften Einheit
-  noch nicht.
+1. **38 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Shion und
+   Souei sind die Vorlagen — vier Linien à vier Stufen je Einheit, also
+   16 Passive. Der größte Brocken; Content-Arbeit, keine Mechanik.
+
+2. **Den Aufstiegs-Pool in Passive umbauen.** *(entschieden)* Die 34 aktiven
+   Fähigkeiten sind totes Gewicht, seit jede Einheit nur noch ihre Signatur
+   führt. Sie werden zu Passiven umgeschrieben und in die vier Kategorien
+   (Angriff, Mechanik, Unterstützung, Defensive) einsortiert — damit wächst
+   die Bibliothek von 34 auf rund 68 und die Entwicklung wird deutlich
+   abwechslungsreicher. Was Gegner brauchen, bleibt als Aktive erhalten.
+
+3. **Startzustand einer Einheit auch zufällig.** *(entschieden)* Eine
+   angebotene oder gekaufte Einheit bringt zufällig vorausgewählte Passive
+   mit, statt der festen Liste aus `data.js`. Die Entwicklung ab Rang B ist
+   bereits zufällig — der Startzustand zieht nach. Im Markt muss die
+   Beschreibung zeigen, was die konkret angebotene Einheit mitbringt.
+
+4. **Meta-Progression vollständig visualisieren.** Die Übersicht im Menü zeigt
+   bisher nur, was freigeschaltet IST, plus eine Zahl für den Rest. Sie soll
+   auch zeigen, **wer und was noch fehlt** — verschlossene Einheiten und
+   Relikte namentlich, erkennbar abgesetzt von den freien.
+
+Balance und Werkzeug:
+
 - Anfänger/Veteran-Abstand bei 12 Punkten (50 gegen 62 % Siege).
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
