@@ -130,3 +130,5 @@ Balance und Werkzeug:
 - Die Stärke von Items & relikten ist nicht sauber gebalanced. Manche items fühlen sich viel zu stark an dafür das sie ungewühnlich sind & mache legendary items fühlen sich zu schwach an.
 - Erste begegnung sollte immer ein kampf sein.
 - Relikt freischalten sollte schneller gehen
+- Ich brauche eine Möglichkeit alle Fähigkeiten jeder Einheit einzusehen
+- Bedrohungsstufe ist immer 0, kein fortschritt zu sehen. obwohl ein run gewonnen wird. 
