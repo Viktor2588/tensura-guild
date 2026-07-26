@@ -15,3 +15,4 @@ Offen:
   Ziel verwundbar, der Trupp schlägt in die Wunde. Braucht ein Zustands-Wort
   „verwundbar" plus Verstärker in den Linien der anderen.
 - Bosse: Pool 2 hat nur zwei Einträge, Pool 1 drei. Beide vertragen mehr.
+- Bedrohungsstufen sollten nicht reine Gegner boni sein, sei kreativ hier.
