@@ -385,3 +385,7 @@ table.dbg i.ab { color: #e77; }
 /* Kopfzeile: freie, aber nicht gewählte Bedrohungsstufen. */
 #hud-stufe .hoeher { font-style: normal; font-size: .65rem; color: var(--gold);
                      vertical-align: super; margin-left: .1rem; }
+.kw-schatten { color: #9a8fd0; } .kw-dunkelheit { color: #6f6a8c; }
+.kw-licht { color: #ffe9a8; }
+.marke.schatten { background: #4a4270; } .marke.dunkelheit { background: #3a3550; }
+.marke.licht { background: #8a7530; }

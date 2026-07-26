@@ -289,6 +289,9 @@ Jede Fähigkeit trägt Schlüsselwörter: was sie **erzeugt** (Quelle) und was s
 | Chaos | Werte des Ziels würfeln jede Runde neu, Fähigkeiten verpuffen | – |
 | Verwundbar | JEDER Angreifer schlägt 15 % je Stapel mehr Rüstung durch | – |
 | Blutung | gut 1 % des maximalen Lebens je Stapel pro Zug | – |
+| Schatten | je Stapel 7 % Chance, einem Treffer GANZ auszuweichen (max. 60 %) | – |
+| Dunkelheit | je Stapel 7 % weniger Schaden, den das Ziel AUSTEILT (max. 60 %) | – |
+| Licht | heilt je Stapel 1,5 % pro Zug, löscht Dunkelheit, trägt durch Schatten | – |
 
 **Stapel sind unbegrenzt.** Wer eine Linie zu Ende baut, sieht das auch an der
 Zahl. Gedeckelt wird nur die Wirkung dort, wo sie sinnlos würde: der Chaos-Faktor
@@ -421,6 +424,21 @@ Beim Anwerben und bei **jedem Aufstieg** wählst du **eine aus vier** — eine j
 Linie, auf der Stufe, die dem Rang entspricht. Verzichten ist erlaubt. Gemessen
 lohnt sich das Mischen: eine Shion mit je einer Passiven aus verschiedenen
 Linien steht deutlich besser da als eine, die eine Linie durchzieht.
+
+## Schatten, Dunkelheit und Licht
+
+Drei Elemente, die etwas tun, das es sonst nirgends gibt:
+
+- **Schatten** liegt auf der *eigenen* Einheit und lässt sie Treffern **ganz
+  ausweichen** — das erste Element, das Schaden vermeidet statt ihn abzufedern.
+- **Dunkelheit** liegt auf dem *Gegner* und senkt, was er **austeilt**. Alle
+  anderen Marken erhöhen, was er einsteckt; Dunkelheit nimmt ihm die Wucht. Gegen
+  Zustandsschaden hilft sie nicht.
+- **Göttliches Licht** liegt auf der eigenen Einheit, heilt stetig, brennt
+  Dunkelheit weg — und ihre Angriffe gehen **durch fremde Schatten hindurch**.
+  Es ist die Antwort auf beide Finsternis-Elemente.
+
+Der **Schattenwolf** trägt Schatten und Dunkelheit, **Shuna** das Licht.
 
 ## Souei und die Marke
 

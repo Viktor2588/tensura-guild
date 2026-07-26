@@ -440,13 +440,20 @@
     passiv('shu_mec3', 'Überfluss', 'onStart', ['schild'], ['heilung'],
       'Heilung über das Maximum hinaus wird beim ganzen Trupp zu Schild',
       function (c) { c.allies().forEach(function (u) { u.ueberheilung = Math.max(u.ueberheilung || 0, 1); }); }),
-    passiv('shu_mec4', 'Ewige Quelle', 'onStart', ['heilung'], [],
-      'Alle Verbündeten erhalten +8 Regeneration',
-      function (c) { c.allies().forEach(function (u) { u.regen += 8; }); }),
+    passiv('shu_mec4', 'Ewige Quelle', 'onStart', ['heilung'], ['licht'],
+      'Alle Verbündeten erhalten +8 Regeneration, und jeder Licht-Stapel an ihnen heilt zusätzlich',
+      function (c) {
+        c.allies().forEach(function (u) { u.regen += 8; u.lichtPlus = (u.lichtPlus || 0) + 0.5; });
+      }),
 
-    passiv('shu_unt1', 'Schutzkreis', 'onStart', ['schild'], [],
-      'Alle Verbündeten starten mit Schild 30',
-      function (c) { c.allies().forEach(function (u) { c.applyStatus(u, 'schild', 30); }); }),
+    passiv('shu_unt1', 'Schutzkreis', 'onStart', ['schild', 'licht'], [],
+      'Alle Verbündeten starten mit Schild 30 und 3 Licht',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.applyStatus(u, 'schild', 30);
+          c.applyStatus(u, 'licht', 3);
+        });
+      }),
     passiv('shu_unt2', 'Reinigung', 'onTurnStart', ['heilung'], [],
       'Nimmt dem ganzen Trupp in jedem Zug einen Stapel Gift und einen Brand',
       function (c) {
@@ -458,18 +465,23 @@
     passiv('shu_unt3', 'Lebensband', 'onAllyDeath', ['heilung'], [],
       'Stirbt ein Verbündeter, heilen alle übrigen 25 % ihres maximalen Lebens',
       function (c) { c.allies().forEach(function (u) { c.heal(u, u.maxHp * 0.25, 'Lebensband'); }); }),
-    passiv('shu_unt4', 'Göttlicher Segen', 'onStart', ['heilung'], [],
-      'Alle Verbündeten erhalten +20 % maximales Leben',
+    passiv('shu_unt4', 'Göttlicher Segen', 'onStart', ['heilung', 'licht'], ['licht'],
+      'Alle Verbündeten erhalten +20 % maximales Leben und 5 Licht — ihre Angriffe gehen ' +
+      'damit durch fremde Schatten hindurch',
       function (c) {
         c.allies().forEach(function (u) {
           var add = Math.round(u.maxHp * 0.2);
           u.maxHp += add; u.hp += add;
+          c.applyStatus(u, 'licht', 5);
         });
       }),
 
-    passiv('shu_def1', 'Gebetsschild', 'onStart', ['schild'], [],
-      'Shuna startet mit Schild 50',
-      function (c) { c.applyStatus(c.self, 'schild', 50); }),
+    passiv('shu_def1', 'Gebetsschild', 'onStart', ['schild', 'licht'], [],
+      'Shuna startet mit Schild 50 und 4 Licht — das heilt sie stetig und hält Dunkelheit fern',
+      function (c) {
+        c.applyStatus(c.self, 'schild', 50);
+        c.applyStatus(c.self, 'licht', 4);
+      }),
     passiv('shu_def2', 'Unantastbar', 'onStart', [], [],
       'Shuna erleidet 22 % weniger Schaden',
       function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.22); }),
@@ -1221,91 +1233,82 @@
         c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
       }),
 
-    /* ---- Schattenwolfs Linien: Frost ---------------------------------------
-       Er nimmt Züge statt Leben. Gegen Bosse, die Erstarrung abschütteln, ist
-       das die schwächste Linie im Spiel — gegen Gruppen die stärkste.          */
+    /* ---- Schattenwolfs Linien: Schatten und Dunkelheit --------------------
+       Er nimmt nicht Züge, sondern Sicht. Schatten lässt ihn Treffern ganz
+       ausweichen, Dunkelheit nimmt dem Gegner die Wucht — und das göttliche
+       Licht ist die Antwort auf beides.                                       */
 
-    passiv('schatten_ang1', 'Frostbiss', 'onHit', [], ['frost'],
-      '+28 % Schaden gegen erstarrte Ziele',
-      function (c) { if (c.target.status.erstarrung > 0) c.dmg *= 1.28; }),
-    passiv('schatten_ang2', 'Eisklinge', 'onHit', [], [],
-      '+20 % Schaden auf jeden Treffer',
-      function (c) { c.dmg *= 1.2; }),
-    passiv('schatten_ang3', 'Kältetod', 'onHit', [], ['frost'],
-      'Doppelter Schaden gegen erstarrte Ziele',
-      function (c) { if (c.target.status.erstarrung > 0) c.dmg *= 2; }),
-    passiv('schatten_ang4', 'Frostherz', 'onHit', [], ['gift', 'brand', 'frost', 'verderbnis'],
-      '+40 % Schaden gegen Ziele, die irgendeinen Zustand tragen',
+    passiv('schatten_ang1', 'Aus dem Dunkel', 'onHit', [], ['schatten'],
+      '+8 % Schaden je Schatten-Stapel, in dem er selbst steht',
+      function (c) { c.dmg *= 1 + 0.08 * (c.self.status.schatten || 0); }),
+    passiv('schatten_ang2', 'Blindschlag', 'onHit', [], ['dunkelheit'],
+      '+35 % Schaden gegen verdunkelte Ziele',
+      function (c) { if (c.target.status.dunkelheit > 0) c.dmg *= 1.35; }),
+    passiv('schatten_ang3', 'Nachtklinge', 'onHit', [], [],
+      '+22 % Schaden auf jeden Treffer',
+      function (c) { c.dmg *= 1.22; }),
+    passiv('schatten_ang4', 'Herz der Finsternis', 'onHit', ['dunkelheit'], ['dunkelheit'],
+      'Gegen verdunkelte Ziele doppelter Schaden, und jeder Treffer vertieft die Dunkelheit um 1',
       function (c) {
-        var s2 = c.target.status;
-        if (s2.gift > 0 || s2.brand > 0 || s2.erstarrung > 0 || s2.verderbnis > 0) c.dmg *= 1.4;
+        if (c.target.status.dunkelheit > 0) c.dmg *= 2;
+        c.applyStatus(c.target, 'dunkelheit', 1);
       }),
 
-    passiv('schatten_mec1', 'Frostaura', 'onHit', ['frost'], [],
-      '22 % Chance, das Ziel erstarren zu lassen',
-      chance(0.22, function (c) { c.applyStatus(c.target, 'erstarrung', 1); })),
-    passiv('schatten_mec2', 'Eisiger Hauch', 'onHit', ['frost', 'flaeche'], [],
-      '14 % Chance, ALLE Gegner erstarren zu lassen',
-      chance(0.14, function (c) {
-        c.foes().forEach(function (f) { c.applyStatus(f, 'erstarrung', 1); });
-      })),
-    passiv('schatten_mec3', 'Dauerfrost', 'onTurnStart', ['frost'], [],
-      'In jedem Zug 28 % Chance, den vordersten Gegner erstarren zu lassen',
-      chance(0.28, function (c) {
-        var f = c.foes()[0]; if (f) c.applyStatus(f, 'erstarrung', 1);
-      })),
-    passiv('schatten_mec4', 'Absoluter Nullpunkt', 'onHit', [], ['frost'],
-      'Erstarrte Ziele verlieren zusätzlich 10 % ihres maximalen Lebens',
-      function (c) {
-        if (c.target.status.erstarrung > 0) {
-          c.deal(c.target, c.target.maxHp * 0.1, 'Absoluter Nullpunkt', { pure: true });
-        }
-      }),
+    passiv('schatten_mec1', 'Schattenmantel', 'onStart', ['schatten'], [],
+      'Beginnt den Kampf mit 4 Schatten — jeder Stapel weicht Treffern aus',
+      function (c) { c.applyStatus(c.self, 'schatten', 4); }),
+    passiv('schatten_mec2', 'Verdunkeln', 'onHit', ['dunkelheit'], [],
+      'Jeder Treffer legt 2 Dunkelheit an und senkt so den Schaden des Ziels',
+      function (c) { c.applyStatus(c.target, 'dunkelheit', 2); }),
+    passiv('schatten_mec3', 'Tiefer Schatten', 'onTurnStart', ['schatten'], [],
+      'Zieht in jedem Zug 2 Schatten nach',
+      function (c) { c.applyStatus(c.self, 'schatten', 2); }),
+    passiv('schatten_mec4', 'Neumond', 'onTurnStart', ['dunkelheit', 'flaeche'], [],
+      'Legt in jedem Zug allen Gegnern 1 Dunkelheit an',
+      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 1); }); }),
 
-    passiv('schatten_unt1', 'Kälteschleier', 'onStart', ['frost'], [],
-      'Jeder Treffer des Trupps lässt mit 10 % Chance erstarren',
+    passiv('schatten_unt1', 'Schattenwurf', 'onStart', ['schatten'], [],
+      'Alle Verbündeten beginnen mit 2 Schatten',
+      function (c) { c.allies().forEach(function (u) { c.applyStatus(u, 'schatten', 2); }); }),
+    passiv('schatten_unt2', 'Blendung', 'onStart', ['dunkelheit'], [],
+      'Jeder Treffer des Trupps legt 1 Dunkelheit an',
       function (c) {
         c.allies().forEach(function (u) {
-          c.addEffect(u, { hook: 'onHit', name: 'Kälteschleier', fn: function (k) {
-            if (k.rng() < 0.1) k.applyStatus(k.target, 'erstarrung', 1);
+          c.addEffect(u, { hook: 'onHit', name: 'Blendung', fn: function (k) {
+            k.applyStatus(k.target, 'dunkelheit', 1);
           } });
         });
       }),
-    passiv('schatten_unt2', 'Frostschneide', 'onStart', [], ['frost'],
-      'Der ganze Trupp verursacht +32 % Schaden gegen erstarrte Ziele',
+    passiv('schatten_unt3', 'Nachtjagd', 'onStart', [], ['dunkelheit'],
+      'Der ganze Trupp verursacht +28 % Schaden gegen verdunkelte Ziele',
       function (c) {
         c.allies().forEach(function (u) {
-          c.addEffect(u, { hook: 'onHit', name: 'Frostschneide', fn: function (k) {
-            if (k.target.status.erstarrung > 0) k.dmg *= 1.32;
+          c.addEffect(u, { hook: 'onHit', name: 'Nachtjagd', fn: function (k) {
+            if (k.target.status.dunkelheit > 0) k.dmg *= 1.28;
           } });
         });
       }),
-    passiv('schatten_unt3', 'Winterluft', 'onStart', ['tempo'], [],
-      'Alle Verbündeten erhalten +10 % Tempo',
-      function (c) { c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.1); }); }),
-    passiv('schatten_unt4', 'Ewiger Winter', 'onStart', ['frost'], [],
-      'Alle Gegner beginnen den Kampf erstarrt',
-      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'erstarrung', 1); }); }),
+    passiv('schatten_unt4', 'Mondlose Nacht', 'onStart', ['schatten', 'dunkelheit'], [],
+      'Alle Verbündeten beginnen mit 3 Schatten, alle Gegner mit 3 Dunkelheit',
+      function (c) {
+        c.allies().forEach(function (u) { c.applyStatus(u, 'schatten', 3); });
+        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 3); });
+      }),
 
-    passiv('schatten_def1', 'Frostpanzer', 'onStart', ['schild'], [],
-      'Startet mit Schild 35',
-      function (c) { c.applyStatus(c.self, 'schild', 35); }),
+    passiv('schatten_def1', 'Schattenhaut', 'onDamaged', ['schatten'], [],
+      'Jeder erlittene Treffer hüllt ihn in 1 weiteren Schatten',
+      function (c) { c.applyStatus(c.self, 'schatten', 1); }),
     passiv('schatten_def2', 'Schattengestalt', 'onStart', [], [],
       'Der Schattenwolf erleidet 14 % weniger Schaden',
       function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.14); }),
-    passiv('schatten_def3', 'Eisdornen', 'onDamaged', ['frost', 'konter'], [],
-      '25 % Chance, einen Angreifer erstarren zu lassen',
-      chance(0.25, function (c) {
-        var f = c.foes()[0]; if (f) c.applyStatus(f, 'erstarrung', 1);
-      })),
-    /* Gemessen war die Defensivlinie mit Deckel UND Minderung UND Schild fast
-       unsterblich (Bruchpunkt +1.94 gegen +0.30 der nächstbesten Linie). Der
-       Deckel ist raus — Tempo und Schild bleiben. */
-    passiv('schatten_def4', 'Nebelwolf', 'onStart', ['tempo', 'schild'], [],
-      '+30 % Tempo und Schild 45',
+    passiv('schatten_def3', 'Umkehrschatten', 'onDamaged', ['dunkelheit', 'konter'], [],
+      'Wer ihn trifft, wird selbst um 2 Stapel verdunkelt',
+      function (c) { var f = c.foes()[0]; if (f) c.applyStatus(f, 'dunkelheit', 2); }),
+    passiv('schatten_def4', 'Nebelwolf', 'onStart', ['tempo', 'schatten'], [],
+      '+30 % Tempo und 5 Schatten',
       function (c) {
         c.self.spd = Math.round(c.self.spd * 1.3);
-        c.applyStatus(c.self, 'schild', 45);
+        c.applyStatus(c.self, 'schatten', 5);
       }),
 
     /* ---- Rudelalphas Linien: das Rudel -------------------------------------
@@ -2230,11 +2233,13 @@
           if (naechstes) c.attack(1.2, naechstes);
         }
       }),
-    aktiv('sig_schattenwolf', 'Frostbiss', 3, ['frost'],
-      '110 % Schaden und 35 % Chance auf Erstarrung. Gegen ein bereits erstarrtes Ziel doppelter Schaden.',
+    aktiv('sig_schattenwolf', 'Schattenbiss', 3, ['schatten', 'dunkelheit'],
+      '120 % Schaden, legt 2 Dunkelheit auf das Ziel und hüllt sich selbst in 2 Schatten. ' +
+      'Gegen ein bereits verdunkeltes Ziel sind es 190 %.',
       function (c) {
-        c.attack(c.target.status.erstarrung > 0 ? 2.2 : 1.1);
-        if (c.rng() < 0.35) c.applyStatus(c.target, 'erstarrung', 1);
+        c.attack(c.target.status.dunkelheit > 0 ? 1.9 : 1.2);
+        c.applyStatus(c.target, 'dunkelheit', 2);
+        c.applyStatus(c.self, 'schatten', 2);
       }),
     aktiv('sig_rudelalpha', 'Rudelbefehl', 4, ['tempo'],
       'Alle Verbündeten dauerhaft +20 % Tempo, die schnellste Einheit zusätzlich +10 % Angriff.',

@@ -136,6 +136,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 16 | Linien für alle fünf Goblins — die zweite Art ist vollständig | Der billigste Anfang trägt jetzt eigene Tiefe | ✅ 11 von 40 |
 | 17 | Bruchpunkt-Prüfstand für Linien, dazu die vier Sturmwölfe | Auch defensive Linien werden endlich fair gemessen | ✅ 15 von 40 |
 | 18 | Linien für die fünf Echsenmenschen — die Hälfte des Rosters ist erreicht | Zwanzig Einheiten mit eigener Handschrift | ✅ 20 von 40 |
+| 19 | Schatten, Dunkelheit und göttliches Licht; Schattenwolf umgebaut | Ausweichen und gedämpfter Gegnerschaden — zwei neue Achsen | ✅ |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -792,6 +793,35 @@ Quellenpriesterins Mechanik +0.35. Nebenbei bekam der Referenztrupp volle
 Ausrüstung, weil mancher Bruchpunkt sonst auf der Untergrenze der Suche klebte.
 
 Ergebnis `dev/balance.js`: 49 % frisch, 61 % voll; `GRUNDHAERTE` 0.95 → 0.97.
+
+### Phase 19 (2026-07-26): Schatten, Dunkelheit und Licht
+
+Drei Elemente, jedes mit einer Wirkung, die es im Spiel noch nicht gab:
+
+- **Schatten** (auf sich): je Stapel 7 % Chance, einem Treffer **ganz** auszuweichen,
+  gedeckelt bei 60 %. Ausweichen gab es bisher nicht — alles federte nur ab.
+- **Dunkelheit** (auf dem Gegner): senkt, was er **austeilt**, um 7 % je Stapel.
+  Jede andere Marke erhöht, was er einsteckt; das hier ist die Gegenrichtung.
+- **Göttliches Licht** (auf sich): heilt je Stapel 1,5 % pro Zug, löscht ebenso
+  viel Dunkelheit, und die eigenen Angriffe gehen **durch fremde Schatten**.
+  Damit hat jede der beiden Finsternisse eine Antwort.
+
+Der **Schattenwolf** ist von Frost auf diese Achse umgebaut — Signatur
+„Schattenbiss" statt „Frostbiss", alle sechzehn Linien neu. Frost bleibt bei
+Ranga und in der Bibliothek. **Shuna** trägt das Licht.
+
+Beim Testen gingen drei Kulissen daneben, alle aus demselben Grund — *die
+Messung stand an der falschen Stelle*:
+
+1. Die Frost-Tests bauten Ranga ohne Passive. Linien-Einheiten tragen ohne
+   ausdrückliche Wahl **keine** — der Frostträger blieb wirkungslos.
+2. Der Dunkelheits-Test ließ die Quelle vorn stehen: der Schattenwolf starb,
+   die Dunkelheit verfiel, und gemessen wurden ungedämpfte späte Treffer.
+   Jetzt hält ein Sack die Front.
+3. Der Licht-Test gab Shuna ihren Schild mit — der fing alles ab, ihr Leben
+   sank nie, und die Heilung hatte nichts zu tun.
+
+Ergebnis `dev/balance.js 600`: 50 % frisch, 61 % voll; `GRUNDHAERTE` 0.97 → 1.00.
 
 Weitere offene Punkte:
 - Der Abstand zwischen Anfänger und Veteran ist auf 12 Punkte gewachsen

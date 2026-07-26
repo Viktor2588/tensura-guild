@@ -8,12 +8,14 @@
   var replay = null;             // { res, i, u:{key->Anzeige}, zeilen, timer, fertig }
   var STATUS_NAMEN = { gift: 'Gift', brand: 'Brand', erstarrung: 'Erstarrt', verderbnis: 'Verderbnis',
                        schild: 'Schild', chaos: 'Chaos', antichaos: 'Antichaos',
-                       verwundbar: 'Verwundbar', blutung: 'Blutung' };
+                       verwundbar: 'Verwundbar', blutung: 'Blutung',
+                       schatten: 'Schatten', dunkelheit: 'Dunkelheit', licht: 'Licht' };
   var KEYWORD_NAMEN = {
     gift: 'Gift', brand: 'Brand', frost: 'Frost', verderbnis: 'Verderbnis',
     schild: 'Schild', heilung: 'Heilung', konter: 'Konter', tempo: 'Tempo',
     exekution: 'Exekution', flaeche: 'Fläche', chaos: 'Chaos',
-    verwundbar: 'Verwundbar', blutung: 'Blutung'
+    verwundbar: 'Verwundbar', blutung: 'Blutung',
+    schatten: 'Schatten', dunkelheit: 'Dunkelheit', licht: 'Licht'
   };
   var TYP_TEXT = {
     kampf: 'Kampf', elite: 'Elite-Kampf', pruefung: 'Kampfherausforderung',
@@ -68,6 +70,7 @@
     signatur: 'typ-signatur', aktive: 'typ-aktiv', aktiv: 'typ-aktiv',
     passive: 'typ-passiv', passiv: 'typ-passiv',
     chaos: 'kw-chaos', antichaos: 'kw-chaos', verwundbar: 'kw-verwundbar', blutung: 'kw-blutung',
+    schatten: 'kw-schatten', dunkel: 'kw-dunkelheit', licht: 'kw-licht',
     relikt: 'typ-relikt', ausrüstung: 'typ-item',
     üblich: 'rar-text-1', ungewöhnlich: 'rar-text-2', selten: 'rar-text-3',
     episch: 'rar-text-4', legendär: 'rar-text-5'
@@ -343,6 +346,7 @@
     else if (l.type === 'chaos') text = '🎲 ' + esc(l.unit) + ': Angriff ' + l.atk + ' %, Rüstung ' +
       l.def + ' %, Tempo ' + l.spd + ' %';
     else if (l.type === 'fehlschlag') text = '✗ ' + esc(l.unit) + ': ' + esc(l.name) + ' verpufft im Chaos';
+    else if (l.type === 'ausweichen') text = '↯ ' + esc(l.target) + ' weicht im Schatten aus';
     else if (l.type === 'wut') text = '🔥 ' + esc(l.unit) + ' gerät in Rage: Angriff ' + l.atk;
     else if (l.type === 'aktiv') { text = '⚡ ' + esc(l.unit) + ' setzt ' + esc(l.name) + ' ein';
                                    klasse = (l.side === 'player' ? 'spieler' : 'feind') + ' aktiv'; }

@@ -19,6 +19,29 @@
      ein Angriffsfaktor unter null, eine Fehlschlagchance von 100 %. Erstarrung
      ist kein Stapel, sondern ein Schalter (ein Zug fällt aus) und bleibt bei 1. */
   var STATUS_CAP = { erstarrung: 1 };
+
+  /* ---- Schatten, Dunkelheit, Licht ---------------------------------------
+     Drei Elemente, die etwas tun, das es bisher nicht gab:
+
+       schatten     auf sich selbst — je Stapel eine Chance, einem Treffer ganz
+                    auszuweichen. Ausweichen gab es im Spiel noch nicht.
+       dunkelheit   auf dem Gegner — senkt seinen AUSGETEILTEN Schaden. Alle
+                    bisherigen Marken erhöhen den eingehenden.
+       licht        auf sich selbst — löscht Dunkelheit, heilt stetig, und die
+                    eigenen Angriffe gehen durch fremde Schatten hindurch.
+                    Das göttliche Licht ist die Antwort auf beide Schatten.    */
+  var SCHATTEN_PRO_STAPEL = 0.07, SCHATTEN_MAX = 0.6;
+  var DUNKELHEIT_PRO_STAPEL = 0.07, DUNKELHEIT_MAX = 0.6;
+  var LICHT_HEILUNG = 0.015;
+
+  function ausweichrate(u) {
+    return Math.min(SCHATTEN_MAX,
+      (SCHATTEN_PRO_STAPEL + (u.schattenPlus || 0)) * (u.status.schatten || 0));
+  }
+  function dunkelFaktor(u) {
+    return 1 - Math.min(DUNKELHEIT_MAX,
+      (DUNKELHEIT_PRO_STAPEL + (u.dunkelPlus || 0)) * (u.status.dunkelheit || 0));
+  }
   /* Untergrenze für den Chaos-Faktor: bei 0 stünde die Einheit still. */
   var CHAOS_MIN = 0.15;
   /* Auch bei sehr vielen Stapeln bleibt ein Rest Verlässlichkeit. */
@@ -68,7 +91,10 @@
     exekution: '+15 % Schaden gegen Ziele unter 35 % Leben',
     flaeche: '+8 % Schaden, solange mindestens zwei Gegner stehen',
     chaos: 'Chaos und Antichaos streuen die Werte um ein Viertel weiter',
-    blutung: 'Blutung reißt ein Viertel mehr Leben heraus'
+    blutung: 'Blutung reißt ein Viertel mehr Leben heraus',
+    schatten: 'Jeder Schatten-Stapel weicht 9 % statt 7 % der Treffer aus',
+    dunkelheit: 'Dunkelheit nimmt 9 % statt 7 % des gegnerischen Schadens',
+    licht: 'Licht heilt doppelt und löscht zwei Stapel Dunkelheit je Zug'
   };
   /* Eine Stelle, die zählt — Kampf und Anzeige dürfen nicht auseinanderlaufen.
      Es resoniert nur die STÄRKSTE Linie: sonst sammelt ein Trupp mit neun
@@ -108,6 +134,7 @@
       side: side, pos: pos, gauge: 0, status: {}, regen: 0, lifesteal: 0,
       heilfaktor: 0, schildfaktor: 0,
       chaos: null, enrage: def.enrage || 0, wut: 1, verschlungen: def.verschlungen || 0,
+      schattenPlus: 0, dunkelPlus: 0, lichtPlus: 0,
       itemZahl: def.itemZahl || 0,
       dmgTaken: 0, dmgDealt: 0
     };
@@ -144,6 +171,14 @@
     function deal(target, amount, source, opt) {
       if (!target || !alive(target)) return 0;
       opt = opt || {};
+      /* Schatten: ganz danebengegangen. Göttliches Licht des Angreifers hebt
+         die Deckung auf, sonst wäre die Antwort darauf reine Statistik. */
+      if (!opt.umgeleitet && !opt.durchLicht && target.status.schatten > 0 &&
+          rng() < ausweichrate(target)) {
+        log.push({ t: t, type: 'ausweichen', key: target.key, target: target.name,
+                   side: target.side, source: source });
+        return 0;
+      }
       var v = target.status.verderbnis || 0;
       amount = amount * (1 + v * (gegen(target, 'verderbnis') ? 0.13 : 0.1));
 
@@ -277,14 +312,15 @@
       /* Die Marke gilt für jeden Angreifer, nicht nur für den, der sie gesetzt
          hat — genau das macht sie zur Trupp-Fähigkeit. */
       pierce = Math.min(1, pierce + VERWUNDBAR_PIERCE * (target.status.verwundbar || 0));
-      var base = u.atk * chaosF(u, 'atk') * (u.wut || 1) * (mult || 1)
+      var base = u.atk * chaosF(u, 'atk') * (u.wut || 1) * dunkelFaktor(u) * (mult || 1)
         - target.def * chaosF(target, 'def') * (1 - pierce);
       var c = ctx(u, { attacker: u, target: target, dmg: base * (0.9 + rng() * 0.2) });
       fire(u, 'onHit', c);
       if (res[u.side].exekution && target.hp < target.maxHp * 0.35) c.dmg *= 1.15;
       if (res[u.side].flaeche && living(other(u.side)).length >= 2) c.dmg *= 1.08;
       if (!alive(target)) return 0;
-      var done = deal(target, c.dmg, quelle || u.name, { pure: !!u.durchschlag || !!opt.pure });
+      var done = deal(target, c.dmg, quelle || u.name,
+        { pure: !!u.durchschlag || !!opt.pure, durchLicht: u.status.licht > 0 });
       u.dmgDealt += done;
       if (u.lifesteal > 0 && done) heal(u, done * u.lifesteal, 'Lebensraub');
       /* Wer den Gegner umlegt, darf das merken — Grundlage für Exekutions-Builds,
@@ -308,6 +344,9 @@
          erste Barriere gelegt wird. */
       var r = res[side];
       mine.forEach(function (u) {
+        if (r.schatten) u.schattenPlus = 0.02;
+        if (r.dunkelheit) u.dunkelPlus = 0.02;
+        if (r.licht) u.lichtPlus = 1;
         if (r.tempo) u.spd = Math.round(u.spd * 1.06);
         if (r.schild) u.schildfaktor += 0.15;
         if (r.heilung) u.heilfaktor += 0.15;
@@ -404,6 +443,18 @@
         u.status.blutung--; if (!alive(u)) return;
       }
       if (u.status.verderbnis > 0) u.status.verderbnis--;
+      /* Licht zuerst: es löscht Dunkelheit, bevor die den Zug verdirbt. */
+      if (u.status.licht > 0) {
+        var lf = 1 + (u.lichtPlus || 0);
+        heal(u, u.maxHp * LICHT_HEILUNG * lf * u.status.licht, 'Licht');
+        if (u.status.dunkelheit > 0) {
+          u.status.dunkelheit = Math.max(0, u.status.dunkelheit - u.status.licht * lf);
+        }
+        u.status.licht--;
+        if (!alive(u)) return;
+      }
+      if (u.status.schatten > 0) u.status.schatten--;
+      if (u.status.dunkelheit > 0) u.status.dunkelheit--;
       if (u.status.verwundbar > 0 && !u.offeneWunde) u.status.verwundbar--;
       /* Der Würfelwurf der Runde: neue Werte, solange Chaos oder Antichaos liegt. */
       var negC = u.status.chaos || 0, posC = u.status.antichaos || 0;
@@ -501,5 +552,7 @@
                   CHAOS_STREUUNG: CHAOS_STREUUNG, CHAOS_FEHLSCHLAG: CHAOS_FEHLSCHLAG,
                   VERWUNDBAR_PIERCE: VERWUNDBAR_PIERCE, BLUTUNG_PRO_STAPEL: BLUTUNG_PRO_STAPEL,
                   ENRAGE_CAP: ENRAGE_CAP,
+                  SCHATTEN_PRO_STAPEL: SCHATTEN_PRO_STAPEL, SCHATTEN_MAX: SCHATTEN_MAX,
+                  DUNKELHEIT_PRO_STAPEL: DUNKELHEIT_PRO_STAPEL, LICHT_HEILUNG: LICHT_HEILUNG,
                   RESONANZ_SCHWELLE: RESONANZ_SCHWELLE, resonanz: resonanz };
 })(globalThis);

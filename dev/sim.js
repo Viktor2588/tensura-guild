@@ -425,7 +425,11 @@ ok(frueh.every(function (id) {
 }), 'thematische Einheiten schalten ihren Verstärker schon auf Rang B frei');
 
 /* Bosse widerstehen Erstarrung — sonst gewinnt Frost jeden Einzelkampf. */
-var frostTeam = [def('schattenwolf', 3)];
+/* Linien-Einheiten tragen ohne ausdrückliche Wahl KEINE Passiven — der
+   Frostträger muss sie also bekommen. */
+var frostM = R.member('ranga');
+frostM.rank = 3; frostM.passives = ['ranga_mec1', 'ranga_mec3', 'ranga_mec4'];
+var frostTeam = [R.resolve(frostM)];
 var trefferBoss = 0, trefferNormal = 0, widerstand = 0;
 for (var fb = 0; fb < 30; fb++) {
   var rb = C.simulate(frostTeam, EN.build({ units: ['milim_boss'], mult: 1 }), fb);
@@ -858,7 +862,12 @@ function tritt_auf(unitId, rank, treffer, gegner) {
 ok(tritt_auf('giftfalter', 0, function (l) { return l.status === 'gift'; }), 'Gift wird angelegt');
 ok(tritt_auf('giftfalter', 0, function (l) { return l.source === 'Gift'; }), 'Gift tickt und macht Schaden');
 ok(tritt_auf('benimaru', 0, function (l) { return l.status === 'brand'; }), 'Brand wird angelegt');
-ok(tritt_auf('schattenwolf', 0, function (l) { return l.type === 'skip'; }), 'Erstarrung lässt einen Zug aussetzen');
+var erstarrtGesehen = false;
+for (var eg = 0; eg < 60 && !erstarrtGesehen; eg++) {
+  erstarrtGesehen = C.simulate([R.resolve(frostM), def('gobta', 1)],
+    [EN.get('felsgolem')], eg).log.some(function (l) { return l.type === 'skip'; });
+}
+ok(erstarrtGesehen, 'Erstarrung lässt einen Zug aussetzen');
 ok(tritt_auf('diablo', 0, function (l) { return l.status === 'verderbnis'; }), 'Verderbnis wird angelegt');
 ok(tritt_auf('rigurd', 0, function (l) { return l.type === 'schild'; }), 'Schild fängt Schaden ab');
 /* Gegen einen Giftgegner: der Schild des Echsenfürsten fängt Treffer ab, Gift
@@ -1020,6 +1029,55 @@ function haerteste(passives) {
 }
 ok(haerteste(['shion_def4']) < haerteste([]),
    'Chaosbollwerk deckelt den härtesten Treffer (' + haerteste([]) + ' → ' + haerteste(['shion_def4']) + ')');
+
+head('Schatten, Dunkelheit und Licht');
+
+function mitPassiven(id, rank, pas) {
+  var m = R.member(id); m.rank = rank; m.passives = pas || [];
+  return R.resolve(m);
+}
+/* Schatten: Treffer gehen ganz daneben — Ausweichen gab es vorher nicht. */
+var schattenM = mitPassiven('schattenwolf', 3, ['schatten_mec1', 'schatten_mec3']);
+var schattenLog = C.simulate([schattenM], [sandsack(60000, { atk: 40, spd: 30 })], 4).log;
+ok(schattenLog.some(function (l) { return l.type === 'ausweichen'; }),
+   'Schatten lässt Treffer ganz danebengehen');
+ok(C.SCHATTEN_MAX < 1, 'die Ausweichrate bleibt unter 100 %');
+
+/* Dunkelheit senkt den AUSGETEILTEN Schaden — anders als jede andere Marke.
+   Gemessen an den SPÄTEN Treffern: früh ist noch keine Dunkelheit aufgebaut. */
+function spaeterSchaden(dunkel) {
+  var boese = { id: 'b', name: 'Schläger', tags: ['bestie', 'front'], hp: 200000, atk: 60,
+                def: 0, spd: 22, actives: [], effects: [], keywords: [] };
+  /* Eine einzelne Quelle verfällt so schnell, wie sie aufbaut — für eine
+     messbare Dunkelheit braucht es die Linie, nicht einen Stapel. */
+  /* Der Sack steht VORN und hält den Schläger — sonst stirbt die Quelle der
+     Dunkelheit, und die späten Treffer sind wieder ungedämpft. */
+  var team = dunkel
+    ? [sandsack(400000, { spd: 8 }),
+       mitPassiven('schattenwolf', 3, ['schatten_mec2', 'schatten_mec4', 'schatten_unt4'])]
+    : [sandsack(400000, { spd: 8 })];
+  var treffer = C.simulate(team, [boese], 6).log
+    .filter(function (l) { return l.type === 'hit' && l.source === 'Schläger'; });
+  var spaet = treffer.slice(-20);
+  return spaet.reduce(function (a, l) { return a + l.dmg; }, 0) / Math.max(1, spaet.length);
+}
+ok(spaeterSchaden(true) < spaeterSchaden(false) * 0.9,
+   'Dunkelheit nimmt dem Gegner die Wucht (' + spaeterSchaden(false).toFixed(0) +
+   ' → ' + spaeterSchaden(true).toFixed(0) + ' Schaden je später Treffer)');
+
+/* Licht: heilt stetig. Shuna muss dafür überhaupt verletzt werden können. */
+var lichtM = mitPassiven('shuna', 3, ['shu_def1']);
+/* Kräftig genug, um Shunas Schild zu brechen — sonst sinkt ihr Leben nie und
+   die Heilung hat nichts zu tun. */
+var lichtLog = C.simulate([lichtM],
+  [{ id: 'n', name: 'Nadler', tags: ['bestie', 'front'], hp: 200000, atk: 45,
+     def: 0, spd: 40, actives: [], effects: [], keywords: [] }], 3).log;
+ok(lichtLog.some(function (l) { return l.source === 'Licht'; }), 'Licht heilt stetig');
+ok(lichtLog.some(function (l) { return l.status === 'licht'; }), 'und wird als Zustand angelegt');
+ok(C.RESONANZ.schatten && C.RESONANZ.dunkelheit && C.RESONANZ.licht,
+   'alle drei Elemente haben eine Resonanz');
+ok(!C.STATUS_CAP.schatten && !C.STATUS_CAP.dunkelheit,
+   'auch sie stapeln unbegrenzt');
 
 head('Verwundbar, Blutung und Boss-Eskalation');
 

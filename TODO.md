@@ -86,12 +86,20 @@ Abgearbeitet in Phase 18:
 - [x] `dev/linien.js` wertet ein Unentschieden nach Vorsprung statt als
       Niederlage — sonst maß es bei Ausdauer-Einheiten nur das Zug-Limit
 
+Abgearbeitet in Phase 19:
+
+- [x] Drei neue Elemente: Schatten (Ausweichen), Dunkelheit (senkt den
+      ausgeteilten Schaden), göttliches Licht (heilt, löscht Dunkelheit,
+      trägt durch Schatten)
+- [x] Schattenwolf von Frost auf Schatten und Dunkelheit umgebaut
+
 Offen:
 
 1. **20 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Zwanzig sind
    fertig: Oger (6), Goblins (5), Sturmwölfe (4), Echsenmenschen (5) — zusammen
-   320 Passive, die Hälfte ist geschafft. Weiter Art für Art; als Nächstes die
-   Insektoiden (5), Dämonen (5), Untoten (5), Drachen (4) und Rimuru.
+   320 Passive, die Hälfte ist geschafft. Weiter Art für Art in dieser
+   Reihenfolge: Dämonen (5), Untote (5), Drachen (4), Rimuru — **Insektoiden
+   zuletzt**.
    Gemessen wird mit `npm run linien`.
 
 2. **Den Aufstiegs-Pool in Passive umbauen.** *(entschieden)* Die 34 aktiven
