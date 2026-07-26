@@ -102,6 +102,34 @@ gemessen erreicht ein sauber gespielter Trupp neun bis zehn Rangstufen.
 Kämpfe laufen **von allein** ab. Du greifst nicht ein. Alles entscheidet sich
 vorher.
 
+## Die Knoten
+
+Die Wahl auf der Karte ist die **Art** des Knotens, nicht ein bekannter Gegner.
+Was genau antritt, siehst du erst im Kampf — nur der Boss des Akts steht von
+Anfang an fest.
+
+| Knoten | Was dich erwartet |
+|---|---|
+| **Kampf** | Eine gewöhnliche Begegnung, eine Belohnung zur Wahl |
+| **Elite-Kampf** | Härter besetzt, würfelt die Belohnung eine Stufe besser |
+| **Kampfherausforderung** | Deutlich härtere Gegner plus eine angesagte Auflage |
+| **Ereignis** | Zwei bis drei Optionen, Ausgang steht an der Option |
+| **Händler** | Kaufen mit Magicule |
+| **Lager** | Magicule, ein Ausrüstungsstück oder dauerhafte Werte |
+| **Boss** | Abschluss des Akts, tritt allein an und eskaliert |
+
+### Kampfherausforderung
+
+Vier mögliche Auflagen: **ohne einen Verlust**, **kurzer Prozess** (höchstens 22
+Züge), **unversehrt** (die vorderste Einheit bleibt über drei Vierteln) oder
+**in Unterzahl** (nur die ersten zwei Einheiten treten an). Die Auflage steht
+vorher auf der Karte.
+
+Hältst du sie, gibt es ein **zweites Belohnungsangebot** obendrauf. Verfehlst du
+sie, bleibt es bei der gewöhnlichen Belohnung — verloren ist nichts außer dem
+Risiko, das der härtere Kampf mitbringt. Gemessen werden rund 62 % der
+angenommenen Auflagen gehalten.
+
 ## Eine Einheit je Art
 
 Von jeder Art steht genau eine Einheit im Trupp: Slime, Goblin, Oger, Sturmwolf,
@@ -203,19 +231,24 @@ Jede Fähigkeit trägt Schlüsselwörter: was sie **erzeugt** (Quelle) und was s
 
 | Schlüsselwort | Wirkung | Grenze |
 |---|---|---|
-| Gift | knapp 2 Schaden je Stapel pro eigenem Zug | 12 |
-| Brand | 2 Schaden je Stapel pro Zug, halbiert Heilung | 8 |
+| Gift | knapp 2 Schaden je Stapel pro eigenem Zug | – |
+| Brand | 2 Schaden je Stapel pro Zug, halbiert Heilung | – |
 | Frost | Zug fällt aus | 1, Bosse widerstehen zu 60 % |
-| Verderbnis | Ziel nimmt +10 % Schaden je Stapel | 5 |
+| Verderbnis | Ziel nimmt +10 % Schaden je Stapel | – |
 | Schild | fängt Schaden ab, baut sich nicht ab | 60 % des Lebens |
 | Heilung | Regeneration, Lebensraub, Wiederbelebung | – |
 | Konter | Schaden zurück an den Angreifer | – |
 | Exekution | mehr Schaden gegen angeschlagene Ziele | – |
 | Fläche | trifft mehrere Gegner | – |
 | Tempo | mehr Züge, also öfter die eigene Signatur | – |
-| Chaos | Werte des Ziels würfeln jede Runde neu, Fähigkeiten verpuffen | 10 |
-| Verwundbar | JEDER Angreifer schlägt 15 % je Stapel mehr Rüstung durch | 5 |
-| Blutung | gut 1 % des maximalen Lebens je Stapel pro Zug | 8 |
+| Chaos | Werte des Ziels würfeln jede Runde neu, Fähigkeiten verpuffen | – |
+| Verwundbar | JEDER Angreifer schlägt 15 % je Stapel mehr Rüstung durch | – |
+| Blutung | gut 1 % des maximalen Lebens je Stapel pro Zug | – |
+
+**Stapel sind unbegrenzt.** Wer eine Linie zu Ende baut, sieht das auch an der
+Zahl. Gedeckelt wird nur die Wirkung dort, wo sie sinnlos würde: der Chaos-Faktor
+fällt nie unter 15 %, die Fehlschlagchance nie über 75 %. Einzige Ausnahme ist
+**Erstarrung** — sie ist ein Schalter, kein Stapel: ein Zug fällt aus, mehr nicht.
 
 Ein Build ist erst rund, wenn **Quellen und Verstärker zusammenkommen** — die
 Anzeige markiert ihn dann grün. Zwei Quellen plus ein Verstärker sind die

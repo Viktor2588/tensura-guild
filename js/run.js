@@ -18,13 +18,49 @@
   var STEPS = [
     ['kampf', 'kampf', 'event'],
     ['kampf', 'event', 'shop'],
-    ['shop', 'event', 'kampf'],
+    ['shop', 'pruefung', 'kampf'],
     ['kampf', 'elite', 'lager'],
-    ['lager', 'event', 'kampf'],
+    ['lager', 'event', 'pruefung'],
     ['kampf', 'shop', 'elite'],
-    ['elite', 'kampf', 'lager'],
+    ['elite', 'pruefung', 'lager'],
     ['boss']
   ];
+
+  /* ---- Kampfherausforderung ----------------------------------------------
+     Ein normaler Kampf mit einer angesagten Auflage. Erfüllt gibt es die
+     doppelte Belohnung, sonst die normale — das Risiko ist die Entscheidung,
+     nicht die Kenntnis des Gegners. `pruef(res, run)` bekommt das Kampfergebnis
+     und sagt, ob die Auflage stand.                                          */
+  /* Der Kampf selbst ist härter als ein gewöhnlicher — sonst wäre die Auflage
+     ein Geschenk. Gemessen wurden die ersten Auflagen zu 92–100 % gehalten. */
+  var PRUEFUNG_HAERTE = 1.9;
+  var PRUEFUNGEN = [
+    { id: 'ohne_verlust', name: 'Ohne einen Verlust',
+      text: 'Keine deiner Einheiten darf fallen.',
+      pruef: function (res) {
+        return !res.fallen.some(function (f) { return f.side === 'player'; });
+      } },
+    { id: 'schnell', name: 'Kurzer Prozess',
+      text: 'Der Kampf muss in höchstens 22 Zügen entschieden sein.',
+      pruef: function (res) { return res.ticks <= 22; } },
+    { id: 'unversehrt', name: 'Unversehrt',
+      text: 'Deine vorderste Einheit muss über drei Vierteln ihres Lebens bleiben.',
+      pruef: function (res) {
+        var vorn = res.survivors.filter(function (u) { return u.side === 'player'; })[0];
+        return !!vorn && vorn.hp > vorn.maxHp * 0.75;
+      } },
+    { id: 'unterzahl', name: 'In Unterzahl',
+      text: 'Nur deine ersten zwei Einheiten treten an — der Rest sieht zu.',
+      vorher: function (run) { return { team: run.team.slice(0, 2) }; },
+      pruef: function () { return true; } }
+  ];
+  var TYP_NAME = { kampf: 'Kampf', elite: 'Elite-Kampf', pruefung: 'Kampfherausforderung',
+                   event: 'Ereignis', shop: 'Händler', lager: 'Lager', boss: 'Boss' };
+
+  function pruefung(id) {
+    for (var i = 0; i < PRUEFUNGEN.length; i++) if (PRUEFUNGEN[i].id === id) return PRUEFUNGEN[i];
+    return null;
+  }
   var TEAM_MAX = 6, BANK_MAX = 3;
   /* Zwei Akte, je ein Boss. Der Inhalt bleibt fünfstufig — Jura-Wald, Höhlen und
      Orks, Falmuth, die Westliche Heilige Kirche, Ruberios —, aber die Stufe
@@ -98,7 +134,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 0.98;   // ohne Abklingzeiten schlagen beide Seiten haerter zu
+  var GRUNDHAERTE = 1.02;   // Stapel sind unbegrenzt; das kostet den Gegner etwas Haerte zurueck
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -131,6 +167,7 @@
        Run. Gemessen mit `node dev/balance.js 500 --stufe N`. */
     /* Nur noch ein leiser Anstieg: die Regeln oben tragen die Härte. */
     var f = GRUNDHAERTE + 0.012 * Math.min(t, 5);
+    if (node && node.type === 'pruefung') f *= PRUEFUNG_HAERTE;
     if (run.act === 1 && node && node.type !== 'boss' && EINSTIEG_HAERTE[run.step]) {
       f *= EINSTIEG_HAERTE[run.step];
     }
@@ -470,7 +507,7 @@
     if (!EN.forAct(st).length) { run.options = []; return; }
     var types = STEPS[run.step];
     run.options = types.map(function (type) {
-      if (type === 'kampf' || type === 'elite') {
+      if (type === 'kampf' || type === 'elite' || type === 'pruefung') {
         /* Belagerung: Elite-Gegner an einem normalen Knoten — aber zu normaler
            Beute. Mit der Elite-Belohnung war die Stufe gemessen LEICHTER als die
            darunter (23 gegen 17 % Siege): die bessere Beute zahlte die härteren
@@ -485,20 +522,24 @@
         var belagert = type === 'kampf' && regel(run, 'belagerung') && run.act >= AKTE &&
           run.step % 2 === 1;
         if (belagert) type = 'elite';
+        /* Kein Gegnername im Knoten: die Wahl ist die Art des Knotens, nicht die
+           Kenntnis der Gegner. Vorher versprach die Vorschau vier Gegner und es
+           traten während des Einstiegs tatsächlich ein bis zwei an. */
         var pool = type === 'elite' ? EN.elitesForAct(st) : EN.forAct(st);
         var e = root.RNG.pick(rng, pool);
-        return { type: type, name: (belagert ? 'Belagerung: ' : '') + e.name,
-                 encounter: e, belagert: belagert };
+        var knoten = { type: type, name: TYP_NAME[type], encounter: e, belagert: belagert };
+        if (type === 'pruefung') knoten.pruefung = root.RNG.pick(rng, PRUEFUNGEN).id;
+        return knoten;
       }
       if (type === 'boss') {
         var b = bossOf(run);
         return { type: 'boss', name: 'BOSS: ' + b.name, encounter: b };
       }
       if (type === 'event') {
-        return { type: 'event', name: 'Ereignis', event: root.RNG.pick(rng, EN.eventsForAct(st)) };
+        return { type: 'event', name: TYP_NAME.event, event: root.RNG.pick(rng, EN.eventsForAct(st)) };
       }
-      if (type === 'shop') return { type: 'shop', name: 'Händler' };
-      return { type: 'lager', name: 'Lager' };
+      if (type === 'shop') return { type: 'shop', name: TYP_NAME.shop };
+      return { type: 'lager', name: TYP_NAME.lager };
     });
     commit(run, rng);
   }
@@ -586,7 +627,10 @@
     var seed = Math.floor(rng() * 0xffffffff);
     commit(run, rng);
     var foes = regeln(run, node, EN.build(node.encounter, bedrohungsFaktor(run, node)));
-    var res = C.simulate(run.team.map(resolve), foes, seed, { relics: run.relics.map(GD.relic) });
+    /* Eine Auflage darf auch den Trupp beschneiden, der antritt. */
+    var p = node.pruefung ? pruefung(node.pruefung) : null;
+    var antritt = (p && p.vorher ? p.vorher(run).team : run.team);
+    var res = C.simulate(antritt.map(resolve), foes, seed, { relics: run.relics.map(GD.relic) });
     run.phase = 'kampf';
     run.pending = { result: res, node: node, rewards: null, devour: null };
 
@@ -596,8 +640,12 @@
       var beute = ertrag(node.encounter.beute * (node.belagert ? 0.75 : 1)) +
         ertrag(MAG_JE_KAMPF + inhaltsStufe(run) * 15);
       run.magicules += beute;
+      /* Auflage erfüllt: ein zweites Belohnungsangebot. Zusätzlich die Beute zu
+         verdoppeln war gemessen zu viel — 63 % Siegquote statt der Zielmarke. */
+      if (p) run.pending.bestanden = p.pruef(res, run);
       run.pending.gold = beute;
       run.pending.rewards = rollRewards(run, node);
+      if (p && run.pending.bestanden) run.pending.extra = rollRewards(run, node);
       run.pending.devour = res.fallen.filter(function (f) { return f.side === 'enemy'; })
         .filter(function (f) { return (EN.get(f.id).effects || []).length; })
         .map(function (f) {
@@ -662,16 +710,17 @@
     return out;
   }
 
-  function takeReward(run, i) {
+  function takeReward(run, i, ausExtra) {
     var p = run.pending;
-    if (!p || !p.rewards) return false;
-    var r = p.rewards[i];
+    var liste = ausExtra ? p && p.extra : p && p.rewards;
+    if (!liste) return false;
+    var r = liste[i];
     if (!r) return false;
     if (r.kind === 'unit') { if (!addUnit(run, r.id)) return false; }
     else if (r.kind === 'relic') run.relics.push(r.id);
     else if (r.kind === 'item') (run.bag = run.bag || []).push(r.id);
     else run.magicules += r.mag;
-    p.rewards = null;
+    if (ausExtra) p.extra = null; else p.rewards = null;
     return true;
   }
 
@@ -1052,9 +1101,9 @@
      nur das Nötige gespeichert, nicht das ganze Log. */
   function schlankesPending(run) {
     var p = run.pending;
-    if (run.phase !== 'kampf' || !p || !p.rewards) return null;
+    if (run.phase !== 'kampf' || !p || !(p.rewards || p.extra)) return null;
     return {
-      rewards: p.rewards, devour: p.devour, gold: p.gold,
+      rewards: p.rewards, extra: p.extra, bestanden: p.bestanden, devour: p.devour, gold: p.gold,
       node: { name: p.node.name }, result: { winner: p.result.winner }
     };
   }
@@ -1139,6 +1188,7 @@
     entlassenWert: entlassenWert, darfEntlassen: darfEntlassen,
     belegteArten: belegteArten, freieArt: freieArt, waehle: waehle, gewicht: gewicht,
     inhaltsStufe: inhaltsStufe, boss: bossOf, STUFEN: STUFEN, ertrag: ertrag,
+    PRUEFUNGEN: PRUEFUNGEN, pruefung: pruefung, TYP_NAME: TYP_NAME,
     buildTeile: buildTeile, resonanzen: resonanzen, analyse: analyse,
     save: save, load: load, clear: clear, loadMeta: loadMeta, saveMeta: saveMeta,
     serialize: serialize, deserialize: deserialize,

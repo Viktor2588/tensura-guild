@@ -14,8 +14,15 @@
 
   var TICK_CAP = 3000;                                   // Patt-Bremse
   /* Ohne Obergrenzen läuft alles davon, was pro Treffer stapelt. */
-  var STATUS_CAP = { verderbnis: 5, gift: 12, brand: 8, erstarrung: 1, chaos: 10, antichaos: 10,
-                     verwundbar: 5, blutung: 8 };
+  /* Stapel sind unbegrenzt — wer eine Linie zu Ende baut, soll das auch sehen.
+     Gedeckelt wird stattdessen die WIRKUNG, dort wo sie sonst unsinnig würde:
+     ein Angriffsfaktor unter null, eine Fehlschlagchance von 100 %. Erstarrung
+     ist kein Stapel, sondern ein Schalter (ein Zug fällt aus) und bleibt bei 1. */
+  var STATUS_CAP = { erstarrung: 1 };
+  /* Untergrenze für den Chaos-Faktor: bei 0 stünde die Einheit still. */
+  var CHAOS_MIN = 0.15;
+  /* Auch bei sehr vielen Stapeln bleibt ein Rest Verlässlichkeit. */
+  var FEHLSCHLAG_MAX = 0.75;
 
   /* ---- Verwundbar --------------------------------------------------------
      Die Marke des Assassinen. Für sich genommen bricht sie nur Rüstung — ihr
@@ -400,7 +407,7 @@
            gedacht, als Glücksspiel gespielt. Unvorhersehbar bleibt es: die Höhe
            der Einbuße wird in jeder Runde neu gewürfelt. */
         ['atk', 'def', 'spd'].forEach(function (k) {
-          u.chaos[k] = 1 + rng() * streu * posC - rng() * streu * negC;
+          u.chaos[k] = Math.max(CHAOS_MIN, 1 + rng() * streu * posC - rng() * streu * negC);
         });
         log.push({ t: t, type: 'chaos', key: u.key, unit: u.name, side: u.side,
                    stapel: Math.round(negC), anti: Math.round(posC),
@@ -433,7 +440,7 @@
 
       /* Chaos lässt das Wirken misslingen: der Zug ist weg, die Abklingzeit läuft. */
       if (aktive && u.chaos && u.chaos.stapel &&
-          rng() < CHAOS_FEHLSCHLAG * u.chaos.stapel) {
+          rng() < Math.min(FEHLSCHLAG_MAX, CHAOS_FEHLSCHLAG * u.chaos.stapel)) {
         log.push({ t: t, type: 'fehlschlag', key: u.key, unit: u.name, side: u.side, name: aktive.name });
         return;
       }
@@ -481,7 +488,8 @@
   }
 
   root.Combat = { simulate: simulate, TICK_CAP: TICK_CAP, ROLES: ROLES, roleOf: roleOf,
-                  STATUS_CAP: STATUS_CAP, RESONANZ: RESONANZ,
+                  STATUS_CAP: STATUS_CAP, CHAOS_MIN: CHAOS_MIN, FEHLSCHLAG_MAX: FEHLSCHLAG_MAX,
+                  RESONANZ: RESONANZ,
                   CHAOS_STREUUNG: CHAOS_STREUUNG, CHAOS_FEHLSCHLAG: CHAOS_FEHLSCHLAG,
                   VERWUNDBAR_PIERCE: VERWUNDBAR_PIERCE, BLUTUNG_PRO_STAPEL: BLUTUNG_PRO_STAPEL,
                   ENRAGE_CAP: ENRAGE_CAP,

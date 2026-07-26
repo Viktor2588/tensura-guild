@@ -345,3 +345,10 @@ table.dbg i.ab { color: #e77; }
 .paar .teil-einheit .herkunft { color: #b9c6ff; opacity: .9; }
 .paar .teil-relikt .herkunft { color: var(--gold); opacity: .9; }
 .paar .unter { text-align: left; }
+
+/* Kampfherausforderung: eigene Farbe, damit die Auflage auffällt. */
+.karte.pruefung { border-color: #d9a441; }
+.art-pruefung { color: #d9a441; }
+.art-kampf { color: #cfd4dc; } .art-elite { color: var(--rot); }
+.art-boss { color: var(--gold); } .art-shop { color: #9fd6c2; }
+.art-event { color: #b8a1ff; } .art-lager { color: #8fd8ff; }

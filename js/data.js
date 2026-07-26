@@ -62,15 +62,15 @@
       verstaerker: 'Kämpft normal, bringt seine Stärke über Fähigkeiten ins Team statt über die Zielwahl.'
     },
     zustaende: {
-      gift: 'Verursacht knapp 2 Schaden je Stapel, jedes Mal wenn das Ziel am Zug ist, und baut sich dabei um 1 ab. Geht durch Schilde. Höchstens 12 Stapel.',
-      brand: 'Verursacht 2 Schaden je Stapel pro Zug des Ziels und HALBIERT jede Heilung an ihm. Baut sich um 1 pro Zug ab. Höchstens 8 Stapel.',
-      erstarrung: 'Das Ziel setzt seinen nächsten Zug komplett aus. Stapelt nicht: ein Zug, mehr nicht. Bosse schütteln Erstarrung zu 60 % ab.',
-      verderbnis: 'Der Fluch: das Ziel erleidet +10 % Schaden je Stapel, aus jeder Quelle. Baut sich um 1 pro Zug ab. Höchstens 5 Stapel (also +50 %).',
+      gift: 'Verursacht knapp 2 Schaden je Stapel, jedes Mal wenn das Ziel am Zug ist, und baut sich dabei um 1 ab. Geht durch Schilde. Stapelt unbegrenzt.',
+      brand: 'Verursacht 2 Schaden je Stapel pro Zug des Ziels und HALBIERT jede Heilung an ihm. Baut sich um 1 pro Zug ab. Stapelt unbegrenzt.',
+      erstarrung: 'Das Ziel setzt seinen nächsten Zug komplett aus. Als einziger Zustand stapelt Erstarrung NICHT — sie ist ein Schalter, kein Stapel: ein Zug, mehr nicht. Bosse schütteln Erstarrung zu 60 % ab.',
+      verderbnis: 'Der Fluch: das Ziel erleidet +10 % Schaden je Stapel, aus jeder Quelle. Baut sich um 1 pro Zug ab. Stapelt unbegrenzt — zehn Stapel sind +100 % Schaden.',
       schild: 'Fängt Schaden ab, bevor Leben verloren geht, und baut sich NICHT von selbst ab. Höchstens 60 % des maximalen Lebens. Gift und Brand gehen hindurch.',
-      chaos: 'Unberechenbarkeit statt Schaden: Wer Chaos trägt, würfelt zu Beginn jedes eigenen Zuges Angriff, Rüstung und Tempo neu aus — je Stapel um bis zu 6 % nach oben ODER unten. Dazu verpufft jede aktive Fähigkeit mit 5 % Chance je Stapel und ist trotzdem abgeklungen. Baut sich um 1 pro Zug ab, höchstens 10 Stapel.',
-      verwundbar: 'Die Marke des Assassinen. Jeder Stapel lässt JEDEN Angreifer 15 % mehr der gegnerischen Rüstung durchschlagen — nicht nur den, der die Marke gesetzt hat. Für sich genommen bescheiden; ihr Wert liegt darin, dass die Unterstützungs-Passiven des Trupps daran andocken. Baut sich um 1 pro Zug ab, höchstens 5 Stapel.',
-      blutung: 'Schaden über Zeit, der am maximalen Leben des Ziels hängt statt an einer festen Zahl: gut 1 % je Stapel pro Zug des Ziels. Damit die Antwort auf Gegner, die schlicht zu viel Leben haben. Geht durch Schilde. Baut sich um 1 pro Zug ab, höchstens 8 Stapel.',
-      antichaos: 'Die invertierte Seite des Chaos: dieselbe Streuung, aber nur nach oben. Je Stapel bis zu 6 % mehr Angriff, Rüstung und Tempo, neu gewürfelt in jedem eigenen Zug, und kein Fehlschlag. Baut sich um 1 pro Zug ab, höchstens 10 Stapel.'
+      chaos: 'Unberechenbarkeit statt Schaden: Wer Chaos trägt, würfelt zu Beginn jedes eigenen Zuges Angriff, Rüstung und Tempo neu aus — je Stapel um bis zu 6 % nach oben ODER unten. Dazu verpufft jede aktive Fähigkeit mit 5 % Chance je Stapel und ist trotzdem abgeklungen. Baut sich um 1 pro Zug ab und stapelt unbegrenzt; die Werte fallen aber nie unter 15 % und die Fehlschlagchance nie über 75 %.',
+      verwundbar: 'Die Marke des Assassinen. Jeder Stapel lässt JEDEN Angreifer 15 % mehr der gegnerischen Rüstung durchschlagen — nicht nur den, der die Marke gesetzt hat. Für sich genommen bescheiden; ihr Wert liegt darin, dass die Unterstützungs-Passiven des Trupps daran andocken. Baut sich um 1 pro Zug ab und stapelt unbegrenzt.',
+      blutung: 'Schaden über Zeit, der am maximalen Leben des Ziels hängt statt an einer festen Zahl: gut 1 % je Stapel pro Zug des Ziels. Damit die Antwort auf Gegner, die schlicht zu viel Leben haben. Geht durch Schilde. Baut sich um 1 pro Zug ab und stapelt unbegrenzt.',
+      antichaos: 'Die invertierte Seite des Chaos: dieselbe Streuung, aber nur nach oben. Je Stapel bis zu 6 % mehr Angriff, Rüstung und Tempo, neu gewürfelt in jedem eigenen Zug, und kein Fehlschlag. Baut sich um 1 pro Zug ab und stapelt unbegrenzt; die Werte fallen aber nie unter 15 % und die Fehlschlagchance nie über 75 %.'
     },
     keywords: {
       gift: 'Schaden über Zeit, der sich stapelt. Stark gegen Gegner mit viel Leben und Rüstung.',
@@ -101,6 +101,7 @@
       aktiv: 'Jede Einheit hat genau eine: ihre Signatur. Sie feuert in JEDEM Zug und ersetzt den normalen Angriff. Trägt sie eine Lagebedingung ("nur wenn jemand verwundet ist"), schlägt die Einheit stattdessen normal zu, bis die Lage da ist.',
       passiv: 'Wirkt dauerhaft im Hintergrund. Alles, was eine Einheit über ihre Signatur hinaus lernt, ist passiv — beim Aufstieg wird eine aus mehreren gewählt.',
       entwicklung: 'Der Weg einer Einheit: mit jedem Rang kommt eine Passive dazu, die du auswählst. Ausgelassen werden kann sie nicht — eine Einheit entwickelt sich, oder sie steigt nicht auf.',
+      pruefung: 'Ein Kampf mit einer angesagten Auflage — ohne Verlust, in wenigen Zügen, unversehrt oder in Unterzahl. Die Gegner sind dabei deutlich härter als auf einem gewöhnlichen Knoten. Hältst du die Auflage, gibt es ein ZWEITES Belohnungsangebot obendrauf; verfehlst du sie, bleibt es bei der gewöhnlichen Belohnung. Verlieren kostet wie überall ein Leben.',
       bedrohungsstufe: 'Die Langzeitschicht: Nach jedem Sieg geht die nächste Stufe auf, und jede schaltet EINE neue Regel frei — nicht bloß mehr Gegnerwerte. Überzahl stellt einen Nachzügler dazu, Nachschub lässt den vordersten Gegner einmal wiederauferstehen, Kriegsrecht macht den Händler karg, Belagerung stellt überall Elite hin, Sturmgott nimmt zwei Leben und lässt Bosse doppelt so schnell eskalieren. Die Regeln sind kumulativ. Eine Prozentzahl verlangt einen stärkeren Trupp, eine Regel einen anderen.',
       eskalation: 'Bosse treten allein an und werden mit jedem ihrer Züge 6 % stärker. Ein Bosskampf ist deshalb ein Tempo-Check: wer nicht abräumt, verliert allmählich. Ohne diese Eskalation entscheidet sich ein Kampf gegen einen einzelnen Gegner in der ersten Runde.',
       praedator: 'Nach jedem gewonnenen Kampf darf ein besiegter Gegner verschlungen werden: seine Fähigkeit wandert als zusätzliche Passive dauerhaft in eine Einheit. Slots gibt es erst ab Rang B.',

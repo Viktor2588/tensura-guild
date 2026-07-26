@@ -68,6 +68,9 @@ function route(run, rng) {
     if (o.type === 'elite') {
       wert = o.belagert ? 10 : (run.lives >= 3 ? 12 : run.lives === 2 ? 4 : -20);
     }
+    /* Die Auflage lohnt sich nur mit Puffer — mit einem Leben geht man kein
+       zusätzliches Risiko ein. */
+    if (o.type === 'pruefung') wert = run.lives >= 3 ? 13 : run.lives === 2 ? 8 : -5;
     if (o.type === 'boss') wert = 100;                       // führt kein Weg vorbei
     if (o.type === 'shop') wert = run.magicules >= 400 ? 16 : 6;
     if (o.type === 'lager') wert = 9;
@@ -172,6 +175,20 @@ function play(seed, voll) {
         });
         R.takeReward(run, b2);
       }
+      if (p.bestanden !== undefined) {
+        run._pruefN = (run._pruefN || 0) + 1;
+        if (p.bestanden) run._pruefOk = (run._pruefOk || 0) + 1;
+      }
+      if (p.extra) {
+        var kwX = teamKeywords(run), bX = 0, sX = -1;
+        p.extra.forEach(function (rw, i) {
+          var sc = rw.kind === 'unit' ? 10 + passt(rw.id, kwX)
+            : rw.kind === 'relic' ? reliktWert(run, rw.id)
+            : rw.kind === 'item' ? 6 : 8;
+          if (sc > sX) { sX = sc; bX = i; }
+        });
+        R.takeReward(run, bX, true);
+      }
       R.advance(run);
       continue;
     }
@@ -217,6 +234,7 @@ function play(seed, voll) {
 /* ---- Läufe ------------------------------------------------------------- */
 
 var siege = 0, akte = {}, schritteSum = 0, rangSum = 0, teamSum = 0;
+var pruefGesamt = 0, pruefOk = 0;
 var kaeufe = {}, unbezahlbar = 0, kostenSum = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
 var ohneFront = 0, ohneStuetze = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
 var proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {}, proResonanz = {};
@@ -231,6 +249,7 @@ for (var s = 0; s < N; s++) {
   var won = run.won;
   if (won) siege++;
   akte[Math.min(run.act, R.AKTE)] = (akte[Math.min(run.act, R.AKTE)] || 0) + 1;
+  pruefGesamt += run._pruefN || 0; pruefOk += run._pruefOk || 0;
   schritteSum += (run.act - 1) * 8 + run.step;
   teamSum += run.team.length;
 
@@ -283,6 +302,8 @@ function tabelle(titel, map, nameFn, minN) {
 console.log('=== ' + N + ' Runs' + (VOLL ? ', volle Freischaltung' : ', frischer Spieler') +
   (STUFE ? ', Bedrohungsstufe ' + STUFE : '') + (STELLEN ? '' : ', ohne Aufstellung') + ' ===');
 console.log('Siege: ' + siege + ' (' + Math.round(siege / N * 100) + '%)');
+console.log('Kampfherausforderungen: ' + pruefGesamt + ', davon gehalten ' +
+  (pruefGesamt ? Math.round(pruefOk / pruefGesamt * 100) : 0) + ' %');
 console.log('Ø erreichte Knoten: ' + (schritteSum / N).toFixed(1) + ' von ' + (R.AKTE * R.STEPS.length));
 console.log('Ø Trupp: ' + (teamSum / N).toFixed(1) + ' Einheiten, Ø Rangstufen gesamt: ' + (rangSum / N).toFixed(1));
 console.log('gescheitert je Akt: ' + Object.keys(akte).sort().map(function (a) {

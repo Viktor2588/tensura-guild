@@ -16,8 +16,8 @@
     verwundbar: 'Verwundbar', blutung: 'Blutung'
   };
   var TYP_TEXT = {
-    kampf: 'Kampf', elite: 'Elite-Kampf', boss: 'Boss', shop: 'Händler',
-    event: 'Ereignis', lager: 'Lager'
+    kampf: 'Kampf', elite: 'Elite-Kampf', pruefung: 'Kampfherausforderung',
+    boss: 'Boss', shop: 'Händler', event: 'Ereignis', lager: 'Lager'
   };
   var ART_TEXT = {
     unit: 'Gefolge', relic: 'Relikt', item: 'Ausrüstung', gold: 'Vorräte',
@@ -130,7 +130,8 @@
   /* Der Weg durch den Akt: was an jedem Knoten zur Wahl steht, wo du gerade
      stehst und wann der Boss kommt. Ohne das plant niemand voraus — die
      Reihenfolge der Knotenarten steht ja fest (Run.STEPS). */
-  var TYP_ICON = { kampf: '⚔', elite: '☠', boss: '👑', shop: '⚖', event: '❓', lager: '🏕' };
+  var TYP_ICON = { kampf: '⚔', elite: '☠', pruefung: '⚑', boss: '👑', shop: '⚖',
+                   event: '❓', lager: '🏕' };
   function zeichnePfad() {
     var el = $('pfad');
     if (!el) return;
@@ -157,19 +158,6 @@
 
   /* -------------------------------------------------------------- Karte */
 
-  function gegnerVorschau(enc) {
-    var zaehler = {};
-    enc.units.forEach(function (id) {
-      var n = EN.get(id).name;
-      zaehler[n] = (zaehler[n] || 0) + 1;
-    });
-    return Object.keys(zaehler).map(function (n) {
-      return zaehler[n] > 1 ? zaehler[n] + '× ' + n : n;
-    }).join(', ');
-  }
-
-  /* Was dich dort erwartet, mit Fähigkeiten — ohne das ist die Wegwahl blind.
-     Die Werte kommen aus EN.build, also inklusive der Härte dieser Begegnung. */
   function gegnerDetails(enc) {
     var defs = EN.build(enc), gesehen = {}, zeilen = [];
     defs.forEach(function (d) {
@@ -186,26 +174,37 @@
     return zeilen.join('\n');
   }
 
+  /* Kein Gegnername, keine Truppenschau: die Wahl ist die ART des Knotens.
+     Vorher stand dort die volle Begegnung — und während des Einstiegs traten
+     dann ein bis zwei Gegner an statt der versprochenen vier. */
+  var KNOTEN_TEXT = {
+    kampf: 'Eine gewöhnliche Begegnung. Wer sie gewinnt, wählt eine Belohnung.',
+    elite: 'Härter besetzt, würfelt die Belohnung aber eine Stufe besser.',
+    pruefung: 'Ein Kampf mit einer Auflage. Hältst du sie ein, gibt es die doppelte ' +
+      'Beute und ein zweites Belohnungsangebot — sonst die gewöhnliche.',
+    boss: 'Abschluss des Akts. Tritt allein an, wird mit jedem Zug stärker und ' +
+      'widersteht Erstarrung zu 60 %.',
+    shop: 'Kaufen mit Magicule: Einheiten, Ausrüstung, meist ein Relikt.',
+    lager: 'Eines zur Wahl: Magicule, ein Ausrüstungsstück oder dauerhafte Werte ' +
+      'für eine zufällige Einheit.',
+    event: 'Ein Ereignis mit zwei bis drei Optionen. Was dabei herauskommt, steht an der Option.'
+  };
+
   function zeichneKarte() {
     var html = regelListe(false) + bossVorschau(run.act) + '<h2>Wohin?</h2><div class="karten">';
     run.options.forEach(function (o, i) {
-      var klasse = o.type === 'boss' ? 'karte boss' : o.type === 'elite' ? 'karte elite' : 'karte';
-      var unter = o.encounter ? gegnerVorschau(o.encounter)
-        : o.type === 'shop' ? 'Einheiten, Ausrüstung, Relikte kaufen'
-        : o.type === 'lager' ? 'Magicule, Ausrüstung oder eine Einheit stärken'
-        : 'Unbekannter Ausgang';
-      var tipText = o.encounter
-        ? gegnerDetails(o.encounter) +
-          (o.type === 'elite' ? '\n\nElite: härter, würfelt Belohnungen aber eine Stufe besser.' : '') +
-          (o.type === 'boss' ? '\n\nBoss: Abschluss des Akts. Widersteht Erstarrung zu 60 %.' : '') +
-          '\n\nVerlierst du, kostet das ein Leben und der Knoten wird neu ausgewürfelt.'
-        : o.type === 'shop' ? 'Kaufen mit Magicule: Einheiten, Ausrüstung, meist ein Relikt.'
-        : o.type === 'lager' ? 'Eines zur Wahl: Magicule, ein Ausrüstungsstück oder dauerhafte Werte für eine zufällige Einheit.'
-        : 'Ein Ereignis mit zwei bis drei Optionen. Was dabei herauskommt, steht an der Option.';
+      var klasse = 'karte' + (o.type === 'boss' ? ' boss' : o.type === 'elite' ? ' elite' : '') +
+        (o.type === 'pruefung' ? ' pruefung' : '');
+      var p = o.pruefung ? R.pruefung(o.pruefung) : null;
+      var text = KNOTEN_TEXT[o.type] || '';
+      if (p) text += '\n\nAuflage — ' + p.name + ': ' + p.text;
+      if (o.belagert) text += '\n\nBelagerung: hier steht eine Elite, die Beute bleibt gewöhnlich.';
+      if (o.encounter) text += '\n\nVerlierst du, kostet das ein Leben und der Knoten wird neu ausgewürfelt.';
       html += '<button class="' + klasse + '" data-a="knoten" data-i="' + i + '"' +
-        tip(o.name, tipText) + '>' +
+        tip(o.name, text) + '>' +
+        '<span class="art art-' + o.type + '">' + (TYP_ICON[o.type] || '') + '</span>' +
         '<span class="titel">' + esc(o.name) + '</span>' +
-        '<span class="unter">' + esc(TYP_TEXT[o.type] || o.type) + ' · ' + esc(unter) + '</span></button>';
+        '<span class="unter">' + esc(p ? p.name : (TYP_TEXT[o.type] || o.type)) + '</span></button>';
     });
     html += '</div>';
     $('view').innerHTML = html;
@@ -502,6 +501,13 @@
           html += '</div>';
         }
       }
+      if (p.bestanden !== undefined) {
+        var pr = R.pruefung(run.node && run.node.pruefung);
+        html += '<p class="' + (p.bestanden ? 'gut' : 'hinweis') + '">' +
+          (p.bestanden ? '✓ Auflage gehalten' : '✗ Auflage verfehlt') +
+          (pr ? ' — ' + esc(pr.name) + ': ' + esc(pr.text) : '') +
+          (p.bestanden ? ' Doppelte Beute und ein zweites Angebot.' : '') + '</p>';
+      }
       if (p.rewards) {
         html += '<h3>Belohnung wählen</h3><div class="karten">';
         p.rewards.forEach(function (r, i) {
@@ -513,10 +519,21 @@
         });
         html += '</div>';
       }
+      if (p.extra) {
+        html += '<h3>Zusatzbelohnung der Auflage</h3><div class="karten">';
+        p.extra.forEach(function (r, i) {
+          var geht = r.kind !== 'unit' || R.freieArt(run, GD.unit(r.id).art);
+          html += '<button class="karte" data-a="extra" data-i="' + i + '"' + (geht ? '' : ' disabled') + '>' +
+            artHtml(r.kind) + '<span class="titel">' + esc(r.name) + '</span>' +
+            '<div class="kw-leiste">' + belohnungTags(r) + '</div>' +
+            (geht ? '' : '<span class="unter">Art schon besetzt</span>') + '</button>';
+        });
+        html += '</div>';
+      }
     } else {
       html += '<p class="schlecht">Niederlage. Ein Leben verloren — ' + run.lives + ' übrig.</p>';
     }
-    if (!p.rewards) html += '<div class="reihe"><button class="haupt" data-a="weiter">Weiter</button></div>';
+    if (!p.rewards && !p.extra) html += '<div class="reihe"><button class="haupt" data-a="weiter">Weiter</button></div>';
     return html;
   }
 
@@ -1036,6 +1053,7 @@
     },
     ueberspringen: function () { ueberspringen(); },
     belohnung: function (d) { R.takeReward(run, +d.i); render(); speichern(); },
+    extra: function (d) { R.takeReward(run, +d.i, true); render(); speichern(); },
     devour: function (d) {
       var ziel = $('devour-ziel');
       R.devour(run, d.id, ziel ? ziel.value : run.team[0].uid);

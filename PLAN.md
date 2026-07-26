@@ -123,6 +123,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 9 | Bedrohungsstufen als Regeln statt Prozentzahlen | Jede Stufe verlangt ein anderes Spiel, nicht nur einen stärkeren Trupp | ✅ |
 | 10 | Eine Aktive je Einheit, keine Abklingzeiten, Passive als einziger Fortschritt | Der Aufstieg ist eine Passiv-Entscheidung, die Signatur bleibt die Handschrift | ✅ |
 | 11 | Aufbau statt Ausrüstung: ein Anfang aus vier Paaren, eine Währung, Tags statt Textwänden | Der erste Kampf ist ein Duell, und jeder Kauf ist ein verzichteter Aufstieg | ✅ |
+| 12 | Unbegrenzte Stapel, Knoten als Arten statt Gegnerlisten, Kampfherausforderung | Die Wahl auf der Karte ist ein Risiko, keine Vorabinformation | ✅ |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -535,7 +536,40 @@ damit Freischaltungen einen Formatwechsel überleben.
 Ergebnis `dev/balance.js 500`: 47 % frisch, 47 % voll freigeschaltet, Ø 4,8
 Einheiten. Bedrohungsleiter **47/37/29/25/21/15** — erstmals sauber monoton.
 
+### Phase 12 (2026-07-26): unbegrenzte Stapel, Knotenarten, Herausforderung
+
+- **Stapelgrenzen weg.** `STATUS_CAP` enthält nur noch `erstarrung: 1` — die ist
+  kein Stapel, sondern ein Schalter. Gedeckelt wird stattdessen die *Wirkung*
+  dort, wo sie unsinnig würde: `CHAOS_MIN` 0.15 (sonst stünde eine Einheit bei
+  genug Chaos still) und `FEHLSCHLAG_MAX` 0.75 (sonst schlüge jede Fähigkeit fehl).
+- **Knoten nennen nur noch ihre Art.** Die Gegnervorschau war nicht nur
+  Vorabinformation, sie **log**: sie zeigte die volle Begegnung, während der
+  Einstieg sie auf ein bis zwei Gegner stutzte — versprochen wurden vier
+  Wolfsjunge, angetreten ist eines. `gegnerVorschau` ist ersatzlos weg, die
+  Boss-Vorschau bleibt (sie hat nie gelogen).
+- **Kampfherausforderung** als vierter Kampfknoten: härtere Gegner
+  (`PRUEFUNG_HAERTE` 1.9) plus eine angesagte Auflage — ohne Verlust, in 22
+  Zügen, unversehrt oder in Unterzahl. Gehalten gibt es ein zweites
+  Belohnungsangebot.
+
+Die Kalibrierung lief in drei Schritten, und der erste Entwurf war ein Geschenk
+statt einer Herausforderung:
+
+| | gehalten | Siegquote |
+|---|---|---|
+| erste Fassung (normale Gegner, lockere Auflagen) | 92–100 % | 66 % |
+| Auflagen verschärft, Gegner ×1.3 | 74 % | 63 % |
+| ohne verdoppelte Beute, Gegner ×1.9 | 62 % | 54 % |
+
+Den Rest holte `GRUNDHAERTE` 0.98 → 1.02 zurück: unbegrenzte Stapel nützen dem
+Spieler mehr als dem Gegner, weil er die meisten Quellen bündelt.
+
+Ergebnis `dev/balance.js 500`: 52 % frisch, 53 % voll freigeschaltet. Zu
+beobachten: Konter-Builds messen 81 % (n=47, also dünn) — das ist über dem
+Zielband und hängt vermutlich an den jetzt unbegrenzten Stapeln.
+
 Weitere offene Punkte:
+- Konter liegt bei 81 % Siegquote über dem Zielband 25–75 %.
 - Der Aufstiegs-Pool aus 34 Aktiven wird vom Spieler nicht mehr gezogen und lebt
   nur noch als Gegner-Repertoire. Entweder in Passive umbauen oder bewusst als
   Gegnerinhalt führen.

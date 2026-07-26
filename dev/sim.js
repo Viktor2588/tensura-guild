@@ -241,6 +241,51 @@ ok(R.chooseStart(dRun, 0), 'die Wahl gelingt');
 ok(dRun.team.length === 1 && dRun.relics.length === 1 && dRun.phase === 'karte' && dRun.options,
    'danach steht eine Einheit mit einem Relikt auf der Karte');
 
+/* Kampfherausforderung: harter Kampf, angesagte Auflage, Zusatzbelohnung. */
+head('Kampfherausforderung');
+ok(R.PRUEFUNGEN.length >= 4 && R.PRUEFUNGEN.every(function (p) { return p.name && p.text && p.pruef; }),
+   'jede Auflage hat Namen, Text und eine Pruefung');
+ok(R.STEPS.some(function (t) { return t.indexOf('pruefung') >= 0; }),
+   'der Knotentyp steht in der Wegleiste');
+ok(R.bedrohungsFaktor({ threat: 0, act: 2, step: 3, team: [1,2,3,4,5] }, { type: 'pruefung' }) >
+   R.bedrohungsFaktor({ threat: 0, act: 2, step: 3, team: [1,2,3,4,5] }, { type: 'kampf' }),
+   'die Gegner einer Herausforderung sind härter als auf einem normalen Knoten');
+
+function pruefLauf(pid, seed) {
+  var r = fertigerRun(seed);
+  r.act = 1; r.step = 4; r.phase = 'karte';
+  r.options = [{ type: 'pruefung', name: 'Kampfherausforderung',
+                 encounter: EN.forAct(1)[0], pruefung: pid }];
+  R.choose(r, 0);
+  return r;
+}
+var pGehalten = null, pVerfehlt = null;
+for (var ps = 0; ps < 60 && !(pGehalten && pVerfehlt); ps++) {
+  var lauf = pruefLauf('unversehrt', ps);
+  if (lauf.pending.result.winner !== 'player') continue;
+  if (lauf.pending.bestanden) pGehalten = pGehalten || lauf; else pVerfehlt = pVerfehlt || lauf;
+}
+ok(pGehalten && pGehalten.pending.extra && pGehalten.pending.extra.length,
+   'gehaltene Auflage gibt ein zweites Belohnungsangebot');
+ok(pVerfehlt && !pVerfehlt.pending.extra && pVerfehlt.pending.rewards,
+   'verfehlte Auflage gibt nur die gewöhnliche Belohnung');
+if (pGehalten) {
+  var vorMag = pGehalten.magicules;
+  ok(R.takeReward(pGehalten, 0) && R.takeReward(pGehalten, 0, true),
+     'beide Angebote lassen sich einlösen');
+  ok(!pGehalten.pending.rewards && !pGehalten.pending.extra, 'danach ist nichts mehr offen');
+}
+/* Die Unterzahl-Auflage schickt wirklich weniger Einheiten ins Feld. */
+var uLauf = pruefLauf('unterzahl', 3);
+ok(uLauf.pending.result.roster.filter(function (u) { return u.side === 'player'; }).length <= 2,
+   'in Unterzahl treten höchstens zwei Einheiten an');
+
+/* Knoten nennen nur noch ihre Art, keine Gegner mehr — die Vorschau log, sobald
+   der Einstieg die Begegnung stutzte. */
+var nRun = fertigerRun(11);
+ok(nRun.options.every(function (o) { return o.name === R.TYP_NAME[o.type] || /^BOSS/.test(o.name); }),
+   'Knoten tragen den Namen ihrer Art, nicht den der Gegner');
+
 /* Kein Relikt und keine Einheit doppelt: sonst ist eine der vier Karten
    strategisch dieselbe Entscheidung wie eine andere. */
 var dopplungR = 0, dopplungU = 0, ohneRelikt = 0;
@@ -789,10 +834,26 @@ ok(tritt_auf('echsenfuerst', 1, function (l) { return l.source === 'Regeneration
 ok(tritt_auf('skelettritter', 2, function (l) { return l.type === 'revive'; }, 'milim_boss'),
    'Wiederkehr belebt wieder');   // beim Skelettritter die zweite Passive
 
+/* Stapel sind unbegrenzt — wer die Linie zu Ende baut, sieht das auch. */
 var gifted = C.simulate([def('apito', 3)], [EN.get('felsgolem')], 4);
 var maxGift = 0;
 gifted.log.forEach(function (l) { if (l.status === 'gift' && l.stacks > maxGift) maxGift = l.stacks; });
-ok(maxGift <= C.STATUS_CAP.gift, 'Gift überschreitet die Obergrenze nicht (' + maxGift + ')');
+ok(maxGift > 12, 'Gift stapelt über die alte Obergrenze hinaus (' + maxGift + ')');
+ok(!C.STATUS_CAP.gift && !C.STATUS_CAP.brand && !C.STATUS_CAP.chaos && !C.STATUS_CAP.verwundbar,
+   'für Gift, Brand, Chaos und Verwundbar gibt es keine Stapelgrenze mehr');
+ok(C.STATUS_CAP.erstarrung === 1,
+   'Erstarrung bleibt bei 1 — sie ist ein Schalter, kein Stapel');
+
+/* Gedeckelt wird die Wirkung, nicht die Zahl: sonst stünde eine Einheit bei
+   genug Chaos still und jede Fähigkeit schlüge fehl. */
+var vieleStapel = { status: { chaos: 40 }, chaos: null };
+var chaosLauf = C.simulate([def('shion', 3)], [sandsack(200000, { spd: 18 })], 3).log;
+var faktoren = chaosLauf.filter(function (l) { return l.type === 'chaos'; });
+ok(faktoren.length > 5 && faktoren.every(function (l) {
+  return l.atk >= C.CHAOS_MIN * 100 - 1 && l.def >= C.CHAOS_MIN * 100 - 1;
+}), 'der Chaos-Faktor fällt nie unter die Untergrenze (' +
+   Math.min.apply(null, faktoren.map(function (l) { return l.atk; })) + ' %)');
+ok(C.FEHLSCHLAG_MAX < 1, 'die Fehlschlagchance bleibt unter 100 %');
 
 /* ------------------------------------------------- Fähigkeits-Synergien */
 head('Fähigkeits-Synergien');
