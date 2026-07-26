@@ -121,9 +121,6 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
-Phase 7 läuft im Worktree `/home/viktor/tensura/worktree/phase-7-todo`
-(Branch `phase-7-todo`).
-
 ### Stand 2026-07-25
 
 `node dev/sim.js` → 88/88. `node dev/balance.js 600` → 53 % Siege (frischer Spieler).
