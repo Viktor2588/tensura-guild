@@ -32,3 +32,5 @@ Offen:
   macht. Pool 2 liegt sauber bei 61–65 %.
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
+- Chaos sollte standardmäßig das gegnerische Ziel debuffen & nicht buffen
+- Es sollte nicht Möglich sein, entwicklungsfähigkeiten(passive) auszulassen. Die infromation das diese den ganzen run anhalten ist unnötig
