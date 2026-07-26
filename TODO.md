@@ -52,3 +52,4 @@ Offen:
 - Spielmechanik: Nach jedem Kampf bekomme ich Magicule. Das rekrutieren von Einheiten kostet Magicule. Das erwerben von Relikten & Items kostet magicule. Alles kostet magicule. Geld ist eine duplette die wir nicht brauchen.
 - Spielmechanik: Ich möchte die Statuswerte der Kämpfer im kampf sehen
 - Spielmechanik: ich möchte nach jedem Kampf ein UI wechsel sehen. Im Kampf die Kampf ui / nach dem Kampf das Truppen management / mit den Upgrade optionen
+- Spielmechanik: entlasse sollte nur ausserhalb des kampfes möglich sein & gegen 25& des eingesetzten Magicule
