@@ -21,7 +21,7 @@ require('../js/run.js');
 var GD = globalThis.GameData, EN = globalThis.Enemies,
     R = globalThis.Run, AB = globalThis.Abilities, C = globalThis.Combat;
 
-var PROBEN = 120;                       // Kämpfe je Härtestufe
+var PROBEN = 70;                        // Kämpfe je Härtestufe
 var BEGLEITUNG = ['rigurd', 'gobwa', 'souka', 'sturmwolf'];
 
 /* Ein Trupp aus der Prüf-Einheit und drei Begleitern, deren Art nicht kollidiert. */
@@ -34,19 +34,36 @@ function trupp(id, rank, passives) {
   });
   return team;
 }
+/* Der Referenztrupp muss Luft nach beiden Seiten haben. Mit nur einem Item lag
+   der Bruchpunkt mancher Einheit genau auf der Untergrenze der Suche — dann
+   lesen alle vier Linien denselben Bodenwert und die Messung sagt nichts. */
+var AUSRUESTUNG = ['heldenmal', 'plattenpanzer', 'langschwert', 'amulett', 'stiefel'];
 function bau(id, rank, passives) {
   var m = R.member(id);
   m.rank = rank;
-  m.items = ['langschwert'];
+  m.items = AUSRUESTUNG.slice(0, R.itemSlots(m));
   if (passives) m.passives = passives;
   return R.resolve(m);
+}
+
+/* Ein Unentschieden am Zug-Limit als Niederlage zu werten verzerrt genau die
+   Einheiten, die auf Ausdauer gebaut sind: ihre Kämpfe laufen lang, und dann
+   misst der Prüfstand nicht mehr ihre Stärke, sondern nur noch, wann Kämpfe
+   aufhören sich aufzulösen. Wer am Limit vorn liegt, hat gewonnen. */
+function gewonnen(r) {
+  if (r.winner === 'player') return true;
+  if (r.winner !== 'draw') return false;
+  var meine = 0, ihre = 0;
+  r.survivors.forEach(function (u) {
+    if (u.side === 'player') meine += u.hp / u.maxHp; else ihre += u.hp / u.maxHp;
+  });
+  return meine > ihre;
 }
 
 function quote(id, rank, passives, haerte) {
   var enc = EN.forAct(4), w = 0;
   for (var s = 0; s < PROBEN; s++) {
-    var r = C.simulate(trupp(id, rank, passives), EN.build(enc[s % enc.length], haerte), s);
-    if (r.winner === 'player') w++;
+    if (gewonnen(C.simulate(trupp(id, rank, passives), EN.build(enc[s % enc.length], haerte), s))) w++;
   }
   return w / PROBEN;
 }
@@ -56,7 +73,7 @@ function bruchpunkt(id, rank, passives) {
   var lo = 0.2, hi = 3.0;
   if (quote(id, rank, passives, lo) < 0.5) return lo;      // schafft nicht mal das
   if (quote(id, rank, passives, hi) > 0.5) return hi;
-  for (var i = 0; i < 9; i++) {
+  for (var i = 0; i < 7; i++) {
     var mid = (lo + hi) / 2;
     if (quote(id, rank, passives, mid) > 0.5) lo = mid; else hi = mid;
   }

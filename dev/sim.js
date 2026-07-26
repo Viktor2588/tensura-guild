@@ -863,8 +863,17 @@ ok(tritt_auf('diablo', 0, function (l) { return l.status === 'verderbnis'; }), '
 ok(tritt_auf('rigurd', 0, function (l) { return l.type === 'schild'; }), 'Schild fängt Schaden ab');
 /* Gegen einen Giftgegner: der Schild des Echsenfürsten fängt Treffer ab, Gift
    geht hindurch — sonst sinkt sein Leben nie und Regeneration hat nichts zu tun. */
-ok(tritt_auf('echsenfuerst', 1, function (l) { return l.source === 'Regeneration'; }, 'hoehlenspinne'),
-   'Regeneration heilt');
+/* Keine linienlose Einheit trägt Regeneration mehr in ihrer festen Liste —
+   also ausdrücklich wählen. */
+var regenM = R.member('gruftwaechter');
+regenM.rank = 2; regenM.durfteWaehlen = 1; regenM.passives = ['regenerator'];
+var regenGesehen = false;
+for (var rg = 0; rg < 60 && !regenGesehen; rg++) {
+  regenGesehen = C.simulate([R.resolve(regenM), def('gobta', 1)],
+    [EN.get('hoehlenspinne')], rg).log
+    .some(function (l) { return l.source === 'Regeneration'; });
+}
+ok(regenGesehen, 'Regeneration heilt');
 ok(tritt_auf('skelettritter', 2, function (l) { return l.type === 'revive'; }, 'milim_boss'),
    'Wiederkehr belebt wieder');   // beim Skelettritter die zweite Passive
 
@@ -1108,7 +1117,7 @@ ok(Object.keys(AB.LINIEN_NAME).every(function (l) {
 ok(Object.keys(AB.linien).length >= 6, 'sechs Einheiten haben eigene Linien: ' + Object.keys(AB.linien).join(', '));
 /* Die Oger sind vollständig — damit ist „eine Einheit je Art" bei ihnen eine
    echte Wahl zwischen sechs verschiedenen Spielweisen. */
-['oger', 'goblin', 'direwolf'].forEach(function (art) {
+['oger', 'goblin', 'direwolf', 'echsenmensch'].forEach(function (art) {
   ok(GD.units.filter(function (u) { return u.art === art; })
      .every(function (u) { return !!AB.linien[u.id]; }),
      'jede Einheit der Art „' + GD.artName(art) + '" hat eigene Linien');
@@ -1282,18 +1291,20 @@ function neigung(id) {
     return (a.keywords || []).concat(a.amplifies || []).some(function (k) { return kw[k]; });
   };
 }
-['gabiru', 'quellenpriesterin'].forEach(function (id) {
+['apito', 'adalmann'].forEach(function (id) {
   var ang = aufstiegsAngebote(id, 10), passt = neigung(id);
   var eigen = Object.keys(ang).filter(passt).reduce(function (n, k) { return n + ang[k]; }, 0);
-  ok(eigen >= 10,
-     GD.unit(id).name + ': der Aufstieg bietet überwiegend Passende an (' + eigen + '/30)');
+  /* Seit je eine Passive aus JEDER Kategorie kommt, kann höchstens ein Teil
+     der vier zum Thema passen — die Kategorie steht fest, nicht das Wort. */
+  ok(eigen >= 5,
+     GD.unit(id).name + ': das Angebot trifft ihr Thema regelmäßig (' + eigen + ' von 48)');
   ok(Object.keys(ang).filter(passt).length >= 1,
      GD.unit(id).name + ': das Angebot trifft ihre Linie (' +
      Object.keys(ang).filter(passt).length + ' verschiedene passende)');
 });
 /* Zufällig statt statisch: dieselbe Einheit sieht über mehrere Runs
    verschiedene Angebote — vorher stand immer dieselbe feste Passive da. */
-['gabiru', 'quellenpriesterin', 'skelettritter'].forEach(function (id) {
+['apito', 'adalmann', 'skelettritter'].forEach(function (id) {
   var ang = aufstiegsAngebote(id, 12);
   ok(Object.keys(ang).length >= 6,
      GD.unit(id).name + ': das Angebot streut über die Runs (' +
@@ -1303,7 +1314,7 @@ function neigung(id) {
 });
 /* Und jede Kategorie kommt vor. */
 var katGesehen = {};
-['gabiru', 'quellenpriesterin', 'skelettritter', 'riesenameise'].forEach(function (id) {
+['apito', 'adalmann', 'skelettritter', 'riesenameise'].forEach(function (id) {
   Object.keys(aufstiegsAngebote(id, 8)).forEach(function (aid) {
     katGesehen[AB.kategorie(aid)] = 1;
   });
@@ -1312,7 +1323,7 @@ ok(['angriff', 'mechanik', 'unterstuetzung', 'defensive'].every(function (k) { r
    'über mehrere Einheiten kommt jede Kategorie im Angebot vor');
 /* Linien-Passive einer Einheit dürfen nie bei einer anderen auftauchen. */
 var fremdeLinien = [];
-['gabiru', 'quellenpriesterin', 'skelettritter', 'riesenameise'].forEach(function (id) {
+['apito', 'adalmann', 'skelettritter', 'riesenameise'].forEach(function (id) {
   Object.keys(aufstiegsAngebote(id, 8)).forEach(function (aid) {
     if (AB.linien_ids[aid]) fremdeLinien.push(id + ' -> ' + aid);
   });

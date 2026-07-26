@@ -137,7 +137,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 0.95;   // fuenfzehn Einheiten mit Linien; gemessen 50 % Siege (frisch)
+  var GRUNDHAERTE = 0.97;   // zwanzig Einheiten mit Linien; gemessen 50 % Siege (frisch)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend

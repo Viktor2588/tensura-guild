@@ -1389,6 +1389,414 @@
         c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.4);
         c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.2); });
         c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* ---- Gabirus Linien: der Wirbelspeer -----------------------------------
+       Je voller die gegnerische Reihe, desto besser für ihn.                   */
+
+    passiv('gab_ang1', 'Speerwirbel', 'onHit', [], ['flaeche'],
+      '+7 % Schaden je lebendem Gegner',
+      function (c) { c.dmg *= 1 + 0.07 * c.foes().length; }),
+    passiv('gab_ang2', 'Prahlerei', 'onHit', [], [],
+      '+30 % Schaden, solange noch kein Verbündeter gefallen ist',
+      function (c) { if (!c.self._gefallen) c.dmg *= 1.3; }),
+    passiv('gab_ang3', 'Held von Gabiru', 'onKill', ['exekution'], [],
+      'Jeder erlegte Gegner gibt dauerhaft +18 % Angriff',
+      function (c) { c.self.atk = Math.round(c.self.atk * 1.18); }),
+    passiv('gab_ang4', 'Sturmangriff', 'onHit', ['flaeche'], [],
+      '30 % Chance, zusätzlich alle anderen Gegner für 50 % zu treffen',
+      chance(0.3, function (c) {
+        c.foes().forEach(function (f) {
+          if (f !== c.target) c.deal(f, c.self.atk * 0.5, 'Sturmangriff');
+        });
+      })),
+
+    passiv('gab_mec1', 'Weiter Ausfall', 'onHit', ['flaeche'], [],
+      '30 % Chance, ein zweites Ziel für 45 % zu treffen',
+      chance(0.3, function (c) {
+        var f = c.foes().filter(function (x) { return x !== c.target; })[0];
+        if (f) c.deal(f, c.self.atk * 0.45, 'Weiter Ausfall');
+      })),
+    passiv('gab_mec2', 'Durchbohren', 'onHit', ['flaeche'], [],
+      'Der Speer trifft die Einheit hinter dem Ziel für 45 %',
+      function (c) {
+        var f = c.foes();
+        var hinter = f[f.indexOf(c.target) + 1];
+        if (hinter) c.deal(hinter, c.self.atk * 0.45, 'Durchbohren');
+      }),
+    passiv('gab_mec3', 'Massenschlächter', 'onHit', [], ['flaeche'],
+      '+11 % Schaden je lebendem Gegner',
+      function (c) { c.dmg *= 1 + 0.11 * c.foes().length; }),
+    passiv('gab_mec4', 'Wirbelsturm', 'onTurnStart', ['flaeche'], [],
+      'In jedem Zug 25 % Chance, alle Gegner für 60 % zu treffen',
+      chance(0.25, function (c) {
+        c.foes().forEach(function (f) { c.deal(f, c.self.atk * 0.6, 'Wirbelsturm'); });
+      })),
+
+    passiv('gab_unt1', 'Vorbild', 'onStart', [], [],
+      'Alle Verbündeten erhalten +6 Angriff',
+      function (c) { c.allies().forEach(function (u) { u.atk += 6; }); }),
+    passiv('gab_unt2', 'Schlachtruf', 'onStart', [], [],
+      'Alle Verbündeten erhalten +10 % Angriff',
+      function (c) { c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.1); }); }),
+    passiv('gab_unt3', 'Gemeinsamer Sturm', 'onStart', [], ['flaeche'],
+      'Der ganze Trupp verursacht +6 % Schaden je lebendem Gegner',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Gemeinsamer Sturm', fn: function (k) {
+            k.dmg *= 1 + 0.06 * k.foes().length;
+          } });
+        });
+      }),
+    passiv('gab_unt4', 'Der große Gabiru', 'onStart', [], [],
+      'Alle Verbündeten erhalten +12 % Angriff und +12 % maximales Leben',
+      function (c) {
+        c.allies().forEach(function (u) {
+          u.atk = Math.round(u.atk * 1.12);
+          var add = Math.round(u.maxHp * 0.12);
+          u.maxHp += add; u.hp += add;
+        });
+      }),
+
+    passiv('gab_def1', 'Schuppenpanzer', 'onStart', [], [],
+      '+5 Rüstung gegen jeden eingehenden Treffer',
+      function (c) { c.self.def += 5; }),
+    passiv('gab_def2', 'Zäher Held', 'onStart', [], [],
+      '+25 % maximales Leben',
+      function (c) {
+        var add = Math.round(c.self.maxHp * 0.25);
+        c.self.maxHp += add; c.self.hp += add;
+      }),
+    passiv('gab_def3', 'Unverwüstlich', 'onDamaged', ['heilung'], [],
+      'Heilt einmalig 40 % seines Lebens, sobald er unter 30 % fällt',
+      function (c) {
+        if (c.self.hp <= 0 || c.self._zaeh5 || c.self.hp >= c.self.maxHp * 0.3) return;
+        c.self._zaeh5 = 1; c.heal(c.self, c.self.maxHp * 0.4, 'Unverwüstlich');
+      }),
+    passiv('gab_def4', 'Niemals aufgeben', 'onDeath', ['heilung'], [],
+      'Steht einmal mit 40 % Leben wieder auf und schlägt danach 30 % härter zu',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1;
+        c.self.hp = Math.round(c.self.maxHp * 0.4);
+        c.self.atk = Math.round(c.self.atk * 1.3);
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* ---- Soukas Linien: die Späherin ---------------------------------------
+       Sie schießt an der Front vorbei. Kleiner Grundangriff, deshalb feste
+       Zahlen statt Anteile — die Lehre aus dem Sturmwolf.                      */
+
+    passiv('souka_ang1', 'Ruhige Hand', 'onStart', [], [],
+      '+8 Angriff — eine feste Zahl, weil ihr Grundwert klein ist',
+      function (c) { c.self.atk += 8; }),
+    passiv('souka_ang2', 'Schwachpunkt', 'onHit', [], ['gift', 'brand', 'frost', 'verderbnis'],
+      '+30 % Schaden gegen Ziele, die irgendeinen Zustand tragen',
+      function (c) {
+        var s2 = c.target.status;
+        if (s2.gift > 0 || s2.brand > 0 || s2.erstarrung > 0 || s2.verderbnis > 0) c.dmg *= 1.3;
+      }),
+    passiv('souka_ang3', 'Doppelschuss', 'onHit', [], [],
+      '30 % Chance auf einen zweiten Schuss mit 60 %',
+      chance(0.3, function (c) { c.deal(c.target, c.self.atk * 0.6, 'Doppelschuss'); })),
+    passiv('souka_ang4', 'Meisterschützin', 'onStart', [], [],
+      '+12 Angriff auf einen Schlag',
+      function (c) { c.self.atk += 12; }),
+
+    passiv('souka_mec1', 'Panzerbrecher', 'onStart', [], [],
+      'Ignoriert 70 % der gegnerischen Rüstung',
+      function (c) { c.self.pierce = Math.max(c.self.pierce || 0, 0.7); }),
+    passiv('souka_mec2', 'Anvisiert', 'onHit', ['verwundbar'], [],
+      'Jeder Treffer macht das Ziel für den ganzen Trupp um 1 Stapel verwundbarer',
+      function (c) { c.applyStatus(c.target, 'verwundbar', 1); }),
+    passiv('souka_mec3', 'Blattschuss', 'onHit', [], [],
+      '20 % Chance auf +60 % Schaden, der die Rüstung ganz ignoriert',
+      chance(0.2, function (c) {
+        c.dmg *= 1.6;
+        c.self.pierce = Math.max(c.self.pierce || 0, 1);
+      })),
+    passiv('souka_mec4', 'Kein Versteck', 'onHit', [], [],
+      '+45 % Schaden gegen die hinterste gegnerische Einheit',
+      function (c) {
+        var f = c.foes();
+        if (f.length && c.target === f[f.length - 1]) c.dmg *= 1.45;
+      }),
+
+    passiv('souka_unt1', 'Aufklärung', 'onStart', [], [],
+      'Der ganze Trupp ignoriert 20 % der gegnerischen Rüstung',
+      function (c) {
+        c.allies().forEach(function (u) { u.pierce = Math.max(u.pierce || 0, 0.2); });
+      }),
+    passiv('souka_unt2', 'Feuerleitung', 'onStart', [], [],
+      'Alle Verbündeten erhalten +6 Angriff',
+      function (c) { c.allies().forEach(function (u) { u.atk += 6; }); }),
+    passiv('souka_unt3', 'Schwachstellen melden', 'onStart', [], ['gift', 'brand', 'frost', 'verderbnis'],
+      'Der ganze Trupp verursacht +25 % Schaden gegen Ziele mit einem Zustand',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Schwachstellen melden', fn: function (k) {
+            var s3 = k.target.status;
+            if (s3.gift > 0 || s3.brand > 0 || s3.erstarrung > 0 || s3.verderbnis > 0) k.dmg *= 1.25;
+          } });
+        });
+      }),
+    passiv('souka_unt4', 'Späherin der Sümpfe', 'onStart', [], [],
+      'Der ganze Trupp ignoriert 35 % Rüstung und erhält +8 Angriff',
+      function (c) {
+        c.allies().forEach(function (u) {
+          u.pierce = Math.max(u.pierce || 0, 0.35);
+          u.atk += 8;
+        });
+      }),
+
+    passiv('souka_def1', 'Fluchtinstinkt', 'onStart', ['tempo'], [],
+      '+25 % Tempo',
+      function (c) { c.self.spd = Math.round(c.self.spd * 1.25); }),
+    passiv('souka_def2', 'Sumpfschleier', 'onStart', [], [],
+      'Souka erleidet 18 % weniger Schaden',
+      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.18); }),
+    passiv('souka_def3', 'Rückzug', 'onDamaged', ['konter'], [],
+      '30 % Chance, einen Angreifer sofort für 70 % zu beschießen',
+      chance(0.3, function (c) {
+        var f = c.foes()[0]; if (f) c.deal(f, c.self.atk * 0.7, 'Rückzug');
+      })),
+    passiv('souka_def4', 'Unsichtbar', 'onStart', ['tempo', 'schild'], [],
+      '+30 % Tempo und Schild 30',
+      function (c) {
+        c.self.spd = Math.round(c.self.spd * 1.3);
+        c.applyStatus(c.self, 'schild', 30);
+      }),
+
+    /* ---- Echsenfürsts Linien: Ausdauer -------------------------------------
+       Der zäheste Körper im Spiel. Seine Mechanik ist nicht der Schild, sondern
+       die LANGE Bank: er wächst, solange der Kampf dauert.                     */
+
+    passiv('fuerst_ang1', 'Fürstenschlag', 'onHit', [], [],
+      '+22 % Schaden auf jeden Treffer',
+      function (c) { c.dmg *= 1.22; }),
+    passiv('fuerst_ang2', 'Wucht', 'onStart', [], [],
+      '+10 Angriff auf einen Schlag',
+      function (c) { c.self.atk += 10; }),
+    passiv('fuerst_ang3', 'Langer Atem', 'onTurnStart', [], [],
+      'Wird in jedem eigenen Zug dauerhaft 4 % stärker',
+      function (c) { c.self.atk = Math.round(c.self.atk * 1.04); }),
+    passiv('fuerst_ang4', 'Zorn des Fürsten', 'onHit', [], ['konter'],
+      '+40 % Schaden, solange er unter der Hälfte seines Lebens steht',
+      function (c) { if (c.self.hp < c.self.maxHp * 0.5) c.dmg *= 1.4; }),
+
+    passiv('fuerst_mec1', 'Bollwerk', 'onStart', ['schild'], [],
+      'Startet mit Schild 70',
+      function (c) { c.applyStatus(c.self, 'schild', 70); }),
+    passiv('fuerst_mec2', 'Stetiger Wall', 'onTurnStart', ['schild'], [],
+      'Baut in jedem Zug 16 Schild nach',
+      function (c) { c.applyStatus(c.self, 'schild', 16); }),
+    passiv('fuerst_mec3', 'Unerschöpflich', 'onStart', ['heilung'], [],
+      '+12 Regeneration in jedem eigenen Zug',
+      function (c) { c.self.regen += 12; }),
+    passiv('fuerst_mec4', 'Sumpfkraft', 'onTurnStart', ['heilung'], [],
+      'Sein maximales Leben wächst in jedem Zug um 2 %',
+      function (c) {
+        var add = Math.round(c.self.maxHp * 0.02);
+        c.self.maxHp += add; c.self.hp += add;
+      }),
+
+    passiv('fuerst_unt1', 'Fürstenwort', 'onStart', [], [],
+      'Alle Verbündeten erhalten +4 Rüstung',
+      function (c) { c.allies().forEach(function (u) { u.def += 4; }); }),
+    passiv('fuerst_unt2', 'Schutz des Volkes', 'onStart', ['schild'], [],
+      'Alle Verbündeten starten mit Schild 30',
+      function (c) { c.allies().forEach(function (u) { c.applyStatus(u, 'schild', 30); }); }),
+    passiv('fuerst_unt3', 'Ausdauer lehren', 'onStart', ['heilung'], [],
+      'Alle Verbündeten erhalten +6 Regeneration',
+      function (c) { c.allies().forEach(function (u) { u.regen += 6; }); }),
+    passiv('fuerst_unt4', 'Herr der Sümpfe', 'onStart', [], [],
+      'Alle Verbündeten erhalten +18 % maximales Leben und +3 Rüstung',
+      function (c) {
+        c.allies().forEach(function (u) {
+          var add = Math.round(u.maxHp * 0.18);
+          u.maxHp += add; u.hp += add; u.def += 3;
+        });
+      }),
+
+    passiv('fuerst_def1', 'Schuppenwall', 'onStart', [], [],
+      '+8 Rüstung gegen jeden eingehenden Treffer',
+      function (c) { c.self.def += 8; }),
+    passiv('fuerst_def2', 'Riesenleib', 'onStart', [], [],
+      '+30 % maximales Leben',
+      function (c) {
+        var add = Math.round(c.self.maxHp * 0.3);
+        c.self.maxHp += add; c.self.hp += add;
+      }),
+    passiv('fuerst_def3', 'Standhaft', 'onStart', [], [],
+      'Kein einzelner Treffer nimmt ihm mehr als 13 % seines maximalen Lebens',
+      function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.13); }),
+    passiv('fuerst_def4', 'Der letzte Wall', 'onDeath', ['schild', 'heilung'], [],
+      'Steht einmal mit 50 % Leben wieder auf und gibt dem Trupp Schild 50',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.5);
+        c.allies().forEach(function (u) { c.applyStatus(u, 'schild', 50); });
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* ---- Drachenknechts Linien: der Speerwall ------------------------------
+       Er hält die Reihe und zahlt zurück — und lehrt es dem Trupp.             */
+
+    passiv('knecht_ang1', 'Speerstoß', 'onStart', [], [],
+      '+9 Angriff — eine feste Zahl statt eines Anteils',
+      function (c) { c.self.atk += 9; }),
+    passiv('knecht_ang2', 'Gegenstoß', 'onHit', ['konter'], [],
+      '+25 % Schaden, sobald er in diesem Kampf selbst getroffen wurde',
+      function (c) { if (c.self.dmgTaken > 0) c.dmg *= 1.25; }),
+    passiv('knecht_ang3', 'Lanzenritt', 'onHit', [], [],
+      'Der erste Angriff im Kampf verursacht doppelten Schaden',
+      function (c) { if (!c.self._lr) { c.self._lr = 1; c.dmg *= 2; } }),
+    passiv('knecht_ang4', 'Drachenspeer', 'onStart', [], [],
+      '+13 Angriff und ignoriert 40 % der Rüstung',
+      function (c) {
+        c.self.atk += 13;
+        c.self.pierce = Math.max(c.self.pierce || 0, 0.4);
+      }),
+
+    passiv('knecht_mec1', 'Speerwall', 'onDamaged', ['konter'], [],
+      'Angreifer erleiden 14 Schaden plus ein Viertel seines Angriffs zurück',
+      function (c) { var f = c.foes()[0]; if (f) c.deal(f, 14 + c.self.atk * 0.25, 'Speerwall'); }),
+    passiv('knecht_mec2', 'Stachelreihe', 'onDamaged', ['konter'], [],
+      '40 % Chance auf einen Gegenangriff mit 80 %',
+      chance(0.4, function (c) {
+        var f = c.foes()[0]; if (f) c.deal(f, c.self.atk * 0.8, 'Stachelreihe');
+      })),
+    passiv('knecht_mec3', 'Vergeltungswall', 'onDamaged', ['konter', 'flaeche'], [],
+      '20 % Chance, ALLE Gegner für 45 % zu treffen',
+      chance(0.2, function (c) {
+        c.foes().forEach(function (f) { c.deal(f, c.self.atk * 0.45, 'Vergeltungswall'); });
+      })),
+    passiv('knecht_mec4', 'Unbrechbare Reihe', 'onDamaged', ['verwundbar', 'konter'], [],
+      'Wer ihn trifft, wird um 2 Stapel verwundbarer und erleidet 10 Schaden',
+      function (c) {
+        var f = c.foes()[0];
+        if (f) { c.applyStatus(f, 'verwundbar', 2); c.deal(f, 10, 'Unbrechbare Reihe'); }
+      }),
+
+    passiv('knecht_unt1', 'Reihenschluss', 'onStart', [], [],
+      'Alle Verbündeten erhalten +3 Rüstung',
+      function (c) { c.allies().forEach(function (u) { u.def += 3; }); }),
+    passiv('knecht_unt2', 'Gemeinsamer Wall', 'onStart', ['konter'], [],
+      'Der ganze Trupp wirft 8 plus 10 % seines Angriffs auf Angreifer zurück',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onDamaged', name: 'Gemeinsamer Wall', fn: function (k) {
+            var f = k.foes()[0]; if (f) k.deal(f, 8 + k.self.atk * 0.1, 'Gemeinsamer Wall');
+          } });
+        });
+      }),
+    passiv('knecht_unt3', 'Deckung geben', 'onStart', [], [],
+      'Die vorderste Einheit erleidet 20 % weniger Schaden',
+      function (c) {
+        var vorn = c.allies()[0];
+        if (vorn) vorn.minderung = Math.max(vorn.minderung || 0, 0.2);
+      }),
+    passiv('knecht_unt4', 'Drachengarde', 'onStart', ['konter'], [],
+      'Alle Verbündeten erhalten +10 % Leben und werfen 10 plus 12 % ihres Angriffs zurück',
+      function (c) {
+        c.allies().forEach(function (u) {
+          var add = Math.round(u.maxHp * 0.1);
+          u.maxHp += add; u.hp += add;
+          c.addEffect(u, { hook: 'onDamaged', name: 'Drachengarde', fn: function (k) {
+            var f = k.foes()[0]; if (f) k.deal(f, 10 + k.self.atk * 0.12, 'Drachengarde');
+          } });
+        });
+      }),
+
+    passiv('knecht_def1', 'Panzerechse', 'onStart', [], [],
+      '+6 Rüstung gegen jeden eingehenden Treffer',
+      function (c) { c.self.def += 6; }),
+    passiv('knecht_def2', 'Zäh', 'onStart', [], [],
+      '+25 % maximales Leben',
+      function (c) {
+        var add = Math.round(c.self.maxHp * 0.25);
+        c.self.maxHp += add; c.self.hp += add;
+      }),
+    passiv('knecht_def3', 'Widerhaken', 'onDamaged', ['heilung'], [],
+      'Heilt sich bei jedem erlittenen Treffer um 9 Leben',
+      function (c) { c.heal(c.self, 9, 'Widerhaken'); }),
+    passiv('knecht_def4', 'Standhalten', 'onStart', [], [],
+      'Kein einzelner Treffer nimmt ihm mehr als 15 % seines maximalen Lebens',
+      function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.15); }),
+
+    /* ---- Quellenpriesterins Linien: Regeneration ---------------------------
+       Nicht Stoßheilung wie Gobwa oder Shuna, sondern der stetige Fluss: sie
+       gewinnt lange Kämpfe, keine kurzen.                                      */
+
+    passiv('prie_ang1', 'Segen der Quelle', 'onStart', [], [],
+      '+8 Angriff aus der Quelle',
+      function (c) { c.self.atk += 8; }),
+    passiv('prie_ang2', 'Wasserklinge', 'onHit', [], [],
+      '+25 % Schaden auf jeden Treffer',
+      function (c) { c.dmg *= 1.25; }),
+    passiv('prie_ang3', 'Lebensraub', 'onStart', ['heilung'], [],
+      'Heilt 35 % des verursachten Schadens',
+      function (c) { c.self.lifesteal += 0.35; }),
+    passiv('prie_ang4', 'Fließende Kraft', 'onHit', [], ['heilung'],
+      '+3 % Schaden je Punkt eigener Regeneration',
+      function (c) { c.dmg *= 1 + 0.03 * (c.self.regen || 0); }),
+
+    passiv('prie_mec1', 'Heilquelle', 'onStart', ['heilung'], [],
+      'Alle Verbündeten erhalten +7 Regeneration',
+      function (c) { c.allies().forEach(function (u) { u.regen += 7; }); }),
+    passiv('prie_mec2', 'Tiefer Brunnen', 'onStart', [], ['heilung'],
+      'Jede Heilung im Trupp wirkt um 50 % stärker',
+      function (c) { c.allies().forEach(function (u) { u.heilfaktor += 0.5; }); }),
+    passiv('prie_mec3', 'Ewiger Fluss', 'onTurnStart', ['heilung'], [],
+      'In jedem Zug wächst die Regeneration des ganzen Trupps um 1',
+      function (c) { c.allies().forEach(function (u) { u.regen += 1; }); }),
+    passiv('prie_mec4', 'Überfluss', 'onStart', ['schild'], ['heilung'],
+      'Heilung über das Maximum hinaus wird beim ganzen Trupp zu Schild',
+      function (c) {
+        c.allies().forEach(function (u) { u.ueberheilung = Math.max(u.ueberheilung || 0, 1); });
+      }),
+
+    passiv('prie_unt1', 'Quellwasser', 'onStart', [], [],
+      'Alle Verbündeten erhalten +12 % maximales Leben',
+      function (c) {
+        c.allies().forEach(function (u) {
+          var add = Math.round(u.maxHp * 0.12);
+          u.maxHp += add; u.hp += add;
+        });
+      }),
+    passiv('prie_unt2', 'Reinigung', 'onTurnStart', ['heilung'], [],
+      'Nimmt dem ganzen Trupp in jedem Zug einen Stapel Gift und einen Brand',
+      function (c) {
+        c.allies().forEach(function (u) {
+          if (u.status.gift > 0) u.status.gift--;
+          if (u.status.brand > 0) u.status.brand--;
+        });
+      }),
+    passiv('prie_unt3', 'Segen', 'onAllyDeath', ['heilung'], [],
+      'Stirbt ein Verbündeter, heilen alle übrigen 30 % ihres maximalen Lebens',
+      function (c) { c.allies().forEach(function (u) { c.heal(u, u.maxHp * 0.3, 'Segen'); }); }),
+    passiv('prie_unt4', 'Herrin der Quelle', 'onStart', ['heilung'], ['heilung'],
+      'Alle Verbündeten erhalten +10 Regeneration, und jede Heilung wirkt 30 % stärker',
+      function (c) {
+        c.allies().forEach(function (u) { u.regen += 10; u.heilfaktor += 0.3; });
+      }),
+
+    passiv('prie_def1', 'Flink', 'onStart', ['tempo'], [],
+      '+20 % Tempo',
+      function (c) { c.self.spd = Math.round(c.self.spd * 1.2); }),
+    passiv('prie_def2', 'Selbstquell', 'onTurnStart', ['heilung'], [],
+      'Heilt sich in jedem Zug um 5 % ihres maximalen Lebens',
+      function (c) { c.heal(c.self, c.self.maxHp * 0.05, 'Selbstquell'); }),
+    passiv('prie_def3', 'Wasserschild', 'onStart', ['schild'], [],
+      'Startet mit Schild 35',
+      function (c) { c.applyStatus(c.self, 'schild', 35); }),
+    passiv('prie_def4', 'Unversiegbar', 'onDeath', ['heilung'], [],
+      'Steht einmal mit 45 % Leben wieder auf und heilt den Trupp um 25 %',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.45);
+        c.allies().forEach(function (u) { c.heal(u, u.maxHp * 0.25, 'Unversiegbar'); });
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
       })
   ];
 
@@ -1485,6 +1893,36 @@
       mechanik: ['alpha_mec1', 'alpha_mec2', 'alpha_mec3', 'alpha_mec4'],
       unterstuetzung: ['alpha_unt1', 'alpha_unt2', 'alpha_unt3', 'alpha_unt4'],
       defensive: ['alpha_def1', 'alpha_def2', 'alpha_def3', 'alpha_def4']
+    },
+    gabiru: {
+      angriff: ['gab_ang1', 'gab_ang2', 'gab_ang3', 'gab_ang4'],
+      mechanik: ['gab_mec1', 'gab_mec2', 'gab_mec3', 'gab_mec4'],
+      unterstuetzung: ['gab_unt1', 'gab_unt2', 'gab_unt3', 'gab_unt4'],
+      defensive: ['gab_def1', 'gab_def2', 'gab_def3', 'gab_def4']
+    },
+    souka: {
+      angriff: ['souka_ang1', 'souka_ang2', 'souka_ang3', 'souka_ang4'],
+      mechanik: ['souka_mec1', 'souka_mec2', 'souka_mec3', 'souka_mec4'],
+      unterstuetzung: ['souka_unt1', 'souka_unt2', 'souka_unt3', 'souka_unt4'],
+      defensive: ['souka_def1', 'souka_def2', 'souka_def3', 'souka_def4']
+    },
+    echsenfuerst: {
+      angriff: ['fuerst_ang1', 'fuerst_ang2', 'fuerst_ang3', 'fuerst_ang4'],
+      mechanik: ['fuerst_mec1', 'fuerst_mec2', 'fuerst_mec3', 'fuerst_mec4'],
+      unterstuetzung: ['fuerst_unt1', 'fuerst_unt2', 'fuerst_unt3', 'fuerst_unt4'],
+      defensive: ['fuerst_def1', 'fuerst_def2', 'fuerst_def3', 'fuerst_def4']
+    },
+    drachenknecht: {
+      angriff: ['knecht_ang1', 'knecht_ang2', 'knecht_ang3', 'knecht_ang4'],
+      mechanik: ['knecht_mec1', 'knecht_mec2', 'knecht_mec3', 'knecht_mec4'],
+      unterstuetzung: ['knecht_unt1', 'knecht_unt2', 'knecht_unt3', 'knecht_unt4'],
+      defensive: ['knecht_def1', 'knecht_def2', 'knecht_def3', 'knecht_def4']
+    },
+    quellenpriesterin: {
+      angriff: ['prie_ang1', 'prie_ang2', 'prie_ang3', 'prie_ang4'],
+      mechanik: ['prie_mec1', 'prie_mec2', 'prie_mec3', 'prie_mec4'],
+      unterstuetzung: ['prie_unt1', 'prie_unt2', 'prie_unt3', 'prie_unt4'],
+      defensive: ['prie_def1', 'prie_def2', 'prie_def3', 'prie_def4']
     }
   };
   /* ---- Kategorien der Bibliothek ------------------------------------------

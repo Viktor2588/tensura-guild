@@ -78,14 +78,21 @@ Abgearbeitet in Phase 17:
 - [x] Linien für alle vier Sturmwölfe: Ranga (Blitz), Sturmwolf (Jagd),
       Schattenwolf (Frost), Rudelalpha (Rudel und Tempo)
 
+Abgearbeitet in Phase 18:
+
+- [x] Linien für alle fünf Echsenmenschen: Gabiru (Wirbelspeer), Souka
+      (Späherin), Echsenfürst (Ausdauer), Drachenknecht (Speerwall),
+      Quellenpriesterin (Regeneration)
+- [x] `dev/linien.js` wertet ein Unentschieden nach Vorsprung statt als
+      Niederlage — sonst maß es bei Ausdauer-Einheiten nur das Zug-Limit
+
 Offen:
 
-1. **25 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Fünfzehn
-   sind fertig: Oger (6), Goblins (5), Sturmwölfe (4) — zusammen 240 Passive.
-   Vier Linien à vier Stufen je Einheit. Weiter Art für Art; als Nächstes die
-   Echsenmenschen (5) oder die Insektoiden (5).
-   Gemessen wird mit `npm run linien` — nicht mehr mit der Siegquote bei
-   fester Härte, die defensive Linien systematisch unterschlug.
+1. **20 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Zwanzig sind
+   fertig: Oger (6), Goblins (5), Sturmwölfe (4), Echsenmenschen (5) — zusammen
+   320 Passive, die Hälfte ist geschafft. Weiter Art für Art; als Nächstes die
+   Insektoiden (5), Dämonen (5), Untoten (5), Drachen (4) und Rimuru.
+   Gemessen wird mit `npm run linien`.
 
 2. **Den Aufstiegs-Pool in Passive umbauen.** *(entschieden)* Die 34 aktiven
    Fähigkeiten sind totes Gewicht, seit jede Einheit nur noch ihre Signatur

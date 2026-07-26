@@ -135,6 +135,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 15 | Linien für die restlichen vier Oger — die erste Art ist vollständig | Sechs Oger, sechs Spielweisen, aber nur einer darf mit | ✅ 6 von 40 |
 | 16 | Linien für alle fünf Goblins — die zweite Art ist vollständig | Der billigste Anfang trägt jetzt eigene Tiefe | ✅ 11 von 40 |
 | 17 | Bruchpunkt-Prüfstand für Linien, dazu die vier Sturmwölfe | Auch defensive Linien werden endlich fair gemessen | ✅ 15 von 40 |
+| 18 | Linien für die fünf Echsenmenschen — die Hälfte des Rosters ist erreicht | Zwanzig Einheiten mit eigener Handschrift | ✅ 20 von 40 |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -764,6 +765,33 @@ hätte:
 
 Ergebnis `dev/balance.js`: 48 % frisch, 62 % voll freigeschaltet;
 `GRUNDHAERTE` von 0.93 auf 0.95.
+
+### Phase 18 (2026-07-26): die Echsenmenschen, und ein zweiter Messfehler
+
+Fünf Einheiten, 80 neue Passive — zusammen **320**, die Hälfte des Rosters hat
+jetzt Linien.
+
+| Echsenmensch | Linie | Kern |
+|---|---|---|
+| Gabiru | Wirbelspeer | je voller die gegnerische Reihe, desto besser |
+| Souka | Späherin | Rüstung ignorieren, an der Front vorbei |
+| Echsenfürst | Ausdauer | wächst, solange der Kampf dauert |
+| Drachenknecht | Speerwall | zahlt zurück und lehrt es dem Trupp |
+| Quellenpriesterin | Regeneration | der stetige Fluss statt der Stoßheilung |
+
+Der Prüfstand aus Phase 17 hatte noch einen zweiten blinden Fleck, und er traf
+genau die Einheiten dieser Art: **ein Unentschieden am Zug-Limit zählte als
+Niederlage.** Wer auf Ausdauer gebaut ist, führt lange Kämpfe — bei Echsenfürst
+und Quellenpriesterin lief die Messung deshalb ins Limit und gab für alle vier
+Linien denselben Bodenwert aus (0.41 / +0.00 quer durch). Gemessen wurde damit
+nicht ihre Stärke, sondern nur, ab wann Kämpfe sich nicht mehr auflösen.
+
+Jetzt gilt: wer am Limit vorn liegt (mehr Restleben-Anteil), hat gewonnen. Damit
+zeigen auch sie ihre Linien — Echsenfürsts Unterstützung +0.20, Defensive +0.22;
+Quellenpriesterins Mechanik +0.35. Nebenbei bekam der Referenztrupp volle
+Ausrüstung, weil mancher Bruchpunkt sonst auf der Untergrenze der Suche klebte.
+
+Ergebnis `dev/balance.js`: 49 % frisch, 61 % voll; `GRUNDHAERTE` 0.95 → 0.97.
 
 Weitere offene Punkte:
 - Der Abstand zwischen Anfänger und Veteran ist auf 12 Punkte gewachsen
