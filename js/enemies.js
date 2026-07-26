@@ -235,6 +235,40 @@
             c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
           })
       ] },
+    { id: 'orklord', name: 'Geld, der Orklord', tags: ['ork', 'front'], boss: true, resistenz: 0.6,
+      hp: 700, atk: 30, def: 11, spd: 22,
+      effects: [
+        faehigkeit('onStart', 'Sternenwolfshunger', 'Beginnt mit Schild 120 und heilt 25 % des verursachten Schadens.',
+          ['schild', 'heilung'], function (c) {
+            c.applyStatus(c.self, 'schild', 120);
+            c.self.lifesteal += 0.25;
+          }),
+        faehigkeit('onDamaged', 'Fleischwall', 'Heilt sich bei jedem erlittenen Treffer um 2 % seines maximalen Lebens.',
+          ['heilung'], function (c) { c.heal(c.self, c.self.maxHp * 0.02, 'Fleischwall'); }),
+        faehigkeit('onKill', 'Verschlinger', 'Jeder erlegte Gegner gibt ihm dauerhaft +18 % Angriff.',
+          ['exekution'], function (c) { scale(c.self, { atk: 0.18 }); })
+      ] },
+    { id: 'razen', name: 'Razen der Hofmagier', tags: ['mensch', 'magier'], boss: true, resistenz: 0.6,
+      hp: 980, atk: 46, def: 8, spd: 40,
+      effects: [
+        faehigkeit('onStart', 'Elementarbeherrschung', 'Ignoriert Rüstung vollständig.', [],
+          function (c) { c.self.pierce = 1; }),
+        faehigkeit('onHit', 'Flammensturm', '35 % Chance, zusätzlich alle Gegner für 65 % zu treffen und 2 Brand anzulegen.',
+          ['flaeche', 'brand'], chance(0.35, function (c) {
+            c.foes().forEach(function (f) {
+              c.deal(f, c.attacker.atk * 0.65, 'Flammensturm');
+              c.applyStatus(f, 'brand', 2);
+            });
+          })),
+        faehigkeit('onDeath', 'Seelenübertragung', 'Steht einmal mit 40 % Leben und +25 % Tempo wieder auf.',
+          ['heilung'], function (c) {
+            if (c.self._auf) return;
+            c.self._auf = 1;
+            c.self.hp = Math.round(c.self.maxHp * 0.4);
+            c.self.spd = Math.round(c.self.spd * 1.25);
+            c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
+          })
+      ] },
     { id: 'milim_boss', name: 'Milim Nava', tags: ['drache', 'verstaerker'], boss: true, resistenz: 0.6, hp: 820, atk: 38, def: 9, spd: 38,
       effects: [
         faehigkeit('onStart', 'Drachenzorn', 'Ignoriert die Rüstung des Ziels vollständig.', [],
@@ -353,6 +387,12 @@
     enc(5, 'Elite: Blutmond über Ruberios', ['vampirfuerstin', 'vampirfuerstin', 'blutmagier', 'saare'], 135, true, 1.9)
   ];
 
+  /* Gemeinsamer Regler für alle Bosse. Getunt wurde zuerst gegen einen von Hand
+     gebauten Referenztrupp — der war stärker als das, womit ein Spieler beim
+     Boss wirklich ankommt, und die Siegquote fiel gemessen von 49 auf 14 %.
+     Nachgezogen wird deshalb hier, gegen `node dev/balance.js`. */
+  var BOSS_HAERTE = 0.6;      // gemessen: 49 % Siege (frisch)
+
   /* Bosse treten allein an — kein Gefolge, das den Schaden verteilt. Dafür ist
      `hpMult` da: das Leben ersetzt die weggefallenen Begleiter, der Angriff
      nicht. Ein Boss mit dreifachem Angriff wäre kein Boss, sondern ein Würfel.
@@ -360,11 +400,14 @@
      Zwei Pools statt fünf fester Bosse: pro Run wird je einer gezogen, also
      sieht kein Run dieselbe Paarung zweimal. */
   var bosses = [
-    { id: 'b_charybdis', pool: 1, name: 'Charybdis', units: ['charybdis'], gold: 140, mult: 1.15, hpMult: 2.0 },
-    { id: 'b_clayman', pool: 1, name: 'Clayman', units: ['clayman'], gold: 150, mult: 1.1, hpMult: 1.8 },
-    { id: 'b_milim', pool: 1, name: 'Milim Nava', units: ['milim_boss'], gold: 170, mult: 0.85, hpMult: 1.5 },
-    { id: 'b_hinata', pool: 2, name: 'Hinata Sakaguchi', units: ['hinata'], gold: 340, mult: 1.05, hpMult: 1.8 },
-    { id: 'b_luminous', pool: 2, name: 'Luminous Valentine', units: ['luminous'], gold: 400, mult: 1, hpMult: 1.7 }
+    { id: 'b_charybdis', pool: 1, name: 'Charybdis', units: ['charybdis'], gold: 140, mult: 1.5, hpMult: 3 },
+    { id: 'b_clayman', pool: 1, name: 'Clayman', units: ['clayman'], gold: 150, mult: 1.44, hpMult: 2.73 },
+    { id: 'b_milim', pool: 1, name: 'Milim Nava', units: ['milim_boss'], gold: 170, mult: 0.71, hpMult: 1.25 },
+    { id: 'b_orklord', pool: 1, name: 'Geld, der Orklord', units: ['orklord'], gold: 150, mult: 1.37, hpMult: 2.46 },
+    { id: 'b_hinata', pool: 2, name: 'Hinata Sakaguchi', units: ['hinata'], gold: 340, mult: 1.62, hpMult: 3.08 },
+    { id: 'b_luminous', pool: 2, name: 'Luminous Valentine', units: ['luminous'], gold: 400, mult: 1.19, hpMult: 2.13 },
+    { id: 'b_razen', pool: 2, name: 'Razen der Hofmagier', units: ['razen'], gold: 320, mult: 1.28, hpMult: 2.43 },
+    { id: 'b_roy', pool: 2, name: 'Roy Valentine', units: ['roy_valentine'], gold: 330, mult: 2.66, hpMult: 5.32 }
   ];
 
   /* ---- Ereignisse: api liefert run.js, damit die Daten dumm bleiben ------- */
@@ -683,6 +726,8 @@
     charybdis: ['rundumschlag', 'wuchtschlag'],
     clayman: ['fluchstoss', 'seelenschlag'],
     milim_boss: ['wuchtschlag', 'rundumschlag'],
+    orklord: ['wuchtschlag', 'schildstoss', 'trutzwall'],
+    razen: ['feuersbrunst', 'frostnova', 'seelenschlag'],
     hinata: ['hinrichtung', 'blitzfolge', 'panzerbruch'],
     luminous: ['rundumschlag', 'aderlass', 'frostnova']
   };
@@ -700,8 +745,9 @@
       var m = (e.mult || 1) * (zusatz || 1);
       return {
         id: d.id, name: d.name, tags: d.tags, effects: d.effects, actives: aktiveVon(id),
-        resistenz: d.resistenz || 0,
-        hp: Math.round(d.hp * m * (e.hpMult || 1)), atk: Math.round(d.atk * m),
+        resistenz: d.resistenz || 0, enrage: d.boss ? (e.enrage || 0.06) : 0,
+        hp: Math.round(d.hp * m * (e.hpMult || 1) * (d.boss ? BOSS_HAERTE : 1)),
+        atk: Math.round(d.atk * m * (d.boss ? BOSS_HAERTE : 1)),
         def: Math.round(d.def * m), spd: d.spd
       };
     });
@@ -715,6 +761,7 @@
     /* Aktgebundene Ereignisse plus die aktübergreifenden. */
     eventsForAct: function (a) { return events.filter(function (e) { return !e.act || e.act === a; }); },
     elitesForAct: function (a) { return encounters.filter(function (e) { return e.act === a && e.elite; }); },
+    BOSS_HAERTE: BOSS_HAERTE,
     bossPool: function (n) { return bosses.filter(function (b) { return b.pool === n; }); },
     bossById: function (id) { return byId(bosses, id); }
   };

@@ -48,7 +48,7 @@ ok(GD.units.every(function (u) { return GD.ARTEN.indexOf(u.art) >= 0; }), 'jede 
 ok(GD.units.concat(EN.all).every(function (u) {
   return u.tags.filter(function (t) { return C.ROLES.indexOf(t) >= 0; }).length === 1;
 }), 'jede Einheit hat genau eine Rolle');
-var HOOKS = ['onStart', 'onTurnStart', 'onHit', 'onDamaged', 'onKill', 'onDeath', 'onAllyDeath', 'onChaos'];
+var HOOKS = ['onStart', 'onTurnStart', 'onHit', 'onDamaged', 'onKill', 'onDeath', 'onAllyDeath', 'onChaos', 'onMarke'];
 ok(AB.passives.every(function (p) { return HOOKS.indexOf(p.hook) >= 0; }), 'jede Passive hängt an einem bekannten Hook');
 ok(AB.pool.concat(AB.signatures).every(function (a) { return a.cd >= 1 && a.cd <= 6; }), 'Abklingzeiten liegen zwischen 1 und 6');
 ok(AB.alle.every(function (a) { return a.id && a.name && a.text && typeof a.fn === 'function'; }),
@@ -786,6 +786,86 @@ function haerteste(passives) {
 ok(haerteste(['shion_def4']) < haerteste([]),
    'Chaosbollwerk deckelt den härtesten Treffer (' + haerteste([]) + ' → ' + haerteste(['shion_def4']) + ')');
 
+head('Verwundbar, Blutung und Boss-Eskalation');
+
+function souei(rank, passives) {
+  var m = R.member('souei');
+  m.rank = rank; m.passives = passives || [];
+  return R.resolve(m);
+}
+function markenNach(rank) {
+  var l = C.simulate([souei(rank)], [sandsack()], 5).log
+    .filter(function (x) { return x.type === 'status' && x.status === 'verwundbar'; });
+  return l.length ? l[0].stacks : 0;
+}
+ok(markenNach(0) === AB.MARKE_JE_RANG[0] && markenNach(3) === AB.MARKE_JE_RANG[3],
+   'Stahlfaden markiert nach Rang: C ' + markenNach(0) + ', S ' + markenNach(3));
+
+/* Der Kern der Marke: sie gilt für JEDEN Angreifer, nicht nur für Souei. */
+function schadenAnGepanzertem(mitSouei) {
+  /* Rüstung knapp unter dem Angriff des Verbündeten — sonst greift überall die
+     Mindestschaden-Regel und der Test misst nichts. */
+  var panzer = sandsack(60000, { def: 14, spd: 4 });
+  var kamerad = R.member('gobta'); kamerad.rank = 3;
+  var team = mitSouei ? [souei(3), R.resolve(kamerad)] : [R.resolve(kamerad)];
+  var log = C.simulate(team, [panzer], 4).log;
+  return log.filter(function (l) { return l.type === 'hit' && l.source === 'Gobta'; })
+    .reduce(function (a, l) { return a + l.dmg; }, 0);
+}
+ok(schadenAnGepanzertem(true) > schadenAnGepanzertem(false) * 1.2,
+   'die Marke hilft dem ganzen Trupp gegen Rüstung (' +
+   schadenAnGepanzertem(false) + ' → ' + schadenAnGepanzertem(true) + ')');
+
+/* Blutung hängt am maximalen Leben — genau darin unterscheidet sie sich von Gift. */
+function blutSchaden(hp) {
+  var opfer = sandsack(hp, { spd: 20 });
+  var log = C.simulate([souei(3, ['souei_mec1', 'souei_mec2'])], [opfer], 6).log;
+  return log.filter(function (l) { return l.source === 'Blutung'; })
+    .reduce(function (a, l) { return Math.max(a, l.dmg); }, 0);
+}
+ok(blutSchaden(8000) > blutSchaden(2000) * 2,
+   'Blutung skaliert am Leben des Ziels (' + blutSchaden(2000) + ' → ' + blutSchaden(8000) + ')');
+
+/* Unterstützungslinie: der Trupp, nicht Souei, wird stärker. */
+function truppSchaden(passives) {
+  var team = [souei(3, passives), R.resolve(R.member('gobta')), R.resolve(R.member('gobkyu'))];
+  var log = C.simulate(team, [sandsack(60000, { def: 20, spd: 4 })], 8).log;
+  return log.filter(function (l) {
+    return l.type === 'hit' && (l.source === 'Gobta' || l.source === 'Gobkyu');
+  }).reduce(function (a, l) { return a + l.dmg; }, 0);
+}
+ok(truppSchaden(['souei_unt1']) > truppSchaden([]) * 1.1,
+   'Gezeichnetes Ziel hebt den Schaden der ANDEREN (' +
+   truppSchaden([]) + ' → ' + truppSchaden(['souei_unt1']) + ')');
+ok(C.simulate([souei(3, ['souei_unt2'])].concat(R.resolve(R.member('gobta'))),
+     [sandsack(60000, { spd: 4 })], 3).log
+   .some(function (l) { return l.type === 'status' && l.status === 'blutung'; }),
+   'Blutspur lässt auch die Verbündeten bluten lassen');
+
+/* Offene Wunde: die Marke verfällt nicht mehr. */
+function markeNachZehnZuegen(passives) {
+  var log = C.simulate([souei(3, passives)], [sandsack(60000, { spd: 20 })], 7).log;
+  var st = log.filter(function (l) { return l.type === 'status' && l.status === 'verwundbar'; });
+  return st.length ? st[st.length - 1].stacks : 0;
+}
+ok(markeNachZehnZuegen(['souei_mec3']) >= markeNachZehnZuegen([]),
+   'Offene Wunde hält die Marke oben');
+
+/* Boss-Eskalation: derselbe Boss wird über die Zeit härter. */
+var bossDef = EN.build(EN.bossById('b_charybdis'), 1);
+ok(bossDef[0].enrage > 0, 'Bosse tragen eine Eskalation');
+ok(EN.build(EN.forAct(1)[0], 1).every(function (d) { return !d.enrage; }),
+   'normale Gegner nicht');
+/* Ein zäher Sack auf der Spielerseite, damit der Kampf überhaupt lange genug
+   läuft, um die Eskalation zu sehen. */
+var wutLog = C.simulate([sandsack(400000, { atk: 1, spd: 14 })], bossDef, 3).log
+  .filter(function (l) { return l.type === 'wut'; });
+ok(wutLog.length > 0 && wutLog[wutLog.length - 1].prozent <= C.ENRAGE_CAP * 100,
+   'die Eskalation läuft und bleibt unter dem Deckel (' +
+   (wutLog.length ? wutLog[wutLog.length - 1].prozent : 0) + ' %)');
+ok([1, 2].every(function (p) { return EN.bossPool(p).length >= 4; }),
+   'jeder Boss-Pool hat mindestens vier Bosse');
+
 head('Wählbare Passive');
 var pRun = fertigerRun(31337);
 pRun.team = []; pRun.bank = []; pRun.pwahlen = [];
@@ -795,6 +875,10 @@ ok(pw && pw.offers.length === 4, 'beim Anwerben liegen vier Passive zur Wahl');
 ok(Object.keys(AB.LINIEN_NAME).every(function (l) {
   return pw.offers.some(function (o) { return o.linie === l; });
 }), 'je eine aus Angriff, Mechanik, Unterstützung und Defensive');
+ok(Object.keys(AB.linien).length >= 2, 'mehr als eine Einheit hat eigene Linien: ' + Object.keys(AB.linien).join(', '));
+ok(Object.keys(AB.linien).every(function (id) {
+  return Object.keys(AB.linien[id]).every(function (l) { return AB.linien[id][l].length === 4; });
+}), 'jede Linie jeder Einheit hat genau vier Stufen');
 ok(pw.offers.every(function (o) { return AB.linien.shion[o.linie][0] === o.id; }),
    'auf Stufe 1 wird die erste Stufe jeder Linie angeboten');
 var shionM = pRun.team[0];

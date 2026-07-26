@@ -32,8 +32,14 @@ weiter über alle fünf Inhaltsstufen der Handlung — sie steigen jetzt nur
 | 2 | 7–8 | Nacht über Ruberios | Hinata Sakaguchi · Luminous Valentine |
 
 Welcher Boss kommt, wird beim Run-Start aus seinem Pool gezogen und steht ab
-dem ersten Knoten in der Vorschau. **Bosse treten allein an** — kein Gefolge,
-das den Schaden verteilt, dafür deutlich mehr Leben.
+dem ersten Knoten in der Vorschau. Je vier Bosse pro Pool.
+
+**Bosse treten allein an** — kein Gefolge, das den Schaden verteilt, dafür
+deutlich mehr Leben. Und sie **eskalieren**: mit jedem eigenen Zug +6 % Angriff,
+gedeckelt bei +100 %. Ein Bosskampf ist damit ein Tempo-Check — wer nicht
+abräumt, verliert allmählich. Ohne die Eskalation entscheidet sich ein Kampf
+gegen einen einzelnen Gegner in der ersten Runde: gemessen sprang die Siegquote
+von 100 auf 0 %, sobald der Boss 10 % stärker wurde.
 
 An jedem Knoten wählst du zwischen **drei Wegen** — und die Vorschau zeigt dir
 vorher, welche Gegner dort stehen, welche Werte sie haben und welche Fähigkeiten
@@ -161,6 +167,8 @@ Jede Fähigkeit trägt Schlüsselwörter: was sie **erzeugt** (Quelle) und was s
 | Fläche | trifft mehrere Gegner | – |
 | Tempo | schnellere Züge | – |
 | Chaos | Werte des Ziels würfeln jede Runde neu, Fähigkeiten verpuffen | 10 |
+| Verwundbar | JEDER Angreifer schlägt 15 % je Stapel mehr Rüstung durch | 5 |
+| Blutung | gut 1 % des maximalen Lebens je Stapel pro Zug | 8 |
 
 Ein Build ist erst rund, wenn **Quellen und Verstärker zusammenkommen** — die
 Anzeige markiert ihn dann grün. Zwei Quellen plus ein Verstärker sind die
@@ -288,6 +296,30 @@ Beim Anwerben und bei **jedem Aufstieg** wählst du **eine aus vier** — eine j
 Linie, auf der Stufe, die dem Rang entspricht. Verzichten ist erlaubt. Gemessen
 lohnt sich das Mischen: eine Shion mit je einer Passiven aus verschiedenen
 Linien steht deutlich besser da als eine, die eine Linie durchzieht.
+
+## Souei und die Marke
+
+Souei ist der Gegenentwurf zu Shion: er baut nicht sich auf, sondern reißt das
+Ziel für die anderen auf. **Stahlfaden** macht verwundbar — 1 Stapel auf Rang C,
+2 auf B, 3 auf A, 5 auf S. Jeder Stapel lässt *jeden* Angreifer 15 % mehr
+Rüstung durchschlagen, nicht nur Souei selbst. Das ist der Haken, an dem seine
+Unterstützungslinie hängt.
+
+| Linie | Worum es geht | Stufe 1 |
+|---|---|---|
+| Angriff | die Marke in eigenen Schaden umsetzen | Schattenschnitt |
+| Chaos-Mechanik | die Marke selbst schärfen | Zielsicherheit |
+| Unterstützung | der Trupp schlägt in die Wunde | Gezeichnetes Ziel |
+| Defensive | Fäden und Schatten | Schattenschritt |
+
+Seine Unterstützungslinie ist die stärkste im Spiel und seine Angriffslinie die
+schwächste — das ist Absicht. Wer Souei nimmt, baut einen Trupp um ihn herum:
+*Gezeichnetes Ziel* gibt allen +6 % Schaden je Stapel, *Blutspur* und *Giftmal*
+lassen den ganzen Trupp Blutung oder Gift anlegen, *Jagdbefehl* schickt alle auf
+dasselbe markierte Ziel.
+
+Shion und Souei sind beide Oger — und es darf nur **eine Einheit je Art** im
+Trupp stehen. Die Wahl zwischen ihnen ist also eine echte Weggabelung.
 
 Alle anderen Einheiten behalten vorerst ihre drei festen Passiven, die mit dem
 Rang aufschalten.

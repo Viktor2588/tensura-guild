@@ -68,6 +68,8 @@
       verderbnis: 'Der Fluch: das Ziel erleidet +10 % Schaden je Stapel, aus jeder Quelle. Baut sich um 1 pro Zug ab. Höchstens 5 Stapel (also +50 %).',
       schild: 'Fängt Schaden ab, bevor Leben verloren geht, und baut sich NICHT von selbst ab. Höchstens 60 % des maximalen Lebens. Gift und Brand gehen hindurch.',
       chaos: 'Unberechenbarkeit statt Schaden: Wer Chaos trägt, würfelt zu Beginn jedes eigenen Zuges Angriff, Rüstung und Tempo neu aus — je Stapel um bis zu 6 % nach oben ODER unten. Dazu verpufft jede aktive Fähigkeit mit 5 % Chance je Stapel und ist trotzdem abgeklungen. Baut sich um 1 pro Zug ab, höchstens 10 Stapel.',
+      verwundbar: 'Die Marke des Assassinen. Jeder Stapel lässt JEDEN Angreifer 15 % mehr der gegnerischen Rüstung durchschlagen — nicht nur den, der die Marke gesetzt hat. Für sich genommen bescheiden; ihr Wert liegt darin, dass die Unterstützungs-Passiven des Trupps daran andocken. Baut sich um 1 pro Zug ab, höchstens 5 Stapel.',
+      blutung: 'Schaden über Zeit, der am maximalen Leben des Ziels hängt statt an einer festen Zahl: gut 1 % je Stapel pro Zug des Ziels. Damit die Antwort auf Gegner, die schlicht zu viel Leben haben. Geht durch Schilde. Baut sich um 1 pro Zug ab, höchstens 8 Stapel.',
       antichaos: 'Die invertierte Seite des Chaos: dieselbe Streuung, aber nur nach oben. Je Stapel bis zu 6 % mehr Angriff, Rüstung und Tempo, neu gewürfelt in jedem eigenen Zug, und kein Fehlschlag. Baut sich um 1 pro Zug ab, höchstens 10 Stapel.'
     },
     keywords: {
@@ -81,6 +83,8 @@
       exekution: 'Quellen sind Fähigkeiten, die gezielt auf schwache Ziele gehen; Verstärker schlagen extra hart gegen Angeschlagene zu. Zusammen räumen sie ab, sobald der erste Gegner wackelt.',
       flaeche: 'Trifft mehrere Gegner gleichzeitig. Stark gegen Gruppen, schwach gegen Bosse.',
       tempo: 'Mehr Züge. Jeder zusätzliche Zug ist ein zusätzlicher Angriff und eine schnellere Abklingzeit.',
+      verwundbar: 'Die Trupp-Marke. Quellen setzen sie, Verstärker docken daran an — und zwar für ALLE Einheiten, nicht nur für die, die markiert hat. Das ist das Schlüsselwort für Trupps, die um einen Assassinen herum gebaut sind.',
+      blutung: 'Schaden über Zeit nach dem maximalen Leben des Ziels. Skaliert gegen Bosse, wo Gift und Brand mit ihren festen Zahlen abfallen.',
       chaos: 'Streuung statt Schaden. Quellen legen dem Gegner Chaos an — schwankende Werte und verpuffende Fähigkeiten. Verstärker schlagen härter zu, je mehr Stapel liegen. Shions Linie, aber der Trupp kann sie mittragen.'
     },
     raritaeten: {
@@ -99,6 +103,7 @@
       aktiv: 'Feuert im Kampf, sobald die Abklingzeit abgelaufen ist, und ERSETZT in dem Zug den normalen Angriff. Sind mehrere bereit, wird die mit der längsten Abklingzeit gewählt — Fähigkeiten mit einer Lagebedingung ("nur wenn jemand verwundet ist") warten, bis diese Lage da ist.',
       passiv: 'Wirkt dauerhaft im Hintergrund, ohne Abklingzeit. Schaltet mit dem Rang frei.',
       abklingzeit: 'Zahl der eigenen Züge, die zwischen zwei Einsätzen dieser Fähigkeit liegen müssen.',
+      eskalation: 'Bosse treten allein an und werden mit jedem ihrer Züge 6 % stärker. Ein Bosskampf ist deshalb ein Tempo-Check: wer nicht abräumt, verliert allmählich. Ohne diese Eskalation entscheidet sich ein Kampf gegen einen einzelnen Gegner in der ersten Runde.',
       praedator: 'Nach jedem gewonnenen Kampf darf ein besiegter Gegner verschlungen werden: seine Fähigkeit wandert dauerhaft in eine Einheit. Slots gibt es erst ab Rang B.',
       itemslot: 'Wie viele Ausrüstungsstücke diese Einheit tragen kann. Hängt am Rang: C 1, B 2, A 3, S 5.',
       quelle: 'Eine Fähigkeit, die diesen Zustand erzeugt.',

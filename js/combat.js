@@ -14,7 +14,23 @@
 
   var TICK_CAP = 3000;                                   // Patt-Bremse
   /* Ohne Obergrenzen läuft alles davon, was pro Treffer stapelt. */
-  var STATUS_CAP = { verderbnis: 5, gift: 12, brand: 8, erstarrung: 1, chaos: 10, antichaos: 10 };
+  var STATUS_CAP = { verderbnis: 5, gift: 12, brand: 8, erstarrung: 1, chaos: 10, antichaos: 10,
+                     verwundbar: 5, blutung: 8 };
+
+  /* ---- Verwundbar --------------------------------------------------------
+     Die Marke des Assassinen. Für sich genommen bricht sie nur Rüstung — ihr
+     Wert liegt darin, dass der GANZE Trupp daran andocken kann. Verderbnis
+     erhöht den Schaden direkt; verwundbar öffnet die Deckung und ist der Haken,
+     an dem die Unterstützungslinien der anderen hängen.                       */
+  /* Eskalation eines allein stehenden Bosses: linear auf den Grundangriff und
+     gedeckelt. Multiplikativ auf u.atk potenziert sie sich über einen langen
+     Kampf ins Absurde — gemessen kippte Clayman damit von 100 auf 0 %. */
+  var ENRAGE_CAP = 1.0;
+
+  var VERWUNDBAR_PIERCE = 0.15;   // je Stapel 15 % der Rüstung ignoriert
+  /* Blutung skaliert am maximalen Leben statt an einer festen Zahl — die eine
+     Antwort auf Gegner, die einfach zu viel Leben haben. */
+  var BLUTUNG_PRO_STAPEL = 0.012;
 
   /* ---- Chaos --------------------------------------------------------------
      Kein Schaden über Zeit, sondern Unberechenbarkeit: wer Chaos trägt, würfelt
@@ -44,7 +60,8 @@
     konter: 'Jede Einheit wirft 4 plus 10 % ihres Angriffs auf Angreifer zurück',
     exekution: '+15 % Schaden gegen Ziele unter 35 % Leben',
     flaeche: '+8 % Schaden, solange mindestens zwei Gegner stehen',
-    chaos: 'Chaos und Antichaos streuen die Werte um ein Viertel weiter'
+    chaos: 'Chaos und Antichaos streuen die Werte um ein Viertel weiter',
+    blutung: 'Blutung reißt ein Viertel mehr Leben heraus'
   };
   /* Eine Stelle, die zählt — Kampf und Anzeige dürfen nicht auseinanderlaufen.
      Es resoniert nur die STÄRKSTE Linie: sonst sammelt ein Trupp mit neun
@@ -81,7 +98,7 @@
       keywords: (def.keywords || []).slice(), resistenz: def.resistenz || 0,
       side: side, pos: pos, gauge: 0, status: {}, regen: 0, lifesteal: 0,
       heilfaktor: 0, schildfaktor: 0,
-      chaos: null, dmgTaken: 0, dmgDealt: 0
+      chaos: null, enrage: def.enrage || 0, wut: 1, dmgTaken: 0, dmgDealt: 0
     };
   }
 
@@ -139,6 +156,7 @@
       }
       /* Deckel je Treffer — für Passive, die einen Körper unzerstörbar machen,
          ohne ihm einfach mehr Leben zu geben. */
+      if (target.minderung) amount *= 1 - target.minderung;
       if (target.schadensdeckel) amount = Math.min(amount, target.maxHp * target.schadensdeckel);
       amount = Math.max(1, Math.round(amount));
       target.hp = Math.max(0, target.hp - amount);
@@ -202,6 +220,15 @@
         addEffect: function (u, e) { u.effects.push(e); },
         /* Chaos anlegen — eine Stelle, damit Meisterschaft, Realitätswarp und
            der onChaos-Hook nicht an jeder einzelnen Fähigkeit hängen. */
+        /* Marke setzen — eine Stelle, damit Zielsicherheit und der onMarke-Hook
+           nicht an jeder Fähigkeit einzeln hängen. */
+        markiere: function (ziel, stapel) {
+          var n = stapel * (self.markenmeister || 1);
+          applyStatus(ziel, 'verwundbar', n);
+          if (self.offeneWunde) ziel.offeneWunde = 1;      // baut sich nicht mehr ab
+          fire(self, 'onMarke', ctx(self, { ziel: ziel, stapel: n }));
+          return n;
+        },
         chaos: function (ziel, stapel) {
           var n = stapel * (self.chaosmeister || 1);
           applyStatus(ziel, 'chaos', n);
@@ -231,7 +258,10 @@
       if (!target || !alive(target)) return 0;
       opt = opt || {};
       var pierce = Math.max(u.pierce || 0, opt.pierce || 0, u.role === 'magier' ? 0.6 : 0);
-      var base = u.atk * chaosF(u, 'atk') * (mult || 1)
+      /* Die Marke gilt für jeden Angreifer, nicht nur für den, der sie gesetzt
+         hat — genau das macht sie zur Trupp-Fähigkeit. */
+      pierce = Math.min(1, pierce + VERWUNDBAR_PIERCE * (target.status.verwundbar || 0));
+      var base = u.atk * chaosF(u, 'atk') * (u.wut || 1) * (mult || 1)
         - target.def * chaosF(target, 'def') * (1 - pierce);
       var c = ctx(u, { attacker: u, target: target, dmg: base * (0.9 + rng() * 0.2) });
       fire(u, 'onHit', c);
@@ -292,6 +322,15 @@
     function pickTarget(u) {
       var foes = living(other(u.side));
       if (!foes.length) return null;
+      /* Jagdbefehl: der Trupp geht auf das, was der Assassine aufgerissen hat. */
+      if (u.jagdbefehl) {
+        var markiert = foes.filter(function (f) { return f.status.verwundbar > 0; });
+        if (markiert.length) {
+          return markiert.reduce(function (a, b) {
+            return (b.status.verwundbar || 0) > (a.status.verwundbar || 0) ? b : a;
+          });
+        }
+      }
       if (u.role === 'fernkampf') return foes[foes.length - 1];               // Hinterreihe
       if (u.role === 'magier') {
         return foes.reduce(function (a, b) { return b.hp < a.hp ? b : a; });  // schwächstes Ziel
@@ -317,6 +356,22 @@
     function act(u) {
       fire(u, 'onTurnStart', ctx(u, {}));
       if (!alive(u)) return;
+      /* Eskalation. Ohne sie ist ein allein stehender Boss eine Ja/Nein-Frage:
+         beide Seiten schlagen mit fast konstantem Schaden, also entscheidet
+         sich alles in der ersten Runde und die Siegquote springt gemessen von
+         100 % auf 0 %, sobald der Boss 10 % stärker wird. Mit ihr wird daraus
+         ein Tempo-Check — wer zu langsam abräumt, verliert allmählich. */
+      if (u.enrage) {
+        u._zuege = (u._zuege || 0) + 1;
+        var neu = 1 + Math.min(u.enrage * u._zuege, ENRAGE_CAP);
+        if (neu > u.wut) {
+          u.wut = neu;
+          if (u._zuege % 4 === 0) {
+            log.push({ t: t, type: 'wut', key: u.key, unit: u.name, side: u.side,
+                       prozent: Math.round((u.wut - 1) * 100) });
+          }
+        }
+      }
 
       if (u.status.gift > 0) {
         deal(u, u.status.gift * 1.7 * (gegen(u, 'gift') ? 1.2 : 1), 'Gift', { pure: true });
@@ -326,7 +381,13 @@
         deal(u, u.status.brand * 2 * (gegen(u, 'brand') ? 1.2 : 1), 'Brand', { pure: true });
         u.status.brand--; if (!alive(u)) return;
       }
+      if (u.status.blutung > 0) {
+        deal(u, u.maxHp * BLUTUNG_PRO_STAPEL * u.status.blutung *
+             (gegen(u, 'blutung') ? 1.25 : 1), 'Blutung', { pure: true });
+        u.status.blutung--; if (!alive(u)) return;
+      }
       if (u.status.verderbnis > 0) u.status.verderbnis--;
+      if (u.status.verwundbar > 0 && !u.offeneWunde) u.status.verwundbar--;
       /* Der Würfelwurf der Runde: neue Werte, solange Chaos oder Antichaos liegt. */
       var negC = u.status.chaos || 0, posC = u.status.antichaos || 0;
       if (negC || posC) {
@@ -419,5 +480,7 @@
   root.Combat = { simulate: simulate, TICK_CAP: TICK_CAP, ROLES: ROLES, roleOf: roleOf,
                   STATUS_CAP: STATUS_CAP, RESONANZ: RESONANZ,
                   CHAOS_STREUUNG: CHAOS_STREUUNG, CHAOS_FEHLSCHLAG: CHAOS_FEHLSCHLAG,
+                  VERWUNDBAR_PIERCE: VERWUNDBAR_PIERCE, BLUTUNG_PRO_STAPEL: BLUTUNG_PRO_STAPEL,
+                  ENRAGE_CAP: ENRAGE_CAP,
                   RESONANZ_SCHWELLE: RESONANZ_SCHWELLE, resonanz: resonanz };
 })(globalThis);

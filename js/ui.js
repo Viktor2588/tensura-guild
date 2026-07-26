@@ -7,11 +7,13 @@
   var run = null;
   var replay = null;             // { res, i, u:{key->Anzeige}, zeilen, timer, fertig }
   var STATUS_NAMEN = { gift: 'Gift', brand: 'Brand', erstarrung: 'Erstarrt', verderbnis: 'Verderbnis',
-                       schild: 'Schild', chaos: 'Chaos', antichaos: 'Antichaos' };
+                       schild: 'Schild', chaos: 'Chaos', antichaos: 'Antichaos',
+                       verwundbar: 'Verwundbar', blutung: 'Blutung' };
   var KEYWORD_NAMEN = {
     gift: 'Gift', brand: 'Brand', frost: 'Frost', verderbnis: 'Verderbnis',
     schild: 'Schild', heilung: 'Heilung', konter: 'Konter', tempo: 'Tempo',
-    exekution: 'Exekution', flaeche: 'Fläche', chaos: 'Chaos'
+    exekution: 'Exekution', flaeche: 'Fläche', chaos: 'Chaos',
+    verwundbar: 'Verwundbar', blutung: 'Blutung'
   };
   var TYP_TEXT = {
     kampf: 'Kampf', elite: 'Elite-Kampf', boss: 'Boss', shop: 'Händler',
@@ -300,6 +302,7 @@
     else if (l.type === 'chaos') text = '🎲 ' + esc(l.unit) + ': Angriff ' + l.atk + ' %, Rüstung ' +
       l.def + ' %, Tempo ' + l.spd + ' %';
     else if (l.type === 'fehlschlag') text = '✗ ' + esc(l.unit) + ': ' + esc(l.name) + ' verpufft im Chaos';
+    else if (l.type === 'wut') text = '🔥 ' + esc(l.unit) + ' gerät in Rage: Angriff ' + l.atk;
     else if (l.type === 'aktiv') { text = '⚡ ' + esc(l.unit) + ' setzt ' + esc(l.name) + ' ein';
                                    klasse = (l.side === 'player' ? 'spieler' : 'feind') + ' aktiv'; }
     else if (l.type === 'death') { text = esc(l.unit) + ' fällt'; klasse = 'tod'; }
@@ -823,6 +826,11 @@
     if (k.schildfaktor) extra.push('Schild ×' + (1 + k.schildfaktor).toFixed(2));
     if (k.pierce) extra.push('Rüstungsdurchdringung ' + Math.round(k.pierce * 100) + ' %');
     if (k.durchschlag) extra.push('geht durch Schilde');
+    if (k.minderung) extra.push('Schadensminderung ' + Math.round(k.minderung * 100) + ' %');
+    if (k.schadensdeckel) extra.push('Treffer gedeckelt auf ' + Math.round(k.schadensdeckel * 100) + ' % Leben');
+    if (k.markenmeister > 1) extra.push('Marken ×' + k.markenmeister);
+    if (k.chaosmeister > 1) extra.push('Chaos ×' + k.chaosmeister);
+    if (k.jagdbefehl) extra.push('Jagdbefehl');
     if (extra.length) html += '<p class="dbg-extra">' + esc(extra.join(' · ')) + '</p>';
 
     html += '<p class="dbg-extra">⚡ ' + (k.actives.map(function (x) {

@@ -118,6 +118,7 @@ State = ein einfaches Objekt, `JSON.stringify` nach localStorage.
 | 5 | `dev/balance.js`: Winrate pro Build, tote & dominante Kombos markieren | Kein Build unter 25 % / über 75 % Winrate | ⚠️ siehe unten |
 | 6 | Politur: Kampf-Animation, Meta-Freischaltungen, Save/Resume | — | ✅ |
 | 7 | TODO.md: zwei Akte mit Boss-Pools, Debug-Übersicht, Chaos-Mechanik und wählbare Passive je Einheit | Shion spielt sich sichtbar anders als über Werte allein | ✅ Shion, 39 Einheiten offen |
+| 8 | Einheiten-Synergie: „verwundbar" als Trupp-Marke, Blutung, Soueis sechzehn Passive, größere Boss-Pools | Ein Assassine macht den ganzen Trupp stärker, nicht nur sich | ✅ Souei, 38 Einheiten offen |
 
 Phase 2 und 4 sind die Arbeit. Der Rest ist Gerüst.
 
@@ -364,12 +365,58 @@ Chaos baut sich nicht mehr ab. Und: **Mischen schlägt Durchziehen** (85 gegen
 Ergebnis `dev/balance.js 400`: 49 % Siege frisch, 52 % mit allem
 Freigeschalteten, Builds zwischen 44 und 63 %.
 
+### Phase 8 (2026-07-26): die Marke, Blutung und Boss-Eskalation
+
+**`verwundbar` ist das erste Schlüsselwort, das dem ganzen Trupp gehört.** Jeder
+Stapel lässt JEDEN Angreifer 15 % mehr Rüstung durchschlagen, nicht nur den, der
+markiert hat. Für sich genommen bescheiden — der Wert liegt darin, dass die
+Unterstützungs-Passiven der anderen daran andocken. Dazu `blutung`: Schaden über
+Zeit nach dem **maximalen Leben** des Ziels statt nach einer festen Zahl, also
+die Antwort auf Gegner, die schlicht zu viel Leben haben.
+
+**Souei** ist der Gegenentwurf zu Shion und trägt sie: stärkste
+Unterstützungslinie im Spiel, schwächste Angriffslinie. Beide sind Oger, es darf
+nur eine Einheit je Art im Trupp stehen — die Wahl ist damit eine echte
+Weggabelung statt einer Zahl.
+
+**Boss-Pools auf je vier gefüllt**: neu sind Geld der Orklord, Razen der
+Hofmagier und Roy Valentine.
+
+Der eigentliche Befund kam beim Tunen: **ein allein stehender Boss ist eine
+Ja/Nein-Frage, keine Schwierigkeit.** Beide Seiten schlagen mit fast konstantem
+Schaden, also entscheidet sich alles in der ersten Runde. Gemessen an Clayman:
+
+| Härtefaktor | 0,8 | 0,9 | 1,0 | 1,1 | 1,25 | 1,5 |
+|---|---|---|---|---|---|---|
+| Siegquote | 100 % | 100 % | 100 % | 3 % | 0 % | 0 % |
+
+Kein Multiplikator der Welt trifft ein Zielband auf einer solchen Klippe. Das
+alte Design (Boss plus zwei Begleiter) hatte den Verlauf, weil das Gefolge
+wegstirbt und der Schaden über die Zeit sinkt. Ersatz dafür ist die
+**Eskalation**: +6 % Angriff je eigenem Zug, gedeckelt bei +100 %, linear auf
+den Grundangriff. Multiplikativ auf `u.atk` potenziert sie sich über einen
+langen Kampf ins Absurde — erste Fassung, Clayman kippte damit wieder auf 0 %.
+Mit der gedeckelten Fassung entsteht eine Übergangszone, und ein Bosskampf wird
+zum Tempo-Check.
+
+Zweiter Befund, teurer: **gegen einen von Hand gebauten Referenztrupp zu tunen
+misst den Referenztrupp, nicht das Spiel.** Die so kalibrierten Bosse ließen die
+Siegquote von 49 auf 14 % fallen — mein Trupp war stärker als das, womit ein
+Spieler beim Boss wirklich ankommt. Nachgezogen wird jetzt über einen
+gemeinsamen Regler `BOSS_HAERTE` in `enemies.js`, gemessen mit `dev/balance.js`:
+0,6 → 50 %, 0,7 → 41 %, 0,8 → 30 %. Steht auf **0,6**.
+
+Ergebnis `dev/balance.js 400`: 50 % Siege frisch, 51 % mit allem
+Freigeschalteten, Builds zwischen 36 und 63 %.
+
 Weitere offene Punkte:
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
-- 39 Einheiten haben noch keine eigenen Linien; das System steht, der Inhalt
+- 38 Einheiten haben noch keine eigenen Linien; das System steht, der Inhalt
   fehlt. Siehe `TODO.md`.
-- Boss-Pool 2 hat nur zwei Einträge — jeder zweite Run endet gegen denselben.
+- Boss-Pool 1 streut: Clayman 90 %, Milim 40 % gegen denselben Referenztrupp.
+  Claymans Selbstheilung war für Boss plus Gefolge entworfen und macht ihn
+  allein stehend entweder unkaputtbar oder wirkungslos. Pool 2 liegt bei 61–65 %.
 
 ## 5. Risiken
 

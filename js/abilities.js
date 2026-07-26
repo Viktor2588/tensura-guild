@@ -32,6 +32,7 @@
   /* Entwicklungsstufen: C Oger, B Teufel, A Verdorbener Teufel, S Ultimativer
      Teufel. Die Zahl der Chaos-Stapel ist die eine Stelle, an der das hängt. */
   var CHAOS_JE_RANG = [1, 2, 3, 5];
+  var MARKE_JE_RANG = [1, 2, 3, 5];
 
   /* ---- Passive Bibliothek: geteilt, jede Einheit trägt drei davon --------- */
 
@@ -220,7 +221,98 @@
       }),
     passiv('shion_def4', 'Chaosbollwerk', 'onStart', [], [],
       'Kein einzelner Treffer nimmt Shion mehr als 12 % ihres maximalen Lebens',
-      function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.12); })
+      function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.12); }),
+
+    /* ---- Soueis Linien ----------------------------------------------------
+       Der Assassine baut nicht sich selbst auf, sondern reißt das Ziel für die
+       anderen auf. Deshalb liegt hier die stärkste Unterstützungslinie im Spiel
+       — und die schwächste Angriffslinie. `onMarke` feuert, sobald Souei
+       markiert; `c.stapel` ist die Menge nach der Zielsicherheit.             */
+
+    passiv('souei_ang1', 'Schattenschnitt', 'onHit', [], ['verwundbar'],
+      '+7 % Schaden je Verwundbar-Stapel auf dem Ziel',
+      function (c) { c.dmg *= 1 + 0.07 * (c.target.status.verwundbar || 0); }),
+    passiv('souei_ang2', 'Meuchler', 'onHit', [], ['verwundbar'],
+      'Gegen verwundbare Ziele +30 % Schaden, und die Rüstung zählt gar nicht mehr',
+      function (c) {
+        if (!(c.target.status.verwundbar > 0)) return;
+        c.dmg *= 1.3;
+        c.self.pierce = 1;
+      }),
+    passiv('souei_ang3', 'Klingentanz', 'onHit', ['flaeche'], ['verwundbar'],
+      '35 % Chance auf einen zweiten Schlag für 50 %, wenn das Ziel verwundbar ist',
+      function (c) {
+        if (!(c.target.status.verwundbar > 0) || c.rng() >= 0.35) return;
+        c.deal(c.target, c.self.atk * 0.5, 'Klingentanz');
+      }),
+    passiv('souei_ang4', 'Todesmal', 'onHit', [], ['verwundbar', 'exekution'],
+      'Doppelter Schaden gegen verwundbare Ziele unter 40 % ihres Lebens',
+      function (c) {
+        if (c.target.status.verwundbar > 0 && c.target.hp < c.target.maxHp * 0.4) c.dmg *= 2;
+      }),
+
+    passiv('souei_mec1', 'Zielsicherheit', 'onStart', [], ['verwundbar'],
+      'Souei setzt 50 % mehr Verwundbar-Stapel, als die Fähigkeit angibt',
+      function (c) { c.self.markenmeister = Math.max(c.self.markenmeister || 1, 1.5); }),
+    passiv('souei_mec2', 'Aufgerissene Wunde', 'onMarke', ['blutung'], [],
+      'Jede Markierung legt zusätzlich 3 Blutung an — Schaden je Zug nach dem Leben des Ziels',
+      function (c) { c.applyStatus(c.ziel, 'blutung', 3); }),
+    passiv('souei_mec3', 'Offene Wunde', 'onStart', ['verwundbar'], [],
+      'Verwundbar, das Souei setzt, baut sich nicht mehr ab',
+      function (c) { c.self.offeneWunde = 1; }),
+    passiv('souei_mec4', 'Schwarmmal', 'onKill', ['verwundbar'], [],
+      'Stirbt ein markiertes Ziel, geht die Marke auf alle übrigen Gegner über',
+      function (c) {
+        var n = (c.getoetet && c.getoetet.status.verwundbar) || 0;
+        if (n) c.foes().forEach(function (f) { c.applyStatus(f, 'verwundbar', n); });
+      }),
+
+    passiv('souei_unt1', 'Gezeichnetes Ziel', 'onStart', [], ['verwundbar'],
+      'Der ganze Trupp verursacht +6 % Schaden je Verwundbar-Stapel auf dem Ziel',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Gezeichnetes Ziel', fn: function (k) {
+            k.dmg *= 1 + 0.06 * (k.target.status.verwundbar || 0);
+          } });
+        });
+      }),
+    passiv('souei_unt2', 'Blutspur', 'onStart', ['blutung'], ['verwundbar'],
+      'Treffer des ganzen Trupps auf verwundbare Ziele legen 1 Blutung an',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Blutspur', fn: function (k) {
+            if (k.target.status.verwundbar > 0) k.applyStatus(k.target, 'blutung', 1);
+          } });
+        });
+      }),
+    passiv('souei_unt3', 'Giftmal', 'onStart', ['gift'], ['verwundbar'],
+      'Treffer des ganzen Trupps auf verwundbare Ziele legen 2 Gift an',
+      function (c) {
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Giftmal', fn: function (k) {
+            if (k.target.status.verwundbar > 0) k.applyStatus(k.target, 'gift', 2);
+          } });
+        });
+      }),
+    passiv('souei_unt4', 'Jagdbefehl', 'onStart', [], ['verwundbar'],
+      'Der ganze Trupp greift bevorzugt das am stärksten markierte Ziel an, statt der eigenen Rolle zu folgen',
+      function (c) { c.allies().forEach(function (u) { u.jagdbefehl = 1; }); }),
+
+    passiv('souei_def1', 'Schattenschritt', 'onStart', ['tempo'], [],
+      '+25 % Tempo und +4 Rüstung',
+      function (c) { c.self.spd = Math.round(c.self.spd * 1.25); c.self.def += 4; }),
+    passiv('souei_def2', 'Fadenschild', 'onStart', ['schild'], [],
+      'Schild 35, plus 15 je verwundbarem Gegner',
+      function (c) {
+        var n = c.foes().filter(function (f) { return f.status.verwundbar > 0; }).length;
+        c.applyStatus(c.self, 'schild', 35 + 15 * n);
+      }),
+    passiv('souei_def3', 'Gegenfaden', 'onDamaged', ['verwundbar', 'konter'], [],
+      'Wer Souei trifft, wird selbst verwundbar',
+      function (c) { var f = c.foes()[0]; if (f) c.applyStatus(f, 'verwundbar', 1); }),
+    passiv('souei_def4', 'Nebelform', 'onStart', [], ['verwundbar'],
+      'Souei erleidet 30 % weniger Schaden, solange er in Deckung der Marke kämpft',
+      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.3); })
   ];
 
   /* Vier Linien à vier Stufen. Die Stufe entspricht dem Rang: bei der Anwerbung
@@ -232,6 +324,12 @@
       mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4'],
       unterstuetzung: ['shion_unt1', 'shion_unt2', 'shion_unt3', 'shion_unt4'],
       defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4']
+    },
+    souei: {
+      angriff: ['souei_ang1', 'souei_ang2', 'souei_ang3', 'souei_ang4'],
+      mechanik: ['souei_mec1', 'souei_mec2', 'souei_mec3', 'souei_mec4'],
+      unterstuetzung: ['souei_unt1', 'souei_unt2', 'souei_unt3', 'souei_unt4'],
+      defensive: ['souei_def1', 'souei_def2', 'souei_def3', 'souei_def4']
     }
   };
   var LINIEN_NAME = { angriff: 'Angriff', mechanik: 'Chaos-Mechanik',
@@ -450,11 +548,15 @@
         c.attack(1.6);
         c.chaos(c.target, CHAOS_JE_RANG[c.self.rank || 0]);
       }),
-    aktiv('sig_souei', 'Stahlfaden', 3, ['frost'],
-      'Drei Angriffe mit je 70 %. Der letzte fesselt das Ziel zu 40 % und lässt es aussetzen.',
+    /* Souei markiert, statt selbst abzuräumen: die Marke ist für den Trupp da.
+       Entwicklungsstufe wie bei Shion — Oger, Teufel, Verdorbener, Ultimativer. */
+    aktiv('sig_souei', 'Stahlfaden', 3, ['verwundbar'],
+      'Drei Angriffe mit je 65 % und macht das Ziel verwundbar — 1 Stapel auf Rang C, ' +
+      '2 auf B, 3 auf A, 5 auf S. Jeder Stapel lässt JEDEN Angreifer 15 % mehr Rüstung ' +
+      'durchschlagen, nicht nur Souei.',
       function (c) {
-        c.attack(0.7); c.attack(0.7); c.attack(0.7);
-        if (c.rng() < 0.4) c.applyStatus(c.target, 'erstarrung', 1);
+        c.attack(0.65); c.attack(0.65); c.attack(0.65);
+        c.markiere(c.target, MARKE_JE_RANG[c.self.rank || 0]);
       }),
     aktiv('sig_shuna', 'Heiliges Feld', 4, ['heilung', 'schild'],
       'Heilt alle Verbündeten um 100 % des Angriffs, gibt Schild 20 und löscht Brand vom ganzen Trupp.',
@@ -727,7 +829,11 @@
     shion_ang1: 2, shion_mec1: 2, shion_unt1: 2, shion_def1: 2,
     shion_ang2: 3, shion_mec2: 3, shion_unt2: 3, shion_def2: 3,
     shion_ang3: 4, shion_mec3: 4, shion_unt3: 4, shion_def3: 4,
-    shion_ang4: 5, shion_mec4: 5, shion_unt4: 5, shion_def4: 5
+    shion_ang4: 5, shion_mec4: 5, shion_unt4: 5, shion_def4: 5,
+    souei_ang1: 2, souei_mec1: 2, souei_unt1: 2, souei_def1: 2,
+    souei_ang2: 3, souei_mec2: 3, souei_unt2: 3, souei_def2: 3,
+    souei_ang3: 4, souei_mec3: 4, souei_unt3: 4, souei_def3: 4,
+    souei_ang4: 5, souei_mec4: 5, souei_unt4: 5, souei_def4: 5
   };
 
   var RARITAET_NAME = ['', 'üblich', 'ungewöhnlich', 'selten', 'episch', 'legendär'];
@@ -745,7 +851,7 @@
   root.Abilities = {
     passives: passives, pool: pool, signatures: signatures, alle: alle,
     linien: linien, LINIEN_NAME: LINIEN_NAME, linienAngebot: linienAngebot,
-    CHAOS_JE_RANG: CHAOS_JE_RANG,
+    CHAOS_JE_RANG: CHAOS_JE_RANG, MARKE_JE_RANG: MARKE_JE_RANG,
     get: byId,
     RARITAET_NAME: RARITAET_NAME, RARITAET_GEWICHT: RARITAET_GEWICHT,
     rarName: function (r) { return RARITAET_NAME[r] || ''; },
