@@ -98,6 +98,8 @@ js/
 dev/
   sim.js        Logik-Selbsttests
   balance.js    N Runs headless, Winrate pro Build
+  linien.js     vergleicht die vier Linien einer Einheit über ihren Bruchpunkt
+  serve.js      statischer Server für die Entwicklung
 ```
 
 Zwei Entscheidungen, die alles andere billig machen:
@@ -732,8 +734,6 @@ rettet. Dasselbe Muster wie bei Souei in Phase 15. Ein Prüfstand, der defensive
 Linien fair misst, fehlt noch.
 
 Weitere offene Punkte:
-- Ein Prüfstand, der defensive Linien fair misst — der jetzige entscheidet zu
-  früh, ob der Trupp überhaupt überlebt.
 - Der Abstand zwischen Anfänger und Veteran ist auf 12 Punkte gewachsen
   (48 gegen 60 %) — der Markt nach jedem Kampf belohnt einen großen Reliktpool
   stärker als früher der einzelne Händler-Knoten.

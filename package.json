@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node dev/serve.js",
     "test": "node dev/sim.js && node dev/uitest.js",
-    "balance": "node dev/balance.js 600"
+    "balance": "node dev/balance.js 600",
+    "linien": "node dev/linien.js"
   },
   "devDependencies": {
     "jsdom": "22.1.0"
