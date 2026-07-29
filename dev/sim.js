@@ -79,8 +79,13 @@ var formen = AB.signatures.filter(function (a) {
 ok(AB.signatures.length - formen.length === GD.units.length,
    'genau eine Signatur je Einheit (' + (AB.signatures.length - formen.length) + ')');
 var formIds = formen.map(function (a) { return a.id; }).sort().join(',');
-ok(formIds === 'sig_ranga_fusion,sig_shion_ordnung,sig_shion_verdorben',
-   'dazu die Verwandlungsformen, die keiner Einheit fest gehören (' + formIds + ')');
+/* Verwandlungsformen gehören keiner Einheit fest — sie ersetzen erst im Kampf.
+   Jede muss aus einer Passive heraus erreichbar sein, sonst ist sie tot. */
+var erreichbar = AB.passives.filter(function (p) {
+  return formen.some(function (f) { return String(p.fn).indexOf(f.id) >= 0; });
+}).length;
+ok(formen.length === 6 && erreichbar === formen.length,
+   'jede der ' + formen.length + ' Verwandlungsformen wird von genau einer Passive gerufen');
 ok(AB.pool.length >= 12 && AB.passives.length >= 20,
    AB.pool.length + ' Pool-Aktive, ' + AB.passives.length + ' Passive');
 
@@ -946,12 +951,15 @@ ok(tritt_auf('rigurd', 0, function (l) { return l.type === 'schild'; }), 'Schild
    geht hindurch — sonst sinkt sein Leben nie und Regeneration hat nichts zu tun. */
 /* Keine linienlose Einheit trägt Regeneration mehr in ihrer festen Liste —
    also ausdrücklich wählen. */
+/* Regeneration wird nur sichtbar, wenn überhaupt Leben fehlt — sonst heilt sie
+   null und schreibt nichts ins Log. Also ein Gegner, der auch trifft. */
 var regenM = R.member('gruftwaechter');
 regenM.rank = 2; regenM.durfteWaehlen = 1; regenM.passives = ['regenerator'];
+var regenSchlaeger = { id: 'rs', name: 'Schläger', tags: ['bestie', 'front'], hp: 400000,
+  atk: 60, def: 0, spd: 26, actives: [], effects: [], keywords: [] };
 var regenGesehen = false;
 for (var rg = 0; rg < 60 && !regenGesehen; rg++) {
-  regenGesehen = C.simulate([R.resolve(regenM), def('gobta', 1)],
-    [EN.get('hoehlenspinne')], rg).log
+  regenGesehen = C.simulate([R.resolve(regenM), def('gobta', 1)], [regenSchlaeger], rg).log
     .some(function (l) { return l.source === 'Regeneration'; });
 }
 ok(regenGesehen, 'Regeneration heilt');
@@ -987,21 +995,27 @@ var kw = AB.keywords(giftTeam);
 ok(kw.gift && kw.gift.quellen >= 2, 'Gift-Team hat mehrere Gift-Quellen');
 ok(kw.gift && kw.gift.verstaerker >= 1, 'und mindestens einen Verstärker (Giftzahn)');
 
-/* Der Verstärker muss messbar etwas bringen. */
-function schaden(effects, seed) {
+/* Der Verstärker muss messbar etwas bringen — gemessen am Schaden JE TREFFER.
+   Die Summe über den Kampf taugt dafür nicht: wer härter zuschlägt, beendet
+   den Kampf früher und kommt auf weniger Treffer, also auf eine ähnliche
+   Gesamtsumme. Genau daran ist dieser Test einmal falsch angeschlagen. */
+function schadenJeTreffer(effects, seed) {
   var d = R.resolve(mit('apito', 1));
   d.effects = effects;
   var r = C.simulate([d], [EN.get('felsgolem')], seed);
-  var sum = 0;
-  r.log.forEach(function (l) { if (l.type === 'hit' && l.side === 'enemy') sum += l.dmg; });
-  return sum;
+  var sum = 0, n = 0;
+  r.log.forEach(function (l) {
+    if (l.type === 'hit' && l.side === 'enemy' && l.source === 'Giftstachel') { sum += l.dmg; n++; }
+  });
+  return n ? sum / n : 0;
 }
 var ohne = 0, mitV = 0;
 for (var sd = 0; sd < 25; sd++) {
-  ohne += schaden([AB.get('giftbrut')], sd);
-  mitV += schaden([AB.get('giftbrut'), AB.get('giftzahn')], sd);
+  ohne += schadenJeTreffer([AB.get('giftbrut')], sd);
+  mitV += schadenJeTreffer([AB.get('giftbrut'), AB.get('giftzahn')], sd);
 }
-ok(mitV > ohne, 'Giftzahn erhöht den Schaden messbar (' + ohne + ' -> ' + mitV + ')');
+ok(mitV > ohne, 'Giftzahn erhöht den Schaden je Treffer messbar (' +
+   ohne.toFixed(0) + ' -> ' + mitV.toFixed(0) + ')');
 
 /* --------------------------------------------------------- Relikte */
 head('Relikte');
@@ -1280,6 +1294,27 @@ function rangaFusion(begleiter) {
 ok(rangaFusion(null) === 0 && rangaFusion('gobkyu') === 0,
    'die Schattenfusion greift weder allein noch mit einem anderen Goblin');
 ok(rangaFusion('gobta') === 1, 'mit Gobta verschmelzen die beiden — genau einmal');
+
+/* Eine Signatur, die weder angreift noch eine Lagebedingung trägt, ersetzt
+   jeden Zug den Normalangriff — dann feuert `onHit` NIE, und jede Passive der
+   Angriffslinie dieser Einheit ist tot. Genau das war bei neun Einheiten der
+   Fall, ohne dass irgendetwas fehlschlug. */
+var stumm = [];
+GD.units.forEach(function (u) {
+  var hatOnHit = Object.keys(AB.linien[u.id]).some(function (k) {
+    return AB.linien[u.id][k].some(function (p) { return AB.get(p).hook === 'onHit'; });
+  });
+  if (!hatOnHit) return;
+  var m = R.member(u.id); m.rank = 3; m.durfteWaehlen = 1;
+  var d = R.resolve(m), n = 0;
+  d.effects = d.effects.concat([{ hook: 'onHit', name: 'probe', fn: function () { n++; } }]);
+  var o = { id: 'o', name: 'O', tags: ['bestie', 'front'], hp: 200000, atk: 30, def: 5,
+    spd: 10, actives: [], effects: [], keywords: [] };
+  C.simulate([d], [o], 10);
+  if (!n) stumm.push(u.name + ' (' + AB.get(u.signature).name + ')');
+});
+ok(!stumm.length, 'jede Einheit mit onHit-Passiven kommt auch zum Angriff' +
+   (stumm.length ? ' — stumm: ' + stumm.join(', ') : ''));
 
 /* Die zweite Bibliotheksschicht liest die LAGE — und `pos` ist 0-basiert, was
    beide Positions-Passiven zunächst um eins verschoben hatte. Also nachgemessen

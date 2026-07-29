@@ -1479,6 +1479,55 @@ das Glossar sagt „ab Platz 3" und stimmt damit überein.)
 `dev/balance.js 600`: 51 % frisch, kein Build-Ausreißer — auch Konter nicht
 mehr, der sich zuletzt hartnäckig gehalten hatte.
 
+### Phase 34 (2026-07-29): Neun stumme Einheiten
+
+Die Insektoiden sollten eine Identität bekommen — sie waren zu dritt zwar
+mechanisch verschieden, aber die ART hatte nichts Eigenes. Jetzt haben alle
+drei eine **Metamorphose**: eine Schwelle mitten im Kampf, hinter der eine
+stärkere Form und eine andere Signatur stehen. Zegion häutet sich nach sechs
+Treffern zur `Perfekten Form`, Apito wächst bei 25 Gift auf dem Feld zur
+`Ausgewachsenen Königin` aus, die Käfergarde klappt bei 30 % verlorenem Leben
+den Panzer auf. Keine andere Art kann das, und es ist genau das, was Insekten
+tun. `verwandle()` ist dieselbe Stelle wie bei Shion und Ranga.
+
+**Beim Prüfen fiel dann etwas viel Größeres auf.** Die Metamorphosen feuerten
+nicht — und der Grund war nicht die Schwelle:
+
+`onHit` feuert nur im Angriffsweg (`angriff()`). Eine Signatur, die weder
+`c.attack` benutzt noch eine Lagebedingung trägt, ersetzt jeden Zug den
+Normalangriff — dann feuert `onHit` **nie**, und jede Passive der Angriffslinie
+dieser Einheit ist tot. Das betraf **neun Einheiten** mit 3–5 toten Passiven
+je Stück: Rigurd, Gobwa, Shuna, Kurobe, Echsenfürst, Quellenpriesterin,
+Gruftwächter, Seelenhexe und Zegion. Der Spieler konnte sie wählen, und sie
+taten nichts.
+
+Zwei verschiedene Ursachen, zwei Reparaturen:
+
+- **Zegion** benutzte `c.deal` statt `c.attack`. Behoben.
+- **Apito** war der subtilste Fall: ihre Signatur wechselte auf `deal`, *sobald
+  das Ziel sechs Gift trug* — ihr eigenes Gift schaltete also ihre Angriffslinie
+  ab, nach wenigen Runden. Jetzt `attack(..., { pure: gift >= 6 })`, was auch dem
+  Text entspricht: durch Schilde, nicht durch Rüstung.
+- Die anderen **acht** haben Unterstützer-Signaturen, die zu Recht nicht
+  angreifen — ihnen fehlte die **Lagebedingung**. Genau der Mechanismus, den das
+  Glossar beschreibt („trägt sie eine Lagebedingung, schlägt die Einheit
+  stattdessen normal zu"). Sie haben jetzt `verwundet`, `schildeDuenn` oder
+  `nochNichtGerufen` — Heilen ohne Verwundete, Schilde auf volle Schilde und ein
+  einmaliger Verstärkerruf waren ohnehin verschwendet.
+
+Ein Test geht jetzt quer über alle Einheiten: wer `onHit`-Passive hat, muss auch
+zum Angriff kommen. Das ist dieselbe Klasse wie der Wächter gegen tote Felder —
+ein Fehler, bei dem nichts fehlschlägt, sondern nur nichts passiert.
+
+**Und ein Test, der aus dem falschen Grund grün war:** die Giftzahn-Prüfung
+verglich die Schadens*summe* über einen Kampf. Wer härter zuschlägt, beendet den
+Kampf früher und kommt auf weniger Treffer — die Summe bleibt gleich. Sie misst
+jetzt den Schaden **je Treffer**.
+
+Die Reparatur hob die Siegquote von 51 auf 66 %: acht Einheiten greifen jetzt
+an, wenn ihre Unterstützung nicht gebraucht wird. `GRUNDHAERTE` 1.08 → 1.28,
+Endstand **49 % frisch**.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

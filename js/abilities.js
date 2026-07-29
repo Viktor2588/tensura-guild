@@ -23,6 +23,14 @@
   }
   var verwundet = function (c) { return c.allies.some(function (u) { return u.hp < u.maxHp * 0.85; }); };
   var mehrereGegner = function (c) { return c.foes.length >= 2; };
+  /* Das Gegenstück zu `verwundet` für Schild-Signaturen: schon gelegte Schilde
+     noch einmal zu legen ist verschwendet — dann schlägt die Einheit lieber zu. */
+  var schildeDuenn = function (c) {
+    return c.allies.some(function (u) { return (u.status.schild || 0) < u.maxHp * 0.15; });
+  };
+  /* Und für reine Verstärker-Signaturen: sie lohnen sich einmal, danach nicht
+     mehr. `_gerufen` merkt sich das je Einheit. */
+  var nochNichtGerufen = function (c) { return !c.self._gerufen; };
   function passiv(id, name, hook, keywords, amplifies, text, fn) {
     return { id: id, name: name, art: 'passiv', hook: hook, keywords: keywords,
              amplifies: amplifies, text: text, fn: fn };
@@ -560,6 +568,46 @@
       function (c) {
         c.self.minderung = Math.max(c.self.minderung || 0, 0.35);
         c.self.spd = Math.max(1, Math.round(c.self.spd * 0.5));
+      }),
+
+
+    /* ---- Metamorphose: die Identität der Insektoiden ------------------------
+       Sie waren zu dritt mechanisch verschieden, aber die ART hatte nichts
+       Eigenes — Gift, Schild und Rüstungsbruch gibt es überall. Jetzt haben
+       alle drei eine Häutung: eine Schwelle mitten im Kampf, hinter der eine
+       andere Form steht. Keine andere Art kann das, und es ist genau das, was
+       Insekten tun. `verwandle()` ist dieselbe Stelle wie bei Shion und Ranga. */
+
+    passiv('zegion_ang5', 'Perfekte Form', 'onHit', [], [],
+      'Ab dem sechsten eigenen Treffer häutet sich Zegion: je bisherigem Treffer +6 % Angriff, ' +
+      '+3 % Tempo und +3,6 % Leben — höchstens +90 %. Seine Signatur wird zur Raumzerreißung.',
+      function (c) {
+        if (c.self._meta) return;
+        c.self._treffer = (c.self._treffer || 0) + 1;
+        if (c.self._treffer < 6) return;
+        c.self._meta = 1;
+        verwandle(c, 'Perfekte Form', 'sig_zegion_perfekt', c.self._treffer, 6, 0.06, 0.9);
+      }),
+    passiv('apito_ang5', 'Ausgewachsene Königin', 'onHit', ['gift'], ['gift'],
+      'Liegen zusammen 25 Gift auf den Gegnern, wächst Apito aus: je Stapel +2 % Angriff, ' +
+      '+1 % Tempo und +1,2 % Leben — höchstens +90 %. Ihre Signatur wird zum Königinnenstachel.',
+      function (c) {
+        if (c.self._meta) return;
+        var gift = 0;
+        c.foes().forEach(function (f) { gift += f.status.gift || 0; });
+        if (gift < 25) return;
+        c.self._meta = 1;
+        verwandle(c, 'Ausgewachsene Königin', 'sig_apito_koenigin', gift, 25, 0.02, 0.9);
+      }),
+    passiv('kaefergarde_ang5', 'Panzerform', 'onDamaged', ['schild'], ['schild'],
+      'Sobald die Garde 30 % ihres Lebens verloren hat, klappt der Panzer auf: je 10 % fehlendem ' +
+      'Leben +12 % Angriff, +6 % Tempo und +7 % Leben — höchstens +90 %. Ihre Signatur wird zum Panzerwall.',
+      function (c) {
+        if (c.self._meta) return;
+        var fehlt = (1 - c.self.hp / c.self.maxHp) * 10;
+        if (fehlt < 3) return;
+        c.self._meta = 1;
+        verwandle(c, 'Panzerform', 'sig_kaefergarde_panzer', fehlt, 3, 0.12, 0.9);
       }),
 
     /* ---- Apito: die Brutmutter ----------------------------------------------
@@ -4787,19 +4835,19 @@
        verlangten: Rimuru liest fremde Zustände statt eigene anzulegen, und der
        Priester in Adalmann führt Licht neben der Totenmagie. */
     zegion: {
-      angriff: ['zegion_ang1', 'zegion_ang2', 'zegion_ang3', 'zegion_ang4'],
+      angriff: ['zegion_ang1', 'zegion_ang2', 'zegion_ang3', 'zegion_ang4', 'zegion_ang5'],
       mechanik: ['zegion_mec1', 'zegion_mec2', 'zegion_mec3', 'zegion_mec4'],
       unterstuetzung: ['zegion_unt1', 'zegion_unt2', 'zegion_unt3', 'zegion_unt4'],
       defensive: ['zegion_def1', 'zegion_def2', 'zegion_def3', 'zegion_def4']
     },
     apito: {
-      angriff: ['apito_ang1', 'apito_ang2', 'apito_ang3', 'apito_ang4'],
+      angriff: ['apito_ang1', 'apito_ang2', 'apito_ang3', 'apito_ang4', 'apito_ang5'],
       mechanik: ['apito_mec1', 'apito_mec2', 'apito_mec3', 'apito_mec4'],
       unterstuetzung: ['apito_unt1', 'apito_unt2', 'apito_unt3', 'apito_unt4'],
       defensive: ['apito_def1', 'apito_def2', 'apito_def3', 'apito_def4']
     },
     kaefergarde: {
-      angriff: ['kaefergarde_ang1', 'kaefergarde_ang2', 'kaefergarde_ang3', 'kaefergarde_ang4'],
+      angriff: ['kaefergarde_ang1', 'kaefergarde_ang2', 'kaefergarde_ang3', 'kaefergarde_ang4', 'kaefergarde_ang5'],
       mechanik: ['kaefergarde_mec1', 'kaefergarde_mec2', 'kaefergarde_mec3', 'kaefergarde_mec4'],
       unterstuetzung: ['kaefergarde_unt1', 'kaefergarde_unt2', 'kaefergarde_unt3', 'kaefergarde_unt4'],
       defensive: ['kaefergarde_def1', 'kaefergarde_def2', 'kaefergarde_def3', 'kaefergarde_def4']
@@ -5241,7 +5289,7 @@
         c.allies().forEach(function (u) { c.applyStatus(u, 'schild', 25); u.def += 3; });
         var vorn = c.allies()[0];
         if (vorn) vorn.atk = Math.round(vorn.atk * 1.15);
-      }),
+      }, schildeDuenn),
     aktiv('sig_rigur', 'Wachkommando', 3, ['konter'],
       '130 % Schaden und Schild 20. Ist bereits ein Verbündeter gefallen, verdoppelt sich der Schaden.',
       function (c) {
@@ -5254,7 +5302,7 @@
         var u = c.allies().reduce(function (a, b) { return (b.hp / b.maxHp) < (a.hp / a.maxHp) ? b : a; });
         c.heal(u, c.self.atk * 2, 'Feldverband');
         if (u.hp < u.maxHp * 0.4) c.applyStatus(u, 'schild', 25);
-      }),
+      }, verwundet),
 
     /* --- Oger --- */
     aktiv('sig_benimaru', 'Kurenai', 3, ['brand', 'flaeche'],
@@ -5279,6 +5327,29 @@
       function (c) {
         c.attack(1.6);
         c.chaos(c.target, CHAOS_JE_RANG[c.self.rank || 0]);
+      }),
+    /* Die drei Häutungsformen der Insektoiden. Sie gehören keiner Einheit fest —
+       sie ersetzen erst im Kampf, wenn die Metamorphose greift. */
+    aktiv('sig_zegion_perfekt', 'Raumzerreißung', 4, [],
+      '230 % Schaden, der durch Schilde hindurchgeht und den Schild des Ziels zerschlägt — ' +
+      'dazu 60 % auf jeden anderen Gegner. Die Form des vollendeten Zegion.',
+      function (c) {
+        c.target.status.schild = 0;
+        c.attack(2.3, c.target, { pure: true });
+        c.foes().forEach(function (f) { if (f !== c.target) c.deal(f, c.self.atk * 0.6, 'Raumzerreißung'); });
+      }),
+    aktiv('sig_apito_koenigin', 'Königinnenstachel', 4, ['gift'],
+      '190 % Schaden und 8 Gift auf jeden Gegner. Die Form der ausgewachsenen Königin.',
+      function (c) {
+        c.attack(1.9);
+        c.foes().forEach(function (f) { c.applyStatus(f, 'gift', 8); });
+      }),
+    aktiv('sig_kaefergarde_panzer', 'Panzerwall', 4, ['schild'],
+      '170 % Schaden und ein Schild über 20 % des eigenen Lebens für jeden Verbündeten. ' +
+      'Die aufgeklappte Form der Garde.',
+      function (c) {
+        c.attack(1.7);
+        c.allies().forEach(function (u) { c.applyStatus(u, 'schild', Math.round(c.self.maxHp * 0.2)); });
       }),
     /* Die Signatur des Ordnungsteufels — das Gegenstück zur Chaosklinge:
        sie verteilt Ordnung, statt Unordnung zu säen. */
@@ -5329,7 +5400,7 @@
           c.heal(u, c.self.atk, 'Heiliges Feld');
           c.applyStatus(u, 'schild', 20);
         });
-      }),
+      }, verwundet),
     aktiv('sig_hakuro', 'Fliegender Hieb', 3, [],
       '180 % Schaden und ignoriert Rüstung. Gegen ein noch unverletztes Ziel (über 70 % Leben) sind es 230 %.',
       function (c) {
@@ -5338,9 +5409,10 @@
     aktiv('sig_kurobe', 'Geschmiedete Klinge', 5, [],
       'Alle Verbündeten erhalten dauerhaft +6 Angriff. Ist Kurobe unverletzt, zusätzlich +2 Rüstung.',
       function (c) {
+        c.self._gerufen = 1;
         var voll = c.self.hp >= c.self.maxHp;
         c.allies().forEach(function (u) { u.atk += 6; if (voll) u.def += 2; });
-      }),
+      }, nochNichtGerufen),
 
     /* --- Sturmwölfe --- */
     aktiv('sig_ranga', 'Schwarzer Blitz', 2, ['donner', 'schatten', 'flaeche'],
@@ -5383,7 +5455,7 @@
         c.applyStatus(c.self, 'schild', 60);
         c.allies().forEach(function (u) { u.def += 4; });
         if (c.self.hp < c.self.maxHp * 0.5) c.heal(c.self, c.self.maxHp * 0.15, 'Bollwerk');
-      }),
+      }, schildeDuenn),
     aktiv('sig_drachenknecht', 'Speerwall', 3, ['konter'],
       '120 % Schaden. Danach erleidet jeder Angreifer dauerhaft 12 Schaden zurück.',
       function (c) {
@@ -5398,20 +5470,25 @@
       'Heilt sofort alle Verbündeten um 100 % des Angriffs und gibt ihnen dauerhaft +4 Regeneration.',
       function (c) {
         c.allies().forEach(function (u) { u.regen += 4; c.heal(u, c.self.atk, 'Heilquelle'); });
-      }),
+      }, verwundet),
 
     /* --- Insektoide --- */
     aktiv('sig_zegion', 'Raumfaust', 3, [],
       '190 % Schaden, der durch Schilde hindurchgeht — und den Schild des Ziels vollständig zerschlägt.',
+      /* `attack` statt `deal`: nur der Angriffsweg feuert `onHit`. Mit `deal`
+         war Zegions gesamte Angriffslinie tot — die Passiven hingen an einem
+         Haken, den seine Signatur nie zog. */
       function (c) {
         c.target.status.schild = 0;
-        c.deal(c.target, c.self.atk * 1.9, 'Raumfaust', { pure: true });
+        c.attack(1.9, c.target, { pure: true });
       }),
     aktiv('sig_apito', 'Giftstachel', 3, ['gift'],
       '130 % Schaden und 5 Gift. Trägt das Ziel schon 6 Gift, geht der Stich durch jeden Schild.',
       function (c) {
-        if (c.target.status.gift >= 6) c.deal(c.target, c.self.atk * 1.3, 'Giftstachel', { pure: true });
-        else c.attack(1.3);
+        /* `attack` in beiden Zweigen: `deal` umgeht `angriff()` und damit den
+           onHit-Haken. Vorher schaltete Apitos eigenes Gift ihre gesamte
+           Angriffslinie ab, sobald sechs Stapel lagen. */
+        c.attack(1.3, c.target, { pure: c.target.status.gift >= 6 });
         c.applyStatus(c.target, 'gift', 5);
       }),
     aktiv('sig_kaefergarde', 'Panzerstoß', 4, ['schild'],
@@ -5521,13 +5598,13 @@
         c.applyStatus(c.self, 'schild', 35);
         var vorn = c.allies()[0];
         if (vorn) c.applyStatus(vorn, 'schild', vorn.hp < vorn.maxHp * 0.5 ? 70 : 35);
-      }),
+      }, schildeDuenn),
     aktiv('sig_seelenhexe', 'Seelenernte', 4, ['heilung'],
       'Heilt alle Verbündeten um 90 % des Angriffs — je gefallenem Verbündeten um die Hälfte mehr.',
       function (c) {
         var tote = c.self._tote || 0;
         c.allies().forEach(function (u) { c.heal(u, c.self.atk * 0.9 * (1 + tote * 0.5), 'Seelenernte'); });
-      })
+      }, verwundet)
   ];
 
   /* ---- Raritätsstufen ----------------------------------------------------

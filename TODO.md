@@ -297,6 +297,20 @@ Abgearbeitet in Phase 33:
 - [x] `pos` ist 0-basiert — `Vorhut` und `Hinterhalt` waren um eins verschoben.
       Nachgemessen und mit fünf Tests festgehalten.
 
+Abgearbeitet in Phase 34:
+
+- [x] Insektoiden bekommen eine Art-Identität: **Metamorphose**. Alle drei
+      häuten sich mitten im Kampf in eine stärkere Form mit anderer Signatur.
+- [x] **Neun Einheiten feuerten nie `onHit`** — ihre Signatur griff nicht an und
+      hatte keine Lagebedingung, also gab es nie einen Normalangriff. 3–5
+      Angriffs-Passive je Einheit waren tot. Zegion nutzte `deal` statt
+      `attack`, Apitos eigenes Gift schaltete ihre Linie ab, die anderen acht
+      brauchten eine Lagebedingung.
+- [x] Wächter-Test: wer `onHit`-Passive hat, muss auch zum Angriff kommen.
+- [x] Die Giftzahn-Prüfung maß die Schadenssumme über einen Kampf — die ist
+      nicht monoton, weil härtere Treffer den Kampf verkürzen. Jetzt je Treffer.
+- [x] `GRUNDHAERTE` 1.08 → 1.28; die Reparatur hatte die Quote auf 66 % gehoben.
+
 Balance und Werkzeug:
 
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller

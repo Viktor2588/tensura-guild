@@ -47,7 +47,7 @@
       oger: 'Kriegervolk aus dem Jura-Wald. Hoher Schaden, wird im Verlauf eines Kampfes stärker.',
       direwolf: 'Sturmwölfe. Schnellste Züge im Spiel, dafür dünnes Fell.',
       echsenmensch: 'Sumpfbewohner. Zäh, regeneriert, hält die Front über lange Kämpfe.',
-      insektoid: 'Schwarmwesen. Gift und Konterschaden statt roher Kraft.',
+      insektoid: 'Schwarmwesen — und die einzige Art, die sich häutet. Jeder Insektoid hat eine Metamorphose: eine Schwelle mitten im Kampf, hinter der eine stärkere Form und eine andere Signatur stehen.',
       daemon: 'Urdämonen. Teuer, brechen Rüstung, tragen Verderbnis.',
       drache: 'Selten und roh stark. Kaum Fähigkeiten nötig — die Werte reichen.',
       untot: 'Kommen zurück. Wiederkehr und Lebensraub statt Ausweichen.'
