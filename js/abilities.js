@@ -280,35 +280,106 @@
       'Kein einzelner Treffer nimmt Shion mehr als 16 % ihres maximalen Lebens',
       function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.155); }),
 
+    /* ---- Wolf und Reiter ----------------------------------------------------
+       Die erste Truppbedingung, die nicht an einem Schlüsselwort hängt, sondern
+       an einer ART. Goblins reiten Sturmwölfe — das ist im Roster bisher nur
+       Fluff gewesen. Diese Passiven machen daraus eine Bau-Entscheidung: der
+       billigste Anfang (Goblin) und der billigste Wolf werten sich gegenseitig
+       auf, und wer beide führt, bekommt bei Ranga und Gobta die Fusion.        */
+
+    passiv('sturm_ang5', 'Wolfsreiter', 'onStart', ['tempo'], [],
+      'Sitzt ein Goblin im Trupp, trägt der Wolf ihn: beide bekommen +25 % Angriff und +15 % Tempo',
+      function (c) {
+        var reiter = c.allies().filter(function (u) { return u.tags[0] === 'goblin'; });
+        if (!reiter.length) return;
+        [c.self].concat(reiter).forEach(function (u) {
+          u.atk = Math.round(u.atk * 1.25);
+          u.spd = Math.round(u.spd * 1.15);
+        });
+      }),
+    passiv('sturm_unt5', 'Reiterei', 'onStart', ['tempo'], [],
+      'Je Goblin im Trupp bekommt der ganze Trupp +7 % Tempo — und der Wolf selbst +10 % Angriff',
+      function (c) {
+        var n = c.allies().filter(function (u) { return u.tags[0] === 'goblin'; }).length;
+        if (!n) return;
+        c.allies().forEach(function (u) { u.spd = Math.round(u.spd * (1 + 0.07 * n)); });
+        c.self.atk = Math.round(c.self.atk * (1 + 0.1 * n));
+      }),
+    passiv('sturm_def5', 'Aufgesessen', 'onDamaged', [], [],
+      'Sitzt ein Goblin im Trupp, pariert der Reiter mit: der Wolf erleidet 22 % weniger Schaden',
+      function (c) {
+        var hat = c.allies().some(function (u) { return u.tags[0] === 'goblin'; });
+        c.self.minderung = hat ? Math.max(c.self.minderung || 0, 0.22) : (c.self.minderung || 0);
+      }),
+
+    passiv('ranga_ang5', 'Schattenfusion', 'onStart', ['schatten'], [],
+      'Ist Gobta im Trupp, verschmelzen Reiter und Wolf: Ranga bekommt +45 % Angriff, +35 % Tempo und 6 Schatten, ' +
+      'Gobta +25 % Leben — und Rangas Signatur wird zum Schwarzen Blitz der Fusion.',
+      function (c) {
+        if (c.self._fusion) return;
+        var gobta = c.allies().filter(function (u) { return u.id === 'gobta'; })[0];
+        if (!gobta) return;
+        c.self._fusion = 1;
+        c.self.atk = Math.round(c.self.atk * 1.45);
+        c.self.spd = Math.round(c.self.spd * 1.35);
+        c.applyStatus(c.self, 'schatten', 6);
+        var mehr = Math.round(gobta.maxHp * 0.25);
+        gobta.maxHp += mehr; gobta.hp += mehr;
+        var sig = byId('sig_ranga_fusion');
+        if (sig) c.self.actives = [sig];
+        c.log.push({ t: 0, type: 'verwandlung', key: c.self.key, unit: c.self.name,
+                     side: c.self.side, form: 'Schattenfusion mit Gobta' });
+      }),
+    passiv('ranga_unt5', 'Rudel und Stamm', 'onStart', ['tempo'], [],
+      'Je Goblin im Trupp schlägt der ganze Trupp 9 % härter',
+      function (c) {
+        var n = c.allies().filter(function (u) { return u.tags[0] === 'goblin'; }).length;
+        if (!n) return;
+        c.allies().forEach(function (u) { u.atk = Math.round(u.atk * (1 + 0.09 * n)); });
+      }),
+    passiv('ranga_def5', 'Schattenreiter', 'onStart', ['schatten'], [],
+      'Ist ein Goblin im Trupp, legt jeder Zug 2 Schatten auf Ranga UND auf den Reiter',
+      function (c) {
+        var reiter = c.allies().filter(function (u) { return u.tags[0] === 'goblin'; });
+        if (!reiter.length) return;
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Schattenreiter', fn: function (k) {
+          k.applyStatus(k.self, 'schatten', 2);
+          k.allies().forEach(function (u) {
+            if (u.tags[0] === 'goblin') k.applyStatus(u, 'schatten', 2);
+          });
+        } });
+      }),
+
     /* ---- Diablos Linien: der Urtümliche Schwarze ---------------------------
-       Noir. Er blendet und verdirbt: Dunkelheit senkt, was der Gegner AUSTEILT,
-       Verderbnis erhöht, was bei ihm ANKOMMT. Beides zusammen ist die einzige
-       Zange im Spiel, die von zwei Seiten gleichzeitig drückt — und seit den
-       Schattenwölfen ist er der einzige Träger von Dunkelheit.                */
+       Zwei Finsternisse, die verschiedene Enden derselben Rechnung anfassen:
+       Dunkelheit senkt, was der GEGNER austeilt, Schatten lässt Treffer an
+       Diablo ganz danebengehen. Der perfekte Diener wird nicht getroffen und
+       schlägt zurück, während niemand ihn sieht. Verderbnis hat er abgegeben —
+       vier andere Einheiten führen sie ohnehin.                                */
 
     passiv('diablo_ang1', 'Zeitgleiche Verachtung', 'onHit', ['dunkelheit'], [],
-      'Der erste Schlag des Kampfes trifft 140 % härter und hüllt jeden Gegner in 4 Dunkelheit',
+      'Der erste Schlag des Kampfes trifft 140 % härter, hüllt jeden Gegner in 4 Dunkelheit — und Diablo tritt in den Schatten zurück',
       function (c) {
         if (c.self._auftakt) return;
         c.self._auftakt = 1;
         c.dmg *= 2.4;
         c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 4); });
+        c.applyStatus(c.self, 'schatten', 4);
       }),
-    passiv('diablo_ang2', 'Zwiefacher Griff', 'onHit', ['verderbnis'], ['dunkelheit'],
-      'Jeder dritte Schlag trifft für jeden Stapel Dunkelheit UND Verderbnis auf dem Ziel 8 % härter — höchstens doppelt',
+    passiv('diablo_ang2', 'Aus dem Schatten', 'onHit', ['schatten'], ['schatten'],
+      'Jeder dritte Schlag trifft 8 % härter je eigenem Schatten-Stapel — höchstens doppelt',
       function (c) {
         if (!zaehler(c.self, 'diablo_ang2', 3)) return;
-        var n = (c.target.status.dunkelheit || 0) + (c.target.status.verderbnis || 0);
-        c.dmg *= 1 + Math.min(1, 0.08 * n);
+        c.dmg *= 1 + Math.min(1, 0.08 * (c.self.status.schatten || 0));
       }),
-    passiv('diablo_ang3', 'Höllenflamme', 'onHit', ['verderbnis'], ['verderbnis'],
-      'Führt ein Verbündeter Verderbnis, legt jeder Schlag 3 Verderbnis an und trifft verdorbene Ziele 25 % härter — sonst 1 Verderbnis',
+    passiv('diablo_ang3', 'Höllenflamme', 'onHit', ['dunkelheit'], ['dunkelheit'],
+      'Führt ein Verbündeter Dunkelheit, trifft Diablo umnachtete Ziele 30 % härter und legt 3 nach — sonst 10 % und 1',
       function (c) {
-        var mit = truppFuehrt(c, 'verderbnis');
-        if (mit && (c.target.status.verderbnis || 0) > 0) c.dmg *= 1.25;
-        c.applyStatus(c.target, 'verderbnis', mit ? 3 : 1);
+        var mit = truppFuehrt(c, 'dunkelheit');
+        if ((c.target.status.dunkelheit || 0) > 0) c.dmg *= mit ? 1.3 : 1.1;
+        c.applyStatus(c.target, 'dunkelheit', mit ? 3 : 1);
       }),
-    passiv('diablo_ang4', 'Zeitstopp', 'onStart', ['dunkelheit'], [],
+    passiv('diablo_ang4', 'Zeitstopp', 'onStart', ['schatten'], [],
       'Diablo schlägt in jedem Zug ein zweites Mal für 70 % — dafür bleibt von seiner Rüstung nichts',
       function (c) {
         c.self.def = 0;
@@ -323,20 +394,19 @@
     passiv('diablo_mec1', 'Umnachtung', 'onStart', ['dunkelheit'], [],
       'Hüllt zu Kampfbeginn jeden Gegner in 5 Dunkelheit — sie schlagen fühlbar schwächer zu',
       function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 5); }); }),
-    passiv('diablo_mec2', 'Verderbte Seele', 'onHit', ['verderbnis', 'dunkelheit'], [],
-      'Jeder dritte Schlag legt 4 Verderbnis und 3 Dunkelheit auf alle Gegner',
+    passiv('diablo_mec2', 'Schattenschritt', 'onHit', ['schatten', 'dunkelheit'], [],
+      'Jeder dritte Schlag legt 3 Dunkelheit auf alle Gegner und zieht Diablo 4 Schatten',
       function (c) {
         if (!zaehler(c.self, 'diablo_mec2', 3)) return;
-        c.foes().forEach(function (f) {
-          c.applyStatus(f, 'verderbnis', 4);
-          c.applyStatus(f, 'dunkelheit', 3);
-        });
+        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 3); });
+        c.applyStatus(c.self, 'schatten', 4);
       }),
-    passiv('diablo_mec3', 'Vollendete Zange', 'onTurnStart', ['dunkelheit'], ['verderbnis'],
-      'Führt ein Verbündeter Verderbnis, legt Diablo jeden Zug 2 Dunkelheit auf alle Gegner nach — sonst 1',
+    passiv('diablo_mec3', 'Vollendete Zange', 'onTurnStart', ['dunkelheit'], ['schatten'],
+      'Führt ein Verbündeter Schatten, legt Diablo jeden Zug 2 Dunkelheit auf alle Gegner nach und zieht sich 2 Schatten — sonst je 1',
       function (c) {
-        var n = truppFuehrt(c, 'verderbnis') ? 2 : 1;
+        var n = truppFuehrt(c, 'schatten') ? 2 : 1;
         c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', n); });
+        c.applyStatus(c.self, 'schatten', n);
       }),
     passiv('diablo_mec4', 'Ewige Nacht', 'onStart', ['dunkelheit'], [],
       'Dunkelheit auf Diablos Zielen baut sich nicht mehr ab — dafür legt er nur noch halb so viel an',
@@ -348,17 +418,20 @@
         } });
       }),
 
-    passiv('diablo_unt1', 'Diener des Herrn', 'onStart', [], [],
-      'Zu Kampfbeginn +12 % Angriff für den Trupp und 3 Dunkelheit auf jeden Gegner',
+    passiv('diablo_unt1', 'Diener des Herrn', 'onStart', ['schatten'], [],
+      'Zu Kampfbeginn +12 % Angriff und 3 Schatten für den Trupp, dazu 3 Dunkelheit auf jeden Gegner',
       function (c) {
-        c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.12); });
+        c.allies().forEach(function (u) {
+          u.atk = Math.round(u.atk * 1.12);
+          c.applyStatus(u, 'schatten', 3);
+        });
         c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 3); });
       }),
-    passiv('diablo_unt2', 'Zerrüttung', 'onDamaged', ['verderbnis'], [],
-      'Jeder vierte Treffer auf den Trupp legt allen Gegnern 4 Verderbnis an',
+    passiv('diablo_unt2', 'Rückzug in die Nacht', 'onDamaged', ['schatten'], [],
+      'Jeder vierte Treffer auf den Trupp zieht den ganzen Trupp in 3 Schatten',
       function (c) {
         if (!zaehler(c.self, 'diablo_unt2', 4)) return;
-        c.foes().forEach(function (f) { c.applyStatus(f, 'verderbnis', 4); });
+        c.allies().forEach(function (u) { c.applyStatus(u, 'schatten', 3); });
       }),
     passiv('diablo_unt3', 'Schleier des Noir', 'onStart', ['dunkelheit'], ['dunkelheit'],
       'Führt ein Verbündeter Dunkelheit, blendet jeder Treffer des Trupps mit 2 — sonst mit 1',
@@ -383,9 +456,12 @@
         });
       }),
 
-    passiv('diablo_def1', 'Dämonenleib', 'onStart', ['schild'], [],
-      'Beginnt mit einem Schild über 30 % seines Lebens',
-      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.3)); }),
+    passiv('diablo_def1', 'Dämonenleib', 'onStart', ['schild', 'schatten'], [],
+      'Beginnt mit einem Schild über 30 % seines Lebens und im Schatten',
+      function (c) {
+        c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.3));
+        c.applyStatus(c.self, 'schatten', 4);
+      }),
     passiv('diablo_def2', 'Blendwerk', 'onDamaged', ['dunkelheit'], [],
       'Jeder dritte erlittene Treffer hüllt den Angreifer in 4 Dunkelheit',
       function (c) {
@@ -393,20 +469,21 @@
         var f = c.foes()[0];
         if (f) c.applyStatus(f, 'dunkelheit', 4);
       }),
-    passiv('diablo_def3', 'Unantastbar', 'onStart', [], ['dunkelheit'],
-      'Führt ein Verbündeter Dunkelheit, kostet kein Treffer mehr als 14 % seines Lebens — sonst 20 %',
+    passiv('diablo_def3', 'Unantastbar', 'onStart', [], ['schatten'],
+      'Führt ein Verbündeter Schatten, kostet kein Treffer mehr als 14 % seines Lebens — sonst 20 %',
       function (c) {
-        var d = truppFuehrt(c, 'dunkelheit') ? 0.14 : 0.2;
+        var d = truppFuehrt(c, 'schatten') ? 0.14 : 0.2;
         c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
       }),
-    passiv('diablo_def4', 'Ultimative Hingabe', 'onDeath', ['dunkelheit'], [],
-      'Steht einmal mit 45 % Leben wieder auf und hüllt alle Gegner in 8 Dunkelheit — danach heilt ihn nichts mehr',
+    passiv('diablo_def4', 'Ultimative Hingabe', 'onDeath', ['dunkelheit', 'schatten'], [],
+      'Steht einmal mit 45 % Leben wieder auf, hüllt alle Gegner in 8 Dunkelheit und sich selbst in 8 Schatten — danach heilt ihn nichts mehr',
       function (c) {
         if (c.self._auf) return;
         c.self._auf = 1;
         c.self.hp = Math.round(c.self.maxHp * 0.45);
         c.self.heilfaktor = -1;
         c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 8); });
+        c.applyStatus(c.self, 'schatten', 8);
         c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name,
                      side: c.self.side, hp: c.self.hp });
       }),
@@ -3441,16 +3518,16 @@
       defensive: ['gobwa_def1', 'gobwa_def2', 'gobwa_def3', 'gobwa_def4']
     },
     ranga: {
-      angriff: ['ranga_ang1', 'ranga_ang2', 'ranga_ang3', 'ranga_ang4'],
+      angriff: ['ranga_ang1', 'ranga_ang2', 'ranga_ang3', 'ranga_ang4', 'ranga_ang5'],
       mechanik: ['ranga_mec1', 'ranga_mec2', 'ranga_mec3', 'ranga_mec4'],
-      unterstuetzung: ['ranga_unt1', 'ranga_unt2', 'ranga_unt3', 'ranga_unt4'],
-      defensive: ['ranga_def1', 'ranga_def2', 'ranga_def3', 'ranga_def4']
+      unterstuetzung: ['ranga_unt1', 'ranga_unt2', 'ranga_unt3', 'ranga_unt4', 'ranga_unt5'],
+      defensive: ['ranga_def1', 'ranga_def2', 'ranga_def3', 'ranga_def4', 'ranga_def5']
     },
     sturmwolf: {
-      angriff: ['sturm_ang1', 'sturm_ang2', 'sturm_ang3', 'sturm_ang4'],
+      angriff: ['sturm_ang1', 'sturm_ang2', 'sturm_ang3', 'sturm_ang4', 'sturm_ang5'],
       mechanik: ['sturm_mec1', 'sturm_mec2', 'sturm_mec3', 'sturm_mec4'],
-      unterstuetzung: ['sturm_unt1', 'sturm_unt2', 'sturm_unt3', 'sturm_unt4'],
-      defensive: ['sturm_def1', 'sturm_def2', 'sturm_def3', 'sturm_def4']
+      unterstuetzung: ['sturm_unt1', 'sturm_unt2', 'sturm_unt3', 'sturm_unt4', 'sturm_unt5'],
+      defensive: ['sturm_def1', 'sturm_def2', 'sturm_def3', 'sturm_def4', 'sturm_def5']
     },
     gabiru: {
       angriff: ['gab_ang1', 'gab_ang2', 'gab_ang3', 'gab_ang4'],
@@ -3776,6 +3853,17 @@
         c.attack(1.6);
         c.chaos(c.target, CHAOS_JE_RANG[c.self.rank || 0]);
       }),
+    /* Die Signatur der Schattenfusion — Ranga trägt sie erst, wenn Gobta im
+       Trupp sitzt und die Verschmelzung greift. */
+    aktiv('sig_ranga_fusion', 'Schwarzer Blitz der Fusion', 4, ['donner', 'schatten'],
+      '210 % Schaden auf die ganze gegnerische Reihe und 4 Donner auf jeden. ' +
+      'Die Signatur von Ranga und Gobta als eins.',
+      function (c) {
+        c.foes().forEach(function (f) {
+          c.attack(2.1, f);
+          c.applyStatus(f, 'donner', 4);
+        });
+      }),
     /* Die Signatur des Verdorbenen Teufels. Sie ersetzt den Chaosschlag erst,
        wenn die Verwandlung greift — vorher trägt sie niemand. `sig_`-Präfix
        heißt: einheitenspezifisch, also keine Raritätsstufe und kein Pool. */
@@ -3915,13 +4003,15 @@
       }),
 
     /* --- Dämonen --- */
-    aktiv('sig_diablo', 'Belial', 3, ['verderbnis'],
-      '140 % Schaden und 3 Verderbnis. Ist das Ziel bereits vollständig verderbt, reißt der Fluch zusätzlich 12 % seines maximalen Lebens heraus.',
+    aktiv('sig_diablo', 'Belial', 3, ['dunkelheit', 'schatten'],
+      '140 % Schaden und 3 Dunkelheit. Diablo tritt danach in 2 Schatten zurück; ' +
+      'ist das Ziel bereits völlig umnachtet, reißt der Griff zusätzlich 12 % seines maximalen Lebens heraus.',
       function (c) {
-        var voll = (c.target.status.verderbnis || 0) >= 5;
+        var blind = (c.target.status.dunkelheit || 0) >= 5;
         c.attack(1.4);
-        if (voll) c.deal(c.target, c.target.maxHp * 0.12, 'Belial', { pure: true });
-        c.applyStatus(c.target, 'verderbnis', 3);
+        if (blind) c.deal(c.target, c.target.maxHp * 0.12, 'Belial', { pure: true });
+        c.applyStatus(c.target, 'dunkelheit', 3);
+        c.applyStatus(c.self, 'schatten', 2);
       }),
     aktiv('sig_testarossa', 'Todesstreich', 4, ['exekution'],
       '120 % Schaden plus 15 % des maximalen Lebens. Unter 30 % Leben wird daraus die doppelte Portion.',

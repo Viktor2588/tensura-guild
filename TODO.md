@@ -241,6 +241,18 @@ Abgearbeitet in Phase 28:
 - [x] Diablos Signatur `Verderbnis` → `Belial`, Rimurus Keystone `Belial` →
       `Azathoth`. Generator: noch 15 Einheiten.
 
+Abgearbeitet in Phase 29:
+
+- [x] Wolf und Reiter: erste Truppbedingung, die an einer ART hängt statt an
+      einem Schlüsselwort. Sturmwolf bekommt `Wolfsreiter`, `Reiterei` und
+      `Aufgesessen` (Goblin im Trupp), Ranga `Rudel und Stamm`,
+      `Schattenreiter` und die `Schattenfusion`.
+- [x] Die Schattenfusion greift nur mit **Gobta** namentlich und ersetzt Rangas
+      Signatur durch den `Schwarzen Blitz der Fusion` — die zweite Form im
+      Spiel nach Shions Verwandlung.
+- [x] Diablo von Verderbnis auf **Dunkelheit + Schatten** umgestellt; vier
+      andere Einheiten tragen Verderbnis ohnehin. Signatur `Belial` mit.
+
 Balance und Werkzeug:
 
 - `dev/linien.js` braucht seit Phase 23 über zehn Minuten statt drei — die

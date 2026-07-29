@@ -1267,6 +1267,40 @@ bei `zaeherBrand` zwei Phasen lang unbemerkt blieb.
 
 `dev/balance.js 600`: 51 % frisch, `GRUNDHAERTE` unverändert.
 
+### Phase 29 (2026-07-29): Wolf und Reiter, Diablo in den Schatten
+
+**Die erste Truppbedingung, die an einer ART hängt.** Bisher fragten alle
+Voraussetzungen nach einem Schlüsselwort. Goblins reiten Sturmwölfe — das stand
+im Roster bisher nur als Fluff. Sechs neue Passiven machen daraus eine
+Bau-Entscheidung, und zwar auf zwei Ebenen:
+
+- **Allgemein, beim Sturmwolf.** `Wolfsreiter` (+25 % Angriff und +15 % Tempo
+  für Wolf UND Reiter), `Reiterei` (je Goblin +7 % Tempo für den Trupp),
+  `Aufgesessen` (der Reiter pariert mit, 22 % weniger Schaden). Damit werten
+  sich der billigste Anfang und der billigste Wolf gegenseitig auf.
+- **Namentlich, bei Ranga.** `Schattenfusion` greift nur mit **Gobta** — nicht
+  mit irgendeinem Goblin. Dann verschmelzen die beiden: +45 % Angriff, +35 %
+  Tempo, 6 Schatten, Gobta +25 % Leben, und Rangas Signatur wird zum
+  `Schwarzen Blitz der Fusion` (210 % auf die ganze Reihe plus 4 Donner auf
+  jeden). Dazu `Rudel und Stamm` und `Schattenreiter`.
+
+Die Fusion ist nach Shions Verwandlung die zweite Form im Spiel, die eine
+Signatur ersetzt. Vier Tests halten die Grenzen: ohne Goblin folgenlos, mit
+einem anderen Goblin keine Fusion, mit Gobta genau einmal.
+
+**Diablo weg von Verderbnis.** Vier Einheiten führten sie ohnehin (Gobta,
+Ultima, Dämonengarde, Adalmann) — als fünfter Träger war er austauschbar. Er
+führt jetzt **Dunkelheit und Schatten**, zwei Finsternisse an verschiedenen
+Enden derselben Rechnung: Dunkelheit senkt, was der Gegner *austeilt*, Schatten
+lässt Treffer an ihm ganz danebengehen. Der perfekte Diener wird nicht getroffen
+und schlägt zurück, während niemand ihn sieht. Seine Signatur `Belial` legt
+entsprechend Dunkelheit an und zieht ihn selbst in den Schatten.
+
+Die Schlüsselwörter stehen danach: Verderbnis 4 Träger, Schatten 4, Dunkelheit
+und Frost und Donner je 1, Chaos 2.
+
+`dev/balance.js 600`: 50 % frisch, `GRUNDHAERTE` unverändert.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

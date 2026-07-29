@@ -75,8 +75,9 @@ var formen = AB.signatures.filter(function (a) {
 });
 ok(AB.signatures.length - formen.length === GD.units.length,
    'genau eine Signatur je Einheit (' + (AB.signatures.length - formen.length) + ')');
-ok(formen.length === 1 && formen[0].id === 'sig_shion_verdorben',
-   'dazu genau eine Verwandlungsform, die keiner Einheit fest gehört');
+var formIds = formen.map(function (a) { return a.id; }).sort().join(',');
+ok(formIds === 'sig_ranga_fusion,sig_shion_verdorben',
+   'dazu die Verwandlungsformen, die keiner Einheit fest gehören (' + formIds + ')');
 ok(AB.pool.length >= 12 && AB.passives.length >= 20,
    AB.pool.length + ' Pool-Aktive, ' + AB.passives.length + ' Passive');
 
@@ -914,7 +915,11 @@ for (var eg = 0; eg < 60 && !erstarrtGesehen; eg++) {
     [EN.get('felsgolem')], eg).log.some(function (l) { return l.type === 'skip'; });
 }
 ok(erstarrtGesehen, 'Erstarrung lässt einen Zug aussetzen');
-ok(tritt_auf('diablo', 0, function (l) { return l.status === 'verderbnis'; }), 'Verderbnis wird angelegt');
+/* Verderbnis trug Diablo, bis er auf Schatten und Dunkelheit umgestellt wurde —
+   vier andere Einheiten führen sie ohnehin. Adalmanns Todesbann legt sie an. */
+ok(tritt_auf('adalmann', 0, function (l) { return l.status === 'verderbnis'; }), 'Verderbnis wird angelegt');
+ok(tritt_auf('diablo', 0, function (l) { return l.status === 'dunkelheit'; }), 'Diablo umnachtet statt zu verderben');
+ok(tritt_auf('diablo', 0, function (l) { return l.status === 'schatten'; }), 'und tritt dabei selbst in den Schatten');
 ok(tritt_auf('rigurd', 0, function (l) { return l.type === 'schild'; }), 'Schild fängt Schaden ab');
 /* Gegen einen Giftgegner: der Schild des Echsenfürsten fängt Treffer ab, Gift
    geht hindurch — sonst sinkt sein Leben nie und Regeneration hat nichts zu tun. */
@@ -1224,6 +1229,36 @@ ok(antichaosWurf(500) <= C.CHAOS_MAX,
    ' ≤ ' + C.CHAOS_MAX + ')');
 ok(antichaosWurf(3) < antichaosWurf(40),
    'unterhalb des Deckels wächst er weiter mit den Stapeln');
+
+/* Wolf und Reiter: die erste Truppbedingung, die an einer ART hängt statt an
+   einem Schlüsselwort. Sie muss folgenlos bleiben, solange kein Goblin dabei
+   ist — sonst wäre sie ein verkappter Eigenbonus. */
+function reiterAtk(begleiter) {
+  var w = R.member('sturmwolf'); w.rank = 3; w.passives = ['sturm_ang5'];
+  var team = [R.resolve(w)];
+  if (begleiter) { var b = R.member(begleiter); b.rank = 3; team.push(R.resolve(b)); }
+  var o = { id: 'o', name: 'O', tags: ['bestie', 'front'], hp: 900000, atk: 1, def: 0,
+    spd: 1, actives: [], effects: [], keywords: [] };
+  var res = C.simulate(team, [o], 2, { nurAufbau: true });
+  return res.einheiten.filter(function (u) { return u.id === 'sturmwolf'; })[0].atk;
+}
+ok(reiterAtk(null) === reiterAtk('shion'),
+   'ohne Goblin im Trupp tut der Wolfsreiter nichts');
+ok(reiterAtk('gobta') > reiterAtk(null),
+   'mit einem Goblin trägt der Wolf ihn (' + reiterAtk(null) + ' → ' + reiterAtk('gobta') + ' Angriff)');
+
+/* Rangas Fusion hängt nicht an der Art, sondern an EINER Einheit: Gobta. */
+function rangaFusion(begleiter) {
+  var r = R.member('ranga'); r.rank = 3; r.passives = ['ranga_ang5'];
+  var team = [R.resolve(r)];
+  if (begleiter) { var b = R.member(begleiter); b.rank = 3; team.push(R.resolve(b)); }
+  var o = { id: 'o', name: 'O', tags: ['bestie', 'front'], hp: 40000, atk: 25, def: 5,
+    spd: 14, actives: [], effects: [], keywords: [] };
+  return C.simulate(team, [o], 8).log.filter(function (l) { return l.type === 'verwandlung'; }).length;
+}
+ok(rangaFusion(null) === 0 && rangaFusion('gobkyu') === 0,
+   'die Schattenfusion greift weder allein noch mit einem anderen Goblin');
+ok(rangaFusion('gobta') === 1, 'mit Gobta verschmelzen die beiden — genau einmal');
 
 /* Shions Verwandlung: keine Zahl, sondern eine Schwelle. Sie darf nur fallen,
    wenn der Bau sie trägt — zehn Chaos auf dem Ziel UND zehn Antichaos auf ihr. */
