@@ -407,6 +407,103 @@ Offen aus der Recherche (Ideen 1, 2, 3, 5):
 - **3. Zwei Reihen statt einer Liste.**
 - **5. Kosten und Aufladung als System** statt je Passive handgeschnitzt.
 
+## Entwurf: Hexagonales Taktik-RPG
+
+Notiert am 2026-07-29 auf Nachfrage. Das ist kein Feature, sondern ein
+Genre-Wechsel: der Kampf ist heute eine *Auflösung* — `simulate()` rechnet ihn
+komplett durch, die UI spielt ihn nur nach, und der Spieler hat währenddessen
+keinen einzigen Eingriff. Ein Hexfeld führt Raum ein, und Raum ohne
+Entscheidungen darin ist bloß Dekoration.
+
+### Die Gabelung, die alles andere bestimmt
+
+**A — Hex-Autoschlacht.** Einheiten bewegen sich selbst nach ihrer Rolle. Der
+Spieler entscheidet vor dem Kampf: Aufstellung auf dem Feld, Zusammensetzung,
+Ausrüstung. Der Roguelite-Kreislauf bleibt, `dev/balance.js` läuft weiter,
+ein Run dauert weiter Minuten.
+
+**B — Hex-Taktik mit Spielerzügen.** Der Spieler bewegt und handelt jede Einheit
+selbst. Das ist das eigentliche Taktik-RPG — und es kostet:
+- Die Wiedergabe entfällt; die UI wird zum Spielbrett mit Eingaben.
+- `dev/balance.js` braucht eine **Taktik-KI**, sonst gibt es keine 600-Run-Messung
+  mehr. Ohne die Messung ist die Balance dieses Projekts blind — sie hat in
+  dieser Sitzung ein Dutzend Fehleinschätzungen aufgedeckt.
+- Ein Run dauert nicht mehr Minuten, sondern eine halbe Stunde. Das verändert
+  den Meta-Fortschritt, die Aktlänge und die Zahl der Knoten.
+
+**Empfehlung: A zuerst.** Sie ist ein Zwischenschritt, kein Kompromiss — und
+wenn der Raum steht und sich gut anfühlt, ist B danach ein UI-Projekt statt
+eines Systemprojekts.
+
+### Was der Hexlayer mindestens braucht
+
+- **Koordinaten**: Achsial (`q`, `r`) ist die übliche Wahl; Distanz ist
+  `(|q1-q2| + |q1+r1-q2-r2| + |r1-r2|) / 2`.
+- **Reichweite je Fähigkeit** statt „alle Gegner".
+- **Bewegung**: ein `zug`-Wert je Einheit, Hexfelder pro Zug.
+- **Sichtlinie** — nur, wenn es Blocker gibt. Ohne Deckung im Gelände ist sie
+  Aufwand ohne Ertrag.
+- Ein kleines Feld reicht: **3–4 Gegner gegen bis zu 6 Einheiten**, also etwa
+  7×7 Hexe. Größer wird Laufzeit ohne Entscheidung.
+
+### Was schon passt — und zwar überraschend gut
+
+Vieles im Spiel ist heute eine Abstraktion von Raum und würde auf Hexen
+buchstäblich werden:
+
+- **Deckung** hängt an „Platz 3 oder weiter hinten" und gibt ein Drittel nach
+  vorn ab. Auf Hexen: der Nachbar vor dir fängt ab. Aus einer Zahl wird eine Lage.
+- **Gerudos Königsdeckung** habe ich als Rückheilung nachgebaut, weil es keine
+  echte Umleitung gibt. Auf Hexen: er deckt die *angrenzenden* Felder. Dieselbe
+  Idee, endlich ohne Krücke.
+- **`flaeche`** ist heute „alle Gegner". Auf Hexen wird daraus eine Form:
+  Kegel, Linie, Ring. Gabirus Wirbel, Veldoras Sturm und Carreras Sprengung
+  hätten alle drei eine *andere* Form statt derselben Wirkung.
+- **`schatten`** (Ausweichen) wäre Sichtlinie und Distanz statt einer Prozentzahl.
+- **Rollen** (`front`, `fernkampf`, `magier`) sind heute nur Zielwahl. Auf Hexen
+  werden sie Reichweite — und die Rolle bekommt zum ersten Mal Struktur.
+- **Ranga + Gobta**, die Schattenfusion: zwei Einheiten, ein Feld. Auf Hexen
+  eine natürliche Regel statt einer Sonderbehandlung.
+- Die **Aufstellung** ist heute eine Liste, die man tauscht. Auf Hexen wird sie
+  die Hauptentscheidung vor jedem Kampf — genau die Tiefe, um die es geht.
+
+### Was bricht — die ehrliche Rechnung
+
+Gemessen im heutigen Bestand:
+
+- **129 Fähigkeiten treffen „alle Gegner"**, **160 fassen den ganzen Trupp an**.
+  Auf einem Hexfeld ist das eine offene Frage: Bleiben sie global, ist der Raum
+  Dekoration. Bekommen sie Reichweiten und Formen, sind das **rund 290
+  Fähigkeiten**, die eine Formdefinition brauchen. Das ist die zentrale Zahl
+  dieses Umbaus — vergleichbar mit dem Befund, dass alle 72 Gegner keine
+  Schlüsselwörter haben.
+- **Zielwahl** (`pickTarget`) ist rollenbasiert und deterministisch. Auf Hexen
+  muss sie Erreichbarkeit kennen — und braucht damit dieselbe Bedrohungslogik,
+  die als Idee 2 ohnehin offen ist.
+- **`dev/balance.js`** misst 600 Runs. Mit Bewegung braucht der Bot eine
+  Positionierungs-KI, sonst misst er einen Trupp, der falsch steht.
+- **Speicherstand**: die Aufstellung ist heute die Reihenfolge im Array. Hexe
+  brauchen Koordinaten je Einheit — Formatwechsel, also eine Migration.
+- **Die Wiedergabe** kennt nur Ereignisse (`hit`, `status`, `death`). Bewegung
+  wäre ein neuer Ereignistyp und eine neue Darstellung.
+
+### Ein gestufter Weg, falls es losgehen soll
+
+1. **Reichweiten einführen, ohne Hexe.** Jede Fähigkeit bekommt `reichweite`
+   (1 = angrenzend, 2 = Reihe, 99 = global). Ändert am Kampf zunächst nichts,
+   erzwingt aber die Entscheidung für alle 290 Fähigkeiten — und legt offen, wie
+   viele wirklich global sein wollen.
+2. **Zwei Reihen** (die offene Idee 3). Kleinster echter Raum, deckt Deckung,
+   Reichweite und Rollen ab. Wenn sich das *nicht* gut anfühlt, ist ein Hexfeld
+   nur mehr desselben Problems.
+3. **Hexkoordinaten** als Ersatz für die Reihen, weiterhin Autoschlacht:
+   Einheiten laufen selbst, der Spieler stellt auf.
+4. **Spielerzüge** — erst wenn 1–3 stehen und die Messung wieder läuft.
+
+Schritt 1 ist die eigentliche Arbeit und für sich allein schon wertvoll: er
+beantwortet, ob dieses Spiel überhaupt ein Raumspiel sein will.
+
+
 Balance und Werkzeug:
 
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller
