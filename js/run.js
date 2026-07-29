@@ -137,7 +137,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.02;   // Donner dazu; gemessen 50 % Siege (frisch)
+  var GRUNDHAERTE = 1.08;   // vier frei gezogene Passive; gemessen 50 % Siege (frisch)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -406,10 +406,16 @@
            das Paar zufällig statt eine Ansage. */
         var sig = AB.get(u.signature);
         var kw = (sig ? sig.keywords : []).concat();
-        (u.passives || []).forEach(function (pid) {
-          var ab = AB.get(pid);
+        var preset = presetLinePassive(run, u.id, rng);
+        if (preset && preset.id) {
+          var ab = AB.get(preset.id);
           if (ab) kw = kw.concat(ab.keywords || [], ab.amplifies || []);
-        });
+        } else {
+          (u.passives || []).forEach(function (pid) {
+            var ab = AB.get(pid);
+            if (ab) kw = kw.concat(ab.keywords || [], ab.amplifies || []);
+          });
+        }
         var offen = relPool.filter(function (r) {
           return !r.bedingung && !vergeben[r.id] && (r.rarity || 1) <= START_MAX_RARITAET;
         });
@@ -421,7 +427,7 @@
         });
         var r = waehle(rng, passend.length ? passend : offen, 1, 1)[0];
         if (r) vergeben[r.id] = 1;
-        return { unit: u.id, relic: r ? r.id : null };
+        return { unit: u.id, relic: r ? r.id : null, passive: preset ? preset.id : null };
       })
     };
     commit(run, rng);
@@ -430,7 +436,7 @@
   function chooseStart(run, i) {
     if (!run.startwahl) return false;
     var o = run.startwahl.offers[i];
-    if (!o || !addUnit(run, o.unit)) return false;
+    if (!o || !addUnit(run, o.unit, o.passive)) return false;
     if (o.relic) run.relics.push(o.relic);
     run.startwahl = null;
     run.phase = 'karte';
@@ -444,6 +450,24 @@
     return f;
   }
   function commit(run, rng) { run.rngState = rng.state(); }
+
+  /* Die vorausgewählte Start-Passive zieht aus der Haupt-RNG des Runs: zwei
+     Angebote derselben Einheit sollen nicht dieselbe Passive tragen. Wer keine
+     RNG mitbringt (Ereignis-Belohnung), bekommt einen eigenen Zug samt commit.
+     Das Ergebnis wandert ins Angebot, damit Anzeige und Anwerbung übereinstimmen. */
+  function presetLinePassive(run, unitId, rng) {
+    if (!AB.linien[unitId]) return null;
+    /* Der mitgebrachte Start trägt keinen Preis: eine geänderte Regel samt
+       Nachteil aufgedrängt zu bekommen, bevor man die Einheit überhaupt
+       gespielt hat, ist keine Entscheidung. */
+    var offers = AB.linienAngebot(unitId).filter(function (o) { return !o.preis; });
+    if (!offers.length) return null;
+    var eigen = !rng;
+    if (eigen) rng = rngOf(run);
+    var p = root.RNG.pick(rng, offers);
+    if (eigen) commit(run, rng);
+    return p;
+  }
 
   /* ---- Rarität: steuert, was überhaupt angeboten wird ---------------------
      Seltenes ist von Anfang an möglich, wird aber erst in den späteren Akten
@@ -713,7 +737,7 @@
     return GD.artName(u.art) + ' · ' + GD.rolleName(u.tags[1]) + ' · ' + (sig ? sig.name : '');
   }
 
-  function addUnit(run, id) {
+  function addUnit(run, id, startPassiveId) {
     var u = GD.unit(id);
     if (!u || !freieArt(run, u.art)) return false;      // eine Einheit je Art
     var m = member(id);
@@ -725,6 +749,16 @@
     }
     else if (run.bank.length < BANK_MAX) run.bank.push(m);
     else return false;
+
+    /* Task 3: Startzustand ist zufällig — die erste Linien-Passive wird
+       vorausgewählt, damit beim Anwerben keine Auswahl-Karten erscheinen. */
+    if (hatLinien(m)) {
+      if (startPassiveId) m.passives = [startPassiveId];
+      else {
+        var preset = presetLinePassive(run, id);
+        if (preset) m.passives = [preset.id];
+      }
+    }
     passivAngebot(run, m, true);
     return true;
   }
@@ -825,16 +859,66 @@
      hintereinander an, da liegen sofort mehrere Wahlen offen.                 */
 
   var KATEGORIEN = ['angriff', 'mechanik', 'unterstuetzung', 'defensive'];
+  var PASSIV_ANGEBOTE = 4;
+
+  /* Bis zu `n` Passive aus der geteilten Bibliothek, höchstens eine je
+     Kategorie. Innerhalb der Kategorie zieht das Thema der Einheit vor: eine
+     Gift-Einheit sieht eher Gift. Die Kategorie selbst steht fest, damit das
+     Angebot nicht vier Mal dieselbe Rolle zeigt. */
+  function bibliotheksAngebot(run, m, hab, n) {
+    var rng = rngOf(run);
+    var kw = AB.keywords(abilities(m));
+    var frei = AB.passives.filter(function (p) {
+      return !AB.linien_ids[p.id] && hab.indexOf(p.id) < 0;
+    });
+    var katen = KATEGORIEN.concat();
+    if (n < katen.length) katen = waehle(rng, katen.map(function (k) { return { id: k }; }), 1, n)
+      .map(function (x) { return x.id; });
+    var offers = [];
+    katen.forEach(function (kat) {
+      var inKat = frei.filter(function (p) { return AB.kategorie(p.id) === kat; });
+      if (!inKat.length) return;
+      var passend = inKat.filter(function (p) {
+        return (p.keywords || []).concat(p.amplifies || []).some(function (k) { return kw[k]; });
+      });
+      var p = waehle(rng, passend.length && rng() < 0.7 ? passend : inKat,
+                     inhaltsStufe(run) + m.rank - 1, 1)[0];
+      if (p) offers.push({ linie: kat, linieName: AB.LINIEN_NAME[kat], id: p.id, bibliothek: true });
+    });
+    commit(run, rng);
+    return offers;
+  }
 
   function passivAngebot(run, m, beiAnwerbung) {
     var hab = m.passives || [];
     var offers;
     if (hatLinien(m)) {
-      var stufe = hab.length + 1;
-      offers = AB.linienAngebot(m.id, stufe)
-        .filter(function (o) { return hab.indexOf(o.id) < 0; });
+      /* Der Startzustand ist bereits vorausgewählt. */
+      if (beiAnwerbung && hab.length >= 1) return;
+      /* Keine Stufen und keine Quote je Linie: die eigenen Passiven einer Einheit
+         sind ein Topf, aus dem vier gezogen werden — egal aus welcher Linie.
+         Dass es heute sechzehn sind und vier je Linie, ist Inhalt, keine Regel;
+         wächst der Topf, zieht diese Stelle unverändert weiter. */
+      var rng = rngOf(run);
+      var topf = AB.linienAngebot(m.id).filter(function (o) { return hab.indexOf(o.id) < 0; });
+      offers = [];
+      while (offers.length < PASSIV_ANGEBOTE && topf.length) {
+        offers.push(topf.splice(Math.floor(rng() * topf.length), 1)[0]);
+      }
+      commit(run, rng);
       if (!offers.length) return;
-      (run.pwahlen = run.pwahlen || []).push({ uid: m.uid, stufe: stufe, offers: offers });
+      /* Wer eine Regel ändert, kostet dafür etwas — halbe Rüstung, kein Heilen,
+         gedrosselter Angriff. Solche Passiven müssen ablehnbar sein, sonst sind
+         sie ein Zwang. Daneben steht die geteilte Bibliothek: schwächer, aber
+         ohne Preis. Das ist zugleich der einzige Weg, auf dem die 34
+         Bibliotheks-Passiven überhaupt noch zum Spieler kommen — seit alle 40
+         Einheiten Linien haben, greift `passivIds` nie mehr auf die feste Liste
+         aus data.js zu. */
+      if (offers.some(function (o) { return o.preis; })) {
+        offers = offers.concat(bibliotheksAngebot(run, m, hab, 2));
+        offers.push({ linieName: 'Verzicht', verzicht: true, id: null });
+      }
+      (run.pwahlen = run.pwahlen || []).push({ uid: m.uid, offers: offers });
       return;
     }
     /* Ohne eigene Linien: eine Passive aus JEDER Kategorie, zufällig gezogen.
@@ -843,26 +927,8 @@
        gibt es nichts zu wählen: Rang C hat keinen Passiv-Slot. */
     if (beiAnwerbung || m.rank < 1) return;
     m.durfteWaehlen = 1;
-    var rng = rngOf(run);
-    var kw = AB.keywords(abilities(m));
-    var frei = AB.passives.filter(function (p) {
-      return !AB.linien_ids[p.id] && hab.indexOf(p.id) < 0;
-    });
-    offers = [];
-    KATEGORIEN.forEach(function (kat) {
-      var inKat = frei.filter(function (p) { return AB.kategorie(p.id) === kat; });
-      if (!inKat.length) return;
-      /* Innerhalb der Kategorie zieht das Thema der Einheit vor: eine Gift-
-         Einheit sieht eher Gift. Die Kategorie selbst steht aber fest. */
-      var passend = inKat.filter(function (p) {
-        return (p.keywords || []).concat(p.amplifies || []).some(function (k) { return kw[k]; });
-      });
-      var p = waehle(rng, passend.length && rng() < 0.7 ? passend : inKat,
-                     inhaltsStufe(run) + m.rank - 1, 1)[0];
-      if (p) offers.push({ linie: kat, linieName: AB.LINIEN_NAME[kat], id: p.id });
-    });
-    commit(run, rng);
-    if (offers.length) (run.pwahlen = run.pwahlen || []).push({ uid: m.uid, stufe: m.rank, offers: offers });
+    offers = bibliotheksAngebot(run, m, hab, 4);
+    if (offers.length) (run.pwahlen = run.pwahlen || []).push({ uid: m.uid, offers: offers });
   }
 
   function passivWahl(run) { return (run.pwahlen || [])[0] || null; }
@@ -873,8 +939,12 @@
     var o = w.offers[i];
     var m = find(run, w.uid);
     if (!o || !m) return false;
-    m.passives = (m.passives || []).concat(o.id);
     run.pwahlen.shift();
+    if (o.verzicht) {
+      run.chronik.push('Passive: ' + GD.unit(m.id).name + ' lehnt den Keystone ab');
+      return true;
+    }
+    m.passives = (m.passives || []).concat(o.id);
     run.chronik.push('Passive: ' + GD.unit(m.id).name + ' wählt ' + AB.get(o.id).name);
     return true;
   }
@@ -899,8 +969,11 @@
        rückwärts, weil ein Trupp, dem eine Rolle fehlt, gar nicht mehr aufholt. */
     themenWahl(run, rng, unitPool(run), st, (regel(run, 'kriegsrecht') ? 1 : 2) + (extra || 0))
       .forEach(function (u) {
+        var preset = presetLinePassive(run, u.id, rng);
         offers.push({ kind: 'unit', id: u.id, name: u.name, price: PREIS_EINHEIT + u.cost * 45,
-                      text: unitText(u), rarity: u.rarity });
+                      text: unitText(u), rarity: u.rarity,
+                      passive: preset ? preset.id : null,
+                      passiveLinieName: preset ? preset.linieName : null });
       });
     themenWahl(run, rng, GD.items, st, 1 + (extra || 0)).forEach(function (it) {
       offers.push({ kind: 'item', id: it.id, name: it.name, price: Math.round(it.cost * PREIS_ITEM),
@@ -940,7 +1013,7 @@
     var liste = run.pending && (run.pending.markt || run.pending.offers);
     var o = liste && liste[i];
     if (!o || o.sold || run.magicules < o.price) return false;
-    if (o.kind === 'unit' && !addUnit(run, o.id)) return false;
+    if (o.kind === 'unit' && !addUnit(run, o.id, o.passive)) return false;
     if (o.kind === 'rang') {
       /* Das Ziel steht im Angebot. Ist es inzwischen verkauft oder schon auf S,
          verfällt der Posten — nachgewürfelt wird nicht. */

@@ -13,7 +13,40 @@ var GD = globalThis.GameData, EN = globalThis.Enemies, C = globalThis.Combat,
 var pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) pass++; else { fail++; console.log('  ✗ ' + msg); } }
 function head(s) { console.log('--- ' + s + ' ---'); }
-function mit(id, rank) { var m = R.member(id); m.rank = rank || 0; return m; }
+function mit(id, rank) {
+  var m = R.member(id);
+  m.rank = rank || 0;
+  /* Seit TODO.md Punkt 1 umgesetzt ist, haben alle Einheiten Linien.
+     Dann tragen sie nicht mehr die festen Passiven aus `data.js`, sondern
+     nur gewählte Linien-Passiven. Für die Tests brauchen wir eine
+     deterministische Standardeinstellung. */
+  if (m.rank >= 1 && AB.linien && AB.linien[id]) {
+    var slots = R.passivSlots(m);
+    var out = [];
+    /* Mechanik-Stufe 1 liefert i.d.R. den „Quellen“-Keyword. */
+    if (slots >= 1) out.push(id + '_mec1');
+    /* Bei Statuslinien ist Angriffs-Stufe 2 der Verstärker. */
+    if (slots >= 2) {
+      var art = GD.unit(id).art;
+      /* Untot hat Wiederkehr als Defensive-Stufe 4. */
+      if (art === 'untot') out.push(id + '_def4');
+      else out.push(id + '_ang2');
+    }
+    /* Der dritte Slot ist für die meisten Tests nicht kritisch. */
+    if (slots >= 3) {
+      /* Für Statuslinien (Gift/Brand/Verdorbnis) setzen wir im Default hohe
+         Mechanik-/Unterstützung-Stufen, damit Stapel-Tests schnell genug
+         laufen (z.B. Gift stapelt über 12). */
+      var mec = AB.get(id + '_mec1');
+      var kw = mec && mec.keywords ? mec.keywords : [];
+      var statusKey = ['gift', 'brand', 'verderbnis'].filter(function (k) { return kw.indexOf(k) >= 0; })[0];
+      if (statusKey) out.push(id + '_unt4'); else out.push(id + '_unt1');
+      if (statusKey) out[0] = id + '_mec4';
+    }
+    m.passives = out.slice(0, slots);
+  }
+  return m;
+}
 /* Der Run beginnt im Draft — für Tests, die die Karte brauchen, durchziehen. */
 /* Der Run startet jetzt mit EINER Einheit. Für die Tests, die einen fertigen
    Trupp brauchen, wird auf drei aufgefüllt — und offene Passiv-Wahlen abgeräumt. */
@@ -1137,6 +1170,30 @@ ok(schadenAnGepanzertem(true) > schadenAnGepanzertem(false) * 1.2,
    'die Marke hilft dem ganzen Trupp gegen Rüstung (' +
    schadenAnGepanzertem(false) + ' → ' + schadenAnGepanzertem(true) + ')');
 
+/* Zwei Fähigkeiten setzen den Abbau eines Zustands aus. Das ist genau die Art
+   Flag, die still ins Leere läuft, wenn der Name nicht zur Engine passt —
+   `zaeherBrand` tat monatelang nichts. Also einmal direkt nachgemessen. */
+function zustandRest(key, flag) {
+  var opfer = { id: 'o', name: 'Opfer', tags: ['bestie', 'front'], hp: 900000, atk: 1,
+    def: 0, spd: 5, actives: [], keywords: [], effects: [
+      { hook: 'onStart', name: 'setz', fn: function (c) {
+        if (flag) c.self[flag] = 1;
+        c.applyStatus(c.self, key, 6);
+      } },
+      { hook: 'onTurnStart', name: 'zeig', fn: function (c) {
+        c.log.push({ t: 0, type: 'probe', rest: c.self.status[key] || 0 });
+      } }
+    ] };
+  var held = { id: 'h', name: 'Held', tags: ['oger', 'front'], hp: 900000, atk: 1,
+    def: 0, spd: 50, actives: [], effects: [], keywords: [] };
+  var proben = C.simulate([held], [opfer], 10).log.filter(function (l) { return l.type === 'probe'; });
+  return proben.length ? proben[proben.length - 1].rest : -1;
+}
+ok(zustandRest('brand', null) === 0 && zustandRest('brand', 'brandBleibt') === 6,
+   'brandBleibt setzt den Abbau von Brand aus');
+ok(zustandRest('verderbnis', null) === 0 && zustandRest('verderbnis', 'verderbnisBleibt') === 6,
+   'verderbnisBleibt setzt den Abbau von Verderbnis aus');
+
 /* Blutung hängt am maximalen Leben — genau darin unterscheidet sie sich von Gift. */
 function blutSchaden(hp) {
   var opfer = sandsack(hp, { spd: 20 });
@@ -1195,10 +1252,14 @@ var pRun = fertigerRun(31337);
 pRun.team = []; pRun.bank = []; pRun.pwahlen = [];
 ok(R.addUnit(pRun, 'shion'), 'Shion lässt sich anwerben');
 var pw = R.passivWahl(pRun);
-ok(pw && pw.offers.length === 4, 'beim Anwerben liegen vier Passive zur Wahl');
-ok(Object.keys(AB.LINIEN_NAME).every(function (l) {
-  return pw.offers.some(function (o) { return o.linie === l; });
-}), 'je eine aus Angriff, Mechanik, Unterstützung und Defensive');
+ok(!pw, 'beim Anwerben gibt es keine Passive-Auswahl mehr');
+var shionM = pRun.team[0];
+ok(shionM.passives.length === 1, 'Shion startet mit einer vorausgewählten Linien-Passive');
+ok(AB.linien_ids[shionM.passives[0]] === 'shion',
+   'Start-Passiv ist eine Linien-Passive von Shion');
+ok(Object.keys(AB.linien.shion).every(function (l) {
+  return AB.linien.shion[l][3] !== shionM.passives[0];
+}), 'und nie eine mit Preis — der Startzustand drängt keinen Nachteil auf');
 ok(Object.keys(AB.linien).length >= 6, 'sechs Einheiten haben eigene Linien: ' + Object.keys(AB.linien).join(', '));
 /* Die Oger sind vollständig — damit ist „eine Einheit je Art" bei ihnen eine
    echte Wahl zwischen sechs verschiedenen Spielweisen. */
@@ -1237,24 +1298,24 @@ ok(atkVon(kMit) > atkVon(kOhne),
    atkVon(kOhne) + ' → ' + atkVon(kMit) + ' Angriff)');
 ok(Object.keys(AB.linien).every(function (id) {
   return Object.keys(AB.linien[id]).every(function (l) { return AB.linien[id][l].length === 4; });
-}), 'jede Linie jeder Einheit hat genau vier Stufen');
-ok(pw.offers.every(function (o) { return AB.linien.shion[o.linie][0] === o.id; }),
-   'auf Stufe 1 wird die erste Stufe jeder Linie angeboten');
-var shionM = pRun.team[0];
-R.choosePassive(pRun, 0);
-ok(shionM.passives.length === 1 && !R.passivWahl(pRun), 'die Wahl landet an der Einheit');
+}), 'jede Linie jeder Einheit hat genau vier Passive — 16 je Einheit');
+/* Start: keine Passive-Auswahl — deshalb kein pw.offers-check und kein choosePassive. */
 ok(R.resolve(shionM).effects.some(function (e) { return e.id === shionM.passives[0]; }),
    'und wirkt sofort im Kampf');
 pRun.magicules = 9000;
 R.rankUp(pRun, shionM.uid);
 var pw2 = R.passivWahl(pRun);
-ok(pw2 && pw2.stufe === 2 && pw2.offers.every(function (o) { return AB.linien.shion[o.linie][1] === o.id; }),
-   'der Aufstieg bietet die nächste Stufe jeder Linie an');
+var pw2Linien = pw2 ? pw2.offers.filter(function (o) { return AB.linien_ids[o.id] === 'shion'; }) : [];
+ok(pw2Linien.length === 4 &&
+   pw2Linien.every(function (o) { return AB.linien.shion[o.linie].indexOf(o.id) >= 0; }),
+   'der Aufstieg bietet eine Passive je Linie an — irgendeine der vier');
+ok(pw2.offers.every(function (o) { return !o.id || shionM.passives.indexOf(o.id) < 0; }),
+   'und nie eine, die die Einheit schon trägt');
 ok(!R.skipPassive, 'eine Passive lässt sich nicht auslassen — es gibt keinen Weg daran vorbei');
 ok(R.choosePassive(pRun, 0) && !R.passivWahl(pRun), 'die Wahl muss getroffen werden');
 ok(R.passivIds(R.member('skelettritter')).length === 0 &&
-   R.passivIds({ id: 'skelettritter', rank: 2 }).length === 2,
-   'Einheiten ohne eigene Linien behalten die festen Passiven nach Rang');
+   R.passivIds({ id: 'skelettritter', rank: 2, passives: ['skelettritter_mec1', 'skelettritter_def4'] }).length === 2,
+   'Linien-Einheiten tragen nur gewählte Linien-Passiven');
 
 /* ------------------------------------------------- Debug-Übersicht */
 head('Debug-Übersicht');
@@ -1336,85 +1397,89 @@ ok(R.rankUp(rRun, held.uid), 'Aufstieg auf B gelingt');
 ok(R.rankName(held) === 'B' && R.itemSlots(held) === 2 && R.aktivSlots(held) === 1 && R.passivSlots(held) === 1,
    'Rang B: 2 Item-Slots, weiterhin eine Aktive, 1 passive');
 ok(R.resolve(held).atk > werteC, 'der Aufstieg erhöht die Werte');
+/* Keine Stufen und keine Bindung: die Einheit hat ihre erste Passive beim
+   Anwerben bekommen, danach steht jede Linie weiter offen. */
 var pw0 = R.passivWahl(rRun);
-ok(pw0 && pw0.offers.length === 4, 'nach dem Aufstieg stehen vier Passive zur Wahl');
-ok(['angriff', 'mechanik', 'unterstuetzung', 'defensive'].every(function (k) {
-  return pw0.offers.some(function (o) { return o.linie === k; });
-}), 'je eine aus Angriff, Mechanik, Unterstützung und Defensive');
+ok(pw0 && pw0.offers.length >= 4, 'nach dem Aufstieg stehen wieder vier Passive zur Wahl');
+ok(pw0.offers.filter(function (o) { return o.id; })
+     .every(function (o) { return o.id !== held.passives[0]; }),
+   'und nie die, die die Einheit schon trägt');
 ok(!R.rankUp(rRun, held.uid), 'kein zweiter Aufstieg, solange die Wahl offen ist');
 var gewaehlt = pw0.offers[0].id;
 ok(R.choosePassive(rRun, 0), 'eine Passive wird gewählt');
-ok(held.passives[0] === gewaehlt && R.resolve(held).effects.some(function (e) { return e.id === gewaehlt; }),
+ok(held.passives[held.passives.length - 1] === gewaehlt &&
+   R.resolve(held).effects.some(function (e) { return e.id === gewaehlt; }),
    'sie wirkt danach im Kampf');
 
 R.rankUp(rRun, held.uid); R.choosePassive(rRun, 0);
 ok(R.rankName(held) === 'A', 'Rang A wird erreicht');
 ok(R.passivWahl(rRun) === null, 'nach der Wahl ist die Warteschlange leer');
+/* Passive mit Preis brauchen Alternativen — egal, an welcher Stelle sie
+   auftauchen. Gesucht wird ein Aufstieg, bei dem eine davon im Angebot steht. */
 R.rankUp(rRun, held.uid); R.choosePassive(rRun, 0);
 ok(R.rankName(held) === 'S' && R.itemSlots(held) === 5, 'Rang S gibt zwei Item-Slots statt einem');
 ok(R.praedatorSlots(held) === 3, 'Rang S trägt drei verschlungene Fähigkeiten');
 ok(!R.rankUp(rRun, held.uid), 'über S hinaus geht es nicht');
 
-/* Der Aufstieg muss zur Einheit passen — sonst wertet jeder dasselbe auf.
-   Seit die Aktive nicht mehr gewählt wird, gilt das für die Passiven. */
-function aufstiegsAngebote(id, n) {
-  var out = {};
-  for (var s = 0; s < n; s++) {
-    var r = fertigerRun(700 + s);
-    r.team = [R.member(id)]; r.bank = []; r.magicules = 5000; r.pwahlen = [];
-    R.rankUp(r, r.team[0].uid);
-    var w = R.passivWahl(r);
-    if (w) w.offers.forEach(function (o) { out[o.id] = (out[o.id] || 0) + 1; });
+/* Passive mit Preis brauchen Alternativen — egal, an welcher Stelle sie
+   auftauchen. Ohne Stufen ist das keine feste Position mehr, also wird gesucht. */
+var pRun4 = null, pw4 = null, pHeld = null;
+for (var vers = 0; vers < 25 && !pw4; vers++) {
+  var probe = fertigerRun(400 + vers);
+  probe.magicules = 9000;
+  var pm = probe.team[0];
+  for (var st = 0; st < 3; st++) {
+    R.rankUp(probe, pm.uid);
+    var w4 = R.passivWahl(probe);
+    if (!w4) break;
+    if (w4.offers.some(function (o) { return o.verzicht; })) {
+      pRun4 = probe; pw4 = w4; pHeld = pm; break;
+    }
+    R.choosePassive(probe, 0);
   }
-  return out;
 }
-function neigung(id) {
-  var m = R.member(id); m.rank = 1;
-  var kw = AB.keywords(R.abilities(m));
-  return function (aid) {
-    var a = AB.get(aid);
-    return (a.keywords || []).concat(a.amplifies || []).some(function (k) { return kw[k]; });
-  };
+ok(pw4, 'Passive mit Preis tauchen im Angebot auf');
+ok(pw4.offers.some(function (o) { return o.preis; }),
+   'und „nichts nehmen" steht nur dann daneben');
+ok(pw4.offers.filter(function (o) { return o.bibliothek; }).length >= 1 &&
+   pw4.offers.every(function (o) { return !o.bibliothek || !AB.linien_ids[o.id]; }),
+   'zusammen mit mindestens einer Passive aus der geteilten Bibliothek');
+var vorher4 = pHeld.passives.length;
+ok(R.choosePassive(pRun4, pw4.offers.length - 1) && pHeld.passives.length === vorher4 &&
+   !R.passivWahl(pRun4),
+   'der Verzicht schließt die Wahl, ohne eine Passive hinzuzufügen');
+
+/* Alle Einheiten haben Linien. Das Angebot zieht je Linie eine der vier
+   zufällig — nicht mehr deterministisch, aber immer vier eigene, je eine pro
+   Kategorie, und nie eine, die die Einheit schon trägt. */
+function aufstiegsOffers(id, seed) {
+  var r = fertigerRun(seed || 700);
+  r.team = [R.member(id)]; r.bank = []; r.magicules = 5000; r.pwahlen = [];
+  R.rankUp(r, r.team[0].uid);
+  var w = R.passivWahl(r);
+  /* Nur die eigenen Linien: liegt eine Passive mit Preis im Angebot, stehen
+     Bibliothek und Verzicht daneben. */
+  return w ? w.offers.filter(function (o) { return o.id && AB.linien_ids[o.id] === id; }) : [];
 }
-['apito', 'adalmann'].forEach(function (id) {
-  var ang = aufstiegsAngebote(id, 10), passt = neigung(id);
-  var eigen = Object.keys(ang).filter(passt).reduce(function (n, k) { return n + ang[k]; }, 0);
-  /* Seit je eine Passive aus JEDER Kategorie kommt, kann höchstens ein Teil
-     der vier zum Thema passen — die Kategorie steht fest, nicht das Wort. */
-  ok(eigen >= 5,
-     GD.unit(id).name + ': das Angebot trifft ihr Thema regelmäßig (' + eigen + ' von 48)');
-  ok(Object.keys(ang).filter(passt).length >= 1,
-     GD.unit(id).name + ': das Angebot trifft ihre Linie (' +
-     Object.keys(ang).filter(passt).length + ' verschiedene passende)');
-});
-/* Zufällig statt statisch: dieselbe Einheit sieht über mehrere Runs
-   verschiedene Angebote — vorher stand immer dieselbe feste Passive da. */
-['apito', 'adalmann', 'skelettritter'].forEach(function (id) {
-  var ang = aufstiegsAngebote(id, 12);
-  ok(Object.keys(ang).length >= 6,
-     GD.unit(id).name + ': das Angebot streut über die Runs (' +
-     Object.keys(ang).length + ' verschiedene in 12 Aufstiegen)');
-  ok(Object.keys(ang).every(function (aid) { return AB.kategorie(aid); }),
-     GD.unit(id).name + ': jede angebotene Passive hat eine Kategorie');
-});
-/* Und jede Kategorie kommt vor. */
-var katGesehen = {};
+
 ['apito', 'adalmann', 'skelettritter', 'riesenameise'].forEach(function (id) {
-  Object.keys(aufstiegsAngebote(id, 8)).forEach(function (aid) {
-    katGesehen[AB.kategorie(aid)] = 1;
-  });
+  var offers = aufstiegsOffers(id, 700);
+  ok(offers.length === 4, GD.unit(id).name + ': vier Linien-Passiven im Aufstiegsangebot');
+  ok(offers.every(function (o) { return AB.linien[id][o.linie].indexOf(o.id) >= 0; }),
+     GD.unit(id).name + ': jede gezogene Passive steht in der Linie, die sie angibt');
+  ok(offers.every(function (o) { return AB.linien_ids[o.id] === id; }),
+     'keine Fremd-Linien werden angeboten (' + GD.unit(id).name + ')');
+  /* Nicht mehr deterministisch: gezogen wird je Linie eine der vier. Geprüft
+     wird stattdessen, dass über die Seeds hinweg auch wirklich gestreut wird —
+     sonst wäre die freie Kombination nur behauptet. */
+  var gesehen = {};
+  for (var s = 0; s < 8; s++) {
+    aufstiegsOffers(id, 700 + s + 1).forEach(function (o) { gesehen[o.id] = 1; });
+  }
+  ok(Object.keys(gesehen).length > 4,
+     GD.unit(id).name + ': über die Seeds kommen mehr als vier verschiedene Passive vor (' +
+     Object.keys(gesehen).length + ')');
 });
-ok(['angriff', 'mechanik', 'unterstuetzung', 'defensive'].every(function (k) { return katGesehen[k]; }),
-   'über mehrere Einheiten kommt jede Kategorie im Angebot vor');
-/* Linien-Passive einer Einheit dürfen nie bei einer anderen auftauchen. */
-var fremdeLinien = [];
-['apito', 'adalmann', 'skelettritter', 'riesenameise'].forEach(function (id) {
-  Object.keys(aufstiegsAngebote(id, 8)).forEach(function (aid) {
-    if (AB.linien_ids[aid]) fremdeLinien.push(id + ' -> ' + aid);
-  });
-});
-ok(!fremdeLinien.length, 'keine Einheit bekommt die Linien-Passive einer anderen angeboten' +
-   (fremdeLinien.length ? ': ' + fremdeLinien.join(', ') : ''));
 /* Item-Slots hängen am Rang */
 var iRun = fertigerRun(31);
 iRun.bag = ['kurzschwert', 'langschwert'];
@@ -1515,10 +1580,12 @@ var wieder = R.deserialize(R.serialize(save));
 ok(wieder.magicules === 321 && wieder.relics.length === save.relics.length,
    'Magicule und Relikte überleben das Speichern');
 ok(wieder.team.length === save.team.length, 'der Trupp überlebt das Speichern');
-ok(wieder.team[0].rank === 1 && wieder.team[0].passives.length === 1,
+ok(wieder.team[0].rank === 1 && wieder.team[0].passives.length === 2,
    'Rang und gewählte Passive überleben das Speichern');
 ok(R.resolve(wieder.team[0]).actives.length === 1 &&
-   R.resolve(wieder.team[0]).effects.some(function (e) { return e.id === wieder.team[0].passives[0]; }),
+   wieder.team[0].passives.every(function (pid) {
+     return R.resolve(wieder.team[0]).effects.some(function (e) { return e.id === pid; });
+   }),
    'geladene Mitglieder lösen Signatur und gewählte Passive korrekt auf');
 
 /* Ein Neuladen im Markt darf den Markt nicht verschlucken. */

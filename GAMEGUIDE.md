@@ -376,6 +376,38 @@ Handschuh der Brutmutter wirkt nur bei einer Einheit, die selbst Gift erzeugt,
 die Zwillingsklinge zahlt sich erst ab Rang B aus, das Rangabzeichen ist auf
 Rang C wertlos.
 
+## Wann Zustände ticken
+
+Das ist die eine Regel, die man kennen muss, weil sie fast jede Rechnung
+verschiebt: **Zustände ticken nicht pro Runde, sondern einmal je Zug ihres
+Trägers** — am Anfang seines Zuges, in fester Reihenfolge (Gift, Brand, Blutung,
+Verderbnis, Licht, Schatten, Dunkelheit, Verwundbar, Chaos, Regeneration,
+Erstarrung).
+
+Zwei Folgen daraus:
+
+- **Tempo verstärkt Schaden über Zeit.** Ein schneller Gegner brennt und blutet
+  in derselben Zeit öfter als ein langsamer. Wer den Gegner beschleunigt — oder
+  einen langsamen Boss vergiftet — rechnet daran vorbei.
+- **Erstarrung schützt nicht davor.** Der ausgesetzte Zug tickt trotzdem.
+
+Je Stapel und Tick: Gift 1,7 Schaden, Brand 2 (und halbiert jede Heilung),
+Blutung 1,2 % des maximalen Lebens, Licht heilt 1,5 %. Alle drei
+Schadensarten gehen durch Schilde. Verderbnis und Verwundbar ticken gar nicht —
+sie liegen einfach und verändern, was ankommt.
+
+**Abbau und die vier Ausnahmen.** Normalerweise verliert jeder Zustand pro
+Trägerzug einen Stapel. Vier Fähigkeiten setzen das aus: Benimarus *Dauerbrand*,
+Adalmanns *Verfluchtes Wort*, Soueis *Offene Wunde* und Shions
+*Gesetzlosigkeit*. Der Unterschied ist keine Feinheit, sondern eine
+Größenordnung — ein Brand, der nicht abbaut, tickt gemessen 150 statt 6 Mal.
+Wer eine davon zieht, sollte den Trupp darum herum bauen.
+
+Schild ist der einzige Zustand, der sich überhaupt nicht abbaut: er wird nur
+verbraucht, und höchstens 60 % des maximalen Lebens liegen gleichzeitig darauf.
+Donner baut sich ebenfalls nicht ab, sondern lädt bis zur Schwelle und entlädt
+sich dann in die ganze Reihe.
+
 ## Nachschlagen im Spiel
 
 Fast jedes Element hat einen Tooltip: Art, Rolle, Rang, jede aktive und passive
@@ -384,7 +416,8 @@ Leiste und die Knoten auf der Karte. Am Rechner beim Überfahren, am Handy beim
 Antippen.
 
 Alles zusammen steht unter **Menü → Glossar**: Zustände, Schlüsselwörter,
-Rollen, Arten und Begriffe wie Rang, Prädator oder Aufstellung.
+Rollen, Arten und Begriffe wie Rang, Prädator, Aufstellung — sowie „Ticken" und
+„Abbau" für die Regeln oben.
 
 ## Tipps
 

@@ -142,8 +142,10 @@ function play(seed, voll) {
       var pkw = teamKeywords(run), pw = R.passivWahl(run);
       var pBest = 0, pScore = -1;
       pw.offers.forEach(function (o, i) {
-        var ab = AB.get(o.id), sc = 1;
-        (ab.keywords || []).concat(ab.amplifies || [])
+        var ab = o.verzicht ? null : AB.get(o.id), sc = 1;
+        /* Der Verzicht auf Stufe 4 zählt wie ein Angebot ohne Treffer: der Bot
+           lehnt den Keystone genau dann ab, wenn er zum Build nichts beiträgt. */
+        if (ab) (ab.keywords || []).concat(ab.amplifies || [])
           .forEach(function (k) { if (pkw[k]) sc += pkw[k].quellen + pkw[k].verstaerker; });
         if (sc > pScore) { pScore = sc; pBest = i; }
       });

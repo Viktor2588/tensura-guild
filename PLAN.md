@@ -856,11 +856,294 @@ Weitere offene Punkte:
   Gegnerinhalt führen.
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
-- 38 Einheiten haben noch keine eigenen Linien; das System steht, der Inhalt
-  fehlt. Siehe `TODO.md`.
+- Alle Einheiten haben Linien, aber die Hälfte kommt aus dem Generator und
+  staffelt nur dieselbe Zahl vier Mal. Siehe Phase 21.
 - Boss-Pool 1 streut: Clayman 90 %, Milim 40 % gegen denselben Referenztrupp.
   Claymans Selbstheilung war für Boss plus Gefolge entworfen und macht ihn
   allein stehend entweder unkaputtbar oder wirkungslos. Pool 2 liegt bei 61–65 %.
+
+### Phase 21 (2026-07-29): Linien nach RPG-Vorbildern
+
+Der Generator hat 40 Einheiten Linien gegeben, aber er kann nur eines: dieselbe
+Wirkung vier Mal größer schreiben. Stufe 4 ist Stufe 1 mit einer anderen Zahl,
+und ob jemand Angriff oder Defensive gewählt hat, sieht man dem Kampf nicht an.
+Vier geliehene Konzepte geben jeder Stufe eine eigene Aufgabe. Die
+Linien-Übersicht im Menü (Reiter „Entwicklungslinien") ist das Werkzeug, an dem
+sich das prüfen lässt: was dort langweilig zu lesen ist, ist auch langweilig zu
+spielen.
+
+**Stufe 1 — Signaturbindung.** Bleibt wie bisher und bleibt Handarbeit: die
+Passive verstärkt genau die eine Signatur der Einheit. Das ist der Teil, den ein
+Generator nicht erzeugen kann, weil er die Signatur verstehen müsste.
+
+**Stufe 2 — Kampfmanöver-Würfel** *(D&D, Battle Master)*. Statt „+15 % Schaden"
+ein Zähler: er füllt sich unter einer Bedingung und wird bei einer anderen
+ausgegeben. Beispiel Angriff: jeder erlittene Treffer gibt eine Ladung, drei
+Ladungen verdoppeln den nächsten Angriff. Damit hat der Trupp eine Ressource zu
+verwalten und der Kampf einen Rhythmus, statt nur einen höheren Multiplikator.
+
+**Stufe 3 — Voraussetzung** *(Pathfinder, Feat-Chains)*. Die Passive verlangt
+etwas vom Trupp, nicht von der Einheit: ein Schlüsselwort, das jemand anderes
+mitbringt. Beispiel: „solange ein Verbündeter Blutung trägt, …". Das macht die
+Reihenfolge der Anwerbungen zu einer Entscheidung und belohnt Bauen statt
+Sammeln — dieselbe Idee wie die Resonanzen, aber pro Einheit statt pro Trupp.
+
+**Stufe 4 — Keystone mit Nachteil** *(Path of Exile)*. Kein Bonus, sondern eine
+geänderte Regel, die etwas kostet: doppelter Schaden bei halber Rüstung, keine
+Heilung dafür Schild aus jedem Treffer. Ein Endpunkt, den man auch **ablehnen**
+können muss — deshalb bekommt Stufe 4 eine „nichts nehmen"-Option.
+
+**Linienbindung** *(D&D, Subklasse)*. Ab Stufe 2 geht es nur noch in derselben
+Linie weiter. Heute lässt sich quer mischen, und genau deshalb sehen alle Trupps
+gleich aus: wer immer das Stärkste nimmt, baut immer dasselbe. Die Wahl bei
+Stufe 1 wird damit erst zu einer Wahl. Zu messen ist, ob die Siegquote dadurch
+unter das Zielband rutscht — die Bindung nimmt dem Spieler eine Korrekturmöglichkeit.
+
+**Umgesetzt** für die 20 Generator-Einheiten. Statt vier Mal derselben Zahl
+tragen die vier Linien jetzt vier Rollen: Angriff wirkt auf den eigenen Schlag,
+Mechanik auf den Themeneffekt, Unterstützung auf den Trupp, Defensive auf das
+Überleben — und jede Stufe hat quer über alle vier dieselbe Aufgabe
+(Auftakt / Manöverzähler / Voraussetzung / Keystone). Die Namen heißen nicht
+mehr „Zegion: Angriff 3", sondern `Zegion: Gleichschritt`.
+
+Zwei Stellen tragen das System: `ausbruch()` ist der einzige Ort, an dem ein
+Thema „losgeht" — Auftakt, Zähler und Voraussetzung zünden denselben Effekt und
+unterscheiden sich nur im Wann. `truppFuehrt()` fragt das Schlüsselwort
+ausdrücklich bei den *anderen* Einheiten ab; täte es das nicht, wäre die
+Voraussetzung ein verkappter Eigenbonus.
+
+Beim Messen aufgefallen: Der Unterstützungs-Keystone („Geteiltes Los": der Trupp
+schlägt 22 % härter, die Einheit selbst nur noch mit einem Drittel) ist für eine
+allein stehende Einheit reiner Verlust. Ein Preis ohne Gegenleistung ist keine
+Entscheidung, sondern eine Falle — er greift jetzt nur mit Verbündeten.
+
+Ergebnis `dev/balance.js 600`: 61 % frisch beim ersten Durchlauf, also klar zu
+stark. Alle Zahlen einmal quer heruntergedreht auf 58 %, dann `GRUNDHAERTE`
+1.02 → 1.06 für die letzten Punkte. Endstand 52 % frisch. Der Konter-Build fiel
+dabei von 83 auf 72 % und liegt damit wieder im Zielband.
+
+**Nachgezogen (2026-07-29): Linienbindung und Verzicht.** Beides sitzt in
+`passivAngebot`. `AB.linien_kat` sagt, in welcher der vier Linien eine Passive
+steht; ab Stufe 2 filtert das Angebot auf die Linie der ersten. Auf Stufe 4
+steht ein `{ verzicht: true }`-Posten daneben, den `choosePassive` abräumt, ohne
+etwas anzuhängen — die Einheit bleibt dann bei drei Passiven.
+
+Die Messung war die Überraschung dieser Phase: die Bindung hebt die Siegquote
+von 52 auf **60 %**, statt sie zu senken. Weniger Auswahl macht den Trupp
+stärker, weil vier Stufen derselben Linie dasselbe Schlüsselwort vier Mal
+stapeln — Resonanzen und die Voraussetzung auf Stufe 3 greifen dadurch fast
+immer. Freie Wahl hatte die Builds verwässert, nicht geschärft.
+
+Der erste Erklärungsversuch war, dass die Voraussetzung zu leicht zu erfüllen
+geworden ist. Ihre Belohnung einmal quer heruntergedreht brachte aber nur einen
+Punkt (60 → 59 %) — der Gewinn liegt in der Schlüsselwort-Dichte selbst, nicht
+an einer einzelnen Stufe. Also über `GRUNDHAERTE` 1.06 → 1.17 gegengesteuert;
+Endstand **51 % frisch**. Der Konter-Build ist damit keine Auffälligkeit mehr,
+Heilung liegt mit 76 % knapp über dem Band.
+
+`dev/balance.js` musste mitziehen: der Bot bewertet den Verzicht wie ein
+Angebot ohne Treffer und lehnt den Keystone damit genau dann ab, wenn er zum
+Build nichts beiträgt.
+
+### Phase 22 (2026-07-29): Die Bibliothek war unerreichbar
+
+Vor dem Umbau des Aufstiegs-Pools (TODO-Punkt 1) stand die Frage, wohin die
+umgeschriebenen Fähigkeiten eigentlich fließen sollen. Die Antwort war
+unangenehm: **nirgendwohin**. Seit alle 40 Einheiten eigene Linien haben, gibt
+`passivIds` für jede Einheit nur noch die gewählten Linien-Passiven zurück; der
+Zweig für die feste Liste aus `data.js` ist unerreichbar, und mit ihm die
+gesamte Bibliothek aus 34 geteilten Passiven. Auch der Kategorien-Zweig in
+`passivAngebot` lief nie. Nachgewiesen mit einem echten Run: eine frisch
+angeworbene Einheit trägt `knecht_mec1`, ihre drei `data.js`-Passiven
+(`rachsucht`, `dornenhaut`, `konterstoss`) tauchen weder im Angebot noch im
+Kampf auf. Der geplante Ausbau der Bibliothek von 34 auf 68 hätte einen Topf
+verdoppelt, aus dem niemand zieht.
+
+Die Bibliothek hängt jetzt an der Stelle, die ohnehin eine Alternative
+brauchte: dem Keystone auf Stufe 4. Er kostet etwas, also stehen daneben zwei
+Bibliotheks-Passiven — schwächer, dafür ohne Preis — und der Verzicht. Damit
+ist aus „nichts nehmen" eine echte dritte Option geworden, und die Bibliothek
+hat wieder einen Weg zum Spieler. Der Kategorien-Zweig ist zu
+`bibliotheksAngebot()` geworden und wird von beiden Seiten benutzt, statt
+tot herumzuliegen.
+
+Gemessen kostet das Siege: 51 → 47 %, weil die Bibliothek schwächer ist als ein
+Keystone und der Bot sie nimmt, sobald sie besser zum Build passt. Das ist der
+Preis der Wahlfreiheit und richtig so. `GRUNDHAERTE` 1.17 → 1.14, Endstand
+**50 % frisch** — und erstmals seit Phase 20 steht kein einziger Build mehr auf
+der Auffälligkeitenliste.
+
+Offen aus Phase 21/22:
+- `GRUNDHAERTE` ist in einer Sitzung von 1.02 auf 1.14 gewandert. Der globale
+  Knopf hat die Zahl geradegezogen, aber er trifft auch die 20 handgeschriebenen
+  Einheiten, die gar nicht stärker geworden sind. Prüfen, ob die
+  Generator-Linien stattdessen an der Wurzel zu breit sind.
+- `dev/linien.js` zeigt die Angriffslinie über alle 20 Einheiten vorn
+  (+0,2 bis +0,57 am Bruchpunkt), die Unterstützungslinie hinten. Das Werkzeug
+  misst eine Einheit allein — genau der Fall, in dem eine Trupp-Linie nichts
+  wert sein kann. Entweder misst `linien.js` künftig mit Trupp, oder die
+  Aussage bleibt für Unterstützung unbrauchbar.
+
+### Phase 23 (2026-07-29): Alle Linien nach dem Vier-Stufen-Aufbau
+
+Phase 21 hat den Aufbau nur den 20 Generator-Einheiten gegeben. Die 20
+handgeschriebenen hatten Charakter, aber keine Struktur: Gobtas Angriffslinie
+war vier Mal „Chance auf Extraschaden", und dem Kampf sah man nicht an, welche
+Stufe gerade lief. Jetzt tragen alle 40 Einheiten dieselben vier Rungs —
+Auftakt, Manöverzähler, Voraussetzung, Keystone — bei unverändertem Thema.
+Shion ist auf Wunsch inhaltlich unangetastet geblieben und nur nachgezogen
+worden.
+
+304 Passive neu geschrieben, Art für Art mit einer Messung dazwischen:
+Goblins (51 %), Oger (49 %), Sturmwölfe, Echsenmenschen. `zaehler` und
+`truppFuehrt` aus der Generator-Schicht tragen jetzt auch die handgeschriebenen
+Linien — dieselbe Mechanik, keine zweite Implementierung.
+
+**Drei Befunde aus dem Messen:**
+
+*Leere Listen.* `onDamaged` feuert auch, wenn eine Gift- oder Brandmarke den
+letzten Gegner gerade erledigt hat. Ein blankes `reduce` über `foes()` wirft
+dort. `schwaechstes()` ist die eine Stelle, die das abfängt; die vier Aktiven
+mit demselben Muster sind nicht betroffen, weil die Zugschleife dort ein Ziel
+garantiert.
+
+*Sammelbegriffe.* Der Heilungs-Build stieg auf 82 %. Zwei Runden Zahlen-Trimmen
+bewegten ihn um einen Punkt — weil die Ursache nicht die Stärke war, sondern
+dass ich `heilung` an fast jede Defensive-Stufe-2 gehängt hatte. Ein kleiner
+Selbstheil-Tick ist keine Heilungs-*Quelle*; das Schlüsselwort an jeder zweiten
+Passive macht die Auswertung blind. Genau das Risiko, das in Abschnitt 5 steht.
+Nach dem Entkoppeln: 78 %.
+
+*Unbegrenztes Stapeln.* Shions Linien lagen bei Rang S bei +1,18 und +1,22 am
+Bruchpunkt, während der Rest des Rosters zwischen −0,24 und +0,4 liegt. Ursache
+ist nicht eine einzelne Zahl, sondern dass `Gesetzlosigkeit` Chaos nie abbauen
+lässt und jede „je Stapel"-Skalierung dadurch unbegrenzt wächst. Die Zahlen sind
+gesenkt **und** die Skalierungen gedeckelt (+50 % bzw. +45 %).
+
+Ebenso an die Messgrenze (3,00) schlugen drei Linien, die ich selbst gebaut
+hatte: Shunas und der Priesterin Unterstützungslinie legten auf Stufe 3 einen
+Schadensdeckel über den ganzen Trupp — eine Defensiv-Wirkung auf einer
+Trupp-Linie, stärker als der Defensiv-Keystone daneben. Sie geben jetzt
+Regeneration. Soukas `Unsichtbar` legte jeden Zug Schatten nach und machte sie
+unantastbar; es greift nur noch jeden zweiten Zug.
+
+Zuletzt roster-weit: der Schadensdeckel skaliert mit dem maximalen Leben und
+wird bei Rang S zur stärksten Wirkung im Spiel. Alle Keystone-Deckel sind um
+3,5 Punkte gelockert — samt der Beschreibungstexte, die sonst etwas anderes
+behauptet hätten als der Kampf tut.
+
+Ergebnis `dev/balance.js 600`: 51 % frisch, `GRUNDHAERTE` 1.14 → 1.11.
+
+Nach allen Trimms bleibt Shunas Defensivlinie der letzte gemessene Ausreißer
+(+1,38): Startschild, bedingte Wiederkehr und Deckel stapelten sich. Schild und
+Wiederkehr sind gesenkt.
+
+Offen aus dieser Phase:
+- `dev/linien.js` braucht jetzt über zehn Minuten statt drei. Die Kämpfe selbst
+  sind schnell (40 Einheiten × 4 Linien in 0,4 s gemessen) — die Binärsuche
+  läuft nur öfter, weil zähere Einheiten den Bruchpunkt weiter oben suchen.
+  Kein Fehler, aber der Prüfstand braucht eine Obergrenze oder gröbere Schritte.
+- Der Heilungs-Build liegt mit 79 % weiter knapp über dem Zielband. Er stand
+  aber schon vor dieser Phase bei 76–77 % — das ist ein alter Befund, kein
+  neuer.
+- Shions Linien liegen nach dem Deckeln immer noch über dem Roster. Ihr Thema
+  ist unbegrenztes Stapeln; solange das so bleibt, hilft nur Deckeln, nicht
+  Senken.
+
+### Phase 24 (2026-07-29): Keine Stufen mehr
+
+Die sechzehn Passiven einer Einheit sind jetzt ein Topf, kein Pfad. Es gibt
+keine Stufe 1–4 und keine Linienbindung: angeboten wird bei jedem Aufstieg eine
+Passive je Linie, zufällig aus dem, was die Einheit noch nicht trägt. Die vier
+Linien bleiben die Struktur der *Wahl* — sie sind keine Reihenfolge mehr.
+
+`linienAngebot(unitId)` gibt deshalb alle sechzehn zurück statt vier einer
+Stufe; wer zieht, filtert selbst. Gezogen werden vier — ohne Quote je Linie, aus
+dem ganzen Topf. Dass es heute sechzehn sind und vier je Linie, ist Inhalt und
+keine Regel: wächst der Topf, zieht `passivAngebot` unverändert weiter. Gemessen
+über 300 Angebote streut das gut (2–3 verschiedene Linien im Regelfall, alle
+vier aus derselben Linie genau ein Mal). Die Rungs aus Phase 21 sind als *Inhalt*
+geblieben (Auftakt, Manöverzähler, Voraussetzung, Keystone), aber sie sind keine
+Positionen mehr. Was einen Preis kostet, trägt jetzt ein `preis`-Kennzeichen —
+das Angebot braucht es, um „nichts nehmen" danebenstellen zu können. Der
+Startzustand beim Anwerben zieht ausdrücklich *keine* Passive mit Preis: einen
+Nachteil aufgedrängt zu bekommen, bevor man die Einheit gespielt hat, ist keine
+Entscheidung. `AB.linien_kat` ist mit der Bindung weggefallen.
+
+Die Übersicht im Menü zeigt jetzt auch die **Signatur** — die eine Aktive, die
+die Einheit immer führt. Ohne sie las sich die Seite wie eine Liste ohne Mitte:
+Benimarus Brand-Passive ergeben erst Sinn, wenn daneben steht, dass seine
+Signatur das Feuer legt. Die vier Passiven mit Preis sind dort markiert.
+
+**Die Messung ist das Interessante.** Ohne Bindung fiel die Siegquote von 51 auf
+40 % — die Umkehrung des Befunds aus Phase 21, und aus demselben Grund: vier
+Passive derselben Linie stapeln dasselbe Schlüsselwort, freie Kombination
+streut es. Der freie Zug aus dem ganzen Topf holt einen Teil davon zurück
+(40 → 57 %), weil vier beliebige Passive öfter zusammenpassen als vier
+erzwungen verschiedene. `GRUNDHAERTE` 1.11 → 1.08, Endstand **50 % frisch**.
+
+Dafür ist die Auffälligkeitenliste die kürzeste dieser Sitzung: **kein einziger
+Build-Ausreißer mehr**. Der Heilungs-Build stand die ganze Sitzung über bei
+76–82 % und ließ sich durch kein Zahlen-Trimmen bewegen; er verschwindet, sobald
+sich Schlüsselwörter nicht mehr vier Stufen tief stapeln lassen. Die Ursache war
+also nie die Stärke einzelner Passiven, sondern die Struktur, die sie in eine
+Reihe zwang.
+
+### Phase 25 (2026-07-29): Vier Einheiten nach ihren Leitmotiven
+
+Ein Inhaltsdurchgang, keine Mechanik: die Linien sollen lesen wie die Figur.
+
+**Benimaru — Feuer als Magie, und Feldherrschaft.** Sein Feuer fragt nicht mehr
+nach Rüstung: `Glutzorn` durchschlägt sie, `Schwarze Flamme` ersetzt den alten
+Prozent-Aufschlag durch reinen Flammenschaden, den weder Rüstung noch Schild
+aufhält, und `Entfesseltes Kurenai` macht das dauerhaft. Damit unterscheidet er
+sich mechanisch von Hakuros Klinge, nicht nur im Text. Die Unterstützungslinie
+befehligt jetzt (`Angriffsbefehl` statt eines stillen Aufschlags), statt nur
+Zahlen zu erhöhen.
+
+**Souei — der Assassine.** Neu: `Aus dem Nichts` (Auftakt aus der
+Verstohlenheit, danach taucht er wieder ab), `Wurfklingen` (Fernkampf auf die
+ganze Reihe), `Schattendoppel` (der Doppelgänger schlägt mit — 55 % je Treffer,
+wenn ein Verbündeter Schatten führt), `Meuchelschnitt` (Hinrichtung markierter
+Ziele), `Stahlfäden` (Fäden legen Verwundbar UND Blutung). Marke, Gift, Blutung
+und Schatten sitzen damit alle auf ihm.
+
+**Shuna — drei Arten Magie.** Ihre Angriffslinie schlägt nicht mehr mit der
+Klinge, sondern mit Licht: `Heiliger Strahl`, `Läuterung`, `Gericht`. Der
+gemeinsame Nenner ist `heiligerSchlag()` — Schaden, der weder Rüstung noch
+Schild kennt und genau deshalb in kleinen Anteilen bleibt. Heilung und
+göttlicher Schutz stehen unverändert in den anderen drei Linien.
+
+**Adalmann — der abgefallene Priester.** Er stand im Generator; jetzt hat er
+eigene Linien, weil sein Charakter genau die Reibung ist: Totenmagie aus dem
+Grab (`Todesbann`, `Grabesatem`, `Verfluchtes Wort`) neben göttlicher
+Angriffsmagie aus der alten Ausbildung (`Totengebet`, `Bannstrahl`,
+`Sterbesakrament`). Der Generator zählt damit noch 19 Einheiten.
+
+**Zwei tote Flags gefunden.** `zaeherBrand` wurde in Phase 23 gesetzt und von
+der Engine nie gelesen — das Feld heißt `brandBleibt`, und es gehört auf das
+brennende ZIEL, nicht auf den Anzünder. `Dauerbrand` tat seitdem schlicht
+nichts. Für Verderbnis gab es gar keinen Abbau-Stopp; er ist jetzt da
+(`verderbnisBleibt`), nach demselben Muster wie `offeneWunde` und `zaehesChaos`.
+Gemessen: Brand tickt ohne Flag sechs Mal, mit Flag 150 Mal. Zwei Tests halten
+das fest — genau diese Art Flag verschwindet still, wenn der Name nicht passt.
+
+Souei trug danach eine Mechanik zu viel — Marke, Blutung, Schatten,
+Doppelgänger *und* Gift. `Giftmal` ist zu `Fadennetz` geworden: die Fäden
+schneiden auf markierten Zielen nach, was dieselbe Arbeit tut und ihm gehört.
+Gift lebt in der Bibliothek und bei Apito und dem Giftfalter weiter.
+
+**Tick-Regeln aufgeschrieben.** Der Flag-Fund hat gezeigt, dass nirgends stand,
+wie oft ein Zustand überhaupt wirkt — und die Antwort ist nicht offensichtlich:
+Zustände ticken **je Zug ihres Trägers**, nicht pro Runde. Daraus folgt, dass
+Tempo jeden Schaden über Zeit verstärkt und Erstarrung nicht davor schützt. Das
+steht jetzt an drei Stellen, jede für ihr Publikum: eine Tabelle über der
+Status-Schleife in `js/combat.js` (Reihenfolge, Schaden je Stapel, die vier
+Abbau-Flags und auf wem sie sitzen), zwei Glossar-Einträge im Spiel (`ticken`,
+`abbau`) und ein Abschnitt in `GAMEGUIDE.md`. Zwei UI-Tests prüfen, dass die
+Erklärung im Menü ankommt.
+
+`dev/balance.js 600`: 50 % frisch, `GRUNDHAERTE` unverändert bei 1.08.
 
 ## 5. Risiken
 

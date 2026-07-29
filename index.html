@@ -54,12 +54,29 @@
     <button type="button" data-a="neu">Neuer Run</button>
     <button type="button" data-a="menu-zu">Zurück</button>
   </div>
-  <h3>Fortschritt</h3>
-  <div id="menu-meta"></div>
-  <h3>Glossar</h3>
-  <div id="menu-glossar"></div>
-  <h3>Chronik</h3>
-  <ol id="menu-chronik"></ol>
+  <div class="reiter" id="menu-reiter">
+    <button type="button" data-reiter="linien" class="an">Entwicklungslinien</button>
+    <button type="button" data-reiter="fortschritt">Fortschritt</button>
+    <button type="button" data-reiter="glossar">Glossar</button>
+    <button type="button" data-reiter="chronik">Chronik</button>
+  </div>
+  <section class="blatt" data-blatt="linien">
+    <p class="hinweis">Sechzehn Passive je Einheit, vier je Linie — frei kombinierbar, ohne Reihenfolge. Eine bringt die Einheit beim Anwerben zufällig mit.</p>
+    <div class="reihe linien-wahl">
+      <label for="linien-einheit">Einheit</label>
+      <select id="linien-einheit"></select>
+    </div>
+    <div id="menu-linien" class="linien-uebersicht"></div>
+  </section>
+  <section class="blatt" data-blatt="fortschritt" hidden>
+    <div id="menu-meta"></div>
+  </section>
+  <section class="blatt" data-blatt="glossar" hidden>
+    <div id="menu-glossar"></div>
+  </section>
+  <section class="blatt" data-blatt="chronik" hidden>
+    <ol id="menu-chronik"></ol>
+  </section>
 </dialog>
 
 <script src="js/rng.js"></script>

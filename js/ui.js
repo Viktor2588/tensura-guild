@@ -571,7 +571,13 @@
       var u = GD.unit(o.id), sig = AB.get(u.signature);
       var zeilen = ['<b>' + esc(sig.name) + '</b> — ' + esc(sig.text)];
       if (AB.linien[u.id]) {
-        zeilen.push('Wählt bei jedem Aufstieg aus <b>vier</b> eigenen Passiven.');
+        if (o.passive) {
+          var p = AB.get(o.passive);
+          zeilen.push('Startet mit <b>' + esc(p.name) + '</b> (Linie ' + esc(o.passiveLinieName) +
+            '): ' + esc(p.text));
+        } else {
+          zeilen.push('Wählt bei jedem Aufstieg aus <b>vier</b> eigenen Passiven — sechzehn insgesamt, frei kombinierbar.');
+        }
       } else {
         zeilen.push('Erste Passive: ' + (u.passives || []).slice(0, 1).map(function (id) {
           var pp = AB.get(id); return '<b>' + esc(pp.name) + '</b> — ' + esc(pp.text);
@@ -715,13 +721,23 @@
     if (!w) return '';
     var m = R.find(run, w.uid);
     if (!m) return '';
-    var html = '<div class="wahlbox"><h3>' + esc(GD.unit(m.id).name) + ' — Passive Stufe ' + w.stufe +
-      ' (Rang ' + R.rankName(m) + ')</h3>' +
-      '<p class="hinweis">' + (w.offers.length === 4
-        ? 'Eine je Linie: Angriff, Mechanik, Unterstützung, Defensive.'
-        : 'Eine davon ist die eigene nächste Passive dieser Einheit.') + '</p>' +
+    var hat = (m.passives || []).length;
+    var html = '<div class="wahlbox"><h3>' + esc(GD.unit(m.id).name) + ' — ' +
+      (hat + 1) + '. Passive (Rang ' + R.rankName(m) + ')</h3>' +
+      '<p class="hinweis">' + (w.offers.some(function (o) { return o.verzicht; })
+        ? 'Eine davon ändert eine Regel und kostet dafür etwas. Daneben steht die Bibliothek — schwächer, aber ohne Preis — oder gar nichts.'
+        : 'Vier aus den eigenen Passiven dieser Einheit — frei gezogen, ohne Reihenfolge und ohne Quote je Linie.') + '</p>' +
       '<div class="karten">';
     w.offers.forEach(function (o, i) {
+      if (o.verzicht) {
+        html += '<button class="karte verzicht" data-a="pwahl" data-i="' + i + '"' +
+          tip('Nichts nehmen', 'Die Einheit bleibt bei drei Passiven. Kein Keystone, ' +
+            'aber auch kein Preis.') + '>' +
+          '<span class="titel">◇ Nichts nehmen</span>' +
+          '<span class="linie">Verzicht</span>' +
+          '<span class="unter">Bleibt bei drei Passiven — ohne den Preis des Keystones.</span></button>';
+        return;
+      }
       var a = AB.get(o.id);
       html += '<button class="karte" data-a="pwahl" data-i="' + i + '"' +
         tip(a.name + ' · ' + o.linieName, rarZeile(a.rarity, 'passive Fähigkeit') +
@@ -1188,13 +1204,103 @@
     }).join('');
   }
 
-  /* Was über die Runs hinweg verdient wurde. Ohne diese Übersicht ist die
-     Meta-Freischaltung eine Zeile beim Tod und danach unsichtbar — man weiß
-     weder, was man schon hat, noch wie viel überhaupt kommt. */
+  /* Alle Linien je Einheit — Nachschlagewerk im Menü (inkl. Generator-Archetypen). */
+  var LINIE_ARCHETYP = {
+    exekution: 'Exekution', status: 'Status', konter: 'Konter', shield: 'Schild',
+    heal: 'Heilung', tempo: 'Tempo', flaeche: 'Fläche'
+  };
+  var LINIE_KATEN = ['angriff', 'mechanik', 'unterstuetzung', 'defensive'];
+
+  function linienEinheitenSortiert() {
+    return GD.units.filter(function (u) { return AB.linien[u.id]; }).sort(function (a, b) {
+      var c = GD.artName(a.art).localeCompare(GD.artName(b.art), 'de');
+      return c !== 0 ? c : a.name.localeCompare(b.name, 'de');
+    });
+  }
+
+  function linienDetailHtml(unitId) {
+    var u = GD.unit(unitId), l = AB.linien[unitId];
+    if (!u || !l) return '<p class="hinweis">Keine Linien für diese Einheit.</p>';
+    var gen = AB.lineUnitsGeneriert && AB.lineUnitsGeneriert.indexOf(unitId) >= 0;
+    var theme = AB.lineTheme && AB.lineTheme[unitId];
+    var arch = '';
+    if (theme) {
+      arch = LINIE_ARCHETYP[theme.kind] || theme.kind;
+      if (theme.statusKey) arch += ' · ' + kwName(theme.statusKey);
+      if (theme.defRevive) arch += ' · Wiederkehr';
+    }
+    var html = '<p class="linien-kopf"><b>' + esc(u.name) + '</b> · ' + esc(GD.artName(u.art)) +
+      (gen ? ' <span class="tag-gen">Generator</span>' : '') +
+      (arch ? '<br><small>Archetyp: ' + esc(arch) + '</small>' : '') + '</p>';
+
+    /* Die Signatur steht über den Linien: sie ist die eine Aktive, die die
+       Einheit immer führt, und der Grund, warum ihre Passiven so aussehen, wie
+       sie aussehen. Ohne sie liest sich die Übersicht wie eine Liste ohne Mitte. */
+    var sig = AB.get(u.signature);
+    if (sig) {
+      var sigKs = (sig.keywords || []).concat(sig.amplifies || []);
+      html += '<div class="signatur-block"' +
+        tip(sig.name, sig.text + (sigKs.length ? '\n\n' + sigKs.map(kwName).join(' · ') : '')) + '>' +
+        '<h5>Signatur · jede Runde</h5>' +
+        '<span class="titel">✦ ' + esc(sig.name) + '</span>' +
+        '<span class="unter">' + esc(sig.text) + '</span>' +
+        (sigKs.length ? '<span class="kws">' + sigKs.map(function (k) {
+          return '<span class="kw-chip">' + esc(kwName(k)) + '</span>';
+        }).join('') + '</span>' : '') +
+        '</div>';
+    }
+
+    html += '<div class="linien-blaetter">';
+    LINIE_KATEN.forEach(function (kat) {
+      if (!l[kat] || !l[kat].length) return;
+      html += '<div class="linie-block"><h5>' + esc(AB.LINIEN_NAME[kat] || kat) + '</h5>';
+      l[kat].forEach(function (pid, i) {
+        var a = AB.get(pid);
+        if (!a) { html += '<span class="linien-stufe">' + esc(pid) + '</span>'; return; }
+        /* Keine Stufen mehr — die vier einer Linie sind gleichrangig und frei
+           kombinierbar. Markiert wird nur, was einen Preis hat. */
+        var preis = i === l[kat].length - 1;
+        var ks = (a.keywords || []).concat(a.amplifies || []);
+        var tipText = a.text + (preis ? '\n\nÄndert eine Regel und kostet dafür etwas.' : '') +
+          (ks.length ? '\n\n' + ks.map(kwName).join(' · ') : '');
+        html += '<span class="linien-stufe"' + tip(a.name, tipText) + '>' +
+          '<b>' + esc(a.name) + '</b>' +
+          (preis ? ' <span class="tag-preis">Preis</span>' : '') +
+          ' — ' + esc(a.text) + '</span>';
+      });
+      html += '</div>';
+    });
+    return html + '</div>';
+  }
+
+  function fuelleLinienSelect(sel, preferId) {
+    if (!sel) return preferId;
+    var liste = linienEinheitenSortiert();
+    var pick = preferId;
+    if (!pick || !AB.linien[pick]) {
+      pick = liste.length ? liste[0].id : '';
+    }
+    sel.innerHTML = liste.map(function (u) {
+      return '<option value="' + esc(u.id) + '"' + (u.id === pick ? ' selected' : '') + '>' +
+        esc(GD.artName(u.art) + ' — ' + u.name) + '</option>';
+    }).join('');
+    return pick;
+  }
+
+  function zeichneLinienUebersicht(unitId) {
+    var sel = $('linien-einheit'), box = $('menu-linien');
+    if (!box) return;
+    var id = fuelleLinienSelect(sel, unitId || (sel && sel.value) ||
+      (run.team[0] ? run.team[0].id : null));
+    box.innerHTML = linienDetailHtml(id);
+  }
+
   function metaHtml() {
     var meta = run.meta;
     var uOffen = GD.units.filter(function (u) { return meta.unlockedUnits.indexOf(u.id) < 0; });
     var rOffen = GD.relics.filter(function (r) { return meta.unlockedRelics.indexOf(r.id) < 0; });
+    var uOffenIds = uOffen.map(function (u) { return u.id; });
+    var rOffenIds = rOffen.map(function (r) { return r.id; });
     var stufe = R.bedrohung(meta.threat || 0);
 
     function balken(hab, gesamt) {
@@ -1202,10 +1308,11 @@
       return '<div class="fortschritt"><i style="width:' + p + '%"></i>' +
         '<b>' + hab + ' / ' + gesamt + '</b></div>';
     }
-    function liste(ids, alle, hol) {
+    function liste(ids, alle, hol, leer) {
       return '<div class="liste">' + alle.filter(function (x) { return ids.indexOf(x.id) >= 0; })
         .map(function (x) {
-          return '<span class="chip rar-rand-' + (x.rarity || 1) + '"' +
+          var rar = x.rarity || 1;
+          return '<span class="chip' + (leer ? ' leer' : '') + ' rar-rand-' + rar + '"' +
             tip(x.name, hol(x)) + '>' + esc(x.name) + '</span>';
         }).join('') + '</div>';
     }
@@ -1236,11 +1343,19 @@
         var sig = AB.get(u.signature);
         return GD.artName(u.art) + ' · ' + GD.rolleName(u.tags[1]) + '\n' + sig.name + ': ' + sig.text;
       }) +
-      (uOffen.length ? '<p class="hinweis">Noch verschlossen: ' + uOffen.length +
-        ' Einheiten. Jeder beendete Run schaltet eine frei.</p>' : '<p class="gut">Alle Einheiten frei.</p>') +
+      (uOffen.length
+        ? '<p class="hinweis">Noch verschlossen: ' + uOffen.length +
+          ' Einheiten. Jeder beendete Run schaltet eine frei.</p>' +
+          liste(uOffenIds, GD.units, function (u) {
+            var sig = AB.get(u.signature);
+            return GD.artName(u.art) + ' · ' + GD.rolleName(u.tags[1]) + '\n' + sig.name + ': ' + sig.text;
+          }, true)
+        : '<p class="gut">Alle Einheiten frei.</p>') +
       '<h4>Relikte</h4>' + balken(meta.unlockedRelics.length, GD.relics.length) +
       liste(meta.unlockedRelics, GD.relics, function (r) { return r.text; }) +
-      (rOffen.length ? '<p class="hinweis">Noch verschlossen: ' + rOffen.length + ' Relikte.</p>'
+      (rOffen.length
+        ? '<p class="hinweis">Noch verschlossen: ' + rOffen.length + ' Relikte.</p>' +
+          liste(rOffenIds, GD.relics, function (r) { return r.text; }, true)
         : '<p class="gut">Alle Relikte frei.</p>');
   }
 
@@ -1342,11 +1457,23 @@
     });
     window.addEventListener('scroll', versteckeTip, true);
     hudTips();
+    var linienSel = $('linien-einheit');
+    if (linienSel) linienSel.addEventListener('change', function () { zeichneLinienUebersicht(linienSel.value); });
+    var reiter = $('menu-reiter');
+    if (reiter) reiter.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-reiter]');
+      if (!b) return;
+      reiter.querySelectorAll('button').forEach(function (x) { x.classList.toggle('an', x === b); });
+      document.querySelectorAll('#menu .blatt').forEach(function (s) {
+        s.hidden = s.dataset.blatt !== b.dataset.reiter;
+      });
+    });
     $('btn-menu').addEventListener('click', function () {
       $('menu-info').textContent = 'Runs: ' + run.meta.runs + ' · Siege: ' + run.meta.wins +
         ' · freigeschaltet: ' + run.meta.unlockedUnits.length + ' Einheiten, ' +
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
+      zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
       $('menu').showModal();

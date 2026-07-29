@@ -236,7 +236,12 @@ var aufstieg = $('[data-a=aufstieg]');
 ok(aufstieg && !aufstieg.disabled, 'der Aufstiegsknopf ist mit genug Magicule aktiv');
 klick(aufstieg);
 ok($('#wahl .karte'), 'nach dem Aufstieg stehen Passive zur Wahl');
-ok($$('#wahl .karte').length >= 3, 'mindestens drei Angebote');
+/* Keine Stufen, keine Bindung: je eine Passive aus jeder der vier Linien. */
+ok($$('#wahl .karte').length >= 4 && $$('#wahl .linie').length >= 4,
+   'vier Angebote, jedes mit seiner Linie beschriftet');
+ok(text('#wahl .hinweis').indexOf('Quote') >= 0 ||
+   text('#wahl .hinweis').indexOf('Preis') >= 0,
+   'und die Box erklärt, dass frei gezogen wird');
 ok(!$('[data-a=pwahl-skip]'), 'es gibt keinen Weg, die Passive auszulassen');
 var vorherPassive = $$('.einheit')[0].querySelectorAll('.fk.passiv').length;
 klick($('#wahl .karte'));
@@ -316,10 +321,34 @@ ok(!!$('#hud-stufe'), 'die Kopfzeile zeigt die Bedrohungsstufe dauerhaft');
 ok($$('#menu-meta .fortschritt').length === 3,
    'der Fortschritt zeigt Balken für Bedrohungsstufe, Einheiten und Relikte');
 ok(/\d+ \/ \d+/.test(text('#menu-meta')), 'mit Zahlen daran');
-ok($$('#menu-meta .chip').length === run.meta.unlockedUnits.length + run.meta.unlockedRelics.length,
-   'und listet jede freigeschaltete Einheit und jedes Relikt einzeln auf');
+ok($$('#menu-meta .chip').length === win.GameData.units.length + win.GameData.relics.length,
+   'und listet Einheiten und Relikte vollständig (inkl. verschlossen) einzeln auf');
 ok($$('#menu-meta .chip[data-tip]').length > 0, 'jeder Eintrag erklärt sich im Tooltip');
 ok($$('#menu-glossar h4').length >= 5, 'das Glossar ist in Abschnitte geteilt');
+ok(/je Zug seines TRÄGERS/.test(text('#menu-glossar')),
+   'das Glossar sagt, wann ein Zustand tickt');
+ok(/Dauerbrand/.test(text('#menu-glossar')) && /150 statt 6/.test(text('#menu-glossar')),
+   'und welche Fähigkeiten den Abbau aussetzen, samt Größenordnung');
+ok($$('#linien-einheit option').length === win.GameData.units.length,
+   'die Linien-Übersicht listet jede Einheit');
+var linienSel = $('#linien-einheit');
+linienSel.value = 'rimuru';
+linienSel.dispatchEvent(new win.Event('change', { bubbles: true }));
+ok(/Generator/.test(text('#menu-linien')), 'Generator-Einheiten sind in der Linien-Übersicht markiert');
+ok(!!$('#menu-linien .signatur-block'), 'die Übersicht zeigt auch die Signatur-Aktive');
+ok($('#menu-linien .signatur-block .unter').textContent.length > 15,
+   'samt ihrer Beschreibung');
+ok($$('#menu-linien .linie-block').length === 4 &&
+   $$('#menu-linien .linien-stufe').length === 16,
+   'und die sechzehn Passiven in vier Linien');
+ok(!/Stufe \d/.test(text('#menu-linien')), 'ohne Stufen — die sechzehn sind frei kombinierbar');
+ok($$('#menu-linien .tag-preis').length === 4, 'vier davon sind als Preis markiert');
+ok(!$('#menu [data-blatt="linien"]').hidden && $('#menu [data-blatt="chronik"]').hidden,
+   'das Menü öffnet auf dem Reiter Entwicklungslinien');
+klick($('#menu-reiter [data-reiter="chronik"]'));
+ok($('#menu [data-blatt="linien"]').hidden && !$('#menu [data-blatt="chronik"]').hidden,
+   'ein Reiter-Klick blendet das andere Blatt aus');
+klick($('#menu-reiter [data-reiter="linien"]'));
 ok($('#menu-chronik').children.length > 0, 'die Chronik protokolliert den Run');
 
 /* ------------------------------------------------------ Speicherstand */
@@ -334,8 +363,9 @@ var gespeichert = JSON.parse(win.localStorage.getItem('tensura-guild-v3'));
 ok(gespeichert.team.length === run.team.length, 'der Trupp steckt im Speicherstand');
 ok(gespeichert.team[0].rank === run.team[0].rank, 'der Rang überlebt das Speichern');
 
-/* Wählbare Passive: vier Karten, eine je Linie. Shion wird angeworben, damit
-   der Fall auch dann greift, wenn der Startdraft sie nicht angeboten hat. */
+/* Start-Passiv: Einheit bekommt beim Anwerben eine vorausgewählte Linien-
+   Passive (keine Karten-Auswahl mehr). Shion wird angeworben, damit der Fall
+   auch dann greift, wenn der Startdraft sie nicht angeboten hat. */
 head('Wählbare Passive');
 if (win.Run.freieArt(run, 'oger')) win.Run.addUnit(run, 'shion');
 else { win.Run.entlassen(run, run.team.filter(function (m) {
@@ -343,13 +373,11 @@ else { win.Run.entlassen(run, run.team.filter(function (m) {
   win.Run.addUnit(run, 'shion'); }
 win.UI.render();
 var pkarten = $$('#wahl .karte');
-ok(pkarten.length === 4, 'beim Anwerben stehen vier Passive zur Wahl');
-ok(pkarten.every(function (k) { return k.querySelector('.linie'); }),
-   'jede Karte nennt ihre Linie');
+ok(pkarten.length === 0, 'beim Anwerben gibt es keine Passive-Auswahl mehr');
 var shionM = run.team.filter(function (m) { return m.id === 'shion'; })[0];
-klick(pkarten[0]);
-ok(shionM.passives.length === 1 && !$('#wahl .karte'),
-   'der Klick wählt die Passive und schließt die Wahl');
+ok(shionM.passives.length === 1 && win.Abilities.linienAngebot('shion')
+     .some(function (o) { return o.id === shionM.passives[0] && !o.preis; }),
+   'Shion startet mit einer vorausgewählten Linien-Passive ohne Preis');
 
 console.log('\n' + pass + '/' + (pass + fail) + ' ok');
 process.exit(fail ? 1 : 0);

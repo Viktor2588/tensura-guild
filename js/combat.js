@@ -450,6 +450,40 @@
         }
       }
 
+      /* ---- Wann tickt ein Zustand, und wann hört er auf? -------------------
+         WICHTIG: Zustände ticken NICHT pro Runde, sondern **einmal je Zug ihres
+         Trägers** — hier, am Anfang von `act(u)`. Eine schnelle Einheit brennt
+         und blutet in derselben Zeit also öfter als eine langsame, und ein
+         Tempo-Bonus verstärkt jeden Schaden über Zeit, den sie trägt. Umgekehrt
+         verlängert Erstarrung nichts: der ausgesetzte Zug tickt trotzdem.
+
+         Reihenfolge in genau dieser Schleife (sie ist beobachtbar, also fest):
+           Gift → Brand → Blutung → Verderbnis → Licht → Schatten → Dunkelheit
+           → Verwundbar → Chaos/Antichaos → Regeneration → Erstarrung
+
+         Je Stapel und Tick (Resonanz des Trägers in Klammern):
+           Gift        1,7 Schaden (×1,2), geht durch Schilde
+           Brand       2 Schaden (×1,2), halbiert zusätzlich jede Heilung
+           Blutung     1,2 % des MAXIMALEN Lebens (×1,25), geht durch Schilde
+           Licht       heilt 1,5 % des maximalen Lebens, löscht ebenso viel Dunkelheit
+           Verderbnis  kein Tick-Schaden — +10 % (13 %) erlittener Schaden, dauernd
+           Verwundbar  kein Tick-Schaden — 15 % Rüstung ignoriert, für JEDEN Angreifer
+           Donner      kein Tick — lädt, bis 6 (4) Stapel liegen, dann Entladung
+
+         Abbau: jeder Zustand verliert je Trägerzug 1 Stapel. Vier Fähigkeiten
+         dürfen das aussetzen — dann bleibt der Stapel liegen und tickt weiter,
+         was den Schaden über Zeit vervielfacht statt ihn nur zu erhöhen:
+           brandBleibt        auf dem Ziel   (Benimaru: Dauerbrand)
+           verderbnisBleibt   auf dem Ziel   (Adalmann: Verfluchtes Wort)
+           offeneWunde        auf dem Ziel   (Souei: Offene Wunde)
+           zaehesChaos        auf dem Ziel   (Shion: Gesetzlosigkeit)
+         Gemessen ist der Unterschied gewaltig: 6 Brand-Ticks ohne Flag gegen
+         150 mit. Die Flags gehören deshalb auf das ZIEL, nicht auf den Anleger
+         — genau daran ist `zaeherBrand` zwei Phasen lang wirkungslos gewesen.
+
+         Nicht in dieser Schleife: Schild baut sich gar nicht ab (nur Absorption,
+         gedeckelt auf 60 % des maximalen Lebens), Erstarrung verbraucht den Zug
+         und zählt danach herunter.                                             */
       if (u.status.gift > 0) {
         deal(u, u.status.gift * 1.7 * (gegen(u, 'gift') ? 1.2 : 1), 'Gift', { pure: true });
         u.status.gift--; if (!alive(u)) return;
@@ -465,7 +499,9 @@
              (gegen(u, 'blutung') ? 1.25 : 1), 'Blutung', { pure: true });
         u.status.blutung--; if (!alive(u)) return;
       }
-      if (u.status.verderbnis > 0) u.status.verderbnis--;
+      /* Wie `brandBleibt` und `offeneWunde`: eine Fähigkeit darf den Abbau
+         aussetzen, statt nur mehr Stapel nachzulegen. */
+      if (u.status.verderbnis > 0 && !u.verderbnisBleibt) u.status.verderbnis--;
       /* Licht zuerst: es löscht Dunkelheit, bevor die den Zug verdirbt. */
       if (u.status.licht > 0) {
         var lf = 1 + (u.lichtPlus || 0);

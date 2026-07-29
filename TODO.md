@@ -95,34 +95,118 @@ Abgearbeitet in Phase 19:
 - [x] Donnerelement: lädt auf, entlädt sich ab der Schwelle in die ganze Reihe
 - [x] Ranga von Frost auf Donner und Schatten umgebaut
 
+Abgearbeitet in Phase 20:
+
+- [x] Linien-Passive für alle Einheiten sind generiert und per `npm test` abgesichert.
+- [x] Meta-Progression zeigt jetzt auch verschlossene Einheiten/Relikte namentlich als getrennte Chips.
+- [x] Startzustand ist zufällig vorausgewählt (keine Passive-Auswahl beim Anwerben); der Markt zeigt das konkrete mitgebrachte Start-Passiv.
+
 Offen:
 
-1. **20 Einheiten haben noch keine eigenen Linien** (`AB.linien`). Zwanzig sind
-   fertig: Oger (6), Goblins (5), Sturmwölfe (4), Echsenmenschen (5) — zusammen
-   320 Passive, die Hälfte ist geschafft. Weiter Art für Art in dieser
-   Reihenfolge: Dämonen (5), Untote (5), Drachen (4), Rimuru — **Insektoiden
-   zuletzt**.
-   Gemessen wird mit `npm run linien`.
+1. **Den Aufstiegs-Pool in Passive umbauen.** *(entschieden, jetzt
+   entsperrt)* Die 34 aktiven Fähigkeiten sind totes Gewicht, seit jede Einheit
+   nur noch ihre Signatur führt. Sie werden zu Passiven umgeschrieben und in
+   die vier Kategorien einsortiert — damit wächst die Bibliothek von 34 auf
+   rund 68. Was Gegner brauchen, bleibt als Aktive erhalten.
+   Vorher war das sinnlos: die Bibliothek kam gar nicht mehr beim Spieler an
+   (siehe Phase 22). Seit sie auf Stufe 4 neben dem Keystone steht, lohnt der
+   Ausbau — jede neue Passive ist dort sofort ziehbar.
 
-2. **Den Aufstiegs-Pool in Passive umbauen.** *(entschieden)* Die 34 aktiven
-   Fähigkeiten sind totes Gewicht, seit jede Einheit nur noch ihre Signatur
-   führt. Sie werden zu Passiven umgeschrieben und in die vier Kategorien
-   (Angriff, Mechanik, Unterstützung, Defensive) einsortiert — damit wächst
-   die Bibliothek von 34 auf rund 68 und die Entwicklung wird deutlich
-   abwechslungsreicher. Was Gegner brauchen, bleibt als Aktive erhalten.
+2. **`GRUNDHAERTE` ist in einer Sitzung von 1.02 auf 1.08 gewandert.** Der
+   globale Knopf hat die Siegquote geradegezogen, aber er trifft auch die 20
+   handgeschriebenen Einheiten, die gar nicht stärker geworden sind. Prüfen, ob
+   die Generator-Linien an der Wurzel zu breit sind, statt weiter am Knopf zu
+   drehen.
 
-3. **Startzustand einer Einheit auch zufällig.** *(entschieden)* Eine
-   angebotene oder gekaufte Einheit bringt zufällig vorausgewählte Passive
-   mit, statt der festen Liste aus `data.js`. Die Entwicklung ab Rang B ist
-   bereits zufällig — der Startzustand zieht nach. Im Markt muss die
-   Beschreibung zeigen, was die konkret angebotene Einheit mitbringt.
+Abgearbeitet in Phase 21:
 
-4. **Meta-Progression vollständig visualisieren.** Die Übersicht im Menü zeigt
-   bisher nur, was freigeschaltet IST, plus eine Zahl für den Rest. Sie soll
-   auch zeigen, **wer und was noch fehlt** — verschlossene Einheiten und
-   Relikte namentlich, erkennbar abgesetzt von den freien.
+- [x] Die 20 Generator-Einheiten haben echte Linien statt vier Mal derselben
+      Zahl: Angriff wirkt auf den eigenen Schlag, Mechanik auf den
+      Themeneffekt, Unterstützung auf den Trupp, Defensive auf das Überleben.
+      Stufe 1 Auftakt (Nova), 2 Manöverzähler (D&D Battle Master),
+      3 Voraussetzung an den Trupp (Pathfinder Feat-Chain), 4 Keystone mit
+      Preis (Path of Exile). Namen sind benannt statt nummeriert.
+- [x] `GRUNDHAERTE` 1.02 → 1.06, damit die stärkeren Linien wieder auf 52 %
+      Siege (frisch) landen.
+- [x] Linienbindung: ab Stufe 2 geht es nur noch in der Linie weiter, die
+      Stufe 1 gesetzt hat (`AB.linien_kat` + Filter in `passivAngebot`).
+      Gemessen hebt das die Siegquote von 52 auf 60 % — weniger Auswahl macht
+      den Trupp stärker, weil die Schlüsselwörter sich stapeln.
+- [x] Stufe 4 ist ablehnbar: „nichts nehmen" steht neben dem Keystone.
+- [x] `GRUNDHAERTE` 1.06 → 1.17, gemessen 51 % Siege (frisch).
+
+Abgearbeitet in Phase 22:
+
+- [x] **Befund:** die 34 Bibliotheks-Passiven waren für den Spieler
+      unerreichbar — seit alle 40 Einheiten Linien haben, greift `passivIds`
+      nie mehr auf die feste Liste aus `data.js` zu, und der Kategorien-Zweig
+      in `passivAngebot` lief nie.
+- [x] Die Bibliothek hängt jetzt an Stufe 4: zwei Passiven ohne Preis stehen
+      neben dem Keystone und dem Verzicht. Der Kategorien-Zweig ist zu
+      `bibliotheksAngebot()` geworden und wird von beiden Seiten benutzt.
+- [x] `GRUNDHAERTE` 1.17 → 1.14, gemessen 50 % Siege (frisch); kein Build steht
+      mehr auf der Auffälligkeitenliste.
+
+Abgearbeitet in Phase 23:
+
+- [x] Alle 40 Einheiten tragen den Vier-Stufen-Aufbau (Auftakt, Manöverzähler,
+      Voraussetzung, Keystone) — 304 handgeschriebene Passive neu geschrieben,
+      Thema je Einheit unverändert. Shion nur nachbalanciert, nicht umgebaut.
+- [x] `schwaechstes()` fängt leere Gegnerlisten ab: `onDamaged` feuert auch,
+      wenn Gift den letzten Gegner schon erledigt hat.
+- [x] `heilung` von den kleinen Selbstheil-Ticks entkoppelt — das Schlüsselwort
+      hing an jeder zweiten Passive und machte die Build-Auswertung blind.
+- [x] Shions Chaos-Skalierungen gedeckelt (+50 % / +45 %), weil
+      `Gesetzlosigkeit` die Stapel nie abbauen lässt.
+- [x] Schadensdeckel roster-weit um 3,5 Punkte gelockert, samt Texten.
+- [x] `GRUNDHAERTE` 1.14 → 1.11, gemessen 51 % Siege (frisch).
+
+Abgearbeitet in Phase 24:
+
+- [x] Keine Stufen mehr: die 16 Passiven je Einheit (4 je Linie) sind frei
+      kombinierbar. Angeboten werden vier aus dem ganzen Topf — ohne Quote je
+      Linie, damit ein größerer Topf später nichts ändert. Die Linienbindung ist
+      weg, `AB.linien_kat` gelöscht.
+- [x] Passive mit Preis tragen ein `preis`-Kennzeichen — daran hängt die
+      „nichts nehmen"-Option. Der Startzustand zieht nie eine davon.
+- [x] Die Linien-Übersicht zeigt die Signatur-Aktive samt Beschreibung und
+      markiert die vier Passiven mit Preis.
+- [x] `GRUNDHAERTE` 1.11 → 1.08, gemessen 50 % Siege (frisch). Ohne Bindung
+      fiel die Quote erst auf 40 % — die Umkehrung des Phase-21-Befunds —, der
+      freie Zug aus dem ganzen Topf holte sie auf 57 % zurück.
+- [x] **Der Heilungs-Build ist kein Ausreißer mehr** (war die ganze Sitzung bei
+      76–82 %). Ursache war nie die Stärke, sondern das Stapeln desselben
+      Schlüsselworts über vier Stufen.
+
+Abgearbeitet in Phase 25:
+
+- [x] Souei hatte eine Mechanik zu viel — Gift ist raus, `Giftmal` ist zu
+      `Fadennetz` geworden (die Fäden schneiden auf markierten Zielen nach).
+      Er führt jetzt Marke, Blutung, Schatten und Doppelgänger.
+- [x] Tick-Regeln dokumentiert: Zustände ticken je Zug ihres TRÄGERS, nicht pro
+      Runde — mit Reihenfolge, Schaden je Stapel und den vier Fähigkeiten, die
+      den Abbau aussetzen. Steht in `js/combat.js` (Tabelle über der Schleife),
+      im Glossar (`ticken`, `abbau`) und in `GAMEGUIDE.md`.
+
+- [x] Benimaru: Feuer ist Magieschaden (durchschlägt Rüstung, `Schwarze Flamme`
+      auch Schilde), Unterstützungslinie befehligt statt nur zu verstärken.
+- [x] Souei: Doppelgänger (`Schattendoppel`), Wurfklingen, Verstohlenheits-
+      Auftakt, Fäden legen Verwundbar und Blutung, Meuchelschnitt.
+- [x] Shuna: Angriffslinie ist göttliche Angriffsmagie über `heiligerSchlag()` —
+      Schaden ohne Rüstung und Schild, dafür in kleinen Anteilen.
+- [x] Adalmann aus dem Generator geholt und handgeschrieben: Totenmagie neben
+      göttlicher Angriffsmagie aus seiner Priestervergangenheit. Generator: 19.
+- [x] **Zwei tote Flags:** `zaeherBrand` (seit Phase 23) las die Engine nie —
+      korrekt heißt es `brandBleibt` und gehört aufs Ziel. `verderbnisBleibt`
+      neu ergänzt. Beide jetzt per Test abgesichert.
 
 Balance und Werkzeug:
+
+- `dev/linien.js` braucht seit Phase 23 über zehn Minuten statt drei — die
+  Binärsuche läuft öfter, weil zähere Einheiten den Bruchpunkt weiter oben
+  suchen. Obergrenze oder gröbere Schritte einziehen.
+- `dev/linien.js` misst eine Einheit allein und bewertet die
+  Unterstützungslinie deshalb strukturell zu schlecht. Mit Trupp messen.
 
 - Anfänger/Veteran-Abstand bei 12 Punkten (50 gegen 62 % Siege).
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
