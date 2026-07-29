@@ -231,9 +231,14 @@ var kaeufe = {}, unbezahlbar = 0, kostenSum = 0, werteSum = 0, reliktSum = 0, it
 var ohneFront = 0, ohneStuetze = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
 var proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {}, proResonanz = {};
 
-function bump(map, key, won) {
-  var e = map[key] = map[key] || { n: 0, w: 0 };
-  e.n++; if (won) e.w++;
+/* Jeder Eimer trägt seine durchschnittliche Lauftiefe mit. Ohne sie liest sich
+   ein kleiner Eimer mit 0 % wie ein kaputter Build — dabei sind es Runs, die in
+   Akt 1 gestorben sind, bevor überhaupt ein Trupp stand. Genau darauf bin ich
+   einmal hereingefallen: „Frost 0 % (15)" wurde nachgemessen und gewinnt in
+   Wahrheit 100 % gegen alle drei Bosse. */
+function bump(map, key, won, tiefe) {
+  var e = map[key] = map[key] || { n: 0, w: 0, t: 0 };
+  e.n++; if (won) e.w++; e.t += (tiefe || 0);
 }
 
 for (var s = 0; s < N; s++) {
@@ -270,7 +275,7 @@ for (var s = 0; s < N; s++) {
   }).sort(function (a, b) {
     return (kw[b].quellen + kw[b].verstaerker) - (kw[a].quellen + kw[a].verstaerker);
   });
-  bump(proKeyword, builds.length ? builds[0] : 'kein Build', won);
+  bump(proKeyword, builds.length ? builds[0] : 'kein Build', won, run.step + (run.act - 1) * R.STEPS.length);
   /* Resonanz ist die Schwelle, ab der ein Build im Kampf wirklich etwas tut —
      also die Zahl, die zeigt, ob sich das Bündeln lohnt. */
   var reso = Object.keys(R.resonanzen(run));
@@ -281,12 +286,14 @@ for (var s = 0; s < N; s++) {
 function tabelle(titel, map, nameFn, minN) {
   console.log('\n' + titel);
   var rows = Object.keys(map).map(function (k) {
-    return { k: k, n: map[k].n, wr: Math.round(map[k].w / map[k].n * 100) };
+    return { k: k, n: map[k].n, wr: Math.round(map[k].w / map[k].n * 100),
+             tiefe: map[k].t ? map[k].t / map[k].n : null };
   }).filter(function (r) { return r.n >= (minN || 1); })
     .sort(function (a, b) { return b.wr - a.wr; });
   rows.forEach(function (r) {
     console.log('  ' + (nameFn(r.k) + '                      ').slice(0, 24) +
-      String(r.wr + '%').padStart(5) + '   (' + r.n + ')');
+      String(r.wr + '%').padStart(5) + '   (' + r.n + ')' +
+      (r.tiefe === null ? '' : '  Ø Knoten ' + r.tiefe.toFixed(1)));
   });
   return rows;
 }
@@ -325,6 +332,11 @@ console.log('\nAuffälligkeiten:');
 var flags = 0;
 kwRows.forEach(function (r) {
   if (r.k === 'kein Build') return;                    // soll ruhig unten liegen
+  /* Ein Eimer, dessen Runs im Schnitt vor Knoten 4 sterben, sagt nichts über
+     seinen Build aus — dort stehen Trupps, die nie einer geworden sind. Ohne
+     diese Hürde meldet das Werkzeug „Frost 0 %", und Frost gewinnt in Wahrheit
+     100 % gegen alle drei Bosse. */
+  if (r.tiefe !== null && r.tiefe < 4) return;
   if (r.wr < 25 || r.wr > 75) { console.log('  ! Build ' + r.k + ': ' + r.wr + '%'); flags++; }
 });
 relRows.forEach(function (r) {

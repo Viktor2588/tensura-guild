@@ -350,6 +350,374 @@
         } });
       }),
 
+    /* ---- Windrache: der zweite Donnerträger ---------------------------------
+       Donner lädt und entlädt sich ab der Schwelle in die ganze Reihe — Ranga
+       lädt einen nach dem anderen auf, der Windrache lädt breit und schnell.
+       Tempo bleibt sein zweites Standbein: er ist öfter am Zug, also lädt er
+       öfter nach, und genau darin liegt der Unterschied zwischen den beiden.   */
+
+    passiv('wind_ang1', 'Sturmstoß', 'onHit', ['donner'], [],
+      'Der erste Schlag des Kampfes trifft 120 % härter und lädt jeden Gegner mit 3 Donner auf',
+      function (c) {
+        if (c.self._auftakt) return;
+        c.self._auftakt = 1;
+        c.dmg *= 2.2;
+        c.foes().forEach(function (f) { c.applyStatus(f, 'donner', 3); });
+      }),
+    passiv('wind_ang2', 'Blitzschwinge', 'onHit', ['donner'], ['tempo'],
+      'Jeder dritte Schlag trifft 70 % härter, plus 3 % je Punkt Tempo über 35',
+      function (c) {
+        if (!zaehler(c.self, 'wind_ang2', 3)) return;
+        c.dmg *= 1.7 + Math.max(0, c.self.spd - 35) * 0.03;
+      }),
+    passiv('wind_ang3', 'Geladene Böe', 'onHit', [], ['donner'],
+      'Führt ein Verbündeter Donner, trifft der Windrache geladene Ziele 30 % härter — sonst 10 %',
+      function (c) {
+        if ((c.target.status.donner || 0) > 0) {
+          c.dmg *= truppFuehrt(c, 'donner') ? 1.3 : 1.1;
+        }
+      }),
+    passiv('wind_ang4', 'Blitzschlag ohne Ende', 'onStart', ['donner'], [],
+      'Jeder Schlag lädt die ganze Reihe mit 2 Donner auf — dafür trifft der Windrache 30 % schwächer',
+      function (c) {
+        c.addEffect(c.self, { hook: 'onHit', name: 'Blitzschlag ohne Ende', fn: function (k) {
+          k.dmg *= 0.7;
+          k.foes().forEach(function (f) { k.applyStatus(f, 'donner', 2); });
+        } });
+      }),
+
+    passiv('wind_mec1', 'Aufziehendes Gewitter', 'onStart', ['donner'], [],
+      'Lädt zu Kampfbeginn jeden Gegner mit 4 Donner auf',
+      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'donner', 4); }); }),
+    passiv('wind_mec2', 'Nachladen', 'onHit', ['donner'], [],
+      'Jeder dritte Schlag lädt alle Gegner mit 3 Donner nach',
+      function (c) {
+        if (!zaehler(c.self, 'wind_mec2', 3)) return;
+        c.foes().forEach(function (f) { c.applyStatus(f, 'donner', 3); });
+      }),
+    passiv('wind_mec3', 'Tiefdruck', 'onStart', ['donner'], ['donner'],
+      'Führt ein Verbündeter Donner, entlädt sich der Blitz zwei Stapel früher — sonst einen',
+      function (c) { c.self.donnerFrueh = truppFuehrt(c, 'donner') ? 2 : 1; }),
+    passiv('wind_mec4', 'Dauergewitter', 'onStart', ['donner', 'tempo'], [],
+      'Jeder Zug lädt alle Gegner mit 3 Donner auf — dafür ist der Windrache 30 % langsamer',
+      function (c) {
+        c.self.spd = Math.max(1, Math.round(c.self.spd * 0.7));
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Dauergewitter', fn: function (k) {
+          k.foes().forEach(function (f) { k.applyStatus(f, 'donner', 3); });
+        } });
+      }),
+
+    passiv('wind_unt1', 'Rückenwind', 'onStart', ['tempo'], [],
+      'Zu Kampfbeginn +15 % Tempo für den ganzen Trupp',
+      function (c) { c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.15); }); }),
+    passiv('wind_unt2', 'Gewitterfront', 'onDamaged', ['donner'], [],
+      'Jeder vierte Treffer auf den Trupp lädt alle Gegner mit 3 Donner auf',
+      function (c) {
+        if (!zaehler(c.self, 'wind_unt2', 4)) return;
+        c.foes().forEach(function (f) { c.applyStatus(f, 'donner', 3); });
+      }),
+    passiv('wind_unt3', 'Leitwind', 'onStart', [], ['donner'],
+      'Führt ein Verbündeter Donner, lädt jeder Treffer des Trupps mit 2 auf — sonst mit 1',
+      function (c) {
+        var n = truppFuehrt(c, 'donner') ? 2 : 1;
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Leitwind', fn: function (k) {
+            k.applyStatus(k.target, 'donner', n);
+          } });
+        });
+      }),
+    passiv('wind_unt4', 'Sturmgeleit', 'onStart', ['tempo'], [],
+      'Der Trupp bekommt +30 % Tempo — der Windrache selbst schlägt nur noch mit einem Drittel',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        andere.forEach(function (u) { u.spd = Math.round(u.spd * 1.3); });
+        c.self.atk = Math.round(c.self.atk * 0.34);
+      }),
+
+    passiv('wind_def1', 'Windschild', 'onStart', ['schild', 'tempo'], [],
+      'Beginnt mit Schild über 28 % seines Lebens und +18 % Tempo',
+      function (c) {
+        c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.28));
+        c.self.spd = Math.round(c.self.spd * 1.18);
+      }),
+    passiv('wind_def2', 'Aufwind', 'onDamaged', [], [],
+      'Jeder dritte erlittene Treffer heilt 9 % und gibt +8 % Tempo',
+      function (c) {
+        if (!zaehler(c.self, 'wind_def2', 3)) return;
+        c.heal(c.self, c.self.maxHp * 0.09, 'Aufwind');
+        c.self.spd = Math.round(c.self.spd * 1.08);
+      }),
+    passiv('wind_def3', 'Wolkendecke', 'onStart', [], ['tempo'],
+      'Führt ein Verbündeter Tempo, kostet kein Treffer mehr als 14 % seines Lebens — sonst 20 %',
+      function (c) {
+        var d = truppFuehrt(c, 'tempo') ? 0.14 : 0.2;
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+      }),
+    passiv('wind_def4', 'Im Auge des Sturms', 'onStart', ['donner'], [],
+      'Jede Entladung auf dem Feld heilt den Windrachen um 7 % — dafür heilt ihn sonst nichts mehr',
+      function (c) {
+        c.self.heilfaktor = -1;
+        c.self.regen = 0;
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Im Auge des Sturms', fn: function (k) {
+          var geladen = k.foes().filter(function (f) { return (f.status.donner || 0) > 0; }).length;
+          if (geladen) k.heal(k.self, k.self.maxHp * 0.07 * 2, 'Im Auge des Sturms');
+        } });
+      }),
+
+    /* ---- Gruftwächter: der zweite Frostträger -------------------------------
+       Grabeskälte. Frost heißt hier nicht Sturm wie bei Veldora, sondern
+       Stillstand: Erstarrung nimmt dem Gegner den Zug, und weil sie auf EINEN
+       Stapel gedeckelt ist, zählt nicht die Menge, sondern wie oft sie fällt.
+       Der Wächter friert am Ort ein, wer ihm zu nahe kommt.                    */
+
+    passiv('gruft_ang1', 'Grabesgriff', 'onHit', ['frost'], [],
+      'Der erste Schlag des Kampfes trifft 110 % härter und lässt das Ziel erstarren',
+      function (c) {
+        if (c.self._auftakt) return;
+        c.self._auftakt = 1;
+        c.dmg *= 2.1;
+        c.applyStatus(c.target, 'erstarrung', 1);
+      }),
+    passiv('gruft_ang2', 'Eisenkalte Faust', 'onHit', ['frost'], [],
+      'Jeder dritte Schlag trifft erstarrte Ziele doppelt — und alle anderen 60 % härter',
+      function (c) {
+        if (!zaehler(c.self, 'gruft_ang2', 3)) return;
+        c.dmg *= (c.target.status.erstarrung || 0) > 0 ? 2 : 1.6;
+      }),
+    passiv('gruft_ang3', 'Totenstarre', 'onHit', ['frost'], ['frost'],
+      'Führt ein Verbündeter Frost, lässt jeder Schlag zu 30 % erstarren — sonst zu 10 %',
+      function (c) {
+        if (c.rng() >= (truppFuehrt(c, 'frost') ? 0.3 : 0.1)) return;
+        c.applyStatus(c.target, 'erstarrung', 1);
+      }),
+    passiv('gruft_ang4', 'Kalter Zorn', 'onStart', ['frost'], [],
+      'Der Wächter schlägt 50 % härter, solange irgendein Gegner erstarrt ist — dafür ist er selbst halb so schnell',
+      function (c) {
+        c.self.spd = Math.max(1, Math.round(c.self.spd * 0.5));
+        c.addEffect(c.self, { hook: 'onHit', name: 'Kalter Zorn', fn: function (k) {
+          if (k.foes().some(function (f) { return (f.status.erstarrung || 0) > 0; })) k.dmg *= 1.5;
+        } });
+      }),
+
+    passiv('gruft_mec1', 'Grabeskälte', 'onStart', ['frost'], [],
+      'Lässt zu Kampfbeginn jeden Gegner erstarren',
+      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'erstarrung', 1); }); }),
+    passiv('gruft_mec2', 'Frostwache', 'onDamaged', ['frost'], [],
+      'Jeder dritte erlittene Treffer lässt den Angreifer erstarren',
+      function (c) {
+        if (!zaehler(c.self, 'gruft_mec2', 3)) return;
+        var f = c.foes()[0];
+        if (f) c.applyStatus(f, 'erstarrung', 1);
+      }),
+    passiv('gruft_mec3', 'Ewiges Eis', 'onTurnStart', ['frost'], ['frost'],
+      'Führt ein Verbündeter Frost, lässt der Wächter jeden Zug einen Gegner erstarren — sonst jeden zweiten',
+      function (c) {
+        if (!truppFuehrt(c, 'frost') && c.rng() < 0.5) return;
+        var f = c.foes()[0];
+        if (f) c.applyStatus(f, 'erstarrung', 1);
+      }),
+    passiv('gruft_mec4', 'Mausoleum', 'onStart', ['frost'], [],
+      'Jeder Zug lässt ALLE Gegner erstarren — dafür schlägt der Wächter nur noch mit einem Viertel',
+      function (c) {
+        c.self.atk = Math.round(c.self.atk * 0.25);
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Mausoleum', fn: function (k) {
+          k.foes().forEach(function (f) { k.applyStatus(f, 'erstarrung', 1); });
+        } });
+      }),
+
+    passiv('gruft_unt1', 'Grabwache', 'onStart', ['schild'], [],
+      'Legt zu Kampfbeginn dem ganzen Trupp ein Schild an',
+      function (c) {
+        c.allies().forEach(function (u) { c.applyStatus(u, 'schild', Math.round(c.self.atk * 0.9)); });
+      }),
+    passiv('gruft_unt2', 'Kalter Hauch', 'onDamaged', ['frost'], [],
+      'Jeder vierte Treffer auf den Trupp lässt alle Gegner erstarren',
+      function (c) {
+        if (!zaehler(c.self, 'gruft_unt2', 4)) return;
+        c.foes().forEach(function (f) { c.applyStatus(f, 'erstarrung', 1); });
+      }),
+    passiv('gruft_unt3', 'Starrer Boden', 'onStart', ['frost'], ['frost'],
+      'Führt ein Verbündeter Frost, lässt jeder Treffer des Trupps zu 20 % erstarren — sonst zu 7 %',
+      function (c) {
+        var p = truppFuehrt(c, 'frost') ? 0.2 : 0.07;
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Starrer Boden', fn: function (k) {
+            if (k.rng() < p) k.applyStatus(k.target, 'erstarrung', 1);
+          } });
+        });
+      }),
+    passiv('gruft_unt4', 'Herr der Gruft', 'onStart', ['schild'], [],
+      'Der Trupp trifft erstarrte Ziele 40 % härter — der Wächter selbst greift kaum noch an',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        c.self.atk = Math.round(c.self.atk * 0.2);
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Herr der Gruft', fn: function (k) {
+            if ((k.target.status.erstarrung || 0) > 0) k.dmg *= 1.4;
+          } });
+        });
+      }),
+
+    passiv('gruft_def1', 'Steinsarg', 'onStart', ['schild'], [],
+      'Beginnt mit einem Schild über 42 % seines Lebens',
+      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.42)); }),
+    passiv('gruft_def2', 'Grabesruhe', 'onDamaged', [], [],
+      'Jeder dritte erlittene Treffer heilt 10 % seines Lebens',
+      function (c) {
+        if (!zaehler(c.self, 'gruft_def2', 3)) return;
+        c.heal(c.self, c.self.maxHp * 0.1, 'Grabesruhe');
+      }),
+    passiv('gruft_def3', 'Kalte Schuppen', 'onStart', [], ['frost'],
+      'Führt ein Verbündeter Frost, kostet kein Treffer mehr als 13 % seines Lebens — sonst 19 %',
+      function (c) {
+        var d = truppFuehrt(c, 'frost') ? 0.13 : 0.19;
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+      }),
+    passiv('gruft_def4', 'Aus dem Grab zurück', 'onDeath', ['frost'], [],
+      'Steht einmal mit 45 % Leben wieder auf und lässt alle Gegner erstarren — danach heilt ihn nichts mehr',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1;
+        c.self.hp = Math.round(c.self.maxHp * 0.45);
+        c.self.heilfaktor = -1;
+        c.foes().forEach(function (f) { c.applyStatus(f, 'erstarrung', 1); });
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name,
+                     side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* ---- Seelenhexe: die zweite Dunkelheitsträgerin --------------------------
+       Diablo umnachtet und verschwindet dabei selbst; die Hexe umnachtet und
+       ZIEHT daraus. Jeder Stapel Dunkelheit auf einem Gegner ist für sie eine
+       Seele, aus der sie Leben für den Trupp holt — der einzige Bau im Spiel,
+       der eine Gegnermarke in Heilung umrechnet.                              */
+
+    passiv('hexe_ang1', 'Seelenriss', 'onHit', ['dunkelheit'], [],
+      'Der erste Schlag des Kampfes trifft 110 % härter und hüllt alle Gegner in 4 Dunkelheit',
+      function (c) {
+        if (c.self._auftakt) return;
+        c.self._auftakt = 1;
+        c.dmg *= 2.1;
+        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 4); });
+      }),
+    passiv('hexe_ang2', 'Zehrender Blick', 'onHit', ['dunkelheit'], ['dunkelheit'],
+      'Jeder dritte Schlag trifft 7 % härter je Stapel Dunkelheit auf dem Ziel — höchstens doppelt',
+      function (c) {
+        if (!zaehler(c.self, 'hexe_ang2', 3)) return;
+        c.dmg *= 1 + Math.min(1, 0.07 * (c.target.status.dunkelheit || 0));
+      }),
+    passiv('hexe_ang3', 'Seelenzoll', 'onHit', ['heilung'], ['dunkelheit'],
+      'Führt ein Verbündeter Dunkelheit, heilt jeder Schlag gegen ein umnachtetes Ziel den Trupp um 4 % — sonst um 1,5 %',
+      function (c) {
+        if ((c.target.status.dunkelheit || 0) <= 0) return;
+        var f = truppFuehrt(c, 'dunkelheit') ? 0.04 : 0.015;
+        c.allies().forEach(function (u) { c.heal(u, u.maxHp * f, 'Seelenzoll'); });
+      }),
+    passiv('hexe_ang4', 'Seelenfresserin', 'onKill', ['dunkelheit'], [],
+      'Jeder Abschuss hüllt alle übrigen Gegner in 6 Dunkelheit und heilt den Trupp um 12 % — dafür hält die Hexe nur die Hälfte aus',
+      function (c) {
+        if (!c.self._zoll) {
+          c.self._zoll = 1;
+          c.self.maxHp = Math.round(c.self.maxHp * 0.5);
+          c.self.hp = Math.min(c.self.hp, c.self.maxHp);
+        }
+        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 6); });
+        c.allies().forEach(function (u) { c.heal(u, u.maxHp * 0.12, 'Seelenfresserin'); });
+      }),
+
+    passiv('hexe_mec1', 'Fluch der Finsternis', 'onStart', ['dunkelheit'], [],
+      'Hüllt zu Kampfbeginn jeden Gegner in 5 Dunkelheit',
+      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 5); }); }),
+    passiv('hexe_mec2', 'Schwarzes Ritual', 'onHit', ['dunkelheit'], [],
+      'Jeder dritte Schlag legt 4 Dunkelheit auf alle Gegner',
+      function (c) {
+        if (!zaehler(c.self, 'hexe_mec2', 3)) return;
+        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 4); });
+      }),
+    passiv('hexe_mec3', 'Seelenband', 'onTurnStart', ['heilung'], ['dunkelheit'],
+      'Führt ein Verbündeter Dunkelheit, heilt der Trupp jeden Zug 1 % je Stapel Dunkelheit auf dem Feld — sonst halb so viel',
+      function (c) {
+        var n = 0;
+        c.foes().forEach(function (f) { n += f.status.dunkelheit || 0; });
+        if (!n) return;
+        var f = Math.min(0.1, 0.01 * n) * (truppFuehrt(c, 'dunkelheit') ? 1 : 0.5);
+        c.allies().forEach(function (u) { c.heal(u, u.maxHp * f, 'Seelenband'); });
+      }),
+    passiv('hexe_mec4', 'Nachtschleier', 'onStart', ['dunkelheit'], [],
+      'Dunkelheit auf den Zielen der Hexe baut sich nicht mehr ab — dafür legt sie nur noch halb so viel an',
+      function (c) {
+        c.self.fluchmeister = (c.self.fluchmeister || 1) * 0.5;
+        c.addEffect(c.self, { hook: 'onHit', name: 'Nachtschleier', fn: function (k) {
+          k.target.dunkelheitBleibt = 1;
+          k.applyStatus(k.target, 'dunkelheit', 2);
+        } });
+      }),
+
+    passiv('hexe_unt1', 'Seelenernte', 'onStart', ['heilung', 'dunkelheit'], [],
+      'Zu Kampfbeginn 3 Dunkelheit auf jeden Gegner und +6 Regeneration für den Trupp',
+      function (c) {
+        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 3); });
+        c.allies().forEach(function (u) { u.regen += 6; });
+      }),
+    passiv('hexe_unt2', 'Totenklage', 'onDamaged', ['heilung'], [],
+      'Jeder vierte Treffer auf den Trupp heilt alle um 7 % und hüllt alle Gegner in 3 Dunkelheit',
+      function (c) {
+        if (!zaehler(c.self, 'hexe_unt2', 4)) return;
+        c.allies().forEach(function (u) { c.heal(u, u.maxHp * 0.07, 'Totenklage'); });
+        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 3); });
+      }),
+    passiv('hexe_unt3', 'Schwarzes Gebet', 'onStart', ['dunkelheit'], ['dunkelheit'],
+      'Führt ein Verbündeter Dunkelheit, blendet jeder Treffer des Trupps mit 2 — sonst mit 1',
+      function (c) {
+        var n = truppFuehrt(c, 'dunkelheit') ? 2 : 1;
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Schwarzes Gebet', fn: function (k) {
+            k.applyStatus(k.target, 'dunkelheit', n);
+          } });
+        });
+      }),
+    passiv('hexe_unt4', 'Herrin der Seelen', 'onStart', ['heilung'], [],
+      'Der Trupp heilt 40 % stärker und bekommt +12 % Leben — die Hexe greift nur noch mit einem Viertel an',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        andere.forEach(function (u) {
+          u.heilfaktor += 0.4;
+          var add = Math.round(u.maxHp * 0.12);
+          u.maxHp += add; u.hp += add;
+        });
+        c.self.atk = Math.round(c.self.atk * 0.25);
+      }),
+
+    passiv('hexe_def1', 'Knochenschleier', 'onStart', ['schild'], [],
+      'Beginnt mit einem Schild über 30 % ihres Lebens',
+      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.3)); }),
+    passiv('hexe_def2', 'Zehrung', 'onDamaged', [], [],
+      'Jeder dritte erlittene Treffer heilt 10 % ihres Lebens',
+      function (c) {
+        if (!zaehler(c.self, 'hexe_def2', 3)) return;
+        c.heal(c.self, c.self.maxHp * 0.1, 'Zehrung');
+      }),
+    passiv('hexe_def3', 'Nachtsicht', 'onStart', [], ['dunkelheit'],
+      'Führt ein Verbündeter Dunkelheit, kostet kein Treffer mehr als 14 % ihres Lebens — sonst 20 %',
+      function (c) {
+        var d = truppFuehrt(c, 'dunkelheit') ? 0.14 : 0.2;
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+      }),
+    passiv('hexe_def4', 'Rückkehr aus der Nacht', 'onDeath', ['dunkelheit', 'heilung'], [],
+      'Steht einmal mit 45 % Leben wieder auf, hüllt alle Gegner in 8 Dunkelheit und heilt den Trupp um 20 % — danach heilt sie nichts mehr',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1;
+        c.self.hp = Math.round(c.self.maxHp * 0.45);
+        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 8); });
+        c.allies().forEach(function (u) { c.heal(u, u.maxHp * 0.2, 'Rückkehr aus der Nacht'); });
+        c.self.heilfaktor = -1;
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name,
+                     side: c.self.side, hp: c.self.hp });
+      }),
+
     /* ---- Diablos Linien: der Urtümliche Schwarze ---------------------------
        Zwei Finsternisse, die verschiedene Enden derselben Rechnung anfassen:
        Dunkelheit senkt, was der GEGNER austeilt, Schatten lässt Treffer an
@@ -3063,9 +3431,9 @@
 
   var LINE_UNITS = [
     'zegion', 'apito', 'riesenameise', 'kaefergarde', 'giftfalter',
- 'testarossa', 'ultima', 'carrera', 'daemonengarde',
- 'drachenwelpe', 'windrache',
-    'wightkoenig', 'skelettritter', 'gruftwaechter', 'seelenhexe'
+    'testarossa', 'ultima', 'carrera', 'daemonengarde',
+    'drachenwelpe',
+    'wightkoenig', 'skelettritter'
   ];
 
   var LINE_UNIT_NAME = {
@@ -3079,11 +3447,8 @@
     carrera: 'Carrera',
     daemonengarde: 'Dämonengarde',
     drachenwelpe: 'Drachenwelpe',
-    windrache: 'Windrache',
     wightkoenig: 'Wight-König',
-    skelettritter: 'Skelettritter',
-    gruftwaechter: 'Gruftwächter',
-    seelenhexe: 'Seelenhexe'
+    skelettritter: 'Skelettritter'
   };
 
   var LINE_THEME = {
@@ -3099,12 +3464,9 @@
     daemonengarde: { kind: 'status', statusKey: 'verderbnis', defRevive: false },
 
     drachenwelpe: { kind: 'status', statusKey: 'brand', defRevive: false },
-    windrache: { kind: 'tempo', defRevive: false },
 
     wightkoenig: { kind: 'heal', defRevive: true },
     skelettritter: { kind: 'konter', defRevive: true },
-    gruftwaechter: { kind: 'shield', defRevive: true },
-    seelenhexe: { kind: 'heal', defRevive: true }
   };
 
   function lineId(unitId, kat, n) { return unitId + '_' + kat + n; }
@@ -3427,6 +3789,24 @@
     /* Rimuru und Adalmann standen im Generator, bis ihre Kits eigene Linien
        verlangten: Rimuru liest fremde Zustände statt eigene anzulegen, und der
        Priester in Adalmann führt Licht neben der Totenmagie. */
+    windrache: {
+      angriff: ['wind_ang1', 'wind_ang2', 'wind_ang3', 'wind_ang4'],
+      mechanik: ['wind_mec1', 'wind_mec2', 'wind_mec3', 'wind_mec4'],
+      unterstuetzung: ['wind_unt1', 'wind_unt2', 'wind_unt3', 'wind_unt4'],
+      defensive: ['wind_def1', 'wind_def2', 'wind_def3', 'wind_def4']
+    },
+    gruftwaechter: {
+      angriff: ['gruft_ang1', 'gruft_ang2', 'gruft_ang3', 'gruft_ang4'],
+      mechanik: ['gruft_mec1', 'gruft_mec2', 'gruft_mec3', 'gruft_mec4'],
+      unterstuetzung: ['gruft_unt1', 'gruft_unt2', 'gruft_unt3', 'gruft_unt4'],
+      defensive: ['gruft_def1', 'gruft_def2', 'gruft_def3', 'gruft_def4']
+    },
+    seelenhexe: {
+      angriff: ['hexe_ang1', 'hexe_ang2', 'hexe_ang3', 'hexe_ang4'],
+      mechanik: ['hexe_mec1', 'hexe_mec2', 'hexe_mec3', 'hexe_mec4'],
+      unterstuetzung: ['hexe_unt1', 'hexe_unt2', 'hexe_unt3', 'hexe_unt4'],
+      defensive: ['hexe_def1', 'hexe_def2', 'hexe_def3', 'hexe_def4']
+    },
     diablo: {
       angriff: ['diablo_ang1', 'diablo_ang2', 'diablo_ang3', 'diablo_ang4'],
       mechanik: ['diablo_mec1', 'diablo_mec2', 'diablo_mec3', 'diablo_mec4'],
@@ -3561,14 +3941,11 @@
     }
   };
 
-  /* Restliche 20 Einheiten bekommen das ID-Muster für Linien (TODO.md). */
-  [
-    'rimuru',
-    'zegion', 'apito', 'riesenameise', 'kaefergarde', 'giftfalter',
-    'testarossa', 'ultima', 'carrera', 'daemonengarde',
-    'milim', 'drachenwelpe', 'windrache',
-    'wightkoenig', 'skelettritter', 'gruftwaechter', 'seelenhexe'
-  ].forEach(function (unitId) {
+  /* Die Generator-Einheiten bekommen ihr ID-Muster. Die Liste stand hier
+     einmal ein zweites Mal ausgeschrieben und lief `LINE_UNITS` hinterher —
+     wer von Hand geschrieben wurde, bekam seine Linien danach wieder mit
+     erfundenen IDs überschrieben. Eine Wahrheit, kein Duplikat. */
+  LINE_UNITS.forEach(function (unitId) {
     linien[unitId] = {
       angriff: [unitId + '_ang1', unitId + '_ang2', unitId + '_ang3', unitId + '_ang4'],
       mechanik: [unitId + '_mec1', unitId + '_mec2', unitId + '_mec3', unitId + '_mec4'],

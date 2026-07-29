@@ -1301,6 +1301,54 @@ und Frost und Donner je 1, Chaos 2.
 
 `dev/balance.js 600`: 50 % frisch, `GRUNDHAERTE` unverändert.
 
+### Phase 30 (2026-07-29): Zweite Träger für Dunkelheit, Frost und Donner
+
+Drei Schlüsselwörter hingen an je einer Einheit — fällt sie im Draft nicht,
+existiert das Element für diesen Run nicht. Jedes hat jetzt einen zweiten
+Träger, handgeschrieben statt umgethemt:
+
+- **Windrache — Donner.** Ranga lädt einen Gegner nach dem anderen auf, der
+  Windrache lädt breit und schnell. Tempo bleibt sein zweites Standbein: er ist
+  öfter am Zug, also lädt er öfter nach. Darin liegt der Unterschied.
+- **Gruftwächter — Frost.** Bei Veldora heißt Frost Sturm, beim Wächter
+  Stillstand. Weil Erstarrung auf EINEN Stapel gedeckelt ist, zählt nicht die
+  Menge, sondern wie oft sie fällt — sein `Mausoleum` lässt jeden Zug alle
+  Gegner erstarren und kostet dafür drei Viertel seines Angriffs.
+- **Seelenhexe — Dunkelheit.** Diablo umnachtet und verschwindet dabei selbst;
+  die Hexe umnachtet und ZIEHT daraus. Jeder Stapel auf einem Gegner ist für sie
+  eine Seele, aus der sie Leben für den Trupp holt — der einzige Bau im Spiel,
+  der eine Gegnermarke in Heilung umrechnet.
+
+Handgeschrieben, weil der Generator es hier nicht könnte: seine Status-Linien
+legen `2 × Stärke` Stapel an, und Erstarrung ist auf einen gedeckelt — die
+Hälfte davon verpufft. Donners Schwelle drückt er ebensowenig aus.
+
+**Ein Duplikat entfernt.** Die Liste der Generator-Einheiten stand ein zweites
+Mal ausgeschrieben und lief `LINE_UNITS` hinterher: wer von Hand geschrieben
+wurde, bekam seine Linien danach wieder mit erfundenen IDs überschrieben. Das
+fiel erst auf, als drei Einheiten mit kurzen Präfixen (`wind_`, `gruft_`,
+`hexe_`) nicht mehr zufällig auf das Muster passten. Jetzt zieht die Schleife
+aus `LINE_UNITS`.
+
+**Und ein Fehlalarm, dem ich aufgesessen bin.** `dev/balance.js` meldete
+„Build frost: 0 % (15)". Ich habe daraufhin Erstarrung so geändert, dass ein
+abgeschüttelter Frost trotzdem Tempo nimmt — und dann nachgemessen: ein
+Frost-Trupp gewinnt **100 %** gegen Clayman, Milim und Hinata. Die Änderung war
+auf einer Fehldiagnose gebaut und ist zurückgenommen.
+
+Der Grund für die 0 %: der Build wird am ENDE eines Runs bestimmt. Wer in Akt 1
+stirbt, hat kaum Einheiten und landet in einem kleinen Eimer. Die Tabelle zeigt
+jetzt je Eimer die durchschnittliche Lauftiefe — `frost 0 % (15) Ø Knoten 1.9`,
+dieselbe Tiefe wie „kein Build" — und die Auffälligkeitenliste überspringt
+Eimer, deren Runs im Schnitt vor Knoten 4 sterben. Ein Werkzeug, das solche
+Runs als Balance-Problem meldet, schickt einen zuverlässig in die falsche
+Richtung.
+
+Schlüsselwörter danach: Dunkelheit, Frost, Donner und Chaos je 2 Träger,
+Schatten und Verderbnis je 4. Generator: noch 12 Einheiten.
+
+`dev/balance.js 600`: 50 % frisch, kein Build-Ausreißer.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

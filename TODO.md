@@ -253,6 +253,18 @@ Abgearbeitet in Phase 29:
 - [x] Diablo von Verderbnis auf **Dunkelheit + Schatten** umgestellt; vier
       andere Einheiten tragen Verderbnis ohnehin. Signatur `Belial` mit.
 
+Abgearbeitet in Phase 30:
+
+- [x] Zweite Träger, handgeschrieben: **Windrache** (Donner, breit und schnell
+      statt einzeln wie Ranga), **Gruftwächter** (Frost als Stillstand statt
+      Sturm wie Veldora), **Seelenhexe** (Dunkelheit, die sie in Heilung für
+      den Trupp umrechnet — anders als Diablo, der darin verschwindet).
+- [x] Die Generator-Liste stand doppelt und überschrieb handgeschriebene Linien
+      mit erfundenen IDs. Sie zieht jetzt aus `LINE_UNITS`.
+- [x] **Fehlalarm im Werkzeug:** „Build frost: 0 %" waren Runs, die an Knoten 2
+      starben. `dev/balance.js` zeigt jetzt je Eimer die Ø-Lauftiefe und meldet
+      keine Ausreißer mehr für Eimer, die im Schnitt vor Knoten 4 enden.
+
 Balance und Werkzeug:
 
 - `dev/linien.js` braucht seit Phase 23 über zehn Minuten statt drei — die
