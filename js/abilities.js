@@ -1246,20 +1246,24 @@
         if (!zaehler(c.self, 'daemonengarde_ang2', 3)) return;
         c.deal(c.target, c.self.atk * 0.9, 'Doppelschritt');
       }),
-    passiv('daemonengarde_ang3', 'Vorwegnahme', 'onHit', [], ['konter'],
-      'Führt ein Verbündeter Konter, schlägt die Garde 6 % härter je erlittenem Treffer — höchstens doppelt, sonst die Hälfte davon',
+    passiv('daemonengarde_ang3', 'Vorwegnahme', 'onDamaged', ['konter'], ['konter'],
+      'Die Garde schlägt zurück, bevor der Treffer sitzt: sie kontert für 40 % und bekommt bei jedem ' +
+      'dritten Treffer einen zusätzlichen Zug — ohne Konter im Trupp nur die Hälfte davon',
       function (c) {
-        var f = truppFuehrt(c, 'konter') ? 0.06 : 0.03;
-        c.dmg *= 1 + Math.min(1, f * (c.self._treffer || 0));
+        var mit = truppFuehrt(c, 'konter');
+        var f = c.foes()[0];
+        if (f) c.deal(f, c.self.atk * (mit ? 0.4 : 0.2), 'Vorwegnahme');
+        if (mit && zaehler(c.self, 'daemonengarde_ang3', 3)) c.self.gauge = (c.self.gauge || 0) + 100;
       }),
-    passiv('daemonengarde_ang4', 'Klingentanz', 'onStart', ['konter'], [],
-      'Jeder erlittene Treffer gibt dauerhaft +6 % Tempo und Angriff — dafür hält die Garde nur die Hälfte aus',
+    passiv('daemonengarde_ang4', 'Klingentanz', 'onStart', ['konter', 'tempo'], [],
+      'Jeder Austausch schärft die Klinge: +5 Angriff je erlittenem Treffer, und jeder vierte ' +
+      'verschafft der Garde einen zusätzlichen Zug — dafür hält sie nur die Hälfte aus',
       function (c) {
         c.self.maxHp = Math.round(c.self.maxHp * 0.5);
         c.self.hp = Math.min(c.self.hp, c.self.maxHp);
         c.addEffect(c.self, { hook: 'onDamaged', name: 'Klingentanz', fn: function (k) {
-          k.self.spd = Math.round(k.self.spd * 1.06);
-          k.self.atk = Math.round(k.self.atk * 1.06);
+          k.self.atk += 5;
+          if (zaehler(k.self, 'daemonengarde_ang4', 4)) k.self.gauge = (k.self.gauge || 0) + 100;
         } });
       }),
 
@@ -1282,12 +1286,11 @@
         c.self.spd = Math.round(c.self.spd * (truppFuehrt(c, 'konter') ? 1.35 : 1.12));
       }),
     passiv('daemonengarde_mec4', 'Klingensturm', 'onStart', ['konter'], [],
-      'Die Garde kontert jeden Treffer mit 70 % ihres Angriffs — dafür schlägt sie selbst nur halb so hart',
+      'Die Garde kontert nicht den Angreifer, sondern ALLE Gegner — dafür schlägt sie selbst nur halb so hart',
       function (c) {
         c.self.atk = Math.round(c.self.atk * 0.5);
         c.addEffect(c.self, { hook: 'onDamaged', name: 'Klingensturm', fn: function (k) {
-          var f = k.foes()[0];
-          if (f) k.deal(f, k.self.atk * 1.4, 'Klingensturm');
+          k.foes().forEach(function (f) { k.deal(f, k.self.atk * 0.8, 'Klingensturm'); });
         } });
       }),
 
@@ -3917,12 +3920,12 @@
       }),
 
     passiv('gobta_mec1', 'Würfelglück', 'onStart', [], [],
-      'Ein Wurf zu Kampfbeginn: +10 Angriff, +10 Rüstung oder +25 % Tempo',
+      'Ein Wurf zu Kampfbeginn, und er wird mit dem Rang besser: +6 Angriff, +6 Rüstung oder +12 % Tempo — je Rang',
       function (c) {
-        var w = c.rng();
-        if (w < 0.34) c.self.atk += 10;
-        else if (w < 0.67) c.self.def += 10;
-        else c.self.spd = Math.round(c.self.spd * 1.25);
+        var r = rangStufe(c), w = c.rng();
+        if (w < 0.34) c.self.atk += 6 * r;
+        else if (w < 0.67) c.self.def += 6 * r;
+        else c.self.spd = Math.round(c.self.spd * (1 + 0.12 * r));
       }),
     passiv('gobta_mec2', 'Zweite Chance', 'onDamaged', ['heilung'], [],
       'Jeder dritte erlittene Treffer wird vollständig zurückgeheilt',
@@ -4080,10 +4083,9 @@
         c.foes().forEach(function (f) { c.deal(f, c.self.atk * 0.45, 'Deckungsfeuer'); });
       }),
     passiv('gobkyu_unt3', 'Späherauge', 'onStart', ['verwundbar'], [],
-      'Führt ein Verbündeter Verwundbar, setzt Gobkyu 60 % größere Marken — sonst 20 %',
+      'Gobkyus Marken fallen je Rang 20 % größer aus — auf S also 80 %',
       function (c) {
-        c.self.markenmeister = Math.max(c.self.markenmeister || 1,
-          truppFuehrt(c, 'verwundbar') ? 1.6 : 1.2);
+        c.self.markenmeister = Math.max(c.self.markenmeister || 1, 1 + 0.2 * rangStufe(c));
       }),
     passiv('gobkyu_unt4', 'Salve', 'onStart', ['verwundbar'], [],
       'Der Trupp trifft markierte Ziele 30 % härter — Gobkyu selbst verliert die halbe Rüstung',
@@ -4142,8 +4144,9 @@
         c.deal(c.target, (c.self.status.schild || 0) * 0.6 + c.self.def * 2, 'Schildschlag');
       }),
     passiv('rigurd_ang3', 'Erster in der Schlacht', 'onHit', [], ['schild'],
-      'Führt ein Verbündeter Schild, schlägt Rigurd 30 % härter — sonst 8 %',
-      function (c) { c.dmg *= truppFuehrt(c, 'schild') ? 1.3 : 1.08; }),
+      'Rigurd schlägt 12 % härter je Rang — auf S also fast die Hälfte mehr',
+      function (c) { c.dmg *= 1 + 0.12 * rangStufe(c); }),
+
     passiv('rigurd_ang4', 'Sammelt euch', 'onStart', [], [],
       'Der Trupp schlägt 22 % härter — Rigurd selbst nur noch mit 40 %',
       function (c) {
@@ -4170,13 +4173,12 @@
         var f = truppFuehrt(c, 'schild') ? 0.35 : 0.12;
         c.allies().forEach(function (u) { u.schildfaktor += f; });
       }),
-    passiv('rigurd_mec4', 'Unerschütterlich', 'onStart', ['schild'], [],
-      'Jeder Zug baut das eigene Schild wieder auf — dafür ist Rigurd halb so schnell',
+    passiv('rigurd_mec4', 'Häuptling von Rang', 'onStart', ['schild'], ['schild'],
+      'Jeder Rang macht die Schilde des ganzen Trupps 30 % stärker — auf S also doppelt so stark. Dafür ist Rigurd halb so schnell.',
       function (c) {
-        c.self.spd = Math.round(c.self.spd * 0.5);
-        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Unerschütterlich', fn: function (k) {
-          k.applyStatus(k.self, 'schild', Math.round(k.self.maxHp * 0.08));
-        } });
+        var f = 0.3 * rangStufe(c);
+        c.allies().forEach(function (u) { u.schildfaktor += f; });
+        c.self.spd = Math.max(1, Math.round(c.self.spd * 0.5));
       }),
 
     passiv('rigurd_unt1', 'Häuptling', 'onStart', [], [],
@@ -4264,13 +4266,15 @@
         if (c.self.hp >= c.self.maxHp * 0.6) return;
         c.dmg *= truppFuehrt(c, 'konter') ? 1.35 : 1.12;
       }),
-    passiv('rigur_ang4', 'Blutzoll', 'onStart', [], [],
-      'Je 2 % fehlendes Leben geben 1 % Schaden — dafür heilt Rigur nichts mehr',
+    passiv('rigur_ang4', 'Erfahrene Wache', 'onStart', ['konter'], [],
+      'Jeder Rang macht Rigurs Konter 40 % härter — auf S also mehr als doppelt. Dafür heilt ihn nichts mehr.',
       function (c) {
         c.self.heilfaktor = -1;
         c.self.regen = 0;
-        c.addEffect(c.self, { hook: 'onHit', name: 'Blutzoll', fn: function (k) {
-          k.dmg *= 1 + (1 - k.self.hp / k.self.maxHp) * 0.5;
+        var f = 1 + 0.4 * rangStufe(c);
+        c.addEffect(c.self, { hook: 'onDamaged', name: 'Erfahrene Wache', fn: function (k) {
+          var g = k.foes()[0];
+          if (g) k.deal(g, k.self.atk * 0.3 * f, 'Erfahrene Wache');
         } });
       }),
 
@@ -4287,10 +4291,10 @@
         c.foes().forEach(function (f) { c.deal(f, c.self.atk * 0.5, 'Dornenwache'); });
       }),
     passiv('rigur_mec3', 'Reflex', 'onDamaged', ['konter'], [],
-      'Führt ein Verbündeter Konter, zahlt Rigur mit 55 % des Angriffs zurück — sonst 22 %',
+      'Rigur zahlt jeden Treffer mit 14 % des Angriffs je Rang zurück — auf S also mit 56 %',
       function (c) {
         var f = c.foes()[0];
-        if (f) c.deal(f, c.self.atk * (truppFuehrt(c, 'konter') ? 0.55 : 0.22), 'Reflex');
+        if (f) c.deal(f, c.self.atk * 0.14 * rangStufe(c), 'Reflex');
       }),
     passiv('rigur_mec4', 'Wachturm', 'onStart', ['konter'], [],
       'Rigur kontert jeden Treffer mit vollem Angriff — dafür schlägt er selbst nur halb so hart',
@@ -4417,12 +4421,13 @@
         var f = truppFuehrt(c, 'heilung') ? 0.22 : 0.08;
         c.allies().forEach(function (u) { u.heilfaktor += f; });
       }),
-    passiv('gobwa_mec4', 'Überfluss', 'onStart', ['heilung'], [],
-      'Jede Heilung im Trupp wirkt 50 % stärker — Gobwa selbst heilt nichts mehr',
+    passiv('gobwa_mec4', 'Gelernte Kunst', 'onStart', ['heilung'], ['heilung'],
+      'Jeder Rang macht jede Heilung im Trupp 22 % stärker — auf S also fast doppelt. Gobwa selbst heilt dafür nichts mehr.',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        andere.forEach(function (u) { u.heilfaktor += 0.5; });
+        var f = 0.22 * rangStufe(c);
+        andere.forEach(function (u) { u.heilfaktor += f; });
         c.self.heilfaktor = -1;
         c.self.regen = 0;
       }),
@@ -4442,13 +4447,11 @@
         var schwach = schwaechstes(c.allies(), function (u) { return u.hp / u.maxHp; });
         if (schwach) c.heal(schwach, schwach.maxHp * 0.15, 'Aufopferung');
       }),
-    passiv('gobwa_unt3', 'Nicht auf meiner Wache', 'onStart', [], ['heilung'],
-      'Führt ein Verbündeter Heilung, kostet im ganzen Trupp kein Treffer mehr als 19 % — sonst 25 %',
+    passiv('gobwa_unt3', 'Nicht auf meiner Wache', 'onStart', ['heilung'], ['heilung'],
+      'Der ganze Trupp regeneriert +3 je Rang Gobwas — auf S also +12',
       function (c) {
-        var d = truppFuehrt(c, 'heilung') ? 0.19 : 0.25;
-        c.allies().forEach(function (u) {
-          u.schadensdeckel = Math.min(u.schadensdeckel || 1, d);
-        });
+        var n = 3 * rangStufe(c);
+        c.allies().forEach(function (u) { u.regen += n; });
       }),
     passiv('gobwa_unt4', 'Mutter der Truppe', 'onStart', ['heilung'], [],
       'Der Trupp bekommt +10 % Leben und heilt 22 % stärker — Gobwa greift nur noch mit einem Drittel an',
@@ -4758,14 +4761,18 @@
       function (c) {
         c.dmg *= 1 + (truppFuehrt(c, 'flaeche') ? 0.12 : 0.04) * c.foes().length;
       }),
-    passiv('gab_ang4', 'Sturmangriff', 'onStart', ['flaeche'], [],
-      'Jeder Stoß trifft alle Gegner voll — dafür nur noch mit 45 % Schaden',
+    passiv('gab_ang4', 'Der Held wächst', 'onStart', ['flaeche'], [],
+      'Gabirus Wirbel greift weiter aus, je länger der Kampf dauert: ab dem dritten Zug trifft jeder Stoß ' +
+      'einen zusätzlichen Gegner für 55 %, ab dem sechsten zwei — dafür trifft er selbst 25 % schwächer',
       function (c) {
-        c.addEffect(c.self, { hook: 'onHit', name: 'Sturmangriff', fn: function (k) {
-          k.dmg *= 0.45;
-          k.foes().forEach(function (f) {
-            if (f !== k.target) k.deal(f, k.dmg, 'Sturmangriff');
-          });
+        langerKampf(c);
+        c.addEffect(c.self, { hook: 'onHit', name: 'Der Held wächst', fn: function (k) {
+          k.dmg *= 0.75;
+          var r = k.self._runden || 0;
+          var zahl = r >= 6 ? 2 : r >= 3 ? 1 : 0;
+          if (!zahl) return;
+          k.foes().filter(function (f) { return f !== k.target; }).slice(0, zahl)
+            .forEach(function (f) { k.deal(f, k.self.atk * 0.55, 'Der Held wächst'); });
         } });
       }),
 
@@ -4778,12 +4785,11 @@
         if (!zaehler(c.self, 'gab_mec2', 3)) return;
         c.self.pierce = Math.max(c.self.pierce || 0, 1);
       }),
-    passiv('gab_mec3', 'Massenschlächter', 'onHit', ['flaeche'], [],
-      'Führt ein Verbündeter Fläche, trifft jeder Stoß einen zweiten Gegner für 50 % — sonst für 20 %',
+    passiv('gab_mec3', 'Massenschlächter', 'onHit', ['flaeche'], ['flaeche'],
+      'Je eigenem Zug trifft Gabiru 4 % härter — höchstens +60 %, und mit Fläche im Trupp doppelt so schnell',
       function (c) {
-        var m = truppFuehrt(c, 'flaeche') ? 0.5 : 0.2;
-        var f = c.foes().filter(function (x) { return x !== c.target; })[0];
-        if (f) c.deal(f, c.self.atk * m, 'Massenschlächter');
+        var r = langerKampf(c) * (truppFuehrt(c, 'flaeche') ? 2 : 1);
+        c.dmg *= 1 + Math.min(0.6, 0.04 * r);
       }),
     passiv('gab_mec4', 'Wirbelsturm', 'onStart', ['flaeche'], [],
       'Jeder Zug trifft alle Gegner für 45 % — dafür hält Gabiru nur noch 60 % aus',
@@ -4946,10 +4952,14 @@
         c.applyStatus(c.self, 'schatten', 4);
       }),
     passiv('souka_def3', 'Rückzug', 'onStart', [], ['tempo'],
-      'Führt ein Verbündeter Tempo, kostet kein Treffer mehr als 16 % ihres Lebens — sonst 22 %',
+      'Je eigenem Zug kostet Souka jeder Treffer 0,8 Prozentpunkte weniger — von 22 % herunter bis 12 %',
       function (c) {
-        var d = truppFuehrt(c, 'tempo') ? 0.16 : 0.22;
-        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+        langerKampf(c);
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Rückzug', fn: function (k) {
+          var d = Math.max(0.12, 0.22 - 0.008 * (k.self._runden || 0));
+          k.self.schadensdeckel = Math.min(k.self.schadensdeckel || 1, d);
+        } });
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.22);
       }),
     passiv('souka_def4', 'Unsichtbar', 'onStart', ['schatten'], [],
       'Jeder zweite Zug legt frischen Schatten an — dafür schlägt Souka nur noch halb so hart',
@@ -4979,8 +4989,9 @@
         c.dmg *= 2 + (1 - c.self.hp / c.self.maxHp);
       }),
     passiv('fuerst_ang3', 'Langer Atem', 'onHit', [], ['schild'],
-      'Führt ein Verbündeter Schild, schlägt der Fürst 28 % härter — sonst 10 %',
-      function (c) { c.dmg *= truppFuehrt(c, 'schild') ? 1.28 : 1.1; }),
+      'Je eigenem Zug schlägt der Fürst 5 % härter — höchstens +75 %. Wer ihn schnell abräumt, merkt nichts davon.',
+      function (c) { c.dmg *= 1 + Math.min(0.75, 0.05 * langerKampf(c)); }),
+
     passiv('fuerst_ang4', 'Zorn des Fürsten', 'onStart', [], [],
       'Der Fürst schlägt 80 % härter, je weniger Leben er hat — dafür beginnt er mit der Hälfte',
       function (c) {
@@ -5007,11 +5018,16 @@
           k.heal(k.self, k.self.maxHp * f, 'Unerschöpflich');
         } });
       }),
-    passiv('fuerst_mec4', 'Sumpfkraft', 'onStart', ['schild'], [],
-      'Schilde wirken doppelt — dafür ist der Fürst nur noch halb so schnell',
+    passiv('fuerst_mec4', 'Unermüdlich', 'onStart', ['heilung', 'schild'], [],
+      'Der Fürst wird mit jedem eigenen Zug zäher: +5 % Rüstung und 1,5 % Heilung je Zug, ohne Grenze — ' +
+      'dafür ist er nur noch halb so schnell',
       function (c) {
-        c.self.schildfaktor += 1;
+        langerKampf(c);
         c.self.spd = Math.max(1, Math.round(c.self.spd * 0.5));
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Unermüdlich', fn: function (k) {
+          k.self.def = Math.round(k.self.def * 1.05);
+          k.heal(k.self, k.self.maxHp * 0.015 * Math.min(10, k.self._runden || 0), 'Unermüdlich');
+        } });
       }),
 
     passiv('fuerst_unt1', 'Fürstenwort', 'onStart', [], [],
@@ -5092,8 +5108,9 @@
         } });
       }),
     passiv('knecht_ang3', 'Lanzenritt', 'onHit', [], ['konter'],
-      'Führt ein Verbündeter Konter, sticht der Knecht 28 % härter — sonst 10 %',
-      function (c) { c.dmg *= truppFuehrt(c, 'konter') ? 1.28 : 1.1; }),
+      'Je eigenem Zug sticht der Knecht 4 % härter — höchstens +60 %',
+      function (c) { c.dmg *= 1 + Math.min(0.6, 0.04 * langerKampf(c)); }),
+
     passiv('knecht_ang4', 'Drachenspeer', 'onStart', ['konter'], [],
       'Jeder erlittene Treffer wird mit vollem Angriff beantwortet — dafür sticht der Knecht selbst nur noch halb',
       function (c) {
@@ -5121,12 +5138,18 @@
         var f = c.foes()[0];
         if (f) c.deal(f, c.self.atk * (truppFuehrt(c, 'konter') ? 0.5 : 0.2), 'Vergeltungswall');
       }),
-    passiv('knecht_mec4', 'Unbrechbare Reihe', 'onStart', ['schild'], [],
-      'Jeder Zug baut das eigene Schild auf — dafür ist der Knecht nur noch halb so schnell',
+    passiv('knecht_mec4', 'Unbrechbare Reihe', 'onStart', ['konter', 'schild'], [],
+      'Die Reihe wächst mit dem Kampf: je eigenem Zug 3 % mehr Konterschaden und ein Schild über 2 % des ' +
+      'eigenen Lebens — dafür ist der Knecht nur noch halb so schnell',
       function (c) {
+        langerKampf(c);
         c.self.spd = Math.max(1, Math.round(c.self.spd * 0.5));
         c.addEffect(c.self, { hook: 'onTurnStart', name: 'Unbrechbare Reihe', fn: function (k) {
-          k.applyStatus(k.self, 'schild', Math.round(k.self.maxHp * 0.09));
+          k.applyStatus(k.self, 'schild', Math.round(k.self.maxHp * 0.02 * Math.min(10, k.self._runden || 0)));
+        } });
+        c.addEffect(c.self, { hook: 'onDamaged', name: 'Unbrechbare Reihe', fn: function (k) {
+          var f = k.foes()[0];
+          if (f) k.deal(f, k.self.atk * 0.03 * (k.self._runden || 0), 'Unbrechbare Reihe');
         } });
       }),
 
@@ -5223,11 +5246,14 @@
         if (!zaehler(c.self, 'prie_mec2', 3)) return;
         c.allies().forEach(function (u) { u.regen += 3; });
       }),
-    passiv('prie_mec3', 'Ewiger Fluss', 'onStart', ['heilung'], [],
-      'Führt ein Verbündeter Heilung, wirkt jede Heilung im Trupp 28 % stärker — sonst 10 %',
+    passiv('prie_mec3', 'Ewiger Fluss', 'onStart', ['heilung'], ['heilung'],
+      'Die Quelle wird stärker, je länger der Kampf läuft: je eigenem Zug wirkt jede Heilung im Trupp 4 % stärker — höchstens +60 %',
       function (c) {
-        var f = truppFuehrt(c, 'heilung') ? 0.28 : 0.1;
-        c.allies().forEach(function (u) { u.heilfaktor += f; });
+        langerKampf(c);
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Ewiger Fluss', fn: function (k) {
+          if ((k.self._runden || 0) > 15) return;
+          k.allies().forEach(function (u) { u.heilfaktor += 0.04; });
+        } });
       }),
     passiv('prie_mec4', 'Überfluss', 'onStart', ['heilung'], [],
       'Die Regeneration des Trupps wirkt 50 % stärker — dafür schlägt die Priesterin nur noch mit einem Viertel',
@@ -5352,6 +5378,29 @@
                  stapel: Math.round(stapel), bonus: Math.round(f * 100) });
   }
 
+
+  /* ---- Zwei Art-Identitäten ------------------------------------------------
+     Goblins wachsen über sich hinaus: ihre Passiven skalieren mit dem RANG.
+     Keine andere Art liest ihn — und der Glossartext behauptet das seit jeher
+     („schwach geboren, wächst über seine Fähigkeiten hinaus"), ohne dass es
+     mechanisch stimmte.
+
+     Echsenmenschen halten lange Kämpfe: ihre Passiven skalieren mit der Zahl
+     der eigenen ZÜGE. Auch das stand schon im Glossar („zäh, regeneriert, hält
+     die Front über lange Kämpfe"). Der Zähler wird genau einmal je Einheit
+     installiert, egal wie viele Dauer-Passive sie trägt — sonst zählte er
+     doppelt.                                                                   */
+  function rangStufe(c) { return (c.self.rank || 0) + 1; }   // C=1 … S=4
+
+  function langerKampf(c) {
+    if (!c.self._rundenZaehler) {
+      c.self._rundenZaehler = 1;
+      c.addEffect(c.self, { hook: 'onTurnStart', name: 'Ausdauer', fn: function (k) {
+        k.self._runden = (k.self._runden || 0) + 1;
+      } });
+    }
+    return c.self._runden || 0;
+  }
 
   /* Geld und Suphia nehmen ihrer Reihe Schaden ab — die Deckung des
      Kampfsystems hängt dagegen an Platz 3. Gebaut aus vorhandenen Mitteln: der

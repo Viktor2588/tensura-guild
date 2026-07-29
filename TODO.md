@@ -323,6 +323,20 @@ Abgearbeitet in Phase 35:
 - [x] Orkkrieger und Phobio im Startbestand. Roster: 40 Einheiten.
 - [x] Die Kampflog-Prüfung hing an einer Zeilenzahl und damit am Startdraft.
 
+Abgearbeitet in Phase 36:
+
+- [x] **Goblins skalieren mit dem Rang** (`rangStufe()`) — 13 → 37 Schaden je
+      Treffer von C auf S. Alle fünf tragen es, nicht nur die blassen drei.
+- [x] **Echsenmenschen wachsen mit der Kampfdauer** (`langerKampf()`) — der
+      Zähler wird genau einmal je Einheit installiert. 34 → 59 je Treffer.
+- [x] Beide Identitäten standen wörtlich im Glossar, ohne mechanisch zu
+      stimmen. Die Glossartexte sagen jetzt, was das Spiel tut.
+- [x] Dämonengarde: schlägt zurück, bevor der Treffer sitzt — jeder Austausch
+      schärft die Klinge, jeder dritte gibt einen Zug, der Keystone kontert alle.
+- [x] **Die Referenzprüfung deckte die Linien nicht ab.** Ein Regex-Fehler hat
+      drei Passive gelöscht, ohne dass ein Test anschlug. Jetzt prüft sie auch
+      `AB.linien`.
+
 Balance und Werkzeug:
 
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller

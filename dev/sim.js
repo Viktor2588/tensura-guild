@@ -93,6 +93,14 @@ var fehlend = [];
 GD.units.forEach(function (u) {
   if (!AB.get(u.signature)) fehlend.push(u.id + ' -> ' + u.signature);
   u.passives.forEach(function (p) { if (!AB.get(p)) fehlend.push(u.id + ' -> ' + p); });
+  /* Auch die LINIEN prüfen: sie waren hier nicht dabei, und eine Bearbeitung
+     hat einmal drei Passive gelöscht, ohne dass ein Test angeschlagen hat —
+     die Einheit bot dann eine Passive an, die es nicht gab. */
+  Object.keys(AB.linien[u.id] || {}).forEach(function (l) {
+    AB.linien[u.id][l].forEach(function (p) {
+      if (!AB.get(p)) fehlend.push(u.id + '/' + l + ' -> ' + p);
+    });
+  });
 });
 ok(!fehlend.length, 'jede Fähigkeitsreferenz existiert' + (fehlend.length ? ': ' + fehlend.join(', ') : ''));
 ok(GD.units.every(function (u) { return u.passives.length === 3; }), 'jede Einheit hat drei Passive');
@@ -1315,6 +1323,27 @@ GD.units.forEach(function (u) {
 });
 ok(!stumm.length, 'jede Einheit mit onHit-Passiven kommt auch zum Angriff' +
    (stumm.length ? ' — stumm: ' + stumm.join(', ') : ''));
+
+/* Zwei Art-Identitäten, die vorher nur im Glossartext standen: Goblins
+   skalieren mit dem RANG, Echsenmenschen mit der KAMPFDAUER. Beide messbar. */
+function jeTreffer(id, pass, rank) {
+  var o = { id: 'o', name: 'O', tags: ['bestie', 'front'], hp: 900000, atk: 2, def: 0,
+    spd: 2, actives: [], effects: [], keywords: [] };
+  var sum = 0, n = 0;
+  for (var sd = 0; sd < 8; sd++) {
+    var m = R.member(id); m.rank = rank; m.passives = pass;
+    C.simulate([R.resolve(m)], [o], sd).log.forEach(function (l) {
+      if (l.type === 'hit' && l.side === 'enemy') { sum += l.dmg; n++; }
+    });
+  }
+  return n ? sum / n : 0;
+}
+var rangC = jeTreffer('rigurd', ['rigurd_ang3'], 0);
+var rangS = jeTreffer('rigurd', ['rigurd_ang3'], 3);
+ok(rangS > rangC * 1.5,
+   'Goblin-Passive skalieren mit dem Rang (' + Math.round(rangC) + ' → ' + Math.round(rangS) + ' je Treffer)');
+ok(jeTreffer('echsenfuerst', ['fuerst_ang3'], 3) > jeTreffer('echsenfuerst', [], 3) * 1.2,
+   'Echsenmenschen-Passive wachsen mit der Kampfdauer');
 
 /* Geld nimmt seiner Reihe Schaden ab — unabhängig von der Aufstellung, anders
    als die Deckung des Kampfsystems, die an Platz 3 hängt. Gemessen am Restleben

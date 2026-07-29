@@ -1564,6 +1564,53 @@ muss, statt eine Zeilenzahl.
 
 `dev/balance.js 600`: 49 % frisch, kein Build-Ausreißer.
 
+### Phase 36 (2026-07-29): Zwei Art-Identitäten, die schon im Glossar standen
+
+Eine Messung über alle 40 Einheiten zeigte sieben, die weder eine eigene
+Mechanik noch ein seltenes Schlüsselwort trugen — austauschbar im Wortsinn:
+Rigurd, Rigur, Gobwa, Gabiru, Echsenfürst, Drachenknecht, Dämonengarde. Vier
+davon Goblins und Echsenmenschen, also genau die zwei Arten, die in Phase 23 als
+Erste umgebaut wurden — bevor die interessanteren Werkzeuge überhaupt
+existierten.
+
+Die Lösung stand längst im Glossar, sie war nur nie mechanisch wahr:
+
+- **Goblins** — „schwach geboren, wächst über seine Fähigkeiten hinaus". Ihre
+  Passiven skalieren jetzt mit dem **Rang**. `rangStufe()` gibt 1 bis 4, und
+  keine andere Art liest ihn. Gemessen an Rigurds `Erster in der Schlacht`:
+  13 Schaden je Treffer auf C, 37 auf S. Alle fünf Goblins tragen das, nicht
+  nur die drei blassen — sonst wäre es wieder nur eine Behauptung.
+- **Echsenmenschen** — „hält die Front über lange Kämpfe". Ihre Passiven wachsen
+  mit der Zahl der **eigenen Züge**. `langerKampf()` installiert den Zähler
+  genau einmal je Einheit, egal wie viele Dauer-Passive sie trägt. Gemessen an
+  `Langer Atem`: 34 → 59 Schaden je Treffer. Wer sie schnell abräumt, merkt
+  nichts davon — das ist der Punkt.
+
+**Dämonengarde** bekam keine Art-Identität (die Dämonen sind einzeln stark
+gezeichnet), sondern eine eigene: sie schlägt zurück, *bevor* der Treffer sitzt.
+Jeder Austausch schärft ihre Klinge (+5 Angriff), jeder dritte bis vierte
+verschafft ihr einen zusätzlichen Zug, und ihr Keystone kontert nicht den
+Angreifer, sondern alle.
+
+**Zwei Befunde am Werkzeug:**
+
+Mein Ersetzungs-Regex hat drei Nachbar-Passive mitgefressen (`rigurd_ang4`,
+`fuerst_ang4`, `knecht_ang4`), weil die zu ersetzenden Rümpfe einzeilig waren
+und der Ausdruck bis zum nächsten mehrzeiligen Ende weiterlief. Aus dem Commit
+zurückgeholt.
+
+Schlimmer: **kein Test hat es gemerkt.** Die Prüfung „jede Fähigkeitsreferenz
+existiert" las nur `u.signature` und `u.passives` aus `data.js` — die LINIEN
+standen nie darin. Eine Einheit hätte im Aufstieg eine Passive angeboten, die
+es nicht gibt. Die Prüfung deckt jetzt auch `AB.linien` ab.
+
+Die Heuristik selbst ist ausdrücklich keine Design-Bewertung: sie zählt
+Code-Merkmale. Beim ersten Durchlauf meldete sie 29 Einheiten, weil sie Haken
+nicht mitlas, und führte Milim als blass, obwohl „trägt gar keinen Zustand" ihre
+erklärte Nische ist. Die sieben oben sind einzeln gegengelesen.
+
+`dev/balance.js 600`: 50 % frisch, kein Build-Ausreißer.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

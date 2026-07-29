@@ -43,10 +43,10 @@
   var GLOSSAR = {
     arten: {
       slime: 'Rimurus Art. Formlos, lernt durch Verschlingen — legendär und darum selten im Angebot.',
-      goblin: 'Schwach geboren, billig zu haben, wächst über seine Fähigkeiten hinaus.',
+      goblin: 'Schwach geboren, billig zu haben — und die einzige Art, deren Passive mit dem RANG skalieren. Ein Goblin auf S tut nicht dasselbe wie einer auf C, er tut mehr davon.',
       oger: 'Kriegervolk aus dem Jura-Wald. Hoher Schaden, wird im Verlauf eines Kampfes stärker.',
       direwolf: 'Sturmwölfe. Schnellste Züge im Spiel, dafür dünnes Fell.',
-      echsenmensch: 'Sumpfbewohner. Zäh, regeneriert, hält die Front über lange Kämpfe.',
+      echsenmensch: 'Sumpfbewohner — die einzige Art, deren Passive mit der KAMPFDAUER wachsen. Je mehr eigene Züge vergehen, desto stärker werden sie. Wer sie schnell abräumt, merkt nichts davon.',
       insektoid: 'Schwarmwesen — und die einzige Art, die sich häutet. Jeder Insektoid hat eine Metamorphose: eine Schwelle mitten im Kampf, hinter der eine stärkere Form und eine andere Signatur stehen.',
       daemon: 'Urdämonen. Teuer, brechen Rüstung, tragen Verderbnis.',
       drache: 'Selten und roh stark. Kaum Fähigkeiten nötig — die Werte reichen.',
