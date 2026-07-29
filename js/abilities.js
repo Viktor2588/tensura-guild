@@ -185,6 +185,37 @@
                      side: c.self.side, form: 'Verdorbener Teufel' });
       }),
 
+    /* Chaos und Antichaos sind dasselbe Rad, einmal nach unten und einmal nach
+       oben. Diese drei Passiven drehen daran, statt Zahlen zu erhöhen:
+       ernten, umleiten, verbrauchen. */
+    passiv('shion_mec5', 'Chaosernte', 'onKill', ['chaos'], ['chaos'],
+      'Fällt ein Ziel mit mindestens 5 Chaos, erntet Shion die Ladung: je Stapel +2 % Angriff dauerhaft, und der ganze Trupp bekommt ein Drittel davon als Antichaos',
+      function (c) {
+        var geerntet = Math.floor(c.getoetet.status.chaos || 0);
+        if (geerntet < 5) return;
+        c.self.atk = Math.round(c.self.atk * (1 + 0.02 * geerntet));
+        var anti = Math.max(1, Math.round(geerntet / 3));
+        c.allies().forEach(function (u) { c.applyStatus(u, 'antichaos', anti); });
+      }),
+    passiv('shion_unt5', 'Umkehr der Ordnung', 'onTurnStart', ['chaos'], ['chaos'],
+      'Zu Beginn jedes Zuges zieht Shion 2 Chaos vom am stärksten belasteten Gegner ab und gibt sie dem schwächsten Verbündeten als Antichaos — Unordnung wird zu Ordnung',
+      function (c) {
+        var quelle = c.foes().reduce(function (a, b) {
+          return (b.status.chaos || 0) > (a.status.chaos || 0) ? b : a;
+        }, c.foes()[0]);
+        if (!quelle || (quelle.status.chaos || 0) < 2) return;
+        quelle.status.chaos -= 2;
+        var ziel = schwaechstes(c.allies(), function (u) { return u.hp / u.maxHp; });
+        if (ziel) c.applyStatus(ziel, 'antichaos', 2);
+      }),
+    passiv('shion_def5', 'Ordnungspanzer', 'onDamaged', ['chaos'], ['chaos'],
+      'Je Antichaos-Stapel erleidet Shion 3 % weniger Schaden — höchstens 45 %. Jeder abgefangene Treffer verbraucht dafür einen Stapel',
+      function (c) {
+        var anti = Math.floor(c.self.status.antichaos || 0);
+        c.self.minderung = Math.min(0.45, 0.03 * anti);
+        if (anti > 0) c.self.status.antichaos--;
+      }),
+
     passiv('shion_mec1', 'Chaosmeisterschaft', 'onStart', [], ['chaos'],
       'Shion legt 30 % mehr Chaos-Stapel an, als die Fähigkeit angibt',
       function (c) { c.self.chaosmeister = Math.max(c.self.chaosmeister || 1, 1.3); }),
@@ -248,6 +279,144 @@
     passiv('shion_def4', 'Chaosbollwerk', 'onStart', [], [],
       'Kein einzelner Treffer nimmt Shion mehr als 16 % ihres maximalen Lebens',
       function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.155); }),
+
+    /* ---- Rimurus Linien: Prädator, Analyse und Ordnung ----------------------
+       Er hat als einziger keine eigene Marke, die er anlegt — er LIEST, was
+       andere angelegt haben. Jeder verschiedene Zustand auf einem Gegner ist
+       für ihn ein Datenpunkt und wird zu Antichaos: dem Aufwärts-Rad, das
+       Angriff, Rüstung und Tempo in jedem Zug neu nach oben würfelt. Damit ist
+       er die Gegenfigur zu Shion — sie sät Unordnung, er erntet daraus Ordnung
+       — und der einzige Trupp-Baustein, der von FREMDEN Schlüsselwörtern lebt. */
+
+    passiv('rimuru_ang1', 'Wasserklinge', 'onHit', [], [],
+      'Der erste Schlag des Kampfes trifft 140 % härter und ignoriert die Rüstung vollständig',
+      function (c) {
+        if (c.self._auftakt) return;
+        c.self._auftakt = 1;
+        c.dmg *= 2.4;
+        c.self.pierce = Math.max(c.self.pierce || 0, 1);
+      }),
+    passiv('rimuru_ang2', 'Große Weisheit', 'onHit', ['chaos'], [],
+      'Jeder dritte Schlag wertet aus: +20 % Schaden je verschiedenem Zustand auf dem Ziel, und Rimuru legt sich ebenso viel Antichaos an',
+      function (c) {
+        if (!zaehler(c.self, 'rimuru_ang2', 3)) return;
+        var n = gelesen(c.target);
+        if (!n) return;
+        c.dmg *= 1 + 0.2 * n;
+        c.applyStatus(c.self, 'antichaos', n);
+      }),
+    passiv('rimuru_ang3', 'Angepasst', 'onHit', [], ['chaos'],
+      'Führt ein Verbündeter Chaos, schlägt Rimuru 3 % härter je eigenem Antichaos-Stapel — sonst 1 %',
+      function (c) {
+        var f = truppFuehrt(c, 'chaos') ? 0.03 : 0.01;
+        c.dmg *= 1 + Math.min(0.6, f * (c.self.status.antichaos || 0));
+      }),
+    passiv('rimuru_ang4', 'Belial', 'onStart', ['chaos'], [],
+      'Rimurus Antichaos zählt doppelt für alles, was daran hängt — dafür verliert er in jedem Zug einen Stapel obendrein',
+      function (c) {
+        c.self.antichaosDoppelt = 1;
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Belial', fn: function (k) {
+          if ((k.self.status.antichaos || 0) > 0) k.self.status.antichaos--;
+        } });
+      }),
+
+    passiv('rimuru_mec1', 'Prädator', 'onStart', ['chaos'], [],
+      'Verschlingt zu Kampfbeginn das Wissen über das Feld: je verschiedenem Zustand auf allen Gegnern 1 Antichaos für Rimuru',
+      function (c) {
+        var n = 0;
+        c.foes().forEach(function (f) { n += gelesen(f); });
+        if (n) c.applyStatus(c.self, 'antichaos', Math.min(8, n));
+      }),
+    passiv('rimuru_mec2', 'Magen der Unendlichkeit', 'onHit', ['chaos'], [],
+      'Jeder dritte Schlag verschlingt einen Stapel jedes Zustands auf dem Ziel — und macht daraus je 2 Antichaos für Rimuru',
+      function (c) {
+        var geerntet = 0;
+        ZUSTAENDE_FEIND.forEach(function (k) {
+          if ((c.target.status[k] || 0) > 0) { c.target.status[k]--; geerntet++; }
+        });
+        if (!geerntet) return;
+        if (!zaehler(c.self, 'rimuru_mec2', 3)) {
+          /* Der Zähler läuft nur, wenn es etwas zu verschlingen gab — sonst
+             würde ein Kampf ohne Zustände den Magen trotzdem füllen. */
+          return;
+        }
+        c.applyStatus(c.self, 'antichaos', geerntet * 2);
+      }),
+    passiv('rimuru_mec3', 'Analyse teilen', 'onTurnStart', ['chaos'], ['chaos'],
+      'Führt ein Verbündeter Chaos, gibt Rimuru jeden Zug 2 seiner Antichaos-Stapel an den ganzen Trupp weiter — sonst 1',
+      function (c) {
+        var n = truppFuehrt(c, 'chaos') ? 2 : 1;
+        if ((c.self.status.antichaos || 0) < n) return;
+        c.allies().forEach(function (u) { if (u !== c.self) c.applyStatus(u, 'antichaos', n); });
+      }),
+    passiv('rimuru_mec4', 'Unendlicher Kerker', 'onStart', ['chaos'], [],
+      'Zustände auf Rimurus Zielen bauen sich nicht mehr ab — dafür legt er selbst nie welche an',
+      function (c) {
+        c.self.fluchmeister = 0.0001;
+        c.addEffect(c.self, { hook: 'onHit', name: 'Unendlicher Kerker', fn: function (k) {
+          k.target.brandBleibt = 1;
+          k.target.verderbnisBleibt = 1;
+          k.target.offeneWunde = 1;
+          k.target.zaehesChaos = 1;
+        } });
+      }),
+
+    passiv('rimuru_unt1', 'Bund der Monster', 'onStart', ['chaos'], [],
+      'Zu Kampfbeginn 4 Antichaos für den ganzen Trupp',
+      function (c) { c.allies().forEach(function (u) { c.applyStatus(u, 'antichaos', 4); }); }),
+    passiv('rimuru_unt2', 'Namensgebung', 'onDamaged', ['chaos'], [],
+      'Jeder vierte Treffer auf den Trupp gibt allen 2 Antichaos und dauerhaft +4 Angriff',
+      function (c) {
+        if (!zaehler(c.self, 'rimuru_unt2', 4)) return;
+        c.allies().forEach(function (u) { c.applyStatus(u, 'antichaos', 2); u.atk += 4; });
+      }),
+    passiv('rimuru_unt3', 'Ordnung aus Analyse', 'onStart', ['chaos'], ['chaos'],
+      'Führt ein Verbündeter Chaos, legt jeder Treffer des Trupps dem Schlagenden 1 Antichaos an — sonst nur Rimuru selbst',
+      function (c) {
+        var alle = truppFuehrt(c, 'chaos');
+        (alle ? c.allies() : [c.self]).forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Ordnung aus Analyse', fn: function (k) {
+            k.applyStatus(k.self, 'antichaos', 1);
+          } });
+        });
+      }),
+    passiv('rimuru_unt4', 'Herr der Monster', 'onStart', ['chaos'], [],
+      'Antichaos des Trupps wirkt doppelt — Rimuru selbst greift nur noch mit einem Viertel an',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        c.self.atk = Math.round(c.self.atk * 0.25);
+        c.allies().forEach(function (u) { u.antichaosDoppelt = 1; });
+      }),
+
+    passiv('rimuru_def1', 'Schleimleib', 'onStart', ['schild'], [],
+      'Beginnt mit einem Schild über 34 % seines Lebens',
+      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.34)); }),
+    passiv('rimuru_def2', 'Selbstregeneration', 'onDamaged', [], [],
+      'Jeder dritte erlittene Treffer heilt 9 % seines Lebens',
+      function (c) {
+        if (!zaehler(c.self, 'rimuru_def2', 3)) return;
+        c.heal(c.self, c.self.maxHp * 0.09, 'Selbstregeneration');
+      }),
+    passiv('rimuru_def3', 'Vielfraß-Barriere', 'onStart', ['chaos'], ['chaos'],
+      'Führt ein Verbündeter Chaos, kostet kein Treffer mehr als 14 % seines Lebens — sonst 20 %',
+      function (c) {
+        var d = truppFuehrt(c, 'chaos') ? 0.14 : 0.2;
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+      }),
+    passiv('rimuru_def4', 'Ultimative Fähigkeit', 'onDeath', ['chaos'], [],
+      'Steht einmal je Kampf mit 40 % Leben wieder auf und verschlingt dabei das ganze Feld: 1 Antichaos je Zustand auf jedem Gegner — danach heilt ihn nichts mehr',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1;
+        c.self.hp = Math.round(c.self.maxHp * 0.4);
+        c.self.heilfaktor = -1;
+        var n = 0;
+        c.foes().forEach(function (f) { n += gelesen(f); });
+        if (n) c.applyStatus(c.self, 'antichaos', Math.min(10, n));
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name,
+                     side: c.self.side, hp: c.self.hp });
+      }),
 
     /* ---- Soueis Linien: der Assassine --------------------------------------
        Fäden, Doppelgänger und Wurfklingen aus der Verstohlenheit. Souei baut
@@ -2662,7 +2831,6 @@
      ID referenziert werden.                                                   */
 
   var LINE_UNITS = [
-    'rimuru',
     'zegion', 'apito', 'riesenameise', 'kaefergarde', 'giftfalter',
     'diablo', 'testarossa', 'ultima', 'carrera', 'daemonengarde',
     'veldora', 'milim', 'drachenwelpe', 'windrache',
@@ -2670,7 +2838,6 @@
   ];
 
   var LINE_UNIT_NAME = {
-    rimuru: 'Rimuru',
     zegion: 'Zegion',
     apito: 'Apito',
     riesenameise: 'Riesenameise',
@@ -2692,7 +2859,6 @@
   };
 
   var LINE_THEME = {
-    rimuru: { kind: 'exekution', defRevive: false },
     zegion: { kind: 'konter', defRevive: false },
     apito: { kind: 'status', statusKey: 'gift', defRevive: false },
     riesenameise: { kind: 'konter', defRevive: false },
@@ -2796,6 +2962,18 @@
     return c.allies().some(function (a) {
       return a !== c.self && (a.keywords || []).indexOf(kw) >= 0;
     });
+  }
+
+  /* Wie viele VERSCHIEDENE Zustände trägt ein Ziel? Rimurus ganze Linie hängt
+     daran: er legt selbst keine Marke an, er liest, was andere angelegt haben.
+     Deshalb ist er der einzige Baustein, der von fremden Schlüsselwörtern lebt. */
+  var ZUSTAENDE_FEIND = ['gift', 'brand', 'blutung', 'verderbnis', 'verwundbar',
+                         'chaos', 'dunkelheit', 'donner', 'erstarrung'];
+  function gelesen(ziel) {
+    if (!ziel) return 0;
+    var n = 0;
+    ZUSTAENDE_FEIND.forEach(function (k) { if ((ziel.status[k] || 0) > 0) n++; });
+    return n;
   }
 
   /* Göttliche Angriffsmagie: Schaden, der weder Rüstung noch Schild kennt.
@@ -3017,12 +3195,19 @@
   var linien = {
     shion: {
       angriff: ['shion_ang1', 'shion_ang2', 'shion_ang3', 'shion_ang4', 'shion_ang5'],
-      mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4'],
-      unterstuetzung: ['shion_unt1', 'shion_unt2', 'shion_unt3', 'shion_unt4'],
-      defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4']
+      mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4', 'shion_mec5'],
+      unterstuetzung: ['shion_unt1', 'shion_unt2', 'shion_unt3', 'shion_unt4', 'shion_unt5'],
+      defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4', 'shion_def5']
     },
-    /* Adalmann stand im Generator, bis der Priester in ihm eigene Linien
-       bekam — Totenmagie und göttliche Angriffsmagie nebeneinander. */
+    /* Rimuru und Adalmann standen im Generator, bis ihre Kits eigene Linien
+       verlangten: Rimuru liest fremde Zustände statt eigene anzulegen, und der
+       Priester in Adalmann führt Licht neben der Totenmagie. */
+    rimuru: {
+      angriff: ['rimuru_ang1', 'rimuru_ang2', 'rimuru_ang3', 'rimuru_ang4'],
+      mechanik: ['rimuru_mec1', 'rimuru_mec2', 'rimuru_mec3', 'rimuru_mec4'],
+      unterstuetzung: ['rimuru_unt1', 'rimuru_unt2', 'rimuru_unt3', 'rimuru_unt4'],
+      defensive: ['rimuru_def1', 'rimuru_def2', 'rimuru_def3', 'rimuru_def4']
+    },
     adalmann: {
       angriff: ['adal_ang1', 'adal_ang2', 'adal_ang3', 'adal_ang4'],
       mechanik: ['adal_mec1', 'adal_mec2', 'adal_mec3', 'adal_mec4'],
@@ -3362,10 +3547,19 @@
 
   var signatures = [
     /* Rimuru: Wasserklinge schneidet durch alles; jeder Kill macht ihn stärker (Prädator). */
-    aktiv('sig_rimuru', 'Wasserklinge', 3, ['exekution'],
-      '170 % Schaden und ignoriert Rüstung vollständig. Tötet der Schlag, wächst Rimurus Angriff dauerhaft um 12 %.',
+    /* Rimuru legt als einziger keine eigene Marke an — er liest das Feld. Jeder
+       VERSCHIEDENE Zustand auf dem Ziel ist ein Datenpunkt und wird zu Antichaos.
+       Damit hängt seine Stärke daran, was der Rest des Trupps anrichtet, und er
+       ist die Gegenfigur zu Shion: sie sät Chaos, er erntet Ordnung. */
+    aktiv('sig_rimuru', 'Prädator', 3, ['chaos'],
+      '170 % Schaden und ignoriert Rüstung vollständig. Für jeden VERSCHIEDENEN ' +
+      'Zustand auf dem Ziel legt Rimuru sich 1 Antichaos an — und je Antichaos-Stapel ' +
+      'trifft er 2 % härter. Tötet der Schlag, wächst sein Angriff dauerhaft um 12 %.',
       function (c) {
-        c.attack(1.7, c.target, { pierce: 1 });
+        var anti = c.self.status.antichaos || 0;
+        c.attack(1.7 * (1 + Math.min(0.5, 0.02 * anti)), c.target, { pierce: 1 });
+        var n = gelesen(c.target);
+        if (n) c.applyStatus(c.self, 'antichaos', n);
         if (c.target.hp <= 0) c.self.atk = Math.round(c.self.atk * 1.12);
       }),
 

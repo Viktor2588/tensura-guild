@@ -50,6 +50,11 @@
   }
   /* Untergrenze für den Chaos-Faktor: bei 0 stünde die Einheit still. */
   var CHAOS_MIN = 0.15;
+  /* Und nach oben? Bis hierher gab es keine Grenze — Chaos zieht nur nach unten,
+     also fiel niemandem auf, dass Antichaos unbegrenzt wächst. Sobald eine
+     Einheit es aus fremden Zuständen ERNTET (Rimuru), stapeln sich in einem
+     langen Kampf dreistellige Mengen und der Wurf verlässt jede Skala. */
+  var CHAOS_MAX = 2.2;
   /* Auch bei sehr vielen Stapeln bleibt ein Rest Verlässlichkeit. */
   var FEHLSCHLAG_MAX = 0.75;
 
@@ -139,7 +144,7 @@
       }),
       keywords: (def.keywords || []).slice(), resistenz: def.resistenz || 0,
       side: side, pos: pos, gauge: 0, status: {}, regen: 0, lifesteal: 0,
-      heilfaktor: 0, schildfaktor: 0,
+      heilfaktor: 0, schildfaktor: 0, fluchmeister: 1, segenmeister: 1,
       chaos: null, enrage: def.enrage || 0, wut: 1, verschlungen: def.verschlungen || 0,
       schattenPlus: 0, dunkelPlus: 0, lichtPlus: 0,
       itemZahl: def.itemZahl || 0,
@@ -251,7 +256,7 @@
     }
 
     var entlaedt = 0;
-    function applyStatus(target, key, stacks) {
+    function applyStatus(target, key, stacks, von) {
       if (!target || !alive(target) || stacks <= 0) return;
       /* Bosse schütteln Erstarrung meist ab — sonst gewinnt Frost jeden
          Einzelkampf, indem er dem Gegner schlicht die Züge nimmt. */
@@ -260,6 +265,15 @@
         log.push({ t: t, type: 'widersteht', key: target.key, target: target.name,
                    side: target.side, status: key });
         return;
+      }
+      /* Zwei generische Stellschrauben für Ausrüstung und Relikte: wer Stapel
+         auf GEGNER legt, skaliert über `fluchmeister`, wer sie auf die eigene
+         Reihe legt, über `segenmeister`. Beide sitzen am Anleger, nicht am Ziel
+         — sonst könnte ein Relikt versehentlich auch fremde Marken verstärken.
+         `chaosmeister` und `markenmeister` bleiben die spezifischen Varianten
+         und multiplizieren obendrauf. */
+      if (von) {
+        stacks *= (von.side === target.side ? von.segenmeister : von.fluchmeister) || 1;
       }
       if (key === 'schild') stacks *= 1 + (target.schildfaktor || 0);
       target.status[key] = (target.status[key] || 0) + stacks;
@@ -287,7 +301,8 @@
 
     function ctx(self, extra) {
       var c = {
-        rng: rng, log: log, self: self, deal: deal, heal: heal, applyStatus: applyStatus,
+        rng: rng, log: log, self: self, deal: deal, heal: heal,
+        applyStatus: function (ziel, key, stapel) { return applyStatus(ziel, key, stapel, self); },
         allies: function () { return living(self.side); },
         foes: function () { return living(other(self.side)); },
         addEffect: function (u, e) { u.effects.push(e); },
@@ -297,18 +312,18 @@
            nicht an jeder Fähigkeit einzeln hängen. */
         markiere: function (ziel, stapel) {
           var n = stapel * (self.markenmeister || 1);
-          applyStatus(ziel, 'verwundbar', n);
+          applyStatus(ziel, 'verwundbar', n, self);
           if (self.offeneWunde) ziel.offeneWunde = 1;      // baut sich nicht mehr ab
           fire(self, 'onMarke', ctx(self, { ziel: ziel, stapel: n }));
           return n;
         },
         chaos: function (ziel, stapel) {
           var n = stapel * (self.chaosmeister || 1);
-          applyStatus(ziel, 'chaos', n);
+          applyStatus(ziel, 'chaos', n, self);
           if (self.gesetzlos) ziel.zaehesChaos = 1;      // baut sich nicht mehr ab
           if (self.antichaosWarp) {
             living(self.side).forEach(function (a) {
-              applyStatus(a, 'antichaos', n * self.antichaosWarp);
+              applyStatus(a, 'antichaos', n * self.antichaosWarp, self);
             });
           }
           fire(self, 'onChaos', ctx(self, { ziel: ziel, stapel: n }));
@@ -516,7 +531,10 @@
       if (u.status.dunkelheit > 0) u.status.dunkelheit--;
       if (u.status.verwundbar > 0 && !u.offeneWunde) u.status.verwundbar--;
       /* Der Würfelwurf der Runde: neue Werte, solange Chaos oder Antichaos liegt. */
-      var negC = u.status.chaos || 0, posC = u.status.antichaos || 0;
+      var negC = u.status.chaos || 0;
+      /* `antichaosDoppelt` (Rimurus Belial und Herr der Monster): das
+         Aufwärts-Rad zählt doppelt, ohne dass mehr Stapel liegen. */
+      var posC = (u.status.antichaos || 0) * (u.antichaosDoppelt ? 2 : 1);
       if (negC || posC) {
         var streu = CHAOS_STREUUNG * (gegen(u, 'chaos') ? 1.25 : 1);
         u.chaos = { stapel: negC };
@@ -525,14 +543,15 @@
            gedacht, als Glücksspiel gespielt. Unvorhersehbar bleibt es: die Höhe
            der Einbuße wird in jeder Runde neu gewürfelt. */
         ['atk', 'def', 'spd'].forEach(function (k) {
-          u.chaos[k] = Math.max(CHAOS_MIN, 1 + rng() * streu * posC - rng() * streu * negC);
+          u.chaos[k] = Math.min(CHAOS_MAX,
+            Math.max(CHAOS_MIN, 1 + rng() * streu * posC - rng() * streu * negC));
         });
         log.push({ t: t, type: 'chaos', key: u.key, unit: u.name, side: u.side,
                    stapel: Math.round(negC), anti: Math.round(posC),
                    atk: Math.round(u.chaos.atk * 100), def: Math.round(u.chaos.def * 100),
                    spd: Math.round(u.chaos.spd * 100) });
         if (negC && !u.zaehesChaos) u.status.chaos--;
-        if (posC) u.status.antichaos--;
+        if (u.status.antichaos > 0) u.status.antichaos--;
       } else u.chaos = null;
       if (u.regen > 0) heal(u, u.regen, 'Regeneration');
 
@@ -606,7 +625,8 @@
   }
 
   root.Combat = { simulate: simulate, TICK_CAP: TICK_CAP, ROLES: ROLES, roleOf: roleOf,
-                  STATUS_CAP: STATUS_CAP, CHAOS_MIN: CHAOS_MIN, FEHLSCHLAG_MAX: FEHLSCHLAG_MAX,
+                  STATUS_CAP: STATUS_CAP, CHAOS_MIN: CHAOS_MIN, CHAOS_MAX: CHAOS_MAX,
+                  FEHLSCHLAG_MAX: FEHLSCHLAG_MAX,
                   RESONANZ: RESONANZ,
                   CHAOS_STREUUNG: CHAOS_STREUUNG, CHAOS_FEHLSCHLAG: CHAOS_FEHLSCHLAG,
                   VERWUNDBAR_PIERCE: VERWUNDBAR_PIERCE, BLUTUNG_PRO_STAPEL: BLUTUNG_PRO_STAPEL,

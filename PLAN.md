@@ -1174,6 +1174,57 @@ Der seltenste Moment eines Kampfes darf nicht stumm bleiben.
 
 `dev/balance.js 600`: 51 % frisch, `GRUNDHAERTE` unverändert.
 
+### Phase 27 (2026-07-29): Stapel-Ausrüstung, Shions Rad, Rimurus Kit
+
+**Zwei generische Stellschrauben.** `applyStatus` kannte bisher nur
+Spezialfälle (`chaosmeister`, `markenmeister`). Jetzt nimmt es den Anleger
+entgegen und multipliziert über zwei Felder: `fluchmeister` für Stapel auf
+GEGNER, `segenmeister` für Stapel auf die EIGENE Reihe. Beide sitzen am
+Anleger, nicht am Ziel — sonst verstärkte ein Relikt versehentlich auch fremde
+Marken. Die Spezialfälle multiplizieren obendrauf.
+
+Darauf fünf Ausrüstungsstücke (Fluchring, Segensring, Chaoszepter,
+Ordnungsreif, Markenbrenner) und drei Relikte (Fluchsiegel, Segensbanner,
+Verzerrter Spiegel). Die Relikte sind kleiner dosiert: ein Faktor auf fünf
+Einheiten multipliziert sich mit allem, was sie ohnehin anlegen.
+
+**Shion, drei weitere Passive am selben Rad.** Chaos und Antichaos sind
+dieselbe Mechanik, einmal nach unten und einmal nach oben — die neuen drehen
+daran, statt Zahlen zu erhöhen: `Chaosernte` erntet die Ladung eines fallenden
+Ziels in dauerhaften Angriff und Trupp-Antichaos, `Umkehr der Ordnung` zieht
+jeden Zug Chaos vom belastetsten Gegner ab und gibt es dem schwächsten
+Verbündeten als Antichaos, `Ordnungspanzer` wandelt Antichaos in Schadensabwehr
+und verbraucht es dabei. Shion hat damit 20 Passive.
+
+**Rimuru komplett neu.** Er stand im Generator und hatte 16 nichtssagende
+Linien. Seine Signatur heißt jetzt `Prädator` und trägt die Idee: er legt als
+einziger keine eigene Marke an, er LIEST das Feld. Jeder *verschiedene* Zustand
+auf dem Ziel wird zu einem Antichaos-Stapel für ihn, und je Stapel trifft er
+härter. Damit hängt seine Stärke daran, was der übrige Trupp anrichtet — er ist
+der einzige Baustein, der von FREMDEN Schlüsselwörtern lebt, und die Gegenfigur
+zu Shion: sie sät Unordnung, er erntet Ordnung. Gemessen: allein bekommt er null
+Antichaos, neben Shion sofort dauerhaft welches.
+
+Seine sechzehn Linien führen das aus — `Große Weisheit` (Schaden je gelesenem
+Zustand), `Magen der Unendlichkeit` (verschlingt Stapel und macht Antichaos
+daraus), `Analyse teilen` (gibt Antichaos an den Trupp weiter), `Unendlicher
+Kerker` (Zustände auf seinen Zielen bauen sich nicht mehr ab, dafür legt er
+selbst keine an).
+
+**Antichaos hatte keine Obergrenze.** Das fiel nie auf, weil Chaos nur nach
+unten zieht — bis Rimuru anfing, es zu ernten: in einem langen Kampf standen
+gemessen 481 Stapel, und der Wurf verließ jede Skala. `CHAOS_MAX = 2.2` deckelt
+ihn jetzt. Ein Test prüft beides: gedeckelt bei 500 Stapeln, wachsend darunter.
+
+**Und ein Wächter gegen die Fehlerklasse.** `zaeherBrand` tat zwei Phasen lang
+nichts, weil das Feld in Wahrheit `brandBleibt` heißt; beim Schreiben von Rimuru
+wäre mir mit `antichaosDoppelt` fast dasselbe passiert. Ein Test geht deshalb
+quer über alle Fähigkeiten, sammelt jedes Feld, das eine Fähigkeit einer Einheit
+zuweist, und verlangt, dass es in `combat.js` überhaupt vorkommt. Das findet den
+Tippfehler in dem Moment, in dem er entsteht.
+
+`dev/balance.js 600`: 51 % frisch, kein Build-Ausreißer, `GRUNDHAERTE` unverändert.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

@@ -71,10 +71,10 @@
       schatten: 'Deckung statt Rüstung: Jeder Stapel gibt 7 % Chance, einem Treffer VOLLSTÄNDIG auszuweichen — höchstens 60 %. Baut sich um 1 pro Zug ab und stapelt unbegrenzt. Göttliches Licht des Angreifers hebt die Deckung auf.',
       dunkelheit: 'Blendung: Jeder Stapel senkt den Schaden, den das Ziel AUSTEILT, um 7 % — höchstens 60 %. Alle anderen Marken erhöhen den eingehenden Schaden; Dunkelheit nimmt dem Gegner die Wucht. Baut sich um 1 pro Zug ab, stapelt unbegrenzt.',
       licht: 'Göttliches Licht auf einer eigenen Einheit: heilt je Stapel 1,5 % ihres maximalen Lebens pro Zug, löscht dabei ebenso viele Stapel Dunkelheit, und ihre Angriffe gehen durch fremde Schatten hindurch. Die Antwort auf beide Finsternis-Elemente. Baut sich um 1 pro Zug ab.',
-      chaos: 'Unberechenbarkeit statt Schaden: Wer Chaos trägt, würfelt zu Beginn jedes eigenen Zuges Angriff, Rüstung und Tempo neu aus — je Stapel um bis zu 6 % nach oben ODER unten. Dazu verpufft jede aktive Fähigkeit mit 5 % Chance je Stapel und ist trotzdem abgeklungen. Baut sich um 1 pro Zug ab und stapelt unbegrenzt; die Werte fallen aber nie unter 15 % und die Fehlschlagchance nie über 75 %.',
+      chaos: 'Unberechenbarkeit statt Schaden: Wer Chaos trägt, würfelt zu Beginn jedes eigenen Zuges Angriff, Rüstung und Tempo neu aus — je Stapel um bis zu 6 % nach oben ODER unten. Dazu verpufft jede aktive Fähigkeit mit 5 % Chance je Stapel und ist trotzdem abgeklungen. Baut sich um 1 pro Zug ab und stapelt unbegrenzt; die Werte bleiben aber zwischen 15 und 220 % und die Fehlschlagchance nie über 75 %.',
       verwundbar: 'Die Marke des Assassinen. Jeder Stapel lässt JEDEN Angreifer 15 % mehr der gegnerischen Rüstung durchschlagen — nicht nur den, der die Marke gesetzt hat. Für sich genommen bescheiden; ihr Wert liegt darin, dass die Unterstützungs-Passiven des Trupps daran andocken. Baut sich um 1 pro Zug ab und stapelt unbegrenzt.',
       blutung: 'Schaden über Zeit, der am maximalen Leben des Ziels hängt statt an einer festen Zahl: gut 1 % je Stapel pro Zug des Ziels. Damit die Antwort auf Gegner, die schlicht zu viel Leben haben. Geht durch Schilde. Baut sich um 1 pro Zug ab und stapelt unbegrenzt.',
-      antichaos: 'Die invertierte Seite des Chaos: dieselbe Streuung, aber nur nach oben. Je Stapel bis zu 6 % mehr Angriff, Rüstung und Tempo, neu gewürfelt in jedem eigenen Zug, und kein Fehlschlag. Baut sich um 1 pro Zug ab und stapelt unbegrenzt; die Werte fallen aber nie unter 15 % und die Fehlschlagchance nie über 75 %.'
+      antichaos: 'Die invertierte Seite des Chaos: dieselbe Streuung, aber nur nach oben. Je Stapel bis zu 6 % mehr Angriff, Rüstung und Tempo, neu gewürfelt in jedem eigenen Zug, und kein Fehlschlag. Baut sich um 1 pro Zug ab und stapelt unbegrenzt; die Werte bleiben aber zwischen 15 und 220 % und die Fehlschlagchance nie über 75 %.'
     },
     keywords: {
       gift: 'Schaden über Zeit, der sich stapelt. Stark gegen Gegner mit viel Leben und Rüstung.',
@@ -458,7 +458,27 @@
       function (run) { return raenge(run).some(function (r) { return r === 0; }); }),
 
     relic('taktgeber', 'Taktgeber', 5, 'Alle Einheiten +18 % Tempo — und damit öfter am Zug',
-      jeder(function (x) { scale(x, { spd: 0.18 }); }), ['tempo'])
+      jeder(function (x) { scale(x, { spd: 0.18 }); }), ['tempo']),
+
+    /* Stapel-Relikte: dieselben zwei Stellschrauben, aber für den GANZEN Trupp.
+       Deshalb kleiner als die Ringe — ein Faktor auf fünf Einheiten multipliziert
+       sich mit allem, was sie ohnehin anlegen. */
+    relic('fluchsiegel', 'Fluchsiegel', 3,
+      'Jeder Stapel, den der Trupp einem Gegner anlegt, fällt 25 % größer aus',
+      jeder(function (x, api) { x.fluchmeister = (x.fluchmeister || 1) * 1.25; })),
+    relic('segensbanner', 'Segensbanner', 3,
+      'Jeder Stapel, den der Trupp der eigenen Reihe anlegt, fällt 25 % größer aus',
+      jeder(function (x) { x.segenmeister = (x.segenmeister || 1) * 1.25; })),
+    relic('verzerrter_spiegel', 'Verzerrter Spiegel', 4,
+      'Chaos des Trupps fällt 50 % größer aus, und jede Einheit beginnt mit 3 Antichaos',
+      function (m, api) {
+        m.forEach(function (x) {
+          x.chaosmeister = (x.chaosmeister || 1) * 1.5;
+          api.addEffect(x, eff('onStart', 'Verzerrter Spiegel', function (c) {
+            c.applyStatus(c.self, 'antichaos', 3);
+          }));
+        });
+      }, ['chaos'], ['chaos'])
   ];
 
   /* ---- Ausrüstung ---------------------------------------------------------- */
@@ -573,7 +593,39 @@
       })] },
     { id: 'schildbrecher', rarity: 5, name: 'Schildbrecher', cost: 100, stats: { atk: 4 },
       text: '+4 Angriff. Alle Angriffe der Trägerin gehen durch Schilde hindurch.',
-      effects: [eff('onStart', 'Schildbrecher', function (c) { c.self.durchschlag = 1; })] }
+      effects: [eff('onStart', 'Schildbrecher', function (c) { c.self.durchschlag = 1; })] },
+
+    /* ---- Stapel-Ausrüstung -------------------------------------------------
+       `fluchmeister` und `segenmeister` sind die generischen Stellschrauben aus
+       combat.js: Stapel, die der Träger auf GEGNER bzw. auf die EIGENE Reihe
+       legt. Sie greifen auf alles — Gift, Brand, Verwundbar, Schild, Licht —
+       und sind deshalb bewusst teuer und selten.                              */
+    { id: 'fluchring', rarity: 3, name: 'Fluchring', cost: 75, stats: {},
+      text: 'Jeder Stapel, den die Trägerin einem GEGNER anlegt, fällt 40 % größer aus — Gift, Brand, Verwundbar, Chaos, alles.',
+      effects: [eff('onStart', 'Fluchring', function (c) {
+        c.self.fluchmeister = (c.self.fluchmeister || 1) * 1.4;
+      })] },
+    { id: 'segensring', rarity: 3, name: 'Segensring', cost: 75, stats: {},
+      text: 'Jeder Stapel, den die Trägerin der EIGENEN Reihe anlegt, fällt 40 % größer aus — Schild, Licht, Antichaos, alles.',
+      effects: [eff('onStart', 'Segensring', function (c) {
+        c.self.segenmeister = (c.self.segenmeister || 1) * 1.4;
+      })] },
+    { id: 'chaoszepter', rarity: 4, name: 'Chaoszepter', cost: 95, stats: { atk: 6 },
+      text: '+6 Angriff. Chaos, das die Trägerin anlegt, fällt 60 % größer aus — zusätzlich zu allem, was sie selbst schon kann.',
+      effects: [eff('onStart', 'Chaoszepter', function (c) {
+        c.self.chaosmeister = (c.self.chaosmeister || 1) * 1.6;
+      })] },
+    { id: 'ordnungsreif', rarity: 4, name: 'Ordnungsreif', cost: 95, stats: { def: 4 },
+      text: '+4 Rüstung. Zu Kampfbeginn 4 Antichaos für die Trägerin, und jeder eigene Antichaos-Stapel fällt 50 % größer aus.',
+      effects: [eff('onStart', 'Ordnungsreif', function (c) {
+        c.self.segenmeister = (c.self.segenmeister || 1) * 1.5;
+        c.applyStatus(c.self, 'antichaos', 4);
+      })] },
+    { id: 'markenbrenner', rarity: 3, name: 'Markenbrenner', cost: 70, stats: { atk: 4 },
+      text: '+4 Angriff. Marken der Trägerin fallen 60 % größer aus — und jeder Angreifer im Trupp profitiert davon.',
+      effects: [eff('onStart', 'Markenbrenner', function (c) {
+        c.self.markenmeister = (c.self.markenmeister || 1) * 1.6;
+      })] }
   ];
 
   /* Die Signatur ist so selten wie ihre Einheit teuer ist — eine Zahl weniger,

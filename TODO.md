@@ -210,6 +210,22 @@ Abgearbeitet in Phase 26:
       der letzten — Linien dürfen jetzt wachsen.
 - [x] Verwandlungen erscheinen im Kampflog.
 
+Abgearbeitet in Phase 27:
+
+- [x] `fluchmeister` und `segenmeister`: generische Multiplikatoren für Stapel
+      auf Gegner bzw. auf die eigene Reihe, am Anleger. Darauf 5 Items
+      (Fluchring, Segensring, Chaoszepter, Ordnungsreif, Markenbrenner) und
+      3 Relikte (Fluchsiegel, Segensbanner, Verzerrter Spiegel).
+- [x] Shion +3 Passive am Chaos/Antichaos-Rad: Chaosernte, Umkehr der Ordnung,
+      Ordnungspanzer. Sie hat jetzt 20.
+- [x] Rimuru komplett neu: Signatur `Prädator` liest fremde Zustände und macht
+      Antichaos daraus; 16 handgeschriebene Linien dazu. Er ist die Gegenfigur
+      zu Shion und lebt als einziger von fremden Schlüsselwörtern.
+- [x] **Antichaos war nach oben unbegrenzt** — gemessen 481 Stapel. `CHAOS_MAX`
+      deckelt den Wurf jetzt bei 2,2.
+- [x] Wächter-Test gegen tote Felder: jedes Feld, das eine Fähigkeit setzt, muss
+      in `combat.js` vorkommen. Fängt Tippfehler wie `zaeherBrand` sofort.
+
 Balance und Werkzeug:
 
 - `dev/linien.js` braucht seit Phase 23 über zehn Minuten statt drei — die

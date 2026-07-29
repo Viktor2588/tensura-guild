@@ -332,7 +332,9 @@ ok(/Dauerbrand/.test(text('#menu-glossar')) && /150 statt 6/.test(text('#menu-gl
 ok($$('#linien-einheit option').length === win.GameData.units.length,
    'die Linien-Übersicht listet jede Einheit');
 var linienSel = $('#linien-einheit');
-linienSel.value = 'rimuru';
+/* Eine Einheit, die noch aus dem Generator kommt — Rimuru und Adalmann haben
+   inzwischen handgeschriebene Linien und tragen die Markierung nicht mehr. */
+linienSel.value = 'zegion';
 linienSel.dispatchEvent(new win.Event('change', { bubbles: true }));
 ok(/Generator/.test(text('#menu-linien')), 'Generator-Einheiten sind in der Linien-Übersicht markiert');
 ok(!!$('#menu-linien .signatur-block'), 'die Übersicht zeigt auch die Signatur-Aktive');

@@ -858,14 +858,14 @@ head('Aktive Fähigkeiten');
 var res = C.simulate([def('rimuru')], [EN.get('felsgolem')], 3);
 var aktive = res.log.filter(function (l) { return l.type === 'aktiv'; });
 ok(aktive.length > 0, 'aktive Fähigkeiten werden eingesetzt');
-ok(aktive.every(function (l) { return l.name === 'Wasserklinge'; }), 'auf Rang C nur die Signatur');
+ok(aktive.every(function (l) { return l.name === 'Prädator'; }), 'auf Rang C nur die Signatur');
 
 /* Keine Abklingzeit mehr: die Signatur feuert in JEDEM Zug und ersetzt den
    Normalangriff. Messbar an der Quelle der Treffer. */
 var quellen = {};
 res.log.filter(function (l) { return l.type === 'hit' && l.side === 'enemy'; })
   .forEach(function (l) { quellen[l.source] = (quellen[l.source] || 0) + 1; });
-ok(!quellen['Rimuru'] && quellen['Wasserklinge'] > 0,
+ok(!quellen['Rimuru'] && quellen['Prädator'] > 0,
    'die Signatur feuert jede Runde, ein Normalangriff kommt nicht mehr vor');
 
 /* Eine Aktive je Einheit — auch auf Rang S. */
@@ -1177,6 +1177,48 @@ function schadenAnGepanzertem(mitSouei) {
 ok(schadenAnGepanzertem(true) > schadenAnGepanzertem(false) * 1.2,
    'die Marke hilft dem ganzen Trupp gegen Rüstung (' +
    schadenAnGepanzertem(false) + ' → ' + schadenAnGepanzertem(true) + ')');
+
+/* Ein Feld auf einer Einheit zu setzen, das die Engine nie liest, ist der
+   teuerste stille Fehler in diesem Projekt: `zaeherBrand` tat zwei Phasen lang
+   nichts, weil das Feld in Wahrheit `brandBleibt` heisst. Also einmal quer über
+   alle Fähigkeiten: jedes Feld, das eine Fähigkeit einer Einheit zuweist, muss
+   in combat.js überhaupt vorkommen. */
+var combatQuelle = require('fs').readFileSync(require('path').join(__dirname, '..', 'js', 'combat.js'), 'utf8');
+var bekannt = { _auf: 1, _auftakt: 1, _man: 1, _verdorben: 1, _schwarm: 1,
+                _vergeltung: 1, _gegenstoss: 1, _zaeh2: 1 };
+var unbekannt = {};
+AB.alle.forEach(function (a) {
+  var quelle = String(a.fn);
+  var m, re = /\b(?:self|target|ziel|u|f|x)\.([a-zA-ZäöüÄÖÜ_][\w]*)\s*=[^=]/g;
+  while ((m = re.exec(quelle))) {
+    var feld = m[1];
+    if (bekannt[feld] || feld.charAt(0) === '_') continue;
+    if (combatQuelle.indexOf(feld) < 0) unbekannt[feld] = (unbekannt[feld] || []).concat(a.id);
+  }
+});
+var tote = Object.keys(unbekannt);
+ok(tote.length === 0, 'kein Feld wird gesetzt, das die Engine nie liest' +
+   (tote.length ? ' — tot: ' + tote.map(function (f) {
+     return f + ' (' + unbekannt[f].slice(0, 3).join(', ') + ')';
+   }).join('; ') : ''));
+
+/* Antichaos hatte keine Obergrenze. Erst Rimuru erntet es aus fremden
+   Zuständen — dreistellige Stapel und ein Wurf jenseits jeder Skala. */
+function antichaosWurf(stapel) {
+  var h = { id: 'h', name: 'H', tags: ['slime', 'magier'], hp: 90000, atk: 10, def: 10,
+    spd: 30, actives: [], keywords: [], effects: [
+      { hook: 'onStart', name: 't', fn: function (c) { c.applyStatus(c.self, 'antichaos', stapel); } }
+    ] };
+  var o = { id: 'o', name: 'O', tags: ['bestie', 'front'], hp: 900000, atk: 1, def: 0,
+    spd: 1, actives: [], effects: [], keywords: [] };
+  var w = C.simulate([h], [o], 3).log.filter(function (l) { return l.type === 'chaos'; });
+  return w.length ? w[0].atk / 100 : 0;
+}
+ok(antichaosWurf(500) <= C.CHAOS_MAX,
+   'der Antichaos-Wurf ist nach oben gedeckelt (' + antichaosWurf(500).toFixed(2) +
+   ' ≤ ' + C.CHAOS_MAX + ')');
+ok(antichaosWurf(3) < antichaosWurf(40),
+   'unterhalb des Deckels wächst er weiter mit den Stapeln');
 
 /* Shions Verwandlung: keine Zahl, sondern eine Schwelle. Sie darf nur fallen,
    wenn der Bau sie trägt — zehn Chaos auf dem Ziel UND zehn Antichaos auf ihr. */
