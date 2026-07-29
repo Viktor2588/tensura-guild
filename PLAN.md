@@ -1611,6 +1611,32 @@ erklärte Nische ist. Die sieben oben sind einzeln gegengelesen.
 
 `dev/balance.js 600`: 50 % frisch, kein Build-Ausreißer.
 
+### Phase 37 (2026-07-29): Hakuro ohne Rüstungsbruch, Käfergarde gestrichen
+
+**Hakuro trug an fünf Stellen Rüstungsdurchschlag** — Signatur, `Klingengeist`,
+`Auge des Meisters`, `Schule des Schwertes`, `Vermächtnis`. Das ist die Stärke
+eines Magiers oder eines Panzerbrechers, nicht die eines alten Schwertmeisters.
+Alle fünf sind durch **Technik** ersetzt: der Hieb sitzt ein zweites Mal
+(Signatur, `Klingengeist`, `Vermächtnis` für den Trupp), und `Auge des Meisters`
+liest den Gegner — je eigenem Schnitt +5 % Schaden, höchstens +70 %. Der Trupp
+lernt bei ihm Finten statt Durchschlag.
+
+**Käfergarde ist gestrichen.** Von den Insektoiden bleiben Zegion und Apito; die
+Metamorphose als Art-Identität tragen beide weiter. Roster: 40 → 39.
+`GRUNDHAERTE` 1.28 → 1.31.
+
+**Derselbe Regex-Fehler wie in Phase 36 — diesmal sofort gefangen.** Beim
+Ersetzen von `hak_mec1` (einzeiliger Rumpf) lief der Ausdruck bis zum nächsten
+mehrzeiligen Ende und nahm `hak_mec2` mit. Der Test, den ich in Phase 36
+erweitert habe, hat es in derselben Minute gemeldet, statt es monatelang liegen
+zu lassen. Genau dafür war er da.
+
+Ein Test hing noch an einer festen Zahl (`formen.length === 6`). Verwandlungs-
+formen kommen und gehen mit den Einheiten — geprüft wird jetzt, dass keine tot
+herumliegt, nicht wie viele es sind.
+
+`dev/balance.js 600`: 50 % frisch, kein Build-Ausreißer.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

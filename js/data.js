@@ -193,8 +193,6 @@
       'sig_zegion', ['rachsucht', 'konterstoss', 'dornenhaut']),
     u('apito', 'Apito', 'insektoid', 'fernkampf', 4, 90, 21, 3, 34,
       'sig_apito', ['giftzahn', 'giftbrut', 'windschritt']),
-    u('kaefergarde', 'Käfergarde', 'insektoid', 'front', 2, 95, 11, 6, 20,
-      'sig_kaefergarde', ['bollwerkmeister', 'schildwall', 'dornenhaut']),
 
     u('diablo', 'Diablo', 'daemon', 'magier', 5, 110, 30, 4, 32,
       'sig_diablo', ['fluchweber', 'verderber', 'panzerbrecher']),

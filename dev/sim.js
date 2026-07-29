@@ -55,7 +55,7 @@ function fertigerRun(seed, meta) {
   var r = R.create(seed, meta || R.newMeta());
   while (r.phase === 'start') R.chooseStart(r, 0);
   /* Verschiedene ARTEN — pro Art passt nur eine Einheit in den Trupp. */
-  ['gobta', 'sturmwolf', 'gruftwaechter', 'kaefergarde'].forEach(function (id) {
+  ['gobta', 'sturmwolf', 'gruftwaechter', 'zegion'].forEach(function (id) {
     if (r.team.length < 3) R.addUnit(r, id);
   });
   while (R.passivWahl(r)) R.choosePassive(r, 0);
@@ -84,7 +84,9 @@ var formIds = formen.map(function (a) { return a.id; }).sort().join(',');
 var erreichbar = AB.passives.filter(function (p) {
   return formen.some(function (f) { return String(p.fn).indexOf(f.id) >= 0; });
 }).length;
-ok(formen.length === 6 && erreichbar === formen.length,
+/* Nicht an einer festen Zahl festmachen — Formen kommen und gehen mit den
+   Einheiten. Geprüft wird, dass keine tot herumliegt. */
+ok(formen.length >= 4 && erreichbar === formen.length,
    'jede der ' + formen.length + ' Verwandlungsformen wird von genau einer Passive gerufen');
 ok(AB.pool.length >= 12 && AB.passives.length >= 20,
    AB.pool.length + ' Pool-Aktive, ' + AB.passives.length + ' Passive');
@@ -1648,7 +1650,7 @@ ok(!R.entlassen(solo, solo.team[0].uid), 'die letzte Einheit lässt sich nicht e
 /* Nicht über den Platz suchen: Frontlinie rückt beim Anwerben nach vorn. */
 R.entlassen(aRun, aRun.team.filter(function (m) { return m.id === 'gobta'; })[0].uid);
 ok(R.addUnit(aRun, 'gobkyu'), 'nach dem Entlassen ist die Art wieder frei');
-ok(R.addUnit(aRun, 'kaefergarde') && aRun.team[0].id === 'kaefergarde',
+ok(R.addUnit(aRun, 'zegion') && aRun.team[0].id === 'zegion',
    'eine angeworbene Frontlinien-Einheit steht sofort auf Platz 1');
 
 /* Ränge */
@@ -1730,7 +1732,7 @@ function aufstiegsOffers(id, seed) {
   return w ? w.offers.filter(function (o) { return o.id && AB.linien_ids[o.id] === id; }) : [];
 }
 
-['apito', 'adalmann', 'zegion', 'kaefergarde'].forEach(function (id) {
+['apito', 'adalmann', 'zegion', 'geld'].forEach(function (id) {
   var offers = aufstiegsOffers(id, 700);
   ok(offers.length === 4, GD.unit(id).name + ': vier Linien-Passiven im Aufstiegsangebot');
   ok(offers.every(function (o) { return AB.linien[id][o.linie].indexOf(o.id) >= 0; }),

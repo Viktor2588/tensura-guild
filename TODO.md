@@ -337,6 +337,16 @@ Abgearbeitet in Phase 36:
       drei Passive gelöscht, ohne dass ein Test anschlug. Jetzt prüft sie auch
       `AB.linien`.
 
+Abgearbeitet in Phase 37:
+
+- [x] Hakuro trägt keinen Rüstungsdurchschlag mehr — alle fünf Stellen durch
+      Technik ersetzt: der Hieb sitzt ein zweites Mal, und `Auge des Meisters`
+      liest den Gegner (+5 % je eigenem Schnitt, höchstens +70 %).
+- [x] Käfergarde gestrichen. Insektoiden: Zegion und Apito. Roster: 39.
+- [x] `GRUNDHAERTE` 1.28 → 1.31.
+- [x] Ein Test hing an einer festen Zahl von Verwandlungsformen; er prüft jetzt,
+      dass keine tot herumliegt.
+
 Balance und Werkzeug:
 
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller

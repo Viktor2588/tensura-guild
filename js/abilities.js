@@ -599,16 +599,6 @@
         c.self._meta = 1;
         verwandle(c, 'Ausgewachsene Königin', 'sig_apito_koenigin', gift, 25, 0.02, 0.9);
       }),
-    passiv('kaefergarde_ang5', 'Panzerform', 'onDamaged', ['schild'], ['schild'],
-      'Sobald die Garde 30 % ihres Lebens verloren hat, klappt der Panzer auf: je 10 % fehlendem ' +
-      'Leben +12 % Angriff, +6 % Tempo und +7 % Leben — höchstens +90 %. Ihre Signatur wird zum Panzerwall.',
-      function (c) {
-        if (c.self._meta) return;
-        var fehlt = (1 - c.self.hp / c.self.maxHp) * 10;
-        if (fehlt < 3) return;
-        c.self._meta = 1;
-        verwandle(c, 'Panzerform', 'sig_kaefergarde_panzer', fehlt, 3, 0.12, 0.9);
-      }),
 
     /* ---- Apito: die Brutmutter ----------------------------------------------
        Gift, aber nicht als Marke — als Brut. Ihre Stapel wachsen von selbst
@@ -735,120 +725,6 @@
                      side: c.self.side, hp: c.self.hp });
       }),
 
-    /* ---- Käfergarde: die Formation ------------------------------------------
-       Die billigste Schild-Einheit, und die einzige, deren Schilde MIT der
-       Truppgröße wachsen. Sie ist kein Bollwerk für sich, sondern der Grund,
-       warum eine volle Reihe zusammenhält.                                     */
-
-    passiv('kaefergarde_ang1', 'Panzerstoß', 'onHit', ['schild'], [],
-      'Der erste Schlag des Kampfes trifft 100 % härter und legt dem Trupp ein Schild an',
-      function (c) {
-        if (c.self._auftakt) return;
-        c.self._auftakt = 1;
-        c.dmg *= 2;
-        c.allies().forEach(function (u) { c.applyStatus(u, 'schild', Math.round(c.self.atk * 0.6)); });
-      }),
-    passiv('kaefergarde_ang2', 'Schildstoß', 'onHit', ['schild'], [],
-      'Jeder dritte Schlag schlägt zusätzlich mit dem halben eigenen Schildwert zu',
-      function (c) {
-        if (!zaehler(c.self, 'kaefergarde_ang2', 3)) return;
-        c.deal(c.target, (c.self.status.schild || 0) * 0.5 + c.self.def, 'Schildstoß');
-      }),
-    passiv('kaefergarde_ang3', 'Gedeckter Vorstoß', 'onHit', [], ['schild'],
-      'Führt ein Verbündeter Schild, schlägt die Garde 28 % härter, solange sie selbst ein Schild trägt — sonst 10 %',
-      function (c) {
-        if ((c.self.status.schild || 0) <= 0) return;
-        c.dmg *= truppFuehrt(c, 'schild') ? 1.28 : 1.1;
-      }),
-    passiv('kaefergarde_ang4', 'Rammbock', 'onStart', ['schild'], [],
-      'Der Schaden der Garde wächst mit ihrem Schild (bis +80 %) — dafür heilt sie nichts mehr',
-      function (c) {
-        c.self.heilfaktor = -1;
-        c.self.regen = 0;
-        c.addEffect(c.self, { hook: 'onHit', name: 'Rammbock', fn: function (k) {
-          k.dmg *= 1 + Math.min(0.8, (k.self.status.schild || 0) / Math.max(1, k.self.maxHp));
-        } });
-      }),
-
-    passiv('kaefergarde_mec1', 'Formation', 'onStart', ['schild'], [],
-      'Legt zu Kampfbeginn dem Trupp ein Schild an — je Mitglied 15 % größer',
-      function (c) {
-        var n = c.allies().length;
-        c.allies().forEach(function (u) {
-          c.applyStatus(u, 'schild', Math.round(c.self.atk * 0.7 * (1 + 0.15 * n)));
-        });
-      }),
-    passiv('kaefergarde_mec2', 'Nachrücken', 'onDamaged', ['schild'], [],
-      'Jeder dritte Treffer legt dem ganzen Trupp Schild nach',
-      function (c) {
-        if (!zaehler(c.self, 'kaefergarde_mec2', 3)) return;
-        c.allies().forEach(function (u) { c.applyStatus(u, 'schild', Math.round(c.self.atk * 0.6)); });
-      }),
-    passiv('kaefergarde_mec3', 'Verzahnte Panzer', 'onStart', ['schild'], ['schild'],
-      'Führt ein Verbündeter Schild, wirken alle Schilde im Trupp 40 % stärker — sonst 15 %',
-      function (c) {
-        var f = truppFuehrt(c, 'schild') ? 0.4 : 0.15;
-        c.allies().forEach(function (u) { u.schildfaktor += f; });
-      }),
-    passiv('kaefergarde_mec4', 'Unverrückbar', 'onStart', ['schild'], [],
-      'Jeder Zug baut die Schilde des ganzen Trupps wieder auf — dafür ist die Garde nur halb so schnell',
-      function (c) {
-        c.self.spd = Math.max(1, Math.round(c.self.spd * 0.5));
-        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Unverrückbar', fn: function (k) {
-          k.allies().forEach(function (u) { k.applyStatus(u, 'schild', Math.round(u.maxHp * 0.06)); });
-        } });
-      }),
-
-    passiv('kaefergarde_unt1', 'Gardebefehl', 'onStart', [], [],
-      'Zu Kampfbeginn +14 % Rüstung für den ganzen Trupp',
-      function (c) { c.allies().forEach(function (u) { u.def = Math.round(u.def * 1.14); }); }),
-    passiv('kaefergarde_unt2', 'Deckung halten', 'onDamaged', ['schild'], [],
-      'Jeder vierte Treffer auf den Trupp legt allen ein Schild an — je Mitglied größer',
-      function (c) {
-        if (!zaehler(c.self, 'kaefergarde_unt2', 4)) return;
-        var n = c.allies().length;
-        c.allies().forEach(function (u) { c.applyStatus(u, 'schild', Math.round(c.self.atk * 0.4 * n)); });
-      }),
-    passiv('kaefergarde_unt3', 'Geschlossene Reihe', 'onStart', [], ['schild'],
-      'Führt ein Verbündeter Schild, erleidet der Trupp 18 % weniger Schaden — sonst 7 %',
-      function (c) {
-        var m = truppFuehrt(c, 'schild') ? 0.18 : 0.07;
-        c.allies().forEach(function (u) { u.minderung = Math.max(u.minderung || 0, m); });
-      }),
-    passiv('kaefergarde_unt4', 'Lebender Wall', 'onStart', ['schild'], [],
-      'Die Verbündeten erleiden 25 % weniger Schaden — die Garde selbst greift nicht mehr an',
-      function (c) {
-        var andere = c.allies().filter(function (u) { return u !== c.self; });
-        if (!andere.length) return;
-        andere.forEach(function (u) { u.minderung = Math.max(u.minderung || 0, 0.25); });
-        c.self.atk = 1;
-      }),
-
-    passiv('kaefergarde_def1', 'Hartschale', 'onStart', ['schild'], [],
-      'Beginnt mit einem Schild über 40 % ihres Lebens',
-      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.4)); }),
-    passiv('kaefergarde_def2', 'Ausgehalten', 'onDamaged', [], [],
-      'Jeder dritte erlittene Treffer heilt 10 % und legt Schild nach',
-      function (c) {
-        if (!zaehler(c.self, 'kaefergarde_def2', 3)) return;
-        c.heal(c.self, c.self.maxHp * 0.1, 'Ausgehalten');
-        c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.12));
-      }),
-    passiv('kaefergarde_def3', 'Panzerwand', 'onStart', ['schild'], ['schild'],
-      'Führt ein Verbündeter Schild, kostet kein Treffer mehr als 11 % ihres Lebens — sonst 17 %',
-      function (c) {
-        var d = truppFuehrt(c, 'schild') ? 0.11 : 0.17;
-        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
-      }),
-    passiv('kaefergarde_def4', 'Nie durchbrochen', 'onStart', ['schild'], [],
-      'Solange die Garde ein Schild trägt, erleidet sie halben Schaden — dafür schlägt sie nur noch mit einem Drittel',
-      function (c) {
-        c.self.atk = Math.round(c.self.atk * 0.34);
-        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Nie durchbrochen', fn: function (k) {
-          k.self.minderung = (k.self.status.schild || 0) > 0 ? 0.5 : 0;
-        } });
-        c.self.minderung = 0.5;
-      }),
     /* ---- Testarossa: der Blutschatten ---------------------------------------
        Die Urtümliche Weiße. Exekution gibt es schon, aber niemand macht daraus
        eine Kette: bei ihr zahlt jeder Abschuss den nächsten. Sie wird im Kampf
@@ -3649,12 +3525,12 @@
        an den Trupp weiter.                                                    */
 
     passiv('hak_ang1', 'Klingengeist', 'onHit', ['exekution'], [],
-      'Der erste Schnitt des Kampfes trifft 140 % härter und ignoriert die Rüstung',
+      'Der erste Schnitt des Kampfes trifft 140 % härter — und sitzt zweimal',
       function (c) {
         if (c.self._auftakt) return;
         c.self._auftakt = 1;
         c.dmg *= 2.4;
-        c.self.pierce = Math.max(c.self.pierce || 0, 1);
+        c.deal(c.target, c.self.atk * 1.2, 'Klingengeist');
       }),
     passiv('hak_ang2', 'Schwertmeister', 'onHit', [], [],
       'Jeder dritte Schnitt trifft ein zweites Mal für 80 %',
@@ -3679,15 +3555,19 @@
         } });
       }),
 
-    passiv('hak_mec1', 'Auge des Meisters', 'onStart', ['exekution'], [],
-      'Beginnt den Kampf mit 45 % Rüstungsdurchschlag',
-      function (c) { c.self.pierce = Math.max(c.self.pierce || 0, 0.45); }),
+    passiv('hak_mec1', 'Auge des Meisters', 'onHit', ['exekution'], [],
+      'Hakuro liest seinen Gegner: je eigenem Schnitt in diesem Kampf +5 % Schaden — höchstens +70 %',
+      function (c) {
+        c.self._schnitte = Math.min(14, (c.self._schnitte || 0) + 1);
+        c.dmg *= 1 + 0.05 * c.self._schnitte;
+      }),
     passiv('hak_mec2', 'Gnadenstoß', 'onHit', ['exekution'], [],
       'Jeder dritte Schnitt nimmt dem Ziel zusätzlich 8 % seines maximalen Lebens',
       function (c) {
         if (!zaehler(c.self, 'hak_mec2', 3)) return;
         c.deal(c.target, c.target.maxHp * 0.08, 'Gnadenstoß', { pure: true });
       }),
+
     passiv('hak_mec3', 'Blutspur', 'onHit', ['blutung'], ['blutung'],
       'Führt ein Verbündeter Blutung, lässt jeder Schnitt mit 3 bluten und trifft blutende Ziele 20 % härter — sonst nur 1 Blutung',
       function (c) {
@@ -3712,10 +3592,10 @@
         });
       }),
     passiv('hak_unt2', 'Schule des Schwertes', 'onDamaged', [], [],
-      'Jeder vierte Treffer auf den Trupp gibt allen 25 % Rüstungsdurchschlag',
+      'Jeder vierte Treffer auf den Trupp lehrt eine Finte: alle Verbündeten schlagen dauerhaft 7 % härter',
       function (c) {
         if (!zaehler(c.self, 'hak_unt2', 4)) return;
-        c.allies().forEach(function (u) { u.pierce = Math.max(u.pierce || 0, 0.25); });
+        c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.07); });
       }),
     passiv('hak_unt3', 'Gemeinsamer Schnitt', 'onStart', [], ['exekution'],
       'Führt ein Verbündeter Exekution, trifft der Trupp angeschlagene Ziele 30 % härter — sonst 12 %',
@@ -3728,11 +3608,19 @@
         });
       }),
     passiv('hak_unt4', 'Vermächtnis', 'onStart', ['exekution'], [],
-      'Der Trupp bekommt 40 % Rüstungsdurchschlag — Hakuro selbst verliert die halbe Rüstung und ein Drittel Leben',
+      'Der Trupp führt Hakuros Technik weiter: jeder Treffer sitzt ein zweites Mal für 30 % — ' +
+      'Hakuro selbst verliert die halbe Rüstung und ein Drittel Leben',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        andere.forEach(function (u) { u.pierce = Math.max(u.pierce || 0, 0.4); });
+        andere.forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Vermächtnis', fn: function (k) {
+            if (k.self._vermaechtnis) return;
+            k.self._vermaechtnis = 1;
+            k.deal(k.target, k.self.atk * 0.3, 'Vermächtnis');
+            k.self._vermaechtnis = 0;
+          } });
+        });
         c.self.def = Math.round(c.self.def * 0.5);
         c.self.maxHp = Math.round(c.self.maxHp * 0.67);
         c.self.hp = Math.min(c.self.hp, c.self.maxHp);
@@ -5503,12 +5391,6 @@
       unterstuetzung: ['apito_unt1', 'apito_unt2', 'apito_unt3', 'apito_unt4'],
       defensive: ['apito_def1', 'apito_def2', 'apito_def3', 'apito_def4']
     },
-    kaefergarde: {
-      angriff: ['kaefergarde_ang1', 'kaefergarde_ang2', 'kaefergarde_ang3', 'kaefergarde_ang4', 'kaefergarde_ang5'],
-      mechanik: ['kaefergarde_mec1', 'kaefergarde_mec2', 'kaefergarde_mec3', 'kaefergarde_mec4'],
-      unterstuetzung: ['kaefergarde_unt1', 'kaefergarde_unt2', 'kaefergarde_unt3', 'kaefergarde_unt4'],
-      defensive: ['kaefergarde_def1', 'kaefergarde_def2', 'kaefergarde_def3', 'kaefergarde_def4']
-    },
     testarossa: {
       angriff: ['testarossa_ang1', 'testarossa_ang2', 'testarossa_ang3', 'testarossa_ang4'],
       mechanik: ['testarossa_mec1', 'testarossa_mec2', 'testarossa_mec3', 'testarossa_mec4'],
@@ -6040,13 +5922,6 @@
         c.attack(1.9);
         c.foes().forEach(function (f) { c.applyStatus(f, 'gift', 8); });
       }),
-    aktiv('sig_kaefergarde_panzer', 'Panzerwall', 4, ['schild'],
-      '170 % Schaden und ein Schild über 20 % des eigenen Lebens für jeden Verbündeten. ' +
-      'Die aufgeklappte Form der Garde.',
-      function (c) {
-        c.attack(1.7);
-        c.allies().forEach(function (u) { c.applyStatus(u, 'schild', Math.round(c.self.maxHp * 0.2)); });
-      }),
     /* Die Signatur des Ordnungsteufels — das Gegenstück zur Chaosklinge:
        sie verteilt Ordnung, statt Unordnung zu säen. */
     aktiv('sig_shion_ordnung', 'Klinge der Ordnung', 4, ['chaos'],
@@ -6097,10 +5972,16 @@
           c.applyStatus(u, 'schild', 20);
         });
       }, verwundet),
-    aktiv('sig_hakuro', 'Fliegender Hieb', 3, [],
-      '180 % Schaden und ignoriert Rüstung. Gegen ein noch unverletztes Ziel (über 70 % Leben) sind es 230 %.',
+    /* Kein Rüstungsdurchschlag mehr: Hakuro ist der alte Schwertmeister, seine
+       Stärke ist Technik, nicht rohe Durchschlagskraft. Statt die Rüstung zu
+       ignorieren, sitzt der Hieb ein zweites Mal. */
+    aktiv('sig_hakuro', 'Fliegender Hieb', 3, ['exekution'],
+      '170 % Schaden, und der Hieb sitzt sofort ein zweites Mal für 60 %. ' +
+      'Gegen ein noch unverletztes Ziel (über 70 % Leben) sind es 220 % statt 170 %.',
       function (c) {
-        c.attack(c.target.hp > c.target.maxHp * 0.7 ? 2.3 : 1.8, c.target, { pierce: 1 });
+        var frisch = c.target.hp > c.target.maxHp * 0.7;
+        c.attack(frisch ? 2.2 : 1.7);
+        c.deal(c.target, c.self.atk * 0.6, 'Fliegender Hieb');
       }),
     aktiv('sig_kurobe', 'Geschmiedete Klinge', 5, [],
       'Alle Verbündeten erhalten dauerhaft +6 Angriff. Ist Kurobe unverletzt, zusätzlich +2 Rüstung.',
@@ -6186,15 +6067,6 @@
            Angriffslinie ab, sobald sechs Stapel lagen. */
         c.attack(1.3, c.target, { pure: c.target.status.gift >= 6 });
         c.applyStatus(c.target, 'gift', 5);
-      }),
-    aktiv('sig_kaefergarde', 'Panzerstoß', 4, ['schild'],
-      '100 % Schaden und Schild 40 auf sich. Die Einheit dahinter erhält Schild 25.',
-      function (c) {
-        c.attack(1);
-        c.applyStatus(c.self, 'schild', 40);
-        var reihe = c.allies();
-        var hinter = reihe[reihe.indexOf(c.self) + 1];
-        if (hinter) c.applyStatus(hinter, 'schild', 25);
       }),
 
     /* --- Dämonen --- */

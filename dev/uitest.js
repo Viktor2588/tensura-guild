@@ -75,7 +75,7 @@ ok(run.phase === 'karte' && run.team.length === 1 && run.relics.length === 1,
 
 /* Der Run startet mit einer Einheit — für Aufstellung und Trupp-Panel braucht
    der Test drei. */
-['gobta', 'sturmwolf', 'gruftwaechter', 'kaefergarde'].forEach(function (id) {
+['gobta', 'sturmwolf', 'gruftwaechter', 'zegion'].forEach(function (id) {
   if (run.team.length < 3) win.Run.addUnit(run, id);
 });
 while (win.Run.passivWahl(run)) win.Run.choosePassive(run, 0);

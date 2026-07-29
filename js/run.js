@@ -90,7 +90,7 @@
   var PRAEDATOR_SLOTS = [0, 1, 2, 3];             // verschlungene Gegnerfähigkeiten
 
   var START_UNITS = ['rimuru', 'gobta', 'gobkyu', 'sturmwolf',
-    'rigurd', 'rigur', 'gobwa', 'kurobe', 'souka', 'kaefergarde',
+    'rigurd', 'rigur', 'gobwa', 'kurobe', 'souka',
     'daemonengarde', 'gruftwaechter', 'drachenknecht', 'quellenpriesterin',
     'ranga', 'shion', 'gabiru', 'wightkoenig',
     /* Der Orkkrieger ist der billigste Frontkämpfer im Spiel und gehört damit
@@ -140,7 +140,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.28;   // Signaturen mit Lagebedingung; gemessen 50 % Siege (frisch)
+  var GRUNDHAERTE = 1.31;   // Hakuro ohne Durchschlag, Kaefergarde gestrichen; gemessen 50 % Siege
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
