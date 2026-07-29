@@ -200,6 +200,16 @@ Abgearbeitet in Phase 25:
       korrekt heißt es `brandBleibt` und gehört aufs Ziel. `verderbnisBleibt`
       neu ergänzt. Beide jetzt per Test abgesichert.
 
+Abgearbeitet in Phase 26:
+
+- [x] Shion: `Verdorbener Teufel` — 10 Chaos auf dem Ziel plus 10 Antichaos auf
+      ihr verwandeln sie einmal je Kampf (+45 % Angriff, +25 % Leben, +20 %
+      Tempo) und ersetzen ihre Signatur durch die `Chaosklinge des Verdorbenen`.
+      Die Bedingung ist der Preis, deshalb trägt sie keinen weiteren.
+- [x] Die Preis-Marke hängt an der festen vierten Stelle einer Linie statt an
+      der letzten — Linien dürfen jetzt wachsen.
+- [x] Verwandlungen erscheinen im Kampflog.
+
 Balance und Werkzeug:
 
 - `dev/linien.js` braucht seit Phase 23 über zehn Minuten statt drei — die

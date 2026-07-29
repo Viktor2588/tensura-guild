@@ -349,6 +349,9 @@
     else if (l.type === 'fehlschlag') text = '✗ ' + esc(l.unit) + ': ' + esc(l.name) + ' verpufft im Chaos';
     else if (l.type === 'ausweichen') text = '↯ ' + esc(l.target) + ' weicht im Schatten aus';
     else if (l.type === 'entladung') text = '⚡ Entladung an ' + esc(l.unit) + ': ' + l.stapel + ' Stapel schlagen in die ganze Reihe';
+    /* Eine Verwandlung ist der seltenste Moment im Kampf — sie darf nicht
+       stumm im Log fehlen, sonst merkt niemand, dass die Schwelle fiel. */
+    else if (l.type === 'verwandlung') text = '✦ ' + esc(l.unit) + ' wird zum ' + esc(l.form);
     else if (l.type === 'wut') text = '🔥 ' + esc(l.unit) + ' gerät in Rage: Angriff ' + l.atk;
     else if (l.type === 'aktiv') { text = '⚡ ' + esc(l.unit) + ' setzt ' + esc(l.name) + ' ein';
                                    klasse = (l.side === 'player' ? 'spieler' : 'feind') + ' aktiv'; }
@@ -1257,9 +1260,10 @@
       l[kat].forEach(function (pid, i) {
         var a = AB.get(pid);
         if (!a) { html += '<span class="linien-stufe">' + esc(pid) + '</span>'; return; }
-        /* Keine Stufen mehr — die vier einer Linie sind gleichrangig und frei
-           kombinierbar. Markiert wird nur, was einen Preis hat. */
-        var preis = i === l[kat].length - 1;
+        /* Keine Stufen mehr — die Passiven einer Linie sind gleichrangig und
+           frei kombinierbar. Markiert wird nur, was einen Preis hat: feste
+           vierte Stelle, damit eine wachsende Linie die Marke nicht mitzieht. */
+        var preis = i === 3;
         var ks = (a.keywords || []).concat(a.amplifies || []);
         var tipText = a.text + (preis ? '\n\nÄndert eine Regel und kostet dafür etwas.' : '') +
           (ks.length ? '\n\n' + ks.map(kwName).join(' · ') : '');

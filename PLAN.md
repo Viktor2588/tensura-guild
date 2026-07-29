@@ -1145,6 +1145,35 @@ Erklärung im Menü ankommt.
 
 `dev/balance.js 600`: 50 % frisch, `GRUNDHAERTE` unverändert bei 1.08.
 
+### Phase 26 (2026-07-29): Shions Verwandlung
+
+Shions Rangleiter heißt seit jeher C Oger, B Teufel, A Verdorbener Teufel,
+S Ultimativer Teufel — im Kampf war davon nichts zu sehen. `Verdorbener Teufel`
+macht die dritte Stufe sichtbar: Triffst du ein Ziel mit **10 Chaos**, während
+du selbst **10 Antichaos** hältst, verwandelt sich Shion einmal je Kampf —
++45 % Angriff, +25 % Leben, +20 % Tempo, und ihre Signatur wird durch die
+`Chaosklinge des Verdorbenen` ersetzt (230 % Schaden, doppelte Chaos-Menge).
+
+Die Passive kostet nichts, weil die **Bedingung der Preis ist**: zehn Chaos auf
+dem Ziel bekommt nur, wer stapelt, und zehn Antichaos auf sich selbst nur, wer
+den Realitätswarp trägt. Gemessen bestätigt: ohne Antichaos-Quelle fällt die
+Schwelle nie, mit dem Warp genau einmal. Drei Tests halten beides fest.
+
+Zwei Dinge mussten dafür nachziehen:
+
+- Die **Preis-Marke** hing an der letzten Stelle einer Linie. Shions
+  Angriffslinie hat jetzt fünf Passive, und die Marke wäre von `Verzerrter
+  Titan` auf die neue gewandert. Sie hängt nun an der festen vierten Stelle —
+  Linien dürfen damit wachsen, ohne dass sich etwas verschiebt.
+- Der **Signaturzähler** im Test verlangte genau eine je Einheit. Die
+  Chaosklinge gehört keiner Einheit fest, sie ersetzt erst im Kampf; der Test
+  trennt jetzt Signaturen von Verwandlungsformen und verlangt beides.
+
+Die Verwandlung steht auch im Kampflog (`✦ Shion wird zum Verdorbenen Teufel`).
+Der seltenste Moment eines Kampfes darf nicht stumm bleiben.
+
+`dev/balance.js 600`: 51 % frisch, `GRUNDHAERTE` unverändert.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

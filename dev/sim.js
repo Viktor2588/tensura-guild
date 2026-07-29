@@ -66,7 +66,15 @@ head('Daten');
 ok(GD.units.length >= 40, GD.units.length + ' Einheiten');
 ok(EN.all.length >= 30, EN.all.length + ' Gegner');
 ok(GD.relics.length >= 30, GD.relics.length + ' Relikte');
-ok(AB.signatures.length === GD.units.length, 'genau eine Signatur je Einheit (' + AB.signatures.length + ')');
+/* Eine Signatur je Einheit, plus die Verwandlungsformen: Shions Chaosklinge
+   des Verdorbenen trägt niemand von Anfang an, sie ersetzt im Kampf. */
+var formen = AB.signatures.filter(function (a) {
+  return !GD.units.some(function (u) { return u.signature === a.id; });
+});
+ok(AB.signatures.length - formen.length === GD.units.length,
+   'genau eine Signatur je Einheit (' + (AB.signatures.length - formen.length) + ')');
+ok(formen.length === 1 && formen[0].id === 'sig_shion_verdorben',
+   'dazu genau eine Verwandlungsform, die keiner Einheit fest gehört');
 ok(AB.pool.length >= 12 && AB.passives.length >= 20,
    AB.pool.length + ' Pool-Aktive, ' + AB.passives.length + ' Passive');
 
@@ -1170,6 +1178,24 @@ ok(schadenAnGepanzertem(true) > schadenAnGepanzertem(false) * 1.2,
    'die Marke hilft dem ganzen Trupp gegen Rüstung (' +
    schadenAnGepanzertem(false) + ' → ' + schadenAnGepanzertem(true) + ')');
 
+/* Shions Verwandlung: keine Zahl, sondern eine Schwelle. Sie darf nur fallen,
+   wenn der Bau sie trägt — zehn Chaos auf dem Ziel UND zehn Antichaos auf ihr. */
+function shionLauf(pass) {
+  var m = R.member('shion'); m.rank = 3; m.passives = pass;
+  var sack = { id: 's', name: 'Sack', tags: ['bestie', 'front'], hp: 60000, atk: 20,
+    def: 0, spd: 8, actives: [], effects: [], keywords: [] };
+  var log = C.simulate([R.resolve(m)], [sack], 14).log;
+  return {
+    verwandelt: log.filter(function (l) { return l.type === 'verwandlung'; }).length,
+    klinge: log.filter(function (l) { return l.source === 'Chaosklinge des Verdorbenen'; }).length
+  };
+}
+ok(shionLauf(['shion_ang5']).verwandelt === 0,
+   'ohne Antichaos-Quelle verwandelt sich Shion nie');
+var verdorben = shionLauf(['shion_ang5', 'shion_unt1']);
+ok(verdorben.verwandelt === 1, 'mit dem Realitätswarp fällt die Schwelle — genau einmal');
+ok(verdorben.klinge > 0, 'und danach schlägt die Chaosklinge des Verdorbenen statt des Chaosschlags');
+
 /* Zwei Fähigkeiten setzen den Abbau eines Zustands aus. Das ist genau die Art
    Flag, die still ins Leere läuft, wenn der Name nicht zur Engine passt —
    `zaeherBrand` tat monatelang nichts. Also einmal direkt nachgemessen. */
@@ -1297,8 +1323,17 @@ ok(atkVon(kMit) > atkVon(kOhne),
    'Kurobes Schmiede rechnet mit der angelegten Ausrüstung (' +
    atkVon(kOhne) + ' → ' + atkVon(kMit) + ' Angriff)');
 ok(Object.keys(AB.linien).every(function (id) {
-  return Object.keys(AB.linien[id]).every(function (l) { return AB.linien[id][l].length === 4; });
-}), 'jede Linie jeder Einheit hat genau vier Passive — 16 je Einheit');
+  return Object.keys(AB.linien[id]).every(function (l) { return AB.linien[id][l].length >= 4; });
+}), 'jede Linie jeder Einheit hat mindestens vier Passive');
+ok(Object.keys(AB.linien).every(function (id) {
+  return Object.keys(AB.linien[id]).reduce(function (n, l) { return n + AB.linien[id][l].length; }, 0) >= 16;
+}), 'also mindestens 16 je Einheit — der Topf darf wachsen, ohne dass etwas bricht');
+/* Die Preis-Marke hängt an der vierten Stelle, nicht an der letzten: sonst
+   verlöre `shion_ang4` sie an die neue fünfte Passive. */
+ok(AB.linienAngebot('shion').filter(function (o) { return o.preis; })
+     .map(function (o) { return o.id; }).sort().join(',') ===
+   'shion_ang4,shion_def4,shion_mec4,shion_unt4',
+   'eine gewachsene Linie zieht die Preis-Marke nicht mit');
 /* Start: keine Passive-Auswahl — deshalb kein pw.offers-check und kein choosePassive. */
 ok(R.resolve(shionM).effects.some(function (e) { return e.id === shionM.passives[0]; }),
    'und wirkt sofort im Kampf');

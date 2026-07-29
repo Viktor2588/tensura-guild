@@ -159,6 +159,32 @@
       '+2 % Schaden je Chaos-Stapel, den das Ziel trägt — höchstens +50 %',
       function (c) { c.dmg *= 1 + Math.min(0.5, 0.02 * (c.target.status.chaos || 0)); }),
 
+    /* Shions Rangleiter heißt C Oger, B Teufel, A Verdorbener Teufel,
+       S Ultimativer Teufel. Diese Passive macht die dritte Stufe im Kampf
+       sichtbar: Sie ist keine Zahl, sondern eine Schwelle, die ein Chaos-Bau
+       überhaupt erst erreicht — zehn Chaos auf dem Ziel bekommt nur, wer
+       stapelt, und zehn Antichaos auf sich selbst nur, wer den Realitätswarp
+       trägt. Deshalb kostet sie nichts: die Bedingung IST der Preis. */
+    passiv('shion_ang5', 'Verdorbener Teufel', 'onHit', ['chaos'], ['chaos'],
+      'Triffst du ein Ziel mit 10 Chaos, während du selbst 10 Antichaos hältst, ' +
+      'wirst du zum Verdorbenen Teufel: +45 % Angriff, +25 % Leben, +20 % Tempo — ' +
+      'und die Signatur wird zur Chaosklinge des Verdorbenen (230 % Schaden, doppeltes Chaos). ' +
+      'Einmal je Kampf.',
+      function (c) {
+        if (c.self._verdorben) return;
+        if ((c.target.status.chaos || 0) < 10 || (c.self.status.antichaos || 0) < 10) return;
+        c.self._verdorben = 1;
+        c.self.atk = Math.round(c.self.atk * 1.45);
+        c.self.spd = Math.round(c.self.spd * 1.2);
+        var mehr = Math.round(c.self.maxHp * 0.25);
+        c.self.maxHp += mehr;
+        c.self.hp += mehr;
+        var sig = byId('sig_shion_verdorben');
+        if (sig) c.self.actives = [sig];
+        c.log.push({ t: 0, type: 'verwandlung', key: c.self.key, unit: c.self.name,
+                     side: c.self.side, form: 'Verdorbener Teufel' });
+      }),
+
     passiv('shion_mec1', 'Chaosmeisterschaft', 'onStart', [], ['chaos'],
       'Shion legt 30 % mehr Chaos-Stapel an, als die Fähigkeit angibt',
       function (c) { c.self.chaosmeister = Math.max(c.self.chaosmeister || 1, 1.3); }),
@@ -2990,7 +3016,7 @@
      die drei festen Passiven aus data.js. */
   var linien = {
     shion: {
-      angriff: ['shion_ang1', 'shion_ang2', 'shion_ang3', 'shion_ang4'],
+      angriff: ['shion_ang1', 'shion_ang2', 'shion_ang3', 'shion_ang4', 'shion_ang5'],
       mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4'],
       unterstuetzung: ['shion_unt1', 'shion_unt2', 'shion_unt3', 'shion_unt4'],
       defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4']
@@ -3175,18 +3201,21 @@
      mehr: jede Passive kann jederzeit und in jeder Kombination auftreten. Wer
      zieht, filtert selbst, was die Einheit schon trägt.
 
-     `preis` markiert die vier, die eine Regel ändern und dafür etwas kosten
-     (halbe Rüstung, keine Heilung, gedrosselter Angriff). Sie stehen an vierter
-     Stelle jeder Linie — nicht als Stufe, sondern weil die Linien so geschrieben
-     sind. Das Angebot braucht die Markierung, um „nichts nehmen" danebenstellen
-     zu können: einen Preis, den man nicht ablehnen kann, ist ein Zwang.        */
+     `preis` markiert die, die eine Regel ändern und dafür etwas kosten (halbe
+     Rüstung, keine Heilung, gedrosselter Angriff). Sie steht an vierter Stelle
+     jeder Linie — nicht als Stufe, sondern weil die Linien so geschrieben sind.
+     Feste Position statt „die letzte": sonst wanderte die Markierung mit, sobald
+     eine Linie wächst. Das Angebot braucht sie, um „nichts nehmen" daneben
+     stellen zu können — einen Preis, den man nicht ablehnen kann, ist ein
+     Zwang.                                                                     */
+  var PREIS_INDEX = 3;
   function linienAngebot(unitId) {
     var l = linien[unitId];
     if (!l) return [];
     var out = [];
     Object.keys(l).forEach(function (k) {
       l[k].forEach(function (id, i) {
-        out.push({ linie: k, linieName: LINIEN_NAME[k], id: id, preis: i === l[k].length - 1 });
+        out.push({ linie: k, linieName: LINIEN_NAME[k], id: id, preis: i === PREIS_INDEX });
       });
     });
     return out;
@@ -3398,6 +3427,16 @@
       function (c) {
         c.attack(1.6);
         c.chaos(c.target, CHAOS_JE_RANG[c.self.rank || 0]);
+      }),
+    /* Die Signatur des Verdorbenen Teufels. Sie ersetzt den Chaosschlag erst,
+       wenn die Verwandlung greift — vorher trägt sie niemand. `sig_`-Präfix
+       heißt: einheitenspezifisch, also keine Raritätsstufe und kein Pool. */
+    aktiv('sig_shion_verdorben', 'Chaosklinge des Verdorbenen', 4, ['chaos'],
+      '230 % Schaden und die doppelte Menge Chaos — 2 Stapel auf Rang C, 4 auf B, ' +
+      '6 auf A, 10 auf S. Die Signatur des Verdorbenen Teufels.',
+      function (c) {
+        c.attack(2.3);
+        c.chaos(c.target, CHAOS_JE_RANG[c.self.rank || 0] * 2);
       }),
     /* Souei markiert, statt selbst abzuräumen: die Marke ist für den Trupp da.
        Entwicklungsstufe wie bei Shion — Oger, Teufel, Verdorbener, Ultimativer. */
