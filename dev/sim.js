@@ -1347,6 +1347,50 @@ ok(rangS > rangC * 1.5,
 ok(jeTreffer('echsenfuerst', ['fuerst_ang3'], 3) > jeTreffer('echsenfuerst', [], 3) * 1.2,
    'Echsenmenschen-Passive wachsen mit der Kampfdauer');
 
+/* Die Meta ist GLOBALER Fortschritt. Sie stand mit im Speicherstand des Runs,
+   und das Laden baute sie daraus neu — also auf dem Stand von Rundenbeginn.
+   Jede folgende Aktion schrieb die alte Kopie zurück: gewonnene
+   Bedrohungsstufen verschwanden wieder. */
+(function () {
+  var store = {};
+  var echt = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: function (k) { return k in store ? store[k] : null; },
+    setItem: function (k, v) { store[k] = v; },
+    removeItem: function (k) { delete store[k]; }
+  };
+  var m = R.loadMeta();
+  var lauf = R.create(9, m);
+  while (lauf.phase === 'start') R.chooseStart(lauf, 0);
+  R.save(lauf);                          // Run mit Stufe 0 gespeichert
+  m.threat = 3; m.threatGewaehlt = 3;
+  R.saveMeta(m);                         // Fortschritt steigt danach
+  var geladen = R.load();
+  ok(geladen.meta.threat === 3,
+     'ein geladener Run übernimmt den gespeicherten Fortschritt, nicht seine eigene alte Kopie (' +
+     geladen.meta.threat + ')');
+
+  /* Siege ohne Bedrohungsstufe kann es nicht geben — der erste Sieg hebt sie.
+     Alte Stände, die genau das zeigen, haben den Fortschritt an den Bug oben
+     verloren und bekommen ihn zurück. */
+  R.saveMeta({ unlockedUnits: ['gobta'], unlockedRelics: [], runs: 23, wins: 15,
+               best: 40, threat: 0, threatGewaehlt: 0 });
+  var alt = R.loadMeta();
+  ok(alt.threat === 5 && alt.threatGewaehlt === 5,
+     'ein Stand mit Siegen, aber Stufe 0 bekommt die Stufen nachgereicht (' + alt.threat + ')');
+  ok(alt.best === R.AKTE * R.STEPS.length,
+     'und ein weitester Weg aus einer Fassung mit mehr Akten wird gekappt');
+
+  R.saveMeta({ unlockedUnits: ['gobta', 'gibtsnicht'], unlockedRelics: ['giftdorn', 'wegdamit'],
+               runs: 1, wins: 0, best: 3, threat: 0, threatGewaehlt: 0 });
+  var sauber = R.loadMeta();
+  ok(sauber.unlockedUnits.join() === 'gobta' && sauber.unlockedRelics.join() === 'giftdorn',
+     'gestrichene Einheiten und Relikte fallen aus alten Ständen heraus');
+  ok(sauber.threat === 0, 'ohne Siege bleibt die Stufe unangetastet');
+
+  globalThis.localStorage = echt;
+})();
+
 /* Jede Mechanik braucht mindestens zwei Träger — eine, die nur an einer Einheit
    hängt, existiert für die meisten Runs nicht. Das ist kein Stilwunsch, sondern
    der Grund, warum Dunkelheit und Frost in Phase 30 zweite Träger bekamen. */
@@ -1395,15 +1439,15 @@ ok(wuchtig.schnitt > flink.schnitt * 2 && flink.treffer > wuchtig.treffer * 2,
 ok(wuchtig.stun > 0 && flink.stun === 0,
    'nur die wuchtige Bauweise betäubt sich selbst (' + wuchtig.stun + ' Aussetzer)');
 
-/* Geld nimmt seiner Reihe Schaden ab — unabhängig von der Aufstellung, anders
+/* Gerudo nimmt seiner Reihe Schaden ab — unabhängig von der Aufstellung, anders
    als die Deckung des Kampfsystems, die an Platz 3 hängt. Gemessen am Restleben
    des Gedeckten, nicht am Treffer selbst: der Treffer fällt voll, der Anteil
-   wird zurückgeheilt und Geld roh aufgebrummt. */
-function geldDeckung(pass) {
+   wird zurückgeheilt und Gerudo roh aufgebrummt. */
+function gerudoDeckung(pass) {
   var summe = 0;
   for (var sd = 0; sd < 20; sd++) {
     var g = R.member('gobkyu'); g.rank = 3; g.passives = [];
-    var d = R.member('geld'); d.rank = 3; d.passives = pass;
+    var d = R.member('gerudo'); d.rank = 3; d.passives = pass;
     var o = { id: 'o', name: 'O', tags: ['bestie', 'front'], hp: 30000, atk: 22, def: 0,
       spd: 20, actives: [], effects: [], keywords: [] };
     var res = C.simulate([R.resolve(g), R.resolve(d)], [o], sd);
@@ -1412,9 +1456,9 @@ function geldDeckung(pass) {
   }
   return summe / 20;
 }
-var ohneD = geldDeckung([]), mitD = geldDeckung(['geld_mec1']), vollD = geldDeckung(['geld_mec4']);
+var ohneD = gerudoDeckung([]), mitD = gerudoDeckung(['gerudo_mec1']), vollD = gerudoDeckung(['gerudo_mec4']);
 ok(mitD > ohneD && vollD > mitD,
-   'Geld nimmt seiner Reihe Schaden ab, und mehr Anteil deckt mehr (' +
+   'Gerudo nimmt seiner Reihe Schaden ab, und mehr Anteil deckt mehr (' +
    Math.round(ohneD * 100) + ' % → ' + Math.round(mitD * 100) + ' % → ' +
    Math.round(vollD * 100) + ' % Restleben)');
 
@@ -1793,7 +1837,7 @@ function aufstiegsOffers(id, seed) {
   return w ? w.offers.filter(function (o) { return o.id && AB.linien_ids[o.id] === id; }) : [];
 }
 
-['apito', 'adalmann', 'zegion', 'geld'].forEach(function (id) {
+['apito', 'adalmann', 'zegion', 'gerudo'].forEach(function (id) {
   var offers = aufstiegsOffers(id, 700);
   ok(offers.length === 4, GD.unit(id).name + ': vier Linien-Passiven im Aufstiegsangebot');
   ok(offers.every(function (o) { return AB.linien[id][o.linie].indexOf(o.id) >= 0; }),

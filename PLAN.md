@@ -1689,6 +1689,39 @@ Schlüsselwort und keine Mechanik steht mehr allein.
 
 `dev/balance.js 600`: 50 % frisch, kein Build-Ausreißer.
 
+### Phase 39 (2026-07-29): Der Fortschritt ging beim Laden verloren
+
+Gemeldet als „ich kann keine Bedrohungsstufe freischalten" — 23 Runs, 15 Siege,
+Stufe 0. Die Freischaltung selbst war in Ordnung; isoliert nachgestellt hebt der
+erste Sieg die Stufe zuverlässig. Der Fehler saß im Speichern:
+
+**Der Speicherstand eines Runs enthielt eine Kopie der Meta**, und `deserialize`
+baute den Fortschritt daraus neu — also auf dem Stand von *Rundenbeginn*. Jede
+folgende Aktion schrieb diese alte Kopie über den echten Fortschritt zurück.
+Wer gewann, bekam seine Stufe; wer danach weiterspielte, verlor sie wieder. Die
+Meta ist globaler Fortschritt und gehört nicht dem Run: der Speicher hat jetzt
+Vorrang, die eingebettete Kopie ist nur noch der Notnagel für Stände ohne
+eigenen Meta-Eintrag.
+
+Der Screenshot trug den zweiten Hinweis schon in sich: „40 / 38" bei den
+Einheiten und „weitester Weg: 40 Knoten", obwohl ein Lauf 16 Knoten hat. Der
+Stand kannte gestrichene Einheiten und eine Fassung mit fünf Akten. `loadMeta`
+räumt beides jetzt auf.
+
+Und weil Siege ohne Bedrohungsstufe gar nicht vorkommen können — der erste Sieg
+hebt sie immer —, ist genau diese Kombination die Signatur des Bugs. Ein Stand
+mit Siegen und Stufe 0 bekommt die Stufen nachgereicht, statt fünfzehn Siege
+noch einmal spielen zu müssen. Die Bedingung ist eng genug, dass sie einen
+gesunden Stand nie anfasst.
+
+Fünf Tests halten das fest, alle mit einem eigenen localStorage-Ersatz.
+
+**Geld heißt jetzt Gerudo.** Beim Umbenennen ist mir der unquotierte Schlüssel
+in der Linien-Tabelle durchgerutscht — die Einheit hatte kurz keine Linien mehr,
+und der Wächter-Test aus Phase 34 hat es sofort gemeldet.
+
+`dev/balance.js 600`: 50 % frisch.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

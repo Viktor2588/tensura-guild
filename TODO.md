@@ -362,6 +362,18 @@ Abgearbeitet in Phase 38:
 - [x] Ein Test verlangt für jede Mechanik zwei Träger. Kein Schlüsselwort und
       keine Mechanik steht mehr allein.
 
+Abgearbeitet in Phase 39:
+
+- [x] **Bugfix Fortschritt:** Der Speicherstand eines Runs trug eine Kopie der
+      Meta, und das Laden baute den globalen Fortschritt daraus neu — auf dem
+      Stand von Rundenbeginn. Jede Aktion schrieb ihn dann zurück. Der Speicher
+      hat jetzt Vorrang.
+- [x] `loadMeta` räumt alte Stände auf: gestrichene Einheiten und Relikte
+      fallen heraus, der weiteste Weg wird auf die heutige Lauflänge gekappt.
+- [x] Stände mit Siegen, aber Stufe 0 bekommen die Bedrohungsstufen
+      nachgereicht — diese Kombination kann nur durch den Bug entstanden sein.
+- [x] Geld heißt Gerudo.
+
 Balance und Werkzeug:
 
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller

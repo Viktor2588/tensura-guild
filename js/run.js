@@ -1247,7 +1247,16 @@
   }
   function deserialize(raw) {
     var d = JSON.parse(raw);
-    var run = create(d.seed, d.meta);
+    /* Die Meta ist GLOBALER Fortschritt und gehört nicht dem Run. Sie stand
+       trotzdem mit im Speicherstand, und das Laden baute sie daraus neu — also
+       auf dem Stand von Rundenbeginn. Jede folgende Aktion schrieb diese alte
+       Kopie über den echten Fortschritt: gewonnene Bedrohungsstufen und
+       freigeschaltete Einheiten verschwanden wieder. Der Speicher hat Vorrang,
+       die eingebettete Kopie ist nur noch der Notnagel für Stände ohne eigenen
+       Meta-Eintrag. */
+    var meta = loadMeta();
+    if (d.meta && !gespeicherteMeta()) meta = d.meta;
+    var run = create(d.seed, meta);
     run.team = []; run.bank = [];
     ['rngState', 'act', 'step', 'threat', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank', 'bosse']
       .forEach(function (k) { if (d[k] !== undefined) run[k] = d[k]; });
@@ -1304,8 +1313,30 @@
       if (meta.threatGewaehlt === undefined || meta.threatGewaehlt === null) {
         meta.threatGewaehlt = meta.threat || 0;
       }
+      /* Gestrichene Einheiten und Relikte aus alten Ständen entfernen — sonst
+         zeigt der Fortschritt „40 / 38" und die Freischaltung glaubt, sie sei
+         fertig, obwohl noch etwas fehlt. */
+      meta.unlockedUnits = (meta.unlockedUnits || []).filter(function (id) { return !!GD.unit(id); });
+      meta.unlockedRelics = (meta.unlockedRelics || []).filter(function (id) { return !!GD.relic(id); });
+      /* Und der weiteste Weg kann nicht länger sein, als der Lauf überhaupt ist:
+         frühere Fassungen hatten fünf Akte. */
+      meta.best = Math.min(meta.best || 0, AKTE * STEPS.length);
+      /* Siege ohne Bedrohungsstufe kann es nicht geben — der erste Sieg hebt sie
+         immer. Wer beides hat, hat den Fortschritt an den Meta-Bug oben verloren
+         (der Speicherstand des Runs trug eine alte Kopie und überschrieb ihn).
+         Eng gefasst nachholen, statt jemanden fünfzehn Siege noch einmal
+         spielen zu lassen. */
+      if ((meta.wins || 0) > 0 && !(meta.threat || 0)) {
+        meta.threat = Math.min(5, meta.wins);
+        meta.threatGewaehlt = meta.threat;
+      }
       return meta;
     } catch (e) { return newMeta(); }
+  }
+  /* Alle Zugriffe auf den Speicher liegen hinter try/catch: der UI-Test läuft
+     ohne localStorage, und ein privates Browserfenster wirft ebenfalls. */
+  function gespeicherteMeta() {
+    try { return localStorage.getItem(META_KEY); } catch (e) { return null; }
   }
   function saveMeta(meta) {
     try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (e) {}

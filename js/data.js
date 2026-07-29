@@ -215,8 +215,8 @@
       'sig_windrache', ['schwungmeister', 'windschritt', 'kettenschlag']),
 
     /* ---- Orks: Masse ------------------------------------------------------ */
-    u('geld', 'Geld', 'ork', 'front', 4, 165, 13, 8, 16,
-      'sig_geld', ['schildwall', 'zaeh', 'dornenhaut']),
+    u('gerudo', 'Gerudo', 'ork', 'front', 4, 165, 13, 8, 16,
+      'sig_gerudo', ['schildwall', 'zaeh', 'dornenhaut']),
     u('orkkrieger', 'Orkkrieger', 'ork', 'front', 1, 80, 12, 2, 20,
       'sig_orkkrieger', ['kriegsherz', 'rachsucht', 'erstschlag']),
 

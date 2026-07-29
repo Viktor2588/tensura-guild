@@ -1475,32 +1475,32 @@
       }),
 
 
-    /* ---- Geld, der Orkkönig: die Deckung ------------------------------------
+    /* ---- Gerudo, der Orkkönig: die Deckung ------------------------------------
        Er hat sein eigenes Volk gefressen und trägt seitdem dessen Hunger. Als
        König richtet er ihn nach innen: er zieht den Schaden seiner Reihe auf
        sich — die einzige Einheit im Spiel, die das UNABHÄNGIG von der
        Aufstellung tut. Die Deckung des Kampfsystems hängt an Platz 3; Geld
        nimmt jedem etwas ab, egal wo er steht. Dafür ist er allein nichts wert.  */
 
-    passiv('geld_ang1', 'Hungrige Faust', 'onHit', [], [],
-      'Der erste Schlag des Kampfes trifft 110 % härter und heilt Geld um ein Drittel des Schadens',
+    passiv('gerudo_ang1', 'Hungrige Faust', 'onHit', [], [],
+      'Der erste Schlag des Kampfes trifft 110 % härter und heilt Gerudo um ein Drittel des Schadens',
       function (c) {
         if (c.self._auftakt) return;
         c.self._auftakt = 1;
         c.dmg *= 2.1;
         c.self.lifesteal = Math.max(c.self.lifesteal || 0, 0.33);
       }),
-    passiv('geld_ang2', 'Vergolten', 'onHit', [], [],
+    passiv('gerudo_ang2', 'Vergolten', 'onHit', [], [],
       'Jeder dritte Schlag trifft 8 % härter je erlittenem Treffer — höchstens doppelt',
       function (c) {
-        if (!zaehler(c.self, 'geld_ang2', 3)) return;
+        if (!zaehler(c.self, 'gerudo_ang2', 3)) return;
         c.dmg *= 1 + Math.min(1, 0.08 * (c.self._genommen || 0));
       }),
-    passiv('geld_ang3', 'Königsfaust', 'onHit', [], ['schild'],
-      'Führt ein Verbündeter Schild, schlägt Geld 30 % härter — sonst 10 %',
+    passiv('gerudo_ang3', 'Königsfaust', 'onHit', [], ['schild'],
+      'Führt ein Verbündeter Schild, schlägt Gerudo 30 % härter — sonst 10 %',
       function (c) { c.dmg *= truppFuehrt(c, 'schild') ? 1.3 : 1.1; }),
-    passiv('geld_ang4', 'Ausgehungert', 'onStart', [], [],
-      'Geld schlägt 6 % härter je 10 % fehlendem Leben — dafür heilt ihn nichts mehr',
+    passiv('gerudo_ang4', 'Ausgehungert', 'onStart', [], [],
+      'Gerudo schlägt 6 % härter je 10 % fehlendem Leben — dafür heilt ihn nichts mehr',
       function (c) {
         c.self.heilfaktor = -1;
         c.self.regen = 0;
@@ -1509,21 +1509,21 @@
         } });
       }),
 
-    passiv('geld_mec1', 'Schild des Königs', 'onStart', ['schild'], [],
+    passiv('gerudo_mec1', 'Schild des Königs', 'onStart', ['schild'], [],
       'Nimmt jedem Verbündeten 22 % jedes Treffers ab — unabhängig von der Aufstellung',
       function (c) { koenigsdeckung(c, 0.22); }),
-    passiv('geld_mec2', 'Sattgefressen', 'onDamaged', ['heilung'], [],
-      'Jeder dritte erlittene Treffer heilt Geld um 12 % seines Lebens',
+    passiv('gerudo_mec2', 'Sattgefressen', 'onDamaged', ['heilung'], [],
+      'Jeder dritte erlittene Treffer heilt Gerudo um 12 % seines Lebens',
       function (c) {
         c.self._genommen = (c.self._genommen || 0) + 1;
-        if (!zaehler(c.self, 'geld_mec2', 3)) return;
+        if (!zaehler(c.self, 'gerudo_mec2', 3)) return;
         c.heal(c.self, c.self.maxHp * 0.12, 'Sattgefressen');
       }),
-    passiv('geld_mec3', 'Lastenträger', 'onStart', ['schild'], ['schild'],
-      'Führt ein Verbündeter Schild, nimmt Geld 35 % jedes Treffers ab — sonst 15 %',
+    passiv('gerudo_mec3', 'Lastenträger', 'onStart', ['schild'], ['schild'],
+      'Führt ein Verbündeter Schild, nimmt Gerudo 35 % jedes Treffers ab — sonst 15 %',
       function (c) { koenigsdeckung(c, truppFuehrt(c, 'schild') ? 0.35 : 0.15); }),
-    passiv('geld_mec4', 'Alles auf mich', 'onStart', ['schild'], [],
-      'Geld nimmt jedem Verbündeten die Hälfte jedes Treffers ab — dafür schlägt er nur noch mit einem Viertel',
+    passiv('gerudo_mec4', 'Alles auf mich', 'onStart', ['schild'], [],
+      'Gerudo nimmt jedem Verbündeten die Hälfte jedes Treffers ab — dafür schlägt er nur noch mit einem Viertel',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -1531,7 +1531,7 @@
         koenigsdeckung(c, 0.5);
       }),
 
-    passiv('geld_unt1', 'Königswort', 'onStart', [], [],
+    passiv('gerudo_unt1', 'Königswort', 'onStart', [], [],
       'Zu Kampfbeginn +14 % Leben für den ganzen Trupp',
       function (c) {
         c.allies().forEach(function (u) {
@@ -1539,21 +1539,21 @@
           u.maxHp += mehr; u.hp += mehr;
         });
       }),
-    passiv('geld_unt2', 'Sammelt euch', 'onDamaged', ['schild'], [],
+    passiv('gerudo_unt2', 'Sammelt euch', 'onDamaged', ['schild'], [],
       'Jeder vierte Treffer auf den Trupp legt allen ein Schild über 12 % ihres Lebens an',
       function (c) {
         c.self._genommen = (c.self._genommen || 0) + 1;
-        if (!zaehler(c.self, 'geld_unt2', 4)) return;
+        if (!zaehler(c.self, 'gerudo_unt2', 4)) return;
         c.allies().forEach(function (u) { c.applyStatus(u, 'schild', Math.round(u.maxHp * 0.12)); });
       }),
-    passiv('geld_unt3', 'Schutzherr', 'onStart', [], ['schild'],
+    passiv('gerudo_unt3', 'Schutzherr', 'onStart', [], ['schild'],
       'Führt ein Verbündeter Schild, erleidet der Trupp 16 % weniger Schaden — sonst 6 %',
       function (c) {
         var m = truppFuehrt(c, 'schild') ? 0.16 : 0.06;
         c.allies().forEach(function (u) { if (u !== c.self) u.minderung = Math.max(u.minderung || 0, m); });
       }),
-    passiv('geld_unt4', 'Orkkönig', 'onStart', [], [],
-      'Der Trupp bekommt +30 % Leben — Geld selbst greift nicht mehr an',
+    passiv('gerudo_unt4', 'Orkkönig', 'onStart', [], [],
+      'Der Trupp bekommt +30 % Leben — Gerudo selbst greift nicht mehr an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -1564,24 +1564,24 @@
         c.self.atk = 1;
       }),
 
-    passiv('geld_def1', 'Fettpanzer', 'onStart', ['schild'], [],
+    passiv('gerudo_def1', 'Fettpanzer', 'onStart', ['schild'], [],
       'Beginnt mit einem Schild über 38 % seines Lebens',
       function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.38)); }),
-    passiv('geld_def2', 'Zäher Wanst', 'onDamaged', [], [],
+    passiv('gerudo_def2', 'Zäher Wanst', 'onDamaged', [], [],
       'Jeder dritte erlittene Treffer heilt 11 % seines Lebens',
       function (c) {
         c.self._genommen = (c.self._genommen || 0) + 1;
-        if (!zaehler(c.self, 'geld_def2', 3)) return;
+        if (!zaehler(c.self, 'gerudo_def2', 3)) return;
         c.heal(c.self, c.self.maxHp * 0.11, 'Zäher Wanst');
       }),
-    passiv('geld_def3', 'Unverdaulich', 'onStart', [], ['schild'],
+    passiv('gerudo_def3', 'Unverdaulich', 'onStart', [], ['schild'],
       'Führt ein Verbündeter Schild, kostet kein Treffer mehr als 12 % seines Lebens — sonst 18 %',
       function (c) {
         var d = truppFuehrt(c, 'schild') ? 0.12 : 0.18;
         c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
       }),
-    passiv('geld_def4', 'Der König steht', 'onDeath', ['schild'], [],
-      'Fällt Geld, bekommt jeder Verbündete ein Schild über 40 % seines Lebens — sein letzter Dienst',
+    passiv('gerudo_def4', 'Der König steht', 'onDeath', ['schild'], [],
+      'Fällt Gerudo, bekommt jeder Verbündete ein Schild über 40 % seines Lebens — sein letzter Dienst',
       function (c) {
         if (c.self._letzter) return;
         c.self._letzter = 1;
@@ -5284,7 +5284,7 @@
     return c.self._runden || 0;
   }
 
-  /* Geld und Suphia nehmen ihrer Reihe Schaden ab — die Deckung des
+  /* Gerudo und Suphia nehmen ihrer Reihe Schaden ab — die Deckung des
      Kampfsystems hängt dagegen an Platz 3. Gebaut aus vorhandenen Mitteln: der
      Verbündete bekommt seinen Anteil zurückgeheilt, der Beschützer bekommt ihn
      roh. Ein Anteil über 0.5 wäre ein Perpetuum mobile, deshalb der Deckel. */
@@ -5343,11 +5343,11 @@
     /* Rimuru und Adalmann standen im Generator, bis ihre Kits eigene Linien
        verlangten: Rimuru liest fremde Zustände statt eigene anzulegen, und der
        Priester in Adalmann führt Licht neben der Totenmagie. */
-    geld: {
-      angriff: ['geld_ang1', 'geld_ang2', 'geld_ang3', 'geld_ang4'],
-      mechanik: ['geld_mec1', 'geld_mec2', 'geld_mec3', 'geld_mec4'],
-      unterstuetzung: ['geld_unt1', 'geld_unt2', 'geld_unt3', 'geld_unt4'],
-      defensive: ['geld_def1', 'geld_def2', 'geld_def3', 'geld_def4']
+    gerudo: {
+      angriff: ['gerudo_ang1', 'gerudo_ang2', 'gerudo_ang3', 'gerudo_ang4'],
+      mechanik: ['gerudo_mec1', 'gerudo_mec2', 'gerudo_mec3', 'gerudo_mec4'],
+      unterstuetzung: ['gerudo_unt1', 'gerudo_unt2', 'gerudo_unt3', 'gerudo_unt4'],
+      defensive: ['gerudo_def1', 'gerudo_def2', 'gerudo_def3', 'gerudo_def4']
     },
     orkkrieger: {
       angriff: ['orkkrieger_ang1', 'orkkrieger_ang2', 'orkkrieger_ang3', 'orkkrieger_ang4'],
@@ -5865,8 +5865,8 @@
         c.chaos(c.target, CHAOS_JE_RANG[c.self.rank || 0]);
       }),
     /* ---- Orks und Bestienkrieger ---------------------------------------- */
-    aktiv('sig_geld', 'Hungriger König', 3, ['schild', 'heilung'],
-      '120 % Schaden und heilt Geld um die Hälfte davon. Zusätzlich Schild 30 für die ' +
+    aktiv('sig_gerudo', 'Hungriger König', 3, ['schild', 'heilung'],
+      '120 % Schaden und heilt Gerudo um die Hälfte davon. Zusätzlich Schild 30 für die ' +
       'am schwersten verwundete Verbündete.',
       function (c) {
         var d = c.attack(1.2);
