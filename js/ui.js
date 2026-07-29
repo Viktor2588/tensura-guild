@@ -1207,11 +1207,7 @@
     }).join('');
   }
 
-  /* Alle Linien je Einheit — Nachschlagewerk im Menü (inkl. Generator-Archetypen). */
-  var LINIE_ARCHETYP = {
-    exekution: 'Exekution', status: 'Status', konter: 'Konter', shield: 'Schild',
-    heal: 'Heilung', tempo: 'Tempo', flaeche: 'Fläche'
-  };
+  /* Alle Linien je Einheit — Nachschlagewerk im Menü. */
   var LINIE_KATEN = ['angriff', 'mechanik', 'unterstuetzung', 'defensive'];
 
   function linienEinheitenSortiert() {
@@ -1224,17 +1220,22 @@
   function linienDetailHtml(unitId) {
     var u = GD.unit(unitId), l = AB.linien[unitId];
     if (!u || !l) return '<p class="hinweis">Keine Linien für diese Einheit.</p>';
-    var gen = AB.lineUnitsGeneriert && AB.lineUnitsGeneriert.indexOf(unitId) >= 0;
-    var theme = AB.lineTheme && AB.lineTheme[unitId];
-    var arch = '';
-    if (theme) {
-      arch = LINIE_ARCHETYP[theme.kind] || theme.kind;
-      if (theme.statusKey) arch += ' · ' + kwName(theme.statusKey);
-      if (theme.defRevive) arch += ' · Wiederkehr';
-    }
+    /* Die „Generator"-Markierung und der Archetyp sind weg: es gibt keine
+       generierten Einheiten mehr, alle 35 sind von Hand geschrieben. Statt
+       eines toten Etiketts stehen jetzt die Schlüsselwörter der Einheit da —
+       das ist die Information, nach der man in der Übersicht sucht. */
+    var kws = {};
+    LINIE_KATEN.forEach(function (kat) {
+      (l[kat] || []).forEach(function (pid) {
+        var a = AB.get(pid);
+        if (a) (a.keywords || []).forEach(function (k) { kws[k] = 1; });
+      });
+    });
+    var liste = Object.keys(kws);
     var html = '<p class="linien-kopf"><b>' + esc(u.name) + '</b> · ' + esc(GD.artName(u.art)) +
-      (gen ? ' <span class="tag-gen">Generator</span>' : '') +
-      (arch ? '<br><small>Archetyp: ' + esc(arch) + '</small>' : '') + '</p>';
+      (liste.length ? '<br><span class="kws">' + liste.map(function (k) {
+        return '<span class="kw-chip">' + esc(kwName(k)) + '</span>';
+      }).join('') + '</span>' : '') + '</p>';
 
     /* Die Signatur steht über den Linien: sie ist die eine Aktive, die die
        Einheit immer führt, und der Grund, warum ihre Passiven so aussehen, wie

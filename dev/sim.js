@@ -21,27 +21,28 @@ function mit(id, rank) {
      nur gewählte Linien-Passiven. Für die Tests brauchen wir eine
      deterministische Standardeinstellung. */
   if (m.rank >= 1 && AB.linien && AB.linien[id]) {
+    /* Die IDs werden aus `AB.linien` gelesen, nicht aus dem Einheitennamen
+       zusammengebaut. Handgeschriebene Einheiten benutzen kurze Präfixe
+       (`gruft_`, `hexe_`, `wind_`), und die zusammengebaute ID traf dort ins
+       Leere — der Test lief dann gegen eine Einheit ganz ohne Passive. */
+    var l = AB.linien[id];
     var slots = R.passivSlots(m);
     var out = [];
     /* Mechanik-Stufe 1 liefert i.d.R. den „Quellen“-Keyword. */
-    if (slots >= 1) out.push(id + '_mec1');
-    /* Bei Statuslinien ist Angriffs-Stufe 2 der Verstärker. */
+    if (slots >= 1) out.push(l.mechanik[0]);
+    /* Bei Statuslinien ist Angriffs-Stufe 2 der Verstärker; Untote tragen ihre
+       Wiederkehr an vierter Stelle der Defensivlinie. */
     if (slots >= 2) {
-      var art = GD.unit(id).art;
-      /* Untot hat Wiederkehr als Defensive-Stufe 4. */
-      if (art === 'untot') out.push(id + '_def4');
-      else out.push(id + '_ang2');
+      out.push(GD.unit(id).art === 'untot' ? l.defensive[3] : l.angriff[1]);
     }
-    /* Der dritte Slot ist für die meisten Tests nicht kritisch. */
     if (slots >= 3) {
-      /* Für Statuslinien (Gift/Brand/Verdorbnis) setzen wir im Default hohe
-         Mechanik-/Unterstützung-Stufen, damit Stapel-Tests schnell genug
-         laufen (z.B. Gift stapelt über 12). */
-      var mec = AB.get(id + '_mec1');
+      /* Für Statuslinien (Gift/Brand/Verderbnis) die hohen Stufen, damit
+         Stapel-Tests schnell genug laufen. */
+      var mec = AB.get(l.mechanik[0]);
       var kw = mec && mec.keywords ? mec.keywords : [];
       var statusKey = ['gift', 'brand', 'verderbnis'].filter(function (k) { return kw.indexOf(k) >= 0; })[0];
-      if (statusKey) out.push(id + '_unt4'); else out.push(id + '_unt1');
-      if (statusKey) out[0] = id + '_mec4';
+      out.push(statusKey ? l.unterstuetzung[3] : l.unterstuetzung[0]);
+      if (statusKey) out[0] = l.mechanik[3];
     }
     m.passives = out.slice(0, slots);
   }
@@ -53,7 +54,8 @@ function mit(id, rank) {
 function fertigerRun(seed, meta) {
   var r = R.create(seed, meta || R.newMeta());
   while (r.phase === 'start') R.chooseStart(r, 0);
-  ['gobta', 'sturmwolf', 'skelettritter', 'riesenameise', 'gobkyu'].forEach(function (id) {
+  /* Verschiedene ARTEN — pro Art passt nur eine Einheit in den Trupp. */
+  ['gobta', 'sturmwolf', 'gruftwaechter', 'kaefergarde'].forEach(function (id) {
     if (r.team.length < 3) R.addUnit(r, id);
   });
   while (R.passivWahl(r)) R.choosePassive(r, 0);
@@ -63,9 +65,10 @@ function def(id, rank) { return R.resolve(mit(id, rank)); }
 
 /* ---------------------------------------------------------------- Daten */
 head('Daten');
-/* 38, nicht 40: Schattenwolf und Rudelalpha sind bewusst gestrichen — vier
-   Wölfe waren zu viel, und ihre Rollen überschnitten sich mit Ranga. */
-ok(GD.units.length >= 38, GD.units.length + ' Einheiten');
+/* 35, nicht 40: Schattenwolf und Rudelalpha (vier Wölfe waren zu viel) sowie
+   Riesenameise, Skelettritter und Giftfalter (Dubletten im Generator) sind
+   bewusst gestrichen. Weniger Einheiten, dafür jede mit eigener Idee. */
+ok(GD.units.length >= 35, GD.units.length + ' Einheiten');
 ok(EN.all.length >= 30, EN.all.length + ' Gegner');
 ok(GD.relics.length >= 30, GD.relics.length + ' Relikte');
 /* Eine Signatur je Einheit, plus die Verwandlungsformen: Shions Chaosklinge
@@ -462,7 +465,7 @@ ok(AB.keywords(teile).gift && AB.keywords(teile).gift.verstaerker >= 1,
    'die Synergie-Anzeige sieht den Relikt-Verstärker');
 
 /* Verstärker sollen früh greifen, sonst entsteht der Build nie. */
-var frueh = ['apito', 'giftfalter', 'diablo', 'benimaru', 'veldora', 'testarossa'];
+var frueh = ['apito', 'carrera', 'diablo', 'benimaru', 'veldora', 'testarossa'];
 ok(frueh.every(function (id) {
   var erste = AB.get(GD.unit(id).passives[0]);
   return (erste.amplifies || []).length > 0;
@@ -807,7 +810,7 @@ head('Deckung');
 /* Wer hinten steht, soll messbar weniger abbekommen — sonst ist die Aufstellung
    nur eine Liste. */
 function schadenAnPosition(pos) {
-  var trupp = [def('rigurd', 2), def('shion', 2), def('gobkyu'), def('giftfalter')];
+  var trupp = [def('rigurd', 2), def('shion', 2), def('gobkyu'), def('apito', 1)];
   var r = C.simulate(trupp, [EN.get('felsgolem')], 12);
   var name = trupp[pos].name;
   var sum = 0;
@@ -820,16 +823,34 @@ function schadenAnPosition(pos) {
    — für die Deckung braucht es Gegner, die überhaupt zum Zug kommen. */
 var vorneTreffer = [];
 for (var ds = 0; ds < 25 && !vorneTreffer.length; ds++) {
-  vorneTreffer = C.simulate([def('rigurd', 2), def('shion', 2), def('gobkyu'), def('giftfalter')],
+  vorneTreffer = C.simulate([def('rigurd', 2), def('shion', 2), def('gobkyu'), def('apito', 1)],
     EN.build({ units: ['ritter', 'bogenschuetze', 'hofmagier'], mult: 3 }), ds)
     .log.filter(function (l) { return l.type === 'hit' && l.source === 'Deckung'; });
 }
 ok(vorneTreffer.length > 0, 'Treffer auf die hinteren Plätze werden teilweise nach vorn umgeleitet');
 /* Nur die eigene Seite prüfen — Deckung gilt für beide, und der Gegner steht
    inzwischen auch zu dritt. */
-ok(vorneTreffer.filter(function (l) { return l.side === 'player'; })
-   .every(function (l) { return l.target === 'Rigurd'; }),
-   'die Deckung landet immer bei der vordersten eigenen Einheit');
+/* „Vorderste Einheit" hieß hier bisher schlicht „heißt Rigurd" — das hält nur,
+   solange Rigurd lebt. Fällt er, rückt jemand nach, und der Test schlug fehl,
+   ohne dass an der Deckung etwas falsch war. Jetzt wird die Front aus dem Log
+   mitgeführt. */
+function deckungImmerVorn(log, trupp) {
+  var lebt = trupp.map(function (u) { return u.name; });
+  var ok2 = true;
+  log.forEach(function (l) {
+    if (l.type === 'death' && l.side === 'player') {
+      lebt = lebt.filter(function (n) { return n !== l.unit; });
+    }
+    if (l.type === 'hit' && l.side === 'player' && l.source === 'Deckung') {
+      if (l.target !== lebt[0]) ok2 = false;
+    }
+  });
+  return ok2;
+}
+var deckTrupp = [def('rigurd', 2), def('shion', 2), def('gobkyu'), def('apito', 1)];
+ok(deckungImmerVorn(C.simulate(deckTrupp,
+     EN.build({ units: ['ritter', 'bogenschuetze', 'hofmagier'], mult: 3 }), 14).log, deckTrupp),
+   'die Deckung landet immer bei der vordersten LEBENDEN eigenen Einheit');
 /* Gift geht an der Deckung vorbei — sonst wäre die Frontlinie auch dagegen ein Schild. */
 var giftLauf = C.simulate([def('rigurd', 2), def('shion', 2), def('gobkyu'), def('apito', 1)],
   [EN.get('hoehlenspinne')], 5);
@@ -838,7 +859,7 @@ ok(giftLauf.log.filter(function (l) { return l.source === 'Gift'; })
 
 /* ------------------------------------------------------------- Kampf */
 head('Kampf');
-var team = ['rimuru', 'gobta', 'skelettritter'].map(function (id) { return def(id); });
+var team = ['rimuru', 'gobta', 'gruftwaechter'].map(function (id) { return def(id); });
 var foes = EN.build(EN.forAct(1)[0]);
 var a1 = C.simulate(team, foes, 1234), b1 = C.simulate(team, foes, 1234);
 ok(JSON.stringify(a1.log) === JSON.stringify(b1.log), 'gleicher Seed -> identisches Log');
@@ -906,8 +927,8 @@ function tritt_auf(unitId, rank, treffer, gegner) {
   }
   return false;
 }
-ok(tritt_auf('giftfalter', 0, function (l) { return l.status === 'gift'; }), 'Gift wird angelegt');
-ok(tritt_auf('giftfalter', 0, function (l) { return l.source === 'Gift'; }), 'Gift tickt und macht Schaden');
+ok(tritt_auf('apito', 0, function (l) { return l.status === 'gift'; }), 'Gift wird angelegt');
+ok(tritt_auf('apito', 0, function (l) { return l.source === 'Gift'; }), 'Gift tickt und macht Schaden');
 ok(tritt_auf('benimaru', 0, function (l) { return l.status === 'brand'; }), 'Brand wird angelegt');
 var erstarrtGesehen = false;
 for (var eg = 0; eg < 60 && !erstarrtGesehen; eg++) {
@@ -934,7 +955,7 @@ for (var rg = 0; rg < 60 && !regenGesehen; rg++) {
     .some(function (l) { return l.source === 'Regeneration'; });
 }
 ok(regenGesehen, 'Regeneration heilt');
-ok(tritt_auf('skelettritter', 2, function (l) { return l.type === 'revive'; }, 'milim_boss'),
+ok(tritt_auf('gruftwaechter', 2, function (l) { return l.type === 'revive'; }, 'milim_boss'),
    'Wiederkehr belebt wieder');   // beim Skelettritter die zweite Passive
 
 /* Stapel sind unbegrenzt — wer die Linie zu Ende baut, sieht das auch. */
@@ -960,7 +981,7 @@ ok(C.FEHLSCHLAG_MAX < 1, 'die Fehlschlagchance bleibt unter 100 %');
 
 /* ------------------------------------------------- Fähigkeits-Synergien */
 head('Fähigkeits-Synergien');
-var giftTeam = [mit('apito', 2), mit('giftfalter', 2)].map(R.abilities)
+var giftTeam = [mit('apito', 2), mit('gobkyu', 2)].map(R.abilities)
   .reduce(function (a, b) { return a.concat(b); }, []);
 var kw = AB.keywords(giftTeam);
 ok(kw.gift && kw.gift.quellen >= 2, 'Gift-Team hat mehrere Gift-Quellen');
@@ -994,7 +1015,7 @@ GD.relics.forEach(function (r) {
 ok(!kaputtR.length, 'jedes Relikt läuft fehlerfrei' + (kaputtR.length ? ' — ' + kaputtR.join(' | ') : ''));
 
 /* Schlüsselwort-Relikte müssen die Schlüsselwörter auch sehen. */
-var giftTrupp = [R.resolve(mit('apito', 1)), R.resolve(mit('giftfalter', 1))];
+var giftTrupp = [R.resolve(mit('apito', 1)), R.resolve(mit('gobkyu', 1))];
 var ohneR = C.simulate(giftTrupp, [EN.get('felsgolem')], 9);
 var mitR = C.simulate(giftTrupp, [EN.get('felsgolem')], 9, { relics: [GD.relic('giftmeister')] });
 ok(JSON.stringify(ohneR.log) !== JSON.stringify(mitR.log), 'Zeichen der Brutmutter greift bei Gift-Fähigkeiten');
@@ -1430,8 +1451,8 @@ ok(pw2.offers.every(function (o) { return !o.id || shionM.passives.indexOf(o.id)
    'und nie eine, die die Einheit schon trägt');
 ok(!R.skipPassive, 'eine Passive lässt sich nicht auslassen — es gibt keinen Weg daran vorbei');
 ok(R.choosePassive(pRun, 0) && !R.passivWahl(pRun), 'die Wahl muss getroffen werden');
-ok(R.passivIds(R.member('skelettritter')).length === 0 &&
-   R.passivIds({ id: 'skelettritter', rank: 2, passives: ['skelettritter_mec1', 'skelettritter_def4'] }).length === 2,
+ok(R.passivIds(R.member('wightkoenig')).length === 0 &&
+   R.passivIds({ id: 'wightkoenig', rank: 2, passives: ['wightkoenig_mec1', 'wightkoenig_def4'] }).length === 2,
    'Linien-Einheiten tragen nur gewählte Linien-Passiven');
 
 /* ------------------------------------------------- Debug-Übersicht */
@@ -1579,7 +1600,7 @@ function aufstiegsOffers(id, seed) {
   return w ? w.offers.filter(function (o) { return o.id && AB.linien_ids[o.id] === id; }) : [];
 }
 
-['apito', 'adalmann', 'skelettritter', 'riesenameise'].forEach(function (id) {
+['apito', 'adalmann', 'zegion', 'kaefergarde'].forEach(function (id) {
   var offers = aufstiegsOffers(id, 700);
   ok(offers.length === 4, GD.unit(id).name + ': vier Linien-Passiven im Aufstiegsangebot');
   ok(offers.every(function (o) { return AB.linien[id][o.linie].indexOf(o.id) >= 0; }),

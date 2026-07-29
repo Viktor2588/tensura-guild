@@ -75,7 +75,7 @@ ok(run.phase === 'karte' && run.team.length === 1 && run.relics.length === 1,
 
 /* Der Run startet mit einer Einheit — für Aufstellung und Trupp-Panel braucht
    der Test drei. */
-['gobta', 'sturmwolf', 'skelettritter', 'riesenameise'].forEach(function (id) {
+['gobta', 'sturmwolf', 'gruftwaechter', 'kaefergarde'].forEach(function (id) {
   if (run.team.length < 3) win.Run.addUnit(run, id);
 });
 while (win.Run.passivWahl(run)) win.Run.choosePassive(run, 0);
@@ -332,11 +332,12 @@ ok(/Dauerbrand/.test(text('#menu-glossar')) && /150 statt 6/.test(text('#menu-gl
 ok($$('#linien-einheit option').length === win.GameData.units.length,
    'die Linien-Übersicht listet jede Einheit');
 var linienSel = $('#linien-einheit');
-/* Eine Einheit, die noch aus dem Generator kommt — Rimuru und Adalmann haben
-   inzwischen handgeschriebene Linien und tragen die Markierung nicht mehr. */
 linienSel.value = 'zegion';
 linienSel.dispatchEvent(new win.Event('change', { bubbles: true }));
-ok(/Generator/.test(text('#menu-linien')), 'Generator-Einheiten sind in der Linien-Übersicht markiert');
+/* Es gibt keine generierten Einheiten mehr — der Kopf zeigt jetzt die
+   Schlüsselwörter der Einheit statt eines Generator-Etiketts. */
+ok($$('#menu-linien .linien-kopf .kw-chip').length > 0,
+   'die Übersicht nennt die Schlüsselwörter der Einheit');
 ok(!!$('#menu-linien .signatur-block'), 'die Übersicht zeigt auch die Signatur-Aktive');
 ok($('#menu-linien .signatur-block .unter').textContent.length > 15,
    'samt ihrer Beschreibung');

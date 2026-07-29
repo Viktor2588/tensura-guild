@@ -89,9 +89,9 @@
   var PASSIV_SLOTS = [0, 1, 2, 3];                // schalten automatisch frei
   var PRAEDATOR_SLOTS = [0, 1, 2, 3];             // verschlungene Gegnerfähigkeiten
 
-  var START_UNITS = ['rimuru', 'gobta', 'gobkyu', 'sturmwolf', 'riesenameise', 'skelettritter',
+  var START_UNITS = ['rimuru', 'gobta', 'gobkyu', 'sturmwolf',
     'rigurd', 'rigur', 'gobwa', 'kurobe', 'souka', 'kaefergarde',
-    'giftfalter', 'daemonengarde', 'gruftwaechter', 'drachenknecht', 'quellenpriesterin',
+    'daemonengarde', 'gruftwaechter', 'drachenknecht', 'quellenpriesterin',
     'ranga', 'shion', 'gabiru', 'wightkoenig'];
   var START_RELICS = ['kern_des_zorns', 'schuppenpanzer', 'lebensquell', 'windschuhe',
     'giftdorn', 'blutkelch', 'rachegeist_relikt', 'erstschlag_relikt', 'turmschild',

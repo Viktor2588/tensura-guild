@@ -1349,6 +1349,64 @@ Schatten und Verderbnis je 4. Generator: noch 12 Einheiten.
 
 `dev/balance.js 600`: 50 % frisch, kein Build-Ausreißer.
 
+### Phase 31 (2026-07-29): Der Generator ist weg
+
+Zwölf Einheiten kamen noch aus dem Generator, und neun davon trugen ein Thema,
+das eine andere Generator-Einheit auch schon hatte: Konter dreimal, Gift, Brand
+und Verderbnis je zweimal. Erst ausgedünnt, dann handgeschrieben.
+
+**Gestrichen (3):** Riesenameise und Skelettritter waren beide Konter-Frontlinie
+für einen Punkt — dasselbe Kit in zwei Arten. Der Giftfalter doppelte Apito.
+Roster: 38 → 35.
+
+**Handgeschrieben (9),** jede mit einer Idee, die es im Spiel noch nicht gab:
+
+- **Zegion** greift nicht den Körper an, sondern die Deckung davor: er
+  ZERSCHLÄGT Schilde, statt sie zu durchdringen. Die erste Einheit, deren Wert
+  am Gegner hängt statt am eigenen Trupp.
+- **Apito** legt Gift nicht an, sondern züchtet es — ihre Stapel wachsen von
+  selbst nach.
+- **Käfergarde** ist die einzige, deren Schilde mit der TRUPPGRÖSSE wachsen.
+- **Testarossa** macht aus Exekution eine Kette: jeder Abschuss zahlt den
+  nächsten mit Angriff und einem weiteren Zug.
+- **Ultima** zieht aus Verderbnis direkten Schaden, statt sie nur zu verstärken.
+- **Carrera** legt kein Feuer, sie ZÜNDET liegendes: Brand-Stapel werden zu
+  einem Schlag und erlöschen dabei. Ein Bau, der von der Arbeit anderer lebt.
+- **Dämonengarde** kontert nicht als Reaktion, sondern wird mit jedem
+  Austausch schneller und härter.
+- **Drachenwelpe** frisst Feuer und wächst daran — dauerhaft, über den Kampf.
+- **Wight-König** ist der einzige, dessen Stärke an GEFALLENEN hängt statt an
+  Verwundeten. Für ihn ist ein Toter kein reiner Verlust.
+
+**Damit hatte der Generator keine Kundschaft mehr** — rund 340 Zeilen, die
+niemand mehr aufrief. Sie sind weg, samt `LINE_UNITS`, `LINE_THEME` und der
+„Generator"-Markierung in der Linien-Übersicht. Vier Helfer sind geblieben
+(`ausbruch`, `zaehler`, `truppFuehrt`, `schwaechstes`), weil die
+handgeschriebenen Linien sie weiterbenutzen. Der Kopf der Übersicht zeigt statt
+des toten Etiketts jetzt die Schlüsselwörter der Einheit — die Information, die
+man dort tatsächlich sucht.
+
+**Vorher aber das Schild-Grundrauschen.** `schild` stand bei 37 von 38
+Einheiten, weil ich jeder Einheit ein „Beginnt mit einem Schild"-Passiv gegeben
+und jedes markiert hatte. Genau der Fehler, den ich in Phase 23 bei `heilung`
+diagnostiziert hatte, nur flächendeckend. Das Schlüsselwort steht jetzt nur noch
+dort, wo eine Einheit wirklich darauf baut — mehrere Passive, Schilde für den
+Trupp, ein Schildfaktor. 37 → 12 Träger, und die Build-Tabelle sagt an dieser
+Stelle wieder etwas aus. Das Selbstschild wirkt unverändert, es zählt nur nicht
+mehr als Quelle.
+
+Zwei Testhelfer waren dabei stillschweigend kaputt: `mit()` baute Passiv-IDs aus
+dem Einheitennamen zusammen (`gruftwaechter_mec1`), was bei kurzen Präfixen
+(`gruft_`) ins Leere lief — der Test prüfte dann eine Einheit ganz ohne
+Passive. Und die Deckungs-Prüfung verglich „vorderste Einheit" mit „heißt
+Rigurd", was nur hielt, solange Rigurd lebte. Beide lesen jetzt den echten
+Zustand.
+
+`dev/balance.js 600`: 50 % frisch. Offen: der Konter-Eimer meldet 82 %, aber bei
+n=28 und der größten Lauftiefe aller Eimer (15,0 von 16) — zwei Runden Trimmen
+haben ihn um null Punkte bewegt. Das riecht nach Auswahl, nicht nach Stärke;
+vor dem nächsten Eingriff gehört das gezielt nachgemessen, so wie bei Frost.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

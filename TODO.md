@@ -265,7 +265,28 @@ Abgearbeitet in Phase 30:
       starben. `dev/balance.js` zeigt jetzt je Eimer die Ø-Lauftiefe und meldet
       keine Ausreißer mehr für Eimer, die im Schnitt vor Knoten 4 enden.
 
+Abgearbeitet in Phase 31:
+
+- [x] `schild` von den allgegenwärtigen Startschilden entkoppelt: 37 → 12
+      Träger. Dasselbe Grundrauschen wie bei `heilung` in Phase 23.
+- [x] Riesenameise, Skelettritter und Giftfalter gestrichen (Dubletten).
+      Roster: 35 Einheiten.
+- [x] Die letzten 9 Generator-Einheiten handgeschrieben — Zegion (Schilde
+      brechen), Apito (Gift züchten), Käfergarde (Schild ~ Truppgröße),
+      Testarossa (Exekutionskette), Ultima (Verderbnis → Schaden), Carrera
+      (Brand zünden statt legen), Dämonengarde (Konter im Voraus),
+      Drachenwelpe (frisst Feuer und wächst), Wight-König (lebt von Gefallenen).
+- [x] **Der Generator ist gelöscht** — rund 340 Zeilen ohne Kundschaft, samt
+      `LINE_UNITS`, `LINE_THEME` und der „Generator"-Markierung in der UI.
+- [x] Zwei kaputte Testhelfer repariert: `mit()` baute Passiv-IDs aus dem
+      Einheitennamen zusammen und lief bei kurzen Präfixen ins Leere; die
+      Deckungs-Prüfung verglich „vorderste Einheit" mit einem festen Namen.
+
 Balance und Werkzeug:
+
+- Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller
+  Eimer. Zwei Runden Trimmen bewegten ihn um null Punkte — vor dem nächsten
+  Eingriff gezielt nachmessen (wie bei Frost), statt weiter an Zahlen zu drehen.
 
 - `dev/linien.js` braucht seit Phase 23 über zehn Minuten statt drei — die
   Binärsuche läuft öfter, weil zähere Einheiten den Bruchpunkt weiter oben
