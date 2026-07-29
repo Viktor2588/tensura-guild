@@ -839,7 +839,7 @@
 
   /* ---- Rangaufstieg ------------------------------------------------------- */
 
-  function rankUp(run, uid, gratis) {
+  function rankUp(run, uid, gratis, festePassive) {
     var m = find(run, uid);
     if (!m || m.rank >= 3 || passivWahl(run)) return false;
     var cost = gratis ? 0 : rankCost(m, run);
@@ -847,8 +847,16 @@
     run.magicules -= cost;
     m.rank++;
     run.chronik.push('Aufstieg: ' + GD.unit(m.id).name + ' auf Rang ' + rankName(m));
-    passivAngebot(run, m);
-
+    /* Die Namensweihe bringt ihre Passive schon mit: sie steht im Angebot, also
+       hat der Spieler beim Kauf bereits entschieden. Eine zweite Wahl danach
+       wäre nur ein Klick ohne Inhalt. */
+    if (festePassive) {
+      m.passives = (m.passives || []).concat(festePassive);
+      var ab = AB.get(festePassive);
+      run.chronik.push('Namensweihe: ' + GD.unit(m.id).name + ' erhält ' + (ab ? ab.name : festePassive));
+    } else {
+      passivAngebot(run, m);
+    }
     return true;
   }
 
@@ -1001,12 +1009,22 @@
     var faehig = run.team.filter(function (m) { return m.rank < 3; });
     if (faehig.length) {
       var ziel = root.RNG.pick(rng, faehig);
-      offers.push({ kind: 'rang', uid: ziel.uid,
+      /* Die Passive wird hier mitgezogen und steht im Angebot. Vorher hob die
+         Weihe nur den Rang und öffnete danach eine Auswahl — zwei Bildschirme
+         für eine Entscheidung. Jetzt sieht man beides auf einmal und entscheidet
+         einmal: dieses Paket zu diesem Preis, oder nicht. */
+      var hat = ziel.passives || [];
+      var offen = AB.linienAngebot(ziel.id).filter(function (o) { return hat.indexOf(o.id) < 0; });
+      var mit = offen.length ? root.RNG.pick(rng, offen) : null;
+      var mitAb = mit ? AB.get(mit.id) : null;
+      offers.push({ kind: 'rang', uid: ziel.uid, passive: mit ? mit.id : null,
                     name: 'Namensweihe: ' + GD.unit(ziel.id).name,
                     price: Math.round(RANK_COST[ziel.rank] * PREIS_RANG_FAKTOR),
                     text: 'Hebt ' + GD.unit(ziel.id).name + ' von Rang ' + RANK_NAME[ziel.rank] +
                           ' auf ' + RANK_NAME[ziel.rank + 1] + '. Das Ziel ist ausgelost und ' +
-                          'steht für diese Verwaltung fest.' });
+                          'steht für diese Verwaltung fest.' +
+                          (mitAb ? ' Dazu fest: ' + mitAb.name + ' (' + mit.linieName + ') — ' +
+                                   mitAb.text : '') });
     }
     commit(run, rng);
     return offers;
@@ -1021,7 +1039,7 @@
       /* Das Ziel steht im Angebot. Ist es inzwischen verkauft oder schon auf S,
          verfällt der Posten — nachgewürfelt wird nicht. */
       var ziel = find(run, o.uid);
-      if (!ziel || ziel.rank >= 3 || !rankUp(run, ziel.uid, true)) return false;
+      if (!ziel || ziel.rank >= 3 || !rankUp(run, ziel.uid, true, o.passive)) return false;
     }
     if (o.kind === 'relic') run.relics.push(o.id);
     if (o.kind === 'item') (run.bag = run.bag || []).push(o.id);

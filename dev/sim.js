@@ -424,8 +424,13 @@ wRun.pending = { markt: [w2] }; wRun.phase = 'markt';
 while (R.passivWahl(wRun)) R.choosePassive(wRun, 0);
 R.entlassen(wRun, w2.uid);
 ok(!R.buy(wRun, 0), 'ein verkauftes Ziel lässt die Namensweihe verfallen');
-ok(R.passivWahl(kRun) && R.passivWahl(kRun).uid === weihe.uid,
-   'auch die Namensweihe verlangt die Wahl einer Passive');
+/* Die Weihe bringt ihre Passive mit, statt danach eine Wahl zu öffnen: ein
+   Klick, eine Entscheidung. Was man bekommt, steht vorher im Angebot. */
+ok(!R.passivWahl(kRun), 'die Namensweihe öffnet keine zweite Wahl mehr');
+ok(weihe.passive && zielM.passives.indexOf(weihe.passive) >= 0,
+   'sie legt die im Angebot genannte Passive direkt an');
+ok(weihe.text.indexOf(AB.get(weihe.passive).name) >= 0,
+   'und das Angebot nennt sie beim Namen, bevor man kauft');
 R.choosePassive(kRun, 0);
 
 /* Ein Ereignis, das einen Rang schenkt, muss auch ohne Magicule wirken. */
@@ -1346,6 +1351,42 @@ ok(rangS > rangC * 1.5,
    'Goblin-Passive skalieren mit dem Rang (' + Math.round(rangC) + ' → ' + Math.round(rangS) + ' je Treffer)');
 ok(jeTreffer('echsenfuerst', ['fuerst_ang3'], 3) > jeTreffer('echsenfuerst', [], 3) * 1.2,
    'Echsenmenschen-Passive wachsen mit der Kampfdauer');
+
+/* Zustände reagierten aufeinander fast gar nicht — ein sauber gestapeltes
+   EINZELNES Schlüsselwort war damit immer besser als zwei gemischte. Drei
+   Kombinationen mit Schwelle ändern das, ohne Mono-Bauten anzufassen. */
+function kombiProbe(setz) {
+  var o = { id: 'o', name: 'O', tags: ['bestie', 'front'], hp: 900000, atk: 1, def: 0,
+    spd: 1, actives: [], effects: [], keywords: [] };
+  var h = { id: 'h', name: 'H', tags: ['oger', 'front'], hp: 900000, atk: 1, def: 0,
+    spd: 60, actives: [], keywords: [], effects: [{ hook: 'onStart', name: 's', fn: setz }] };
+  return C.simulate([h], [o], 3).log.filter(function (l) { return l.type === 'kombi'; });
+}
+var verpuffung = kombiProbe(function (c) {
+  c.applyStatus(c.foes()[0], 'gift', 5); c.applyStatus(c.foes()[0], 'brand', 5);
+});
+ok(verpuffung.length === 1 && verpuffung[0].name === 'Verpuffung',
+   'Brand auf Gift verpufft, sobald zusammen acht Stapel liegen');
+ok(!kombiProbe(function (c) {
+  c.applyStatus(c.foes()[0], 'gift', 2); c.applyStatus(c.foes()[0], 'brand', 2);
+}).length, 'unter der Schwelle passiert nichts');
+ok(!kombiProbe(function (c) { c.applyStatus(c.foes()[0], 'gift', 20); }).length,
+   'und ein Mono-Bau löst sie nie aus — ihm fehlt der Partner');
+
+var splitter = kombiProbe(function (c) {
+  c.applyStatus(c.foes()[0], 'donner', 4); c.applyStatus(c.foes()[0], 'erstarrung', 1);
+});
+ok(splitter.length === 1 && splitter[0].name === 'Splitter',
+   'Erstarrung auf einen geladenen Gegner entlädt den Donner sofort');
+
+var wunde = kombiProbe(function (c) {
+  c.applyStatus(c.foes()[0], 'verwundbar', 4); c.applyStatus(c.foes()[0], 'blutung', 6);
+});
+ok(wunde.length === 1 && wunde[0].stapel === 9,
+   'Blutung auf ein markiertes Ziel fällt 50 % größer aus (' + (wunde[0] || {}).stapel + ')');
+ok(!kombiProbe(function (c) {
+  c.applyStatus(c.foes()[0], 'verwundbar', 1); c.applyStatus(c.foes()[0], 'blutung', 6);
+}).length, 'eine einzelne Marke reicht dafür nicht');
 
 /* Die Meta ist GLOBALER Fortschritt. Sie stand mit im Speicherstand des Runs,
    und das Laden baute sie daraus neu — also auf dem Stand von Rundenbeginn.

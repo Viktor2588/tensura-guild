@@ -255,6 +255,60 @@
       return amount;
     }
 
+    /* ---- Zustände, die aufeinander reagieren --------------------------------
+       Dreizehn Zustände, und sie ignorierten sich fast alle: nur Licht löschte
+       Dunkelheit, nur Donner hatte eine Schwelle. Ein sauber gestapeltes
+       EINZELNES Schlüsselwort war damit immer besser als zwei gemischte — die
+       Hybridbauten, die das Spiel anbietet, bestrafte es.
+
+       Drei Kombinationen ändern das. Alle drei lösen beim ANLEGEN des zweiten
+       Zustands aus, stehen also an einer Stelle, und alle drei haben eine
+       Schwelle: Mono-Bauten treffen sie nie, weil ihnen der Partner fehlt.
+
+         Verpuffung   Brand trifft Gift, zusammen mindestens 8 Stapel.
+                      Beide verbrennen und richten je Stapel 3 reinen Schaden an.
+         Splitter     Erstarrung trifft einen mit Donner geladenen Gegner —
+                      die Ladung entlädt sich sofort, statt auf die Schwelle
+                      zu warten.
+         Aufgerissen  Blutung auf ein markiertes Ziel (3+ Verwundbar) fällt
+                      50 % größer aus. Die Marke reißt die Wunde weiter auf.     */
+    var kombiniert = 0;
+    function kombination(target, key) {
+      if (kombiniert || !alive(target)) return;
+      kombiniert = 1;
+      try {
+        var gift = target.status.gift || 0, brand = target.status.brand || 0;
+        if ((key === 'brand' || key === 'gift') && gift > 0 && brand > 0 && gift + brand >= 8) {
+          var summe = gift + brand;
+          target.status.gift = 0;
+          target.status.brand = 0;
+          log.push({ t: t, type: 'kombi', key: target.key, target: target.name,
+                     side: target.side, name: 'Verpuffung', stapel: Math.round(summe) });
+          deal(target, summe * 3, 'Verpuffung', { pure: true });
+          return;
+        }
+        if (key === 'erstarrung' && (target.status.donner || 0) > 0) {
+          var ladung = target.status.donner;
+          target.status.donner = 0;
+          log.push({ t: t, type: 'kombi', key: target.key, target: target.name,
+                     side: target.side, name: 'Splitter', stapel: Math.round(ladung) });
+          living(target.side).forEach(function (u) {
+            deal(u, u.maxHp * DONNER_SCHADEN * ladung, 'Splitter', { pure: true });
+          });
+          return;
+        }
+        if (key === 'blutung' && (target.status.verwundbar || 0) >= 3) {
+          var dazu = Math.round(stacksVon(target, 'blutung') * 0.5);
+          if (dazu > 0) {
+            target.status.blutung += dazu;
+            log.push({ t: t, type: 'kombi', key: target.key, target: target.name,
+                       side: target.side, name: 'Aufgerissen', stapel: Math.round(target.status.blutung) });
+          }
+        }
+      } finally { kombiniert = 0; }
+    }
+    function stacksVon(u, k) { return u.status[k] || 0; }
+
     var entlaedt = 0;
     function applyStatus(target, key, stacks, von) {
       if (!target || !alive(target) || stacks <= 0) return;
@@ -283,6 +337,7 @@
       if (key === 'schild') target.status.schild = Math.min(target.status.schild, target.maxHp * 0.6);
       log.push({ t: t, type: 'status', key: target.key, target: target.name, side: target.side,
                  status: key, stacks: Math.round(target.status[key]) });
+      kombination(target, key);
       /* Entladung: der Blitz springt auf die ganze Reihe des Trägers über. Das
          Sperrflag verhindert, dass eine Entladung die nächste auslöst. */
       var schwelle = DONNER_SCHWELLE - (gegen(target, 'donner') ? 2 : 0);

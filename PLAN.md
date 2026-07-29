@@ -1722,6 +1722,43 @@ und der Wächter-Test aus Phase 34 hat es sofort gemeldet.
 
 `dev/balance.js 600`: 50 % frisch.
 
+### Phase 40 (2026-07-29): Namensweihe als Paket, und Zustände, die reagieren
+
+**Die Namensweihe war zwei Bildschirme für eine Entscheidung.** Sie hob den Rang
+einer ausgelosten Einheit und öffnete danach eine Passiv-Wahl — also kaufen,
+dann noch einmal klicken. Jetzt zieht der Markt die Passive gleich mit, nennt
+sie im Angebot beim Namen und legt sie beim Kauf direkt an. Man sieht vorher
+genau, was man bekommt, und entscheidet einmal: dieses Paket zu diesem Preis,
+oder nicht. Schneller, und die Entscheidung ist schärfer, weil sie vollständig
+ist.
+
+**Idee 4 umgesetzt: Zustände reagieren aufeinander.** Dreizehn Zustände
+ignorierten sich fast alle — nur Licht löschte Dunkelheit, nur Donner hatte eine
+Schwelle. Ein sauber gestapeltes EINZELNES Schlüsselwort war damit immer besser
+als zwei gemischte, und das Spiel bestrafte genau die Hybridbauten, die es
+anbietet.
+
+Drei Kombinationen ändern das:
+
+| | Auslöser | Wirkung |
+|---|---|---|
+| **Verpuffung** | Brand trifft Gift, zusammen ≥ 8 Stapel | beide verbrennen, je Stapel 3 Schaden durch Schilde |
+| **Splitter** | Erstarrung auf einen geladenen Gegner | die Donnerladung entlädt sich sofort |
+| **Aufgerissen** | Blutung auf ein Ziel mit ≥ 3 Verwundbar | die Blutung fällt 50 % größer aus |
+
+Alle drei lösen beim **Anlegen** des zweiten Zustands aus, stehen also an einer
+Stelle in `applyStatus`, und alle drei haben eine **Schwelle**. Das ist der
+entscheidende Teil: ein Mono-Bau trifft sie nie, weil ihm der Partner fehlt —
+gemessen löst „nur Gift 20" keine einzige aus. Bestehende Bauten sind damit
+unangetastet, neue werden möglich.
+
+Ein Sperrflag verhindert, dass eine Kombination die nächste auslöst — dieselbe
+Falle wie bei der Donner-Entladung in Phase 19. Der Kampflog nennt sie
+(`✸ Verpuffung an Nadler (10 Stapel)`), weil ein seltener Effekt, den niemand
+sieht, keiner ist.
+
+`dev/balance.js 600`: 51 % frisch, kein Build-Ausreißer.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

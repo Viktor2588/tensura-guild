@@ -396,6 +396,20 @@ Blutung 1,2 % des maximalen Lebens, Licht heilt 1,5 %. Alle drei
 Schadensarten gehen durch Schilde. Verderbnis und Verwundbar ticken gar nicht —
 sie liegen einfach und verändern, was ankommt.
 
+**Kombinationen.** Drei Zustandspaare reagieren aufeinander, und sie sind der
+Grund, warum ein gemischter Bau mehr sein kann als die Summe seiner Teile:
+
+- **Verpuffung** — Brand trifft Gift, zusammen mindestens 8 Stapel. Beide
+  verbrennen und richten je Stapel 3 Schaden an, der durch Schilde geht.
+- **Splitter** — Erstarrung auf einen mit Donner geladenen Gegner entlädt die
+  Ladung sofort, statt auf die Schwelle zu warten.
+- **Aufgerissen** — Blutung auf ein Ziel mit mindestens 3 Verwundbar fällt 50 %
+  größer aus.
+
+Alle drei haben eine Schwelle. Ein reiner Ein-Schlüsselwort-Bau löst sie nie
+aus — ihm fehlt der Partner. Wer mischt, bekommt dafür etwas, was Stapeln
+allein nicht gibt.
+
 **Abbau und die vier Ausnahmen.** Normalerweise verliert jeder Zustand pro
 Trägerzug einen Stapel. Fünf Fähigkeiten setzen das aus: Benimarus *Dauerbrand*,
 Adalmanns *Verfluchtes Wort*, Diablos *Ewige Nacht*, Soueis *Offene Wunde* und

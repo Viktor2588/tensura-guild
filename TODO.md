@@ -386,6 +386,27 @@ Abgearbeitet in Phase 39:
   Kopie der Meta und überschrieb damit den echten Fortschritt. Alte Stände mit
   Siegen bekommen die Stufen nachgereicht.
 
+Abgearbeitet in Phase 40:
+
+- [x] Die **Namensweihe** bringt ihre Passive mit: Ziel UND Passive werden beim
+      Marktaufbau ausgelost, stehen im Angebot und werden beim Kauf direkt
+      angelegt. Keine zweite Wahl mehr — ein Klick, eine vollständige
+      Entscheidung.
+- [x] **Zustands-Kombinationen** (Idee 4): Verpuffung (Brand + Gift ≥ 8),
+      Splitter (Erstarrung auf Donner), Aufgerissen (Blutung auf 3+ Verwundbar).
+      Alle mit Schwelle, damit Mono-Bauten sie nie auslösen. Im Kampflog, im
+      Glossar und in `GAMEGUIDE.md` erklärt.
+
+Offen aus der Recherche (Ideen 1, 2, 3, 5):
+
+- **1. Gegnergruppen bekommen eigene Schlüsselwörter.** Die Resonanz-Maschinerie
+  läuft schon für beide Seiten, aber alle 72 Gegner haben `keywords: []`. Reine
+  Datenarbeit, größter Gewinn.
+- **2. Bedrohung statt fester Zielwahl** — ein Panzer kann heute keine Treffer
+  auf sich ziehen.
+- **3. Zwei Reihen statt einer Liste.**
+- **5. Kosten und Aufladung als System** statt je Passive handgeschnitzt.
+
 Balance und Werkzeug:
 
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller

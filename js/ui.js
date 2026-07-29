@@ -353,6 +353,10 @@
        stumm im Log fehlen, sonst merkt niemand, dass die Schwelle fiel. */
     /* Der Bonus ist nicht mehr fest, sondern hängt an den Stapeln — dann muss
        er auch im Log stehen, sonst sieht niemand, was das Stapeln gebracht hat. */
+    /* Kombinationen sind selten und sollen sichtbar sein — sonst merkt niemand,
+       warum plötzlich die halbe Reihe brennt. */
+    else if (l.type === 'kombi') text = '✸ ' + esc(l.name) + ' an ' + esc(l.target) +
+      ' (' + l.stapel + ' Stapel)';
     else if (l.type === 'verwandlung') text = '✦ ' + esc(l.unit) + ' wird zum ' + esc(l.form) +
       (l.bonus ? ' (' + l.stapel + ' Stapel → +' + l.bonus + ' %)' : '');
     else if (l.type === 'wut') text = '🔥 ' + esc(l.unit) + ' gerät in Rage: Angriff ' + l.atk;
