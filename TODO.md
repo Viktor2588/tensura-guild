@@ -377,8 +377,14 @@ Abgearbeitet in Phase 39:
 - Die Stärke von Items & relikten ist nicht sauber gebalanced. Manche items fühlen sich viel zu stark an dafür das sie ungewühnlich sind & mache legendary items fühlen sich zu schwach an.
 - Erste begegnung sollte immer ein kampf sein.
 - Relikt freischalten sollte schneller gehen
-- Ich brauche eine Möglichkeit alle Fähigkeiten jeder Einheit einzusehen
-- Bedrohungsstufe ist immer 0, kein fortschritt zu sehen. obwohl ein run gewonnen wird. 
+- ~~Ich brauche eine Möglichkeit alle Fähigkeiten jeder Einheit einzusehen~~ —
+  erledigt: **Menü → Entwicklungslinien** zeigt je Einheit die Signatur samt
+  Beschreibung und alle sechzehn Passiven in vier Linien, mit Tooltips und
+  Preis-Markierung.
+- ~~Bedrohungsstufe ist immer 0, kein fortschritt zu sehen, obwohl ein run
+  gewonnen wird~~ — erledigt in Phase 39: der Speicherstand des Runs trug eine
+  Kopie der Meta und überschrieb damit den echten Fortschritt. Alte Stände mit
+  Siegen bekommen die Stufen nachgereicht.
 
 Balance und Werkzeug:
 
