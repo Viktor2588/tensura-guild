@@ -311,6 +311,18 @@ Abgearbeitet in Phase 34:
       nicht monoton, weil härtere Treffer den Kampf verkürzen. Jetzt je Treffer.
 - [x] `GRUNDHAERTE` 1.08 → 1.28; die Reparatur hatte die Quote auf 66 % gehoben.
 
+Abgearbeitet in Phase 35:
+
+- [x] Neue Art **Ork**: Geld (zieht Schaden seiner Reihe auf sich, unabhängig
+      von der Aufstellung — `koenigsdeckung()`) und der Orkkrieger (billigster
+      Frontkämpfer, zahlt für Wunden statt für Deckung).
+- [x] Neue Art **Bestie**: Phobio, Albis, Suphia. Art-Identität ist die
+      Reaktion auf den Kampfverlauf — erlittener Schaden, gefallene Gegner,
+      verwundete Verbündete. Phobio schlägt als einzige Einheit mit stark
+      schwankendem Schaden (55–175 %).
+- [x] Orkkrieger und Phobio im Startbestand. Roster: 40 Einheiten.
+- [x] Die Kampflog-Prüfung hing an einer Zeilenzahl und damit am Startdraft.
+
 Balance und Werkzeug:
 
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller

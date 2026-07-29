@@ -1595,6 +1595,565 @@
                      side: c.self.side, hp: c.self.hp });
       }),
 
+
+    /* ---- Geld, der Orkkönig: die Deckung ------------------------------------
+       Er hat sein eigenes Volk gefressen und trägt seitdem dessen Hunger. Als
+       König richtet er ihn nach innen: er zieht den Schaden seiner Reihe auf
+       sich — die einzige Einheit im Spiel, die das UNABHÄNGIG von der
+       Aufstellung tut. Die Deckung des Kampfsystems hängt an Platz 3; Geld
+       nimmt jedem etwas ab, egal wo er steht. Dafür ist er allein nichts wert.  */
+
+    passiv('geld_ang1', 'Hungrige Faust', 'onHit', [], [],
+      'Der erste Schlag des Kampfes trifft 110 % härter und heilt Geld um ein Drittel des Schadens',
+      function (c) {
+        if (c.self._auftakt) return;
+        c.self._auftakt = 1;
+        c.dmg *= 2.1;
+        c.self.lifesteal = Math.max(c.self.lifesteal || 0, 0.33);
+      }),
+    passiv('geld_ang2', 'Vergolten', 'onHit', [], [],
+      'Jeder dritte Schlag trifft 8 % härter je erlittenem Treffer — höchstens doppelt',
+      function (c) {
+        if (!zaehler(c.self, 'geld_ang2', 3)) return;
+        c.dmg *= 1 + Math.min(1, 0.08 * (c.self._genommen || 0));
+      }),
+    passiv('geld_ang3', 'Königsfaust', 'onHit', [], ['schild'],
+      'Führt ein Verbündeter Schild, schlägt Geld 30 % härter — sonst 10 %',
+      function (c) { c.dmg *= truppFuehrt(c, 'schild') ? 1.3 : 1.1; }),
+    passiv('geld_ang4', 'Ausgehungert', 'onStart', [], [],
+      'Geld schlägt 6 % härter je 10 % fehlendem Leben — dafür heilt ihn nichts mehr',
+      function (c) {
+        c.self.heilfaktor = -1;
+        c.self.regen = 0;
+        c.addEffect(c.self, { hook: 'onHit', name: 'Ausgehungert', fn: function (k) {
+          k.dmg *= 1 + 0.6 * (1 - k.self.hp / k.self.maxHp);
+        } });
+      }),
+
+    passiv('geld_mec1', 'Schild des Königs', 'onStart', ['schild'], [],
+      'Nimmt jedem Verbündeten 22 % jedes Treffers ab — unabhängig von der Aufstellung',
+      function (c) { koenigsdeckung(c, 0.22); }),
+    passiv('geld_mec2', 'Sattgefressen', 'onDamaged', ['heilung'], [],
+      'Jeder dritte erlittene Treffer heilt Geld um 12 % seines Lebens',
+      function (c) {
+        c.self._genommen = (c.self._genommen || 0) + 1;
+        if (!zaehler(c.self, 'geld_mec2', 3)) return;
+        c.heal(c.self, c.self.maxHp * 0.12, 'Sattgefressen');
+      }),
+    passiv('geld_mec3', 'Lastenträger', 'onStart', ['schild'], ['schild'],
+      'Führt ein Verbündeter Schild, nimmt Geld 35 % jedes Treffers ab — sonst 15 %',
+      function (c) { koenigsdeckung(c, truppFuehrt(c, 'schild') ? 0.35 : 0.15); }),
+    passiv('geld_mec4', 'Alles auf mich', 'onStart', ['schild'], [],
+      'Geld nimmt jedem Verbündeten die Hälfte jedes Treffers ab — dafür schlägt er nur noch mit einem Viertel',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        c.self.atk = Math.round(c.self.atk * 0.25);
+        koenigsdeckung(c, 0.5);
+      }),
+
+    passiv('geld_unt1', 'Königswort', 'onStart', [], [],
+      'Zu Kampfbeginn +14 % Leben für den ganzen Trupp',
+      function (c) {
+        c.allies().forEach(function (u) {
+          var mehr = Math.round(u.maxHp * 0.14);
+          u.maxHp += mehr; u.hp += mehr;
+        });
+      }),
+    passiv('geld_unt2', 'Sammelt euch', 'onDamaged', ['schild'], [],
+      'Jeder vierte Treffer auf den Trupp legt allen ein Schild über 12 % ihres Lebens an',
+      function (c) {
+        c.self._genommen = (c.self._genommen || 0) + 1;
+        if (!zaehler(c.self, 'geld_unt2', 4)) return;
+        c.allies().forEach(function (u) { c.applyStatus(u, 'schild', Math.round(u.maxHp * 0.12)); });
+      }),
+    passiv('geld_unt3', 'Schutzherr', 'onStart', [], ['schild'],
+      'Führt ein Verbündeter Schild, erleidet der Trupp 16 % weniger Schaden — sonst 6 %',
+      function (c) {
+        var m = truppFuehrt(c, 'schild') ? 0.16 : 0.06;
+        c.allies().forEach(function (u) { if (u !== c.self) u.minderung = Math.max(u.minderung || 0, m); });
+      }),
+    passiv('geld_unt4', 'Orkkönig', 'onStart', [], [],
+      'Der Trupp bekommt +30 % Leben — Geld selbst greift nicht mehr an',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        andere.forEach(function (u) {
+          var mehr = Math.round(u.maxHp * 0.3);
+          u.maxHp += mehr; u.hp += mehr;
+        });
+        c.self.atk = 1;
+      }),
+
+    passiv('geld_def1', 'Fettpanzer', 'onStart', ['schild'], [],
+      'Beginnt mit einem Schild über 38 % seines Lebens',
+      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.38)); }),
+    passiv('geld_def2', 'Zäher Wanst', 'onDamaged', [], [],
+      'Jeder dritte erlittene Treffer heilt 11 % seines Lebens',
+      function (c) {
+        c.self._genommen = (c.self._genommen || 0) + 1;
+        if (!zaehler(c.self, 'geld_def2', 3)) return;
+        c.heal(c.self, c.self.maxHp * 0.11, 'Zäher Wanst');
+      }),
+    passiv('geld_def3', 'Unverdaulich', 'onStart', [], ['schild'],
+      'Führt ein Verbündeter Schild, kostet kein Treffer mehr als 12 % seines Lebens — sonst 18 %',
+      function (c) {
+        var d = truppFuehrt(c, 'schild') ? 0.12 : 0.18;
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+      }),
+    passiv('geld_def4', 'Der König steht', 'onDeath', ['schild'], [],
+      'Fällt Geld, bekommt jeder Verbündete ein Schild über 40 % seines Lebens — sein letzter Dienst',
+      function (c) {
+        if (c.self._letzter) return;
+        c.self._letzter = 1;
+        c.allies().forEach(function (u) {
+          if (u !== c.self) c.applyStatus(u, 'schild', Math.round(u.maxHp * 0.4));
+        });
+      }),
+
+    /* ---- Orkkrieger: die Masse ----------------------------------------------
+       Der billigste Frontkämpfer im Spiel und das genaue Gegenteil seines
+       Königs: er nimmt niemandem etwas ab, er teilt aus und fällt. Seine Linien
+       zahlen für Wunden, nicht für Deckung.                                    */
+
+    passiv('orkkrieger_ang1', 'Ansturm', 'onHit', [], [],
+      'Der erste Schlag des Kampfes trifft 130 % härter',
+      function (c) {
+        if (c.self._auftakt) return;
+        c.self._auftakt = 1;
+        c.dmg *= 2.3;
+      }),
+    passiv('orkkrieger_ang2', 'Wundwut', 'onHit', [], [],
+      'Jeder dritte Schlag trifft 10 % härter je 10 % fehlendem Leben',
+      function (c) {
+        if (!zaehler(c.self, 'orkkrieger_ang2', 3)) return;
+        c.dmg *= 1 + (1 - c.self.hp / c.self.maxHp);
+      }),
+    passiv('orkkrieger_ang3', 'Schlachtruf', 'onHit', [], ['tempo'],
+      'Führt ein Verbündeter Tempo, schlägt der Krieger 28 % härter — sonst 10 %',
+      function (c) { c.dmg *= truppFuehrt(c, 'tempo') ? 1.28 : 1.1; }),
+    passiv('orkkrieger_ang4', 'Blutgier', 'onStart', ['exekution'], [],
+      'Jeder Abschuss gibt dauerhaft +35 % Angriff — dafür hält der Krieger nur die Hälfte aus',
+      function (c) {
+        c.self.maxHp = Math.round(c.self.maxHp * 0.5);
+        c.self.hp = Math.min(c.self.hp, c.self.maxHp);
+        c.addEffect(c.self, { hook: 'onKill', name: 'Blutgier', fn: function (k) {
+          k.self.atk = Math.round(k.self.atk * 1.35);
+        } });
+      }),
+
+    passiv('orkkrieger_mec1', 'Grobschlächtig', 'onStart', [], [],
+      'Beginnt den Kampf mit +10 Angriff und 40 % Rüstungsdurchschlag',
+      function (c) {
+        c.self.atk += 10;
+        c.self.pierce = Math.max(c.self.pierce || 0, 0.4);
+      }),
+    passiv('orkkrieger_mec2', 'Nachsetzen', 'onHit', [], [],
+      'Jeder dritte Schlag schlägt sofort ein zweites Mal für 80 %',
+      function (c) {
+        if (!zaehler(c.self, 'orkkrieger_mec2', 3)) return;
+        c.deal(c.target, c.self.atk * 0.8, 'Nachsetzen');
+      }),
+    passiv('orkkrieger_mec3', 'Keine Deckung', 'onStart', [], ['exekution'],
+      'Führt ein Verbündeter Exekution, ignoriert der Krieger jede Rüstung — sonst die Hälfte',
+      function (c) {
+        c.self.pierce = Math.max(c.self.pierce || 0, truppFuehrt(c, 'exekution') ? 1 : 0.5);
+      }),
+    passiv('orkkrieger_mec4', 'Berserker', 'onStart', [], [],
+      'Der Krieger schlägt doppelt so hart — und erleidet 40 % mehr Schaden',
+      function (c) {
+        c.self.atk = Math.round(c.self.atk * 2);
+        c.self.minderung = -0.4;
+      }),
+
+    passiv('orkkrieger_unt1', 'Kriegsgeschrei', 'onStart', [], [],
+      'Zu Kampfbeginn +12 % Angriff für den ganzen Trupp',
+      function (c) { c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.12); }); }),
+    passiv('orkkrieger_unt2', 'Angestachelt', 'onDamaged', [], [],
+      'Jeder vierte Treffer auf den Trupp gibt allen dauerhaft +7 Angriff',
+      function (c) {
+        if (!zaehler(c.self, 'orkkrieger_unt2', 4)) return;
+        c.allies().forEach(function (u) { u.atk += 7; });
+      }),
+    passiv('orkkrieger_unt3', 'Vorwärts', 'onStart', [], ['tempo'],
+      'Führt ein Verbündeter Tempo, bekommt der Trupp +18 % Tempo — sonst +7 %',
+      function (c) {
+        var f = truppFuehrt(c, 'tempo') ? 1.18 : 1.07;
+        c.allies().forEach(function (u) { u.spd = Math.round(u.spd * f); });
+      }),
+    passiv('orkkrieger_unt4', 'Sturmspitze', 'onStart', [], [],
+      'Die Verbündeten schlagen 25 % härter — der Krieger hält nur noch ein Drittel aus',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        andere.forEach(function (u) { u.atk = Math.round(u.atk * 1.25); });
+        c.self.maxHp = Math.round(c.self.maxHp * 0.34);
+        c.self.hp = Math.min(c.self.hp, c.self.maxHp);
+      }),
+
+    passiv('orkkrieger_def1', 'Grobe Haut', 'onStart', [], [],
+      'Beginnt mit einem Schild über 26 % seines Lebens',
+      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.26)); }),
+    passiv('orkkrieger_def2', 'Weggesteckt', 'onDamaged', [], [],
+      'Jeder dritte erlittene Treffer heilt 9 % und gibt dauerhaft +5 Angriff',
+      function (c) {
+        if (!zaehler(c.self, 'orkkrieger_def2', 3)) return;
+        c.heal(c.self, c.self.maxHp * 0.09, 'Weggesteckt');
+        c.self.atk += 5;
+      }),
+    passiv('orkkrieger_def3', 'Dickschädel', 'onStart', [], ['schild'],
+      'Führt ein Verbündeter Schild, kostet kein Treffer mehr als 15 % seines Lebens — sonst 21 %',
+      function (c) {
+        var d = truppFuehrt(c, 'schild') ? 0.15 : 0.21;
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+      }),
+    passiv('orkkrieger_def4', 'Letzter Ansturm', 'onDeath', [], [],
+      'Fällt der Krieger, schlägt er jeden Gegner ein letztes Mal für 180 % seines Angriffs',
+      function (c) {
+        if (c.self._letzter) return;
+        c.self._letzter = 1;
+        c.foes().forEach(function (f) { c.deal(f, c.self.atk * 1.8, 'Letzter Ansturm'); });
+      }),
+
+    /* ---- Bestienkrieger: Instinkt -------------------------------------------
+       Eurazanias Drei. Sie tragen keine Magie und legen keinen Zustand an — was
+       sie ausmacht, ist die REAKTION auf den Kampfverlauf. Phobio reagiert auf
+       erlittenen Schaden, Albis auf gefallene Gegner, Suphia auf verwundete
+       Verbündete. Das ist die Art-Identität: nicht was sie tun, sondern worauf. */
+
+    passiv('phobio_ang1', 'Aufgebracht', 'onDamaged', [], [],
+      'Der erste erlittene Treffer bringt Phobio auf: dauerhaft +35 % Angriff und +25 % Tempo',
+      function (c) {
+        if (c.self._auf1) return;
+        c.self._auf1 = 1;
+        c.self.atk = Math.round(c.self.atk * 1.35);
+        c.self.spd = Math.round(c.self.spd * 1.25);
+      }),
+    passiv('phobio_ang2', 'Ungestüm', 'onHit', [], [],
+      'Jeder Schlag schwankt wild: zwischen 55 % und 175 % — im Mittel etwas mehr, aber nie verlässlich',
+      function (c) { c.dmg *= 0.55 + c.rng() * 1.2; }),
+    passiv('phobio_ang3', 'Raubtiersprung', 'onHit', ['exekution'], ['exekution'],
+      'Führt ein Verbündeter Exekution, springt Phobio zusätzlich für 80 % auf das schwächste Ziel — sonst für 30 %',
+      function (c) {
+        var f = schwaechstes(c.foes(), function (x) { return x.hp; });
+        if (f && f !== c.target) c.deal(f, c.self.atk * (truppFuehrt(c, 'exekution') ? 0.8 : 0.3), 'Raubtiersprung');
+      }),
+    passiv('phobio_ang4', 'Blinde Raserei', 'onStart', [], [],
+      'Phobio schlägt 70 % härter, weicht aber keinem Schlag mehr aus und erleidet 30 % mehr Schaden',
+      function (c) {
+        c.self.atk = Math.round(c.self.atk * 1.7);
+        c.self.minderung = -0.3;
+      }),
+
+    passiv('phobio_mec1', 'Panthersinne', 'onStart', ['tempo'], [],
+      'Beginnt den Kampf mit +30 % Tempo',
+      function (c) { c.self.spd = Math.round(c.self.spd * 1.3); }),
+    passiv('phobio_mec2', 'Angestachelt', 'onDamaged', ['tempo'], [],
+      'Jeder dritte erlittene Treffer gibt dauerhaft +12 % Tempo und +8 % Angriff',
+      function (c) {
+        if (!zaehler(c.self, 'phobio_mec2', 3)) return;
+        c.self.spd = Math.round(c.self.spd * 1.12);
+        c.self.atk = Math.round(c.self.atk * 1.08);
+      }),
+    passiv('phobio_mec3', 'Reißzahn', 'onHit', ['blutung'], ['blutung'],
+      'Führt ein Verbündeter Blutung, lässt jeder Schlag mit 3 bluten — sonst mit 1',
+      function (c) { c.applyStatus(c.target, 'blutung', truppFuehrt(c, 'blutung') ? 3 : 1); }),
+    passiv('phobio_mec4', 'Ausser Kontrolle', 'onStart', [], [],
+      'Phobio greift in jedem Zug ein zweites Mal an — dafür trifft er nur noch mit 60 % Schaden',
+      function (c) {
+        c.addEffect(c.self, { hook: 'onHit', name: 'Ausser Kontrolle', fn: function (k) {
+          if (k.self._doppelt) return;
+          k.self._doppelt = 1;
+          k.dmg *= 0.6;
+          k.deal(k.target, k.dmg, 'Ausser Kontrolle');
+          k.self._doppelt = 0;
+        } });
+      }),
+
+    passiv('phobio_unt1', 'Jagdruf des Panthers', 'onStart', ['tempo'], [],
+      'Zu Kampfbeginn +13 % Tempo für den ganzen Trupp',
+      function (c) { c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.13); }); }),
+    passiv('phobio_unt2', 'Wut im Rudel', 'onDamaged', [], [],
+      'Jeder vierte Treffer auf den Trupp gibt allen dauerhaft +8 % Angriff',
+      function (c) {
+        if (!zaehler(c.self, 'phobio_unt2', 4)) return;
+        c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.08); });
+      }),
+    passiv('phobio_unt3', 'Hetze', 'onStart', [], ['exekution'],
+      'Führt ein Verbündeter Exekution, trifft der Trupp angeschlagene Ziele 30 % härter — sonst 12 %',
+      function (c) {
+        var m = truppFuehrt(c, 'exekution') ? 1.3 : 1.12;
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Hetze', fn: function (k) {
+            if (k.target.hp < k.target.maxHp * 0.5) k.dmg *= m;
+          } });
+        });
+      }),
+    passiv('phobio_unt4', 'Voran, alle!', 'onStart', ['tempo'], [],
+      'Der Trupp bekommt +30 % Tempo — Phobio selbst erleidet 40 % mehr Schaden',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        andere.forEach(function (u) { u.spd = Math.round(u.spd * 1.3); });
+        c.self.minderung = -0.4;
+      }),
+
+    passiv('phobio_def1', 'Geschmeidig', 'onStart', ['schild', 'tempo'], [],
+      'Beginnt mit Schild über 24 % seines Lebens und +15 % Tempo',
+      function (c) {
+        c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.24));
+        c.self.spd = Math.round(c.self.spd * 1.15);
+      }),
+    passiv('phobio_def2', 'Zäher Kater', 'onDamaged', [], [],
+      'Jeder dritte erlittene Treffer heilt 10 % seines Lebens',
+      function (c) {
+        if (!zaehler(c.self, 'phobio_def2', 3)) return;
+        c.heal(c.self, c.self.maxHp * 0.1, 'Zäher Kater');
+      }),
+    passiv('phobio_def3', 'Instinkt', 'onStart', [], ['tempo'],
+      'Führt ein Verbündeter Tempo, kostet kein Treffer mehr als 14 % seines Lebens — sonst 20 %',
+      function (c) {
+        var d = truppFuehrt(c, 'tempo') ? 0.14 : 0.2;
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+      }),
+    passiv('phobio_def4', 'Nie am Boden', 'onDeath', [], [],
+      'Steht einmal mit 35 % Leben und doppeltem Tempo wieder auf — danach heilt ihn nichts mehr',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1;
+        c.self.hp = Math.round(c.self.maxHp * 0.35);
+        c.self.spd = Math.round(c.self.spd * 2);
+        c.self.heilfaktor = -1;
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name,
+                     side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* -- Albis: die kalte Schlange. Sie reagiert auf gefallene Gegner. -- */
+
+    passiv('albis_ang1', 'Kaltblütig', 'onKill', [], [],
+      'Jeder gefallene Gegner gibt Albis dauerhaft +20 % Angriff und 15 % Durchschlag',
+      function (c) {
+        c.self.atk = Math.round(c.self.atk * 1.2);
+        c.self.pierce = Math.min(1, (c.self.pierce || 0) + 0.15);
+      }),
+    passiv('albis_ang2', 'Präzise', 'onHit', [], [],
+      'Jeder dritte Schuss ignoriert die Rüstung vollständig und trifft 70 % härter',
+      function (c) {
+        if (!zaehler(c.self, 'albis_ang2', 3)) return;
+        c.dmg *= 1.7;
+        c.self.pierce = Math.max(c.self.pierce || 0, 1);
+      }),
+    passiv('albis_ang3', 'Schlangenblick', 'onHit', ['verwundbar'], ['verwundbar'],
+      'Führt ein Verbündeter Verwundbar, markiert jeder dritte Schuss mit 4 — sonst mit 1',
+      function (c) {
+        if (!zaehler(c.self, 'albis_ang3', 3)) return;
+        c.markiere(c.target, truppFuehrt(c, 'verwundbar') ? 4 : 1);
+      }),
+    passiv('albis_ang4', 'Ohne Regung', 'onStart', ['exekution'], [],
+      'Albis ignoriert jede Rüstung — dafür hält sie nur die Hälfte aus',
+      function (c) {
+        c.self.pierce = 1;
+        c.self.maxHp = Math.round(c.self.maxHp * 0.5);
+        c.self.hp = Math.min(c.self.hp, c.self.maxHp);
+      }),
+
+    passiv('albis_mec1', 'Gift der Weißen', 'onStart', ['gift'], [],
+      'Vergiftet zu Kampfbeginn jeden Gegner mit 5',
+      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'gift', 5); }); }),
+    passiv('albis_mec2', 'Nachgesetzt', 'onKill', ['gift'], [],
+      'Jeder gefallene Gegner vergiftet alle übrigen mit 6',
+      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'gift', 6); }); }),
+    passiv('albis_mec3', 'Umklammerung', 'onHit', ['gift'], ['gift'],
+      'Führt ein Verbündeter Gift, vergiftet jeder Schuss mit 3 — sonst mit 1',
+      function (c) { c.applyStatus(c.target, 'gift', truppFuehrt(c, 'gift') ? 3 : 1); }),
+    passiv('albis_mec4', 'Berechnend', 'onStart', ['exekution'], [],
+      'Albis trifft angeschlagene Ziele doppelt — volle nur noch halb',
+      function (c) {
+        c.addEffect(c.self, { hook: 'onHit', name: 'Berechnend', fn: function (k) {
+          k.dmg *= k.target.hp < k.target.maxHp * 0.5 ? 2 : 0.5;
+        } });
+      }),
+
+    passiv('albis_unt1', 'Kühler Kopf', 'onStart', [], [],
+      'Zu Kampfbeginn +20 % Durchschlag und +8 % Angriff für den ganzen Trupp',
+      function (c) {
+        c.allies().forEach(function (u) {
+          u.pierce = Math.max(u.pierce || 0, 0.2);
+          u.atk = Math.round(u.atk * 1.08);
+        });
+      }),
+    passiv('albis_unt2', 'Aasgeruch', 'onKill', [], [],
+      'Jeder gefallene Gegner gibt dem ganzen Trupp dauerhaft +8 % Angriff',
+      function (c) { c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.08); }); }),
+    passiv('albis_unt3', 'Gezeichnete Beute', 'onStart', [], ['verwundbar'],
+      'Führt ein Verbündeter Verwundbar, trifft der Trupp markierte Ziele 30 % härter — sonst 12 %',
+      function (c) {
+        var m = truppFuehrt(c, 'verwundbar') ? 1.3 : 1.12;
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Gezeichnete Beute', fn: function (k) {
+            if ((k.target.status.verwundbar || 0) > 0) k.dmg *= m;
+          } });
+        });
+      }),
+    passiv('albis_unt4', 'Weiße Herrin', 'onStart', ['exekution'], [],
+      'Der Trupp bekommt 45 % Durchschlag — Albis selbst schlägt nur noch mit einem Drittel',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        andere.forEach(function (u) { u.pierce = Math.max(u.pierce || 0, 0.45); });
+        c.self.atk = Math.round(c.self.atk * 0.34);
+      }),
+
+    passiv('albis_def1', 'Schuppenkleid', 'onStart', [], [],
+      'Beginnt mit einem Schild über 26 % ihres Lebens',
+      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.26)); }),
+    passiv('albis_def2', 'Häutung', 'onDamaged', [], [],
+      'Jeder dritte erlittene Treffer heilt 10 % ihres Lebens',
+      function (c) {
+        if (!zaehler(c.self, 'albis_def2', 3)) return;
+        c.heal(c.self, c.self.maxHp * 0.1, 'Häutung');
+      }),
+    passiv('albis_def3', 'Auf Distanz', 'onStart', [], ['tempo'],
+      'Führt ein Verbündeter Tempo, kostet kein Treffer mehr als 14 % ihres Lebens — sonst 20 %',
+      function (c) {
+        var d = truppFuehrt(c, 'tempo') ? 0.14 : 0.2;
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+      }),
+    passiv('albis_def4', 'Totstellen', 'onDeath', [], [],
+      'Steht einmal mit 30 % Leben und doppeltem Angriff wieder auf — danach heilt sie nichts mehr',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1;
+        c.self.hp = Math.round(c.self.maxHp * 0.3);
+        c.self.atk = Math.round(c.self.atk * 2);
+        c.self.heilfaktor = -1;
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name,
+                     side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* -- Suphia: der wachsame Tiger. Sie reagiert auf verwundete Verbündete. -- */
+
+    passiv('suphia_ang1', 'Wachsamer Schlag', 'onHit', [], [],
+      'Der erste Schlag des Kampfes trifft 100 % härter, plus 20 % je verwundetem Verbündeten',
+      function (c) {
+        if (c.self._auftakt) return;
+        c.self._auftakt = 1;
+        var wund = c.allies().filter(function (u) { return u.hp < u.maxHp * 0.9; }).length;
+        c.dmg *= 2 + 0.2 * wund;
+      }),
+    passiv('suphia_ang2', 'Beschützerzorn', 'onHit', [], [],
+      'Jeder dritte Schlag trifft 15 % härter je verwundetem Verbündeten',
+      function (c) {
+        if (!zaehler(c.self, 'suphia_ang2', 3)) return;
+        var wund = c.allies().filter(function (u) { return u.hp < u.maxHp * 0.9; }).length;
+        c.dmg *= 1 + 0.15 * wund;
+      }),
+    passiv('suphia_ang3', 'Vergeltung', 'onStart', ['konter'], ['konter'],
+      'Führt ein Verbündeter Konter, schlägt Suphia für jeden Treffer auf den Trupp mit 30 % zurück — sonst mit 12 %',
+      function (c) {
+        var m = truppFuehrt(c, 'konter') ? 0.3 : 0.12;
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onDamaged', name: 'Vergeltung', fn: function (k) {
+            var f = k.foes()[0];
+            if (f) k.deal(f, c.self.atk * m, 'Vergeltung');
+          } });
+        });
+      }),
+    passiv('suphia_ang4', 'Goldener Zorn', 'onAllyDeath', [], [],
+      'Jeder gefallene Verbündete gibt Suphia dauerhaft +45 % Angriff — dafür heilt sie nichts mehr',
+      function (c) {
+        if (!c.self._zorn) { c.self._zorn = 1; c.self.heilfaktor = -1; c.self.regen = 0; }
+        c.self.atk = Math.round(c.self.atk * 1.45);
+      }),
+
+    passiv('suphia_mec1', 'Tigerpranke', 'onStart', [], [],
+      'Beginnt den Kampf mit +9 Angriff und +5 Rüstung',
+      function (c) { c.self.atk += 9; c.self.def += 5; }),
+    passiv('suphia_mec2', 'Aufgepasst', 'onDamaged', ['schild'], [],
+      'Jeder dritte Treffer auf den Trupp legt dem am schwersten Verwundeten ein Schild an',
+      function (c) {
+        if (!zaehler(c.self, 'suphia_mec2', 3)) return;
+        var u = schwaechstes(c.allies(), function (x) { return x.hp / x.maxHp; });
+        if (u) c.applyStatus(u, 'schild', Math.round(u.maxHp * 0.18));
+      }),
+    passiv('suphia_mec3', 'Nie unaufmerksam', 'onTurnStart', ['heilung'], ['heilung'],
+      'Führt ein Verbündeter Heilung, heilt Suphia jeden Zug den Schwächsten um 6 % — sonst um 2,5 %',
+      function (c) {
+        var f = truppFuehrt(c, 'heilung') ? 0.06 : 0.025;
+        var u = schwaechstes(c.allies(), function (x) { return x.hp / x.maxHp; });
+        if (u) c.heal(u, u.maxHp * f, 'Nie unaufmerksam');
+      }),
+    passiv('suphia_mec4', 'Wächterin', 'onStart', [], [],
+      'Suphia nimmt jedem Verbündeten 30 % jedes Treffers ab — dafür schlägt sie nur noch halb so hart',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        c.self.atk = Math.round(c.self.atk * 0.5);
+        koenigsdeckung(c, 0.3);
+      }),
+
+    passiv('suphia_unt1', 'Wachkommando', 'onStart', [], [],
+      'Zu Kampfbeginn +10 % Angriff und +10 % Rüstung für den ganzen Trupp',
+      function (c) {
+        c.allies().forEach(function (u) {
+          u.atk = Math.round(u.atk * 1.1);
+          u.def = Math.round(u.def * 1.1);
+        });
+      }),
+    passiv('suphia_unt2', 'Zusammenhalten', 'onAllyDeath', [], [],
+      'Fällt ein Verbündeter, bekommt der übrige Trupp dauerhaft +15 % Angriff und Rüstung',
+      function (c) {
+        c.allies().forEach(function (u) {
+          u.atk = Math.round(u.atk * 1.15);
+          u.def = Math.round(u.def * 1.15);
+        });
+      }),
+    passiv('suphia_unt3', 'Rückhalt', 'onStart', [], ['schild'],
+      'Führt ein Verbündeter Schild, erleidet der Trupp 15 % weniger Schaden — sonst 6 %',
+      function (c) {
+        var m = truppFuehrt(c, 'schild') ? 0.15 : 0.06;
+        c.allies().forEach(function (u) { u.minderung = Math.max(u.minderung || 0, m); });
+      }),
+    passiv('suphia_unt4', 'Goldene Wacht', 'onStart', [], [],
+      'Die Verbündeten bekommen +25 % Leben und Rüstung — Suphia selbst greift kaum noch an',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        andere.forEach(function (u) {
+          u.def = Math.round(u.def * 1.25);
+          var mehr = Math.round(u.maxHp * 0.25);
+          u.maxHp += mehr; u.hp += mehr;
+        });
+        c.self.atk = Math.round(c.self.atk * 0.2);
+      }),
+
+    passiv('suphia_def1', 'Goldenes Fell', 'onStart', ['schild'], [],
+      'Beginnt mit einem Schild über 32 % ihres Lebens',
+      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.32)); }),
+    passiv('suphia_def2', 'Standhaft', 'onDamaged', [], [],
+      'Jeder dritte erlittene Treffer heilt 11 % ihres Lebens',
+      function (c) {
+        if (!zaehler(c.self, 'suphia_def2', 3)) return;
+        c.heal(c.self, c.self.maxHp * 0.11, 'Standhaft');
+      }),
+    passiv('suphia_def3', 'Aufmerksam', 'onStart', [], ['konter'],
+      'Führt ein Verbündeter Konter, kostet kein Treffer mehr als 13 % ihres Lebens — sonst 19 %',
+      function (c) {
+        var d = truppFuehrt(c, 'konter') ? 0.13 : 0.19;
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+      }),
+    passiv('suphia_def4', 'Bis zuletzt', 'onDeath', ['heilung'], [],
+      'Fällt Suphia, heilt der übrige Trupp um 30 % und schlägt dauerhaft 20 % härter',
+      function (c) {
+        if (c.self._letzter) return;
+        c.self._letzter = 1;
+        c.allies().forEach(function (u) {
+          if (u === c.self) return;
+          c.heal(u, u.maxHp * 0.3, 'Bis zuletzt');
+          u.atk = Math.round(u.atk * 1.2);
+        });
+      }),
+
     /* ---- Wolf und Reiter ----------------------------------------------------
        Die erste Truppbedingung, die nicht an einem Schlüsselwort hängt, sondern
        an einer ART. Goblins reiten Sturmwölfe — das ist im Roster bisher nur
@@ -4794,6 +5353,25 @@
   }
 
 
+  /* Geld und Suphia nehmen ihrer Reihe Schaden ab — die Deckung des
+     Kampfsystems hängt dagegen an Platz 3. Gebaut aus vorhandenen Mitteln: der
+     Verbündete bekommt seinen Anteil zurückgeheilt, der Beschützer bekommt ihn
+     roh. Ein Anteil über 0.5 wäre ein Perpetuum mobile, deshalb der Deckel. */
+  function koenigsdeckung(c, anteil) {
+    var schutz = c.self;
+    anteil = Math.min(0.5, anteil);
+    c.allies().forEach(function (u) {
+      if (u === schutz) return;
+      c.addEffect(u, { hook: 'onDamaged', name: 'Deckung des Königs', fn: function (k) {
+        if (!schutz.hp || schutz.hp <= 0) return;
+        var teil = (k.amount || 0) * anteil;
+        if (teil < 1) return;
+        k.heal(k.self, teil, 'Deckung des Königs');
+        k.deal(schutz, teil, 'Deckung des Königs', { pure: true });
+      } });
+    });
+  }
+
   /* Göttliche Angriffsmagie: Schaden, der weder Rüstung noch Schild kennt.
      Genau deshalb müssen die Anteile klein bleiben. Eine Stelle, damit Shuna
      und Adalmann dasselbe Licht führen und nicht zwei leicht verschiedene. */
@@ -4834,6 +5412,36 @@
     /* Rimuru und Adalmann standen im Generator, bis ihre Kits eigene Linien
        verlangten: Rimuru liest fremde Zustände statt eigene anzulegen, und der
        Priester in Adalmann führt Licht neben der Totenmagie. */
+    geld: {
+      angriff: ['geld_ang1', 'geld_ang2', 'geld_ang3', 'geld_ang4'],
+      mechanik: ['geld_mec1', 'geld_mec2', 'geld_mec3', 'geld_mec4'],
+      unterstuetzung: ['geld_unt1', 'geld_unt2', 'geld_unt3', 'geld_unt4'],
+      defensive: ['geld_def1', 'geld_def2', 'geld_def3', 'geld_def4']
+    },
+    orkkrieger: {
+      angriff: ['orkkrieger_ang1', 'orkkrieger_ang2', 'orkkrieger_ang3', 'orkkrieger_ang4'],
+      mechanik: ['orkkrieger_mec1', 'orkkrieger_mec2', 'orkkrieger_mec3', 'orkkrieger_mec4'],
+      unterstuetzung: ['orkkrieger_unt1', 'orkkrieger_unt2', 'orkkrieger_unt3', 'orkkrieger_unt4'],
+      defensive: ['orkkrieger_def1', 'orkkrieger_def2', 'orkkrieger_def3', 'orkkrieger_def4']
+    },
+    phobio: {
+      angriff: ['phobio_ang1', 'phobio_ang2', 'phobio_ang3', 'phobio_ang4'],
+      mechanik: ['phobio_mec1', 'phobio_mec2', 'phobio_mec3', 'phobio_mec4'],
+      unterstuetzung: ['phobio_unt1', 'phobio_unt2', 'phobio_unt3', 'phobio_unt4'],
+      defensive: ['phobio_def1', 'phobio_def2', 'phobio_def3', 'phobio_def4']
+    },
+    albis: {
+      angriff: ['albis_ang1', 'albis_ang2', 'albis_ang3', 'albis_ang4'],
+      mechanik: ['albis_mec1', 'albis_mec2', 'albis_mec3', 'albis_mec4'],
+      unterstuetzung: ['albis_unt1', 'albis_unt2', 'albis_unt3', 'albis_unt4'],
+      defensive: ['albis_def1', 'albis_def2', 'albis_def3', 'albis_def4']
+    },
+    suphia: {
+      angriff: ['suphia_ang1', 'suphia_ang2', 'suphia_ang3', 'suphia_ang4'],
+      mechanik: ['suphia_mec1', 'suphia_mec2', 'suphia_mec3', 'suphia_mec4'],
+      unterstuetzung: ['suphia_unt1', 'suphia_unt2', 'suphia_unt3', 'suphia_unt4'],
+      defensive: ['suphia_def1', 'suphia_def2', 'suphia_def3', 'suphia_def4']
+    },
     zegion: {
       angriff: ['zegion_ang1', 'zegion_ang2', 'zegion_ang3', 'zegion_ang4', 'zegion_ang5'],
       mechanik: ['zegion_mec1', 'zegion_mec2', 'zegion_mec3', 'zegion_mec4'],
@@ -5327,6 +5935,45 @@
       function (c) {
         c.attack(1.6);
         c.chaos(c.target, CHAOS_JE_RANG[c.self.rank || 0]);
+      }),
+    /* ---- Orks und Bestienkrieger ---------------------------------------- */
+    aktiv('sig_geld', 'Hungriger König', 3, ['schild', 'heilung'],
+      '120 % Schaden und heilt Geld um die Hälfte davon. Zusätzlich Schild 30 für die ' +
+      'am schwersten verwundete Verbündete.',
+      function (c) {
+        var d = c.attack(1.2);
+        c.heal(c.self, d * 0.5, 'Hungriger König');
+        var u = schwaechstes(c.allies(), function (x) { return x.hp / x.maxHp; });
+        if (u) c.applyStatus(u, 'schild', 30);
+      }),
+    aktiv('sig_orkkrieger', 'Grobe Axt', 3, [],
+      '150 % Schaden. Fehlt dem Krieger selbst mehr als die Hälfte seines Lebens, werden daraus 210 %.',
+      function (c) { c.attack(c.self.hp < c.self.maxHp * 0.5 ? 2.1 : 1.5); }),
+    aktiv('sig_phobio', 'Schwarzer Sprung', 3, ['tempo'],
+      '160 % Schaden auf das schwächste Ziel — und der Schaden schwankt stark: zwischen 60 und 190 %.',
+      function (c) {
+        var f = schwaechstes(c.foes(), function (x) { return x.hp; }) || c.target;
+        c.attack(1.6 * (0.6 + c.rng() * 1.3), f);
+      }),
+    aktiv('sig_albis', 'Weißer Biss', 3, ['gift'],
+      '140 % Schaden, ignoriert die Rüstung, und 4 Gift. Ist das Ziel bereits vergiftet, ' +
+      'wächst Albis dauerhaft um 6 % Angriff.',
+      function (c) {
+        var schon = (c.target.status.gift || 0) > 0;
+        c.attack(1.4, c.target, { pierce: 1 });
+        c.applyStatus(c.target, 'gift', 4);
+        if (schon) c.self.atk = Math.round(c.self.atk * 1.06);
+      }),
+    aktiv('sig_suphia', 'Goldene Wacht', 3, ['schild'],
+      '130 % Schaden. Ist ein Verbündeter unter der Hälfte, bekommt er zusätzlich Schild 45 ' +
+      'und Suphia +10 % Angriff für den Rest des Kampfes.',
+      function (c) {
+        c.attack(1.3);
+        var u = schwaechstes(c.allies(), function (x) { return x.hp / x.maxHp; });
+        if (u && u.hp < u.maxHp * 0.5) {
+          c.applyStatus(u, 'schild', 45);
+          c.self.atk = Math.round(c.self.atk * 1.1);
+        }
       }),
     /* Die drei Häutungsformen der Insektoiden. Sie gehören keiner Einheit fest —
        sie ersetzen erst im Kampf, wenn die Metamorphose greift. */

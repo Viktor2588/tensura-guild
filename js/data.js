@@ -26,7 +26,7 @@
   }
 
   var ARTEN = ['slime', 'goblin', 'oger', 'direwolf', 'echsenmensch', 'insektoid',
-    'daemon', 'drache', 'untot'];
+    'daemon', 'drache', 'untot', 'ork', 'bestie'];
   var ART_NAME = {
     slime: 'Slime', goblin: 'Goblin', oger: 'Oger', direwolf: 'Sturmwolf',
     echsenmensch: 'Echsenmensch', insektoid: 'Insektoid', daemon: 'Dämon',
@@ -50,7 +50,9 @@
       insektoid: 'Schwarmwesen — und die einzige Art, die sich häutet. Jeder Insektoid hat eine Metamorphose: eine Schwelle mitten im Kampf, hinter der eine stärkere Form und eine andere Signatur stehen.',
       daemon: 'Urdämonen. Teuer, brechen Rüstung, tragen Verderbnis.',
       drache: 'Selten und roh stark. Kaum Fähigkeiten nötig — die Werte reichen.',
-      untot: 'Kommen zurück. Wiederkehr und Lebensraub statt Ausweichen.'
+      untot: 'Kommen zurück. Wiederkehr und Lebensraub statt Ausweichen.',
+      ork: 'Schiere Masse. Der Orkkönig zieht den Schaden seiner Reihe auf sich, der Krieger wirft ihn nach vorn — Orks halten aus oder teilen aus, nie beides.',
+      bestie: 'Bestienkrieger aus Eurazania. Keine Magie, kein Zustand — sie reagieren auf den KAMPFVERLAUF: auf erlittenen Schaden, auf gefallene Gegner, auf verwundete Verbündete.'
     },
     /* Die Rolle steuert die Zielwahl im Kampf — die einzige taktische Ansage,
        die der Spieler über die Aufstellung noch trifft. */
@@ -213,6 +215,20 @@
       'sig_drachenwelpe', ['aschehaut', 'glutkern', 'zaeh']),
     u('windrache', 'Windrache', 'drache', 'fernkampf', 4, 100, 22, 4, 32,
       'sig_windrache', ['schwungmeister', 'windschritt', 'kettenschlag']),
+
+    /* ---- Orks: Masse ------------------------------------------------------ */
+    u('geld', 'Geld', 'ork', 'front', 4, 165, 13, 8, 16,
+      'sig_geld', ['schildwall', 'zaeh', 'dornenhaut']),
+    u('orkkrieger', 'Orkkrieger', 'ork', 'front', 1, 80, 12, 2, 20,
+      'sig_orkkrieger', ['kriegsherz', 'rachsucht', 'erstschlag']),
+
+    /* ---- Bestienkrieger: Instinkt ----------------------------------------- */
+    u('phobio', 'Phobio', 'bestie', 'front', 3, 105, 18, 3, 32,
+      'sig_phobio', ['rachsucht', 'schwungmeister', 'windschritt']),
+    u('albis', 'Albis', 'bestie', 'fernkampf', 3, 90, 17, 3, 27,
+      'sig_albis', ['panzerbrecher', 'henkersblick', 'giftzahn']),
+    u('suphia', 'Suphia', 'bestie', 'verstaerker', 3, 115, 14, 5, 24,
+      'sig_suphia', ['bannerherz', 'jagdruf', 'zaeh']),
 
     u('adalmann', 'Adalmann', 'untot', 'magier', 4, 100, 22, 4, 26,
       'sig_adalmann', ['fluchweber', 'verderber', 'wiederkehr']),

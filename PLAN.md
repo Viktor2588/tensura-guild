@@ -1528,6 +1528,42 @@ Die Reparatur hob die Siegquote von 51 auf 66 %: acht Einheiten greifen jetzt
 an, wenn ihre Unterstützung nicht gebraucht wird. `GRUNDHAERTE` 1.08 → 1.28,
 Endstand **49 % frisch**.
 
+### Phase 35 (2026-07-29): Orks und Bestienkrieger
+
+Zwei neue Arten, fünf Einheiten, Roster 35 → 40. `ART_NAME` kannte `ork` und
+`bestie` längst — sie standen nur nicht in `ARTEN`.
+
+**Orks sind ein Gegensatzpaar.** Geld, der Orkkönig, hat sein eigenes Volk
+gefressen und richtet den Hunger als König nach innen: er **zieht Schaden seiner
+Reihe auf sich**, und zwar unabhängig von der Aufstellung. Die Deckung des
+Kampfsystems hängt an Platz 3 — Geld nimmt jedem etwas ab, egal wo er steht.
+Gemessen steigt das Restleben des Gedeckten von 82 auf 86 bzw. 91 %, je nach
+Anteil. Der Orkkrieger ist sein genaues Gegenteil und der billigste Frontkämpfer
+im Spiel: er nimmt niemandem etwas ab, teilt aus und fällt. Seine Linien zahlen
+für Wunden, nicht für Deckung.
+
+`koenigsdeckung()` baut die Umleitung aus vorhandenen Mitteln — der Verbündete
+bekommt seinen Anteil zurückgeheilt, der Beschützer bekommt ihn roh. Der Anteil
+ist auf 50 % gedeckelt, alles darüber wäre ein Perpetuum mobile.
+
+**Die drei Bestienkrieger** aus Eurazania tragen keine Magie und legen keinen
+Zustand an. Ihre Art-Identität ist die **Reaktion auf den Kampfverlauf**, nicht
+eine Wirkung: Phobio reagiert auf erlittenen Schaden (und schlägt als einzige
+Einheit im Spiel mit stark schwankendem Schaden — 55 bis 175 %), Albis auf
+gefallene Gegner (jeder Abschuss macht sie präziser), Suphia auf verwundete
+Verbündete. Damit unterscheiden sie sich von der Metamorphose der Insektoiden:
+dort eine Schwelle, die verwandelt, hier ein Ereignis, auf das geantwortet wird.
+
+Orkkrieger und Phobio stehen im Startbestand — der eine, weil er der billigste
+Frontkämpfer ist, der andere, damit die neue Art gleich im Angebot auftaucht.
+
+**Zwei Tests waren zu eng geschnitten.** Die Kampflog-Prüfung verlangte mehr als
+fünf Zeilen — das hängt an der Kampflänge und damit am Startdraft, den zwei neue
+Startbestand-Einheiten verschoben haben. Sie prüft jetzt, was das Log leisten
+muss, statt eine Zeilenzahl.
+
+`dev/balance.js 600`: 49 % frisch, kein Build-Ausreißer.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

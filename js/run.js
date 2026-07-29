@@ -92,7 +92,10 @@
   var START_UNITS = ['rimuru', 'gobta', 'gobkyu', 'sturmwolf',
     'rigurd', 'rigur', 'gobwa', 'kurobe', 'souka', 'kaefergarde',
     'daemonengarde', 'gruftwaechter', 'drachenknecht', 'quellenpriesterin',
-    'ranga', 'shion', 'gabiru', 'wightkoenig'];
+    'ranga', 'shion', 'gabiru', 'wightkoenig',
+    /* Der Orkkrieger ist der billigste Frontkämpfer im Spiel und gehört damit
+       in den Startbestand; Phobio bringt die neue Bestien-Art gleich mit. */
+    'orkkrieger', 'phobio'];
   var START_RELICS = ['kern_des_zorns', 'schuppenpanzer', 'lebensquell', 'windschuhe',
     'giftdorn', 'blutkelch', 'rachegeist_relikt', 'erstschlag_relikt', 'turmschild',
     'magiestein', 'heilsegen', 'barriere_stein', 'dornenhaut_relikt', 'schwerer_stand'];

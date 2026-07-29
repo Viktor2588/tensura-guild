@@ -1316,6 +1316,29 @@ GD.units.forEach(function (u) {
 ok(!stumm.length, 'jede Einheit mit onHit-Passiven kommt auch zum Angriff' +
    (stumm.length ? ' — stumm: ' + stumm.join(', ') : ''));
 
+/* Geld nimmt seiner Reihe Schaden ab — unabhängig von der Aufstellung, anders
+   als die Deckung des Kampfsystems, die an Platz 3 hängt. Gemessen am Restleben
+   des Gedeckten, nicht am Treffer selbst: der Treffer fällt voll, der Anteil
+   wird zurückgeheilt und Geld roh aufgebrummt. */
+function geldDeckung(pass) {
+  var summe = 0;
+  for (var sd = 0; sd < 20; sd++) {
+    var g = R.member('gobkyu'); g.rank = 3; g.passives = [];
+    var d = R.member('geld'); d.rank = 3; d.passives = pass;
+    var o = { id: 'o', name: 'O', tags: ['bestie', 'front'], hp: 30000, atk: 22, def: 0,
+      spd: 20, actives: [], effects: [], keywords: [] };
+    var res = C.simulate([R.resolve(g), R.resolve(d)], [o], sd);
+    var ueb = res.survivors.filter(function (u) { return u.id === 'gobkyu'; })[0];
+    summe += ueb ? ueb.hp / ueb.maxHp : 0;
+  }
+  return summe / 20;
+}
+var ohneD = geldDeckung([]), mitD = geldDeckung(['geld_mec1']), vollD = geldDeckung(['geld_mec4']);
+ok(mitD > ohneD && vollD > mitD,
+   'Geld nimmt seiner Reihe Schaden ab, und mehr Anteil deckt mehr (' +
+   Math.round(ohneD * 100) + ' % → ' + Math.round(mitD * 100) + ' % → ' +
+   Math.round(vollD * 100) + ' % Restleben)');
+
 /* Die zweite Bibliotheksschicht liest die LAGE — und `pos` ist 0-basiert, was
    beide Positions-Passiven zunächst um eins verschoben hatte. Also nachgemessen
    statt angenommen. */
