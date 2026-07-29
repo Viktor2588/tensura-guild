@@ -1637,6 +1637,58 @@ herumliegt, nicht wie viele es sind.
 
 `dev/balance.js 600`: 50 % frisch, kein Build-Ausreißer.
 
+### Phase 38 (2026-07-29): Milim ohne Defensive, und zweite Träger für alles
+
+**Milim trägt als einzige Einheit im Spiel keine Defensivlinie.** Das ist kein
+Versehen, sondern die Ansage: sie verteidigt nicht, sie schlägt. Wer sie nimmt,
+bekommt zwölf Passive statt sechzehn und muss ihr Überleben aus Relikten,
+Ausrüstung und der Aufstellung bauen. Ein Test hält fest, dass genau eine
+Einheit so gebaut ist — damit es auffällt, wenn es jemand versehentlich
+nachmacht.
+
+**Ihre zwei Bauweisen stecken in zwei Linien:**
+
+- Die **Angriffslinie** macht sie zur langsamen Brecherin. `Aufgeladener Zorn`
+  trifft jeden dritten Schlag VIERFACH und betäubt sie danach einen Zug lang
+  (`erstarrung` auf sich selbst — der Zustand existierte längst, nur nie als
+  eigener Preis). `Vernichtung` gibt +140 % auf jeden Schlag und kostet jeden
+  zweiten Zug.
+- Die **Mechaniklinie** macht sie zur schnellen wilden Schlägerin: `Ungezügelt`
+  (+35 % Tempo), `Rasend` (wächst je Zug), `Sturmfaust` (zweiter Schlag in jedem
+  Zug für 60 %).
+
+Gemessen trennen sich die beiden klar: 309 Schaden bei 27 Treffern und acht
+Aussetzern gegen 99 Schaden bei 100 Treffern und keinem. Beides zusammen geht
+schlecht — die Selbstbetäubung frisst genau die Züge, für die die andere Linie
+zahlt. Das ist der Punkt.
+
+`Drachenbrut` und `Drachentöterin` hängen an `enrage`, also an Bossen: der
+Trupp trifft Bosse und Drachen 35 % härter, Milim selbst doppelt. Eine Nische,
+die es noch nicht gab — Bosse sind der harte Teil eines Runs.
+
+**Zweite Träger für alles.** Eine Mechanik, die nur an einer Einheit hängt,
+existiert für die meisten Runs nicht — derselbe Grund, aus dem Dunkelheit und
+Frost in Phase 30 zweite Träger bekamen. Vier Mechaniken standen allein da:
+
+| Mechanik | war allein bei | jetzt zusätzlich |
+|---|---|---|
+| Chaos anlegen | Shion | **Gobta** — sein Würfel IST Unordnung, „Schicksalswende" passt zu Chaos besser als zu Verderbnis |
+| Zustände lesen | Rimuru | **Albis** — die Berechnende liest, was auf dem Ziel liegt |
+| Schildbruch | Zegion | **Orkkrieger** — die grobe Axt zerschlägt Deckung |
+| Zufallsschaden | Phobio | **Gobta** — sein ganzes Wesen, jetzt als Schwankung statt nur als Chance |
+| Selbstbetäubung | Milim | **Orkkrieger** — der Berserker holt so weit aus, dass er offen steht |
+| Boss-Bonus | Milim | **Hakuro** — der alte Meister hat schon Größeres gefällt |
+
+Dazu bekam die **Aufstellung** erstmals Bedeutung für Einheiten statt nur für
+die Bibliothek: Gobkyu hält aus der Hinterreihe deutlich besser aus als vorn
+(ein Bogenschütze gehört nach hinten), und Rigurds `Häuptling` wirkt doppelt so
+stark, wenn er selbst an der Spitze steht.
+
+Ein Test geht jetzt quer über alle Mechaniken und verlangt zwei Träger. Kein
+Schlüsselwort und keine Mechanik steht mehr allein.
+
+`dev/balance.js 600`: 50 % frisch, kein Build-Ausreißer.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

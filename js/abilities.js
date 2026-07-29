@@ -1622,10 +1622,12 @@
       }),
 
     passiv('orkkrieger_mec1', 'Grobschlächtig', 'onStart', [], [],
-      'Beginnt den Kampf mit +10 Angriff und 40 % Rüstungsdurchschlag',
+      '+10 Angriff, und jeder dritte Schlag zerschlägt den Schild des Ziels vollständig',
       function (c) {
         c.self.atk += 10;
-        c.self.pierce = Math.max(c.self.pierce || 0, 0.4);
+        c.addEffect(c.self, { hook: 'onHit', name: 'Grobschlächtig', fn: function (k) {
+          if (zaehler(k.self, 'orkkrieger_mec1', 3)) k.target.status.schild = 0;
+        } });
       }),
     passiv('orkkrieger_mec2', 'Nachsetzen', 'onHit', [], [],
       'Jeder dritte Schlag schlägt sofort ein zweites Mal für 80 %',
@@ -1639,10 +1641,13 @@
         c.self.pierce = Math.max(c.self.pierce || 0, truppFuehrt(c, 'exekution') ? 1 : 0.5);
       }),
     passiv('orkkrieger_mec4', 'Berserker', 'onStart', [], [],
-      'Der Krieger schlägt doppelt so hart — und erleidet 40 % mehr Schaden',
+      'Der Krieger schlägt doppelt so hart — dafür holt er so weit aus, dass er nach jedem ' +
+      'dritten Schlag einen Zug lang offen steht',
       function (c) {
         c.self.atk = Math.round(c.self.atk * 2);
-        c.self.minderung = -0.4;
+        c.addEffect(c.self, { hook: 'onHit', name: 'Berserker', fn: function (k) {
+          if (zaehler(k.self, 'orkkrieger_mec4', 3)) k.applyStatus(k.self, 'erstarrung', 1);
+        } });
       }),
 
     passiv('orkkrieger_unt1', 'Kriegsgeschrei', 'onStart', [], [],
@@ -1846,10 +1851,13 @@
       'Führt ein Verbündeter Gift, vergiftet jeder Schuss mit 3 — sonst mit 1',
       function (c) { c.applyStatus(c.target, 'gift', truppFuehrt(c, 'gift') ? 3 : 1); }),
     passiv('albis_mec4', 'Berechnend', 'onStart', ['exekution'], [],
-      'Albis trifft angeschlagene Ziele doppelt — volle nur noch halb',
+      'Albis liest ihr Ziel: +25 % Schaden je VERSCHIEDENEM Zustand darauf, und gegen ' +
+      'angeschlagene Ziele doppelt — gegen unversehrte, saubere Ziele dafür nur halb',
       function (c) {
         c.addEffect(c.self, { hook: 'onHit', name: 'Berechnend', fn: function (k) {
-          k.dmg *= k.target.hp < k.target.maxHp * 0.5 ? 2 : 0.5;
+          var n = gelesen(k.target);
+          if (n) k.dmg *= 1 + 0.25 * n;
+          k.dmg *= k.target.hp < k.target.maxHp * 0.5 ? 2 : (n ? 1 : 0.5);
         } });
       }),
 
@@ -2609,11 +2617,18 @@
                      side: c.self.side, hp: c.self.hp });
       }),
 
-    /* ---- Milims Linien: rohe Zerstörung ------------------------------------
-       Als einzige Einheit im Spiel trägt sie GAR KEINEN Zustand — kein Gift,
-       kein Brand, keine Marke. Ihre Linien sind reine Zahlen, die sich
-       gegenseitig aufschaukeln: je länger sie draufhält, desto härter trifft
-       sie. Das ist ihr Charakter und zugleich die Nische, die im Roster fehlte.  */
+    /* ---- Milims Linien: rohe Zerstörung, ohne Rückweg -----------------------
+       Sie trägt als einzige Einheit im Spiel GAR KEINE Defensivlinie. Das ist
+       kein Versehen, sondern die Ansage: Milim verteidigt nicht, sie schlägt.
+       Wer sie nimmt, bekommt zwölf Passive statt sechzehn — und muss ihr
+       Überleben aus Relikten, Ausrüstung und der Aufstellung bauen.
+
+       Die zwei Bauweisen stecken in zwei Linien: die ANGRIFFSLINIE macht sie zur
+       langsamen Brecherin, die aufgeladene Schläge austeilt und sich danach
+       selbst nicht mehr bewegen kann. Die MECHANIKLINIE macht sie zur schnellen
+       wilden Schlägerin, die öfter und leichter zuschlägt. Beides zusammen geht
+       nicht gut — die Selbstbetäubung frisst genau die Züge, für die die andere
+       Linie bezahlt.                                                            */
 
     passiv('milim_ang1', 'Drachenfaust', 'onHit', [], [],
       'Der erste Schlag des Kampfes trifft dreifach und ignoriert die Rüstung',
@@ -2623,34 +2638,33 @@
         c.dmg *= 3;
         c.self.pierce = Math.max(c.self.pierce || 0, 1);
       }),
-    passiv('milim_ang2', 'Drachenzorn', 'onHit', [], [],
-      'Jeder Schlag auf dasselbe Ziel trifft 12 % härter als der davor — ein Zielwechsel setzt zurück',
+    passiv('milim_ang2', 'Aufgeladener Zorn', 'onHit', [], [],
+      'Jeder dritte Schlag ist aufgeladen und trifft VIERFACH — danach kann Milim einen Zug lang nicht handeln',
       function (c) {
-        if (c.self._zorn_ziel !== c.target.key) { c.self._zorn_ziel = c.target.key; c.self._zorn = 0; }
-        c.self._zorn = Math.min(10, (c.self._zorn || 0) + 1);
-        c.dmg *= 1 + 0.12 * (c.self._zorn - 1);
+        if (!zaehler(c.self, 'milim_ang2', 3)) return;
+        c.dmg *= 4;
+        c.applyStatus(c.self, 'erstarrung', 1);
       }),
-    passiv('milim_ang3', 'Zerstörerin', 'onHit', ['exekution'], ['exekution'],
-      'Führt ein Verbündeter Exekution, trifft Milim Ziele unter 50 % Leben doppelt — sonst 30 % härter',
+    passiv('milim_ang3', 'Drachentöterin', 'onHit', ['exekution'], ['exekution'],
+      'Gegen Bosse trifft Milim doppelt — führt ein Verbündeter Exekution, dreifach',
       function (c) {
-        if (c.target.hp >= c.target.maxHp * 0.5) return;
-        c.dmg *= truppFuehrt(c, 'exekution') ? 2 : 1.3;
+        if (!c.target.enrage) return;
+        c.dmg *= truppFuehrt(c, 'exekution') ? 3 : 2;
       }),
-    passiv('milim_ang4', 'Drakonische Wut', 'onStart', [], [],
-      'Milim wird mit jedem eigenen Zug 8 % stärker, ohne Grenze — dafür heilt sie nichts mehr',
+    passiv('milim_ang4', 'Vernichtung', 'onStart', [], [],
+      'Jeder Schlag trifft 140 % härter — dafür muss Milim nach jedem zweiten einen Zug aussetzen',
       function (c) {
-        c.self.heilfaktor = -1;
-        c.self.regen = 0;
-        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Drakonische Wut', fn: function (k) {
-          k.self.atk = Math.round(k.self.atk * 1.08);
+        c.addEffect(c.self, { hook: 'onHit', name: 'Vernichtung', fn: function (k) {
+          k.dmg *= 2.4;
+          if (zaehler(k.self, 'milim_ang4', 2)) k.applyStatus(k.self, 'erstarrung', 1);
         } });
       }),
 
-    passiv('milim_mec1', 'Drachenpanzer', 'onStart', [], [],
-      'Beginnt den Kampf mit 60 % Rüstungsdurchschlag und +8 Rüstung',
+    passiv('milim_mec1', 'Ungezügelt', 'onStart', ['tempo'], [],
+      'Beginnt den Kampf mit +35 % Tempo und 50 % Rüstungsdurchschlag',
       function (c) {
-        c.self.pierce = Math.max(c.self.pierce || 0, 0.6);
-        c.self.def += 8;
+        c.self.spd = Math.round(c.self.spd * 1.35);
+        c.self.pierce = Math.max(c.self.pierce || 0, 0.5);
       }),
     passiv('milim_mec2', 'Nachschlag', 'onHit', [], [],
       'Jeder dritte Schlag schlägt sofort ein zweites Mal für 110 %',
@@ -2658,39 +2672,43 @@
         if (!zaehler(c.self, 'milim_mec2', 3)) return;
         c.deal(c.target, c.self.atk * 1.1, 'Nachschlag');
       }),
-    passiv('milim_mec3', 'Übermacht', 'onHit', [], ['exekution'],
-      'Führt ein Verbündeter Exekution, ignoriert Milim jede Rüstung — sonst die Hälfte',
+    passiv('milim_mec3', 'Rasend', 'onStart', ['tempo'], ['tempo'],
+      'Führt ein Verbündeter Tempo, wird Milim mit jedem eigenen Zug 9 % schneller — sonst 4 %. Höchstens +80 %.',
       function (c) {
-        c.self.pierce = Math.max(c.self.pierce || 0, truppFuehrt(c, 'exekution') ? 1 : 0.5);
+        var f = truppFuehrt(c, 'tempo') ? 1.09 : 1.04;
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Rasend', fn: function (k) {
+          k.self._rasend = (k.self._rasend || 0) + 1;
+          if (k.self._rasend <= 8) k.self.spd = Math.round(k.self.spd * f);
+        } });
       }),
-    passiv('milim_mec4', 'Drachenbrecher', 'onStart', ['flaeche'], [],
-      'Jeder Schlag trifft alle übrigen Gegner für 60 % mit — dafür hält Milim nur noch 60 % aus',
+    passiv('milim_mec4', 'Sturmfaust', 'onStart', ['tempo'], [],
+      'Milim schlägt in jedem Zug ein zweites Mal — dafür trifft jeder Schlag nur noch mit 60 %',
       function (c) {
-        c.self.maxHp = Math.round(c.self.maxHp * 0.6);
-        c.self.hp = Math.min(c.self.hp, c.self.maxHp);
-        c.addEffect(c.self, { hook: 'onHit', name: 'Drachenbrecher', fn: function (k) {
-          k.foes().forEach(function (f) {
-            if (f !== k.target) k.deal(f, k.self.atk * 0.6, 'Drachenbrecher');
-          });
+        c.addEffect(c.self, { hook: 'onHit', name: 'Sturmfaust', fn: function (k) {
+          if (k.self._sturm) return;
+          k.self._sturm = 1;
+          k.dmg *= 0.6;
+          k.deal(k.target, k.dmg, 'Sturmfaust');
+          k.self._sturm = 0;
         } });
       }),
 
     passiv('milim_unt1', 'Kraft der Demonlord', 'onStart', [], [],
       'Zu Kampfbeginn +16 % Angriff für den ganzen Trupp',
       function (c) { c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.16); }); }),
-    passiv('milim_unt2', 'Mitreißen', 'onDamaged', [], [],
-      'Jeder vierte Treffer auf den Trupp gibt allen dauerhaft +8 Angriff',
+    passiv('milim_unt2', 'Drachenblut', 'onDamaged', [], [],
+      'Jeder vierte Treffer auf den Trupp gibt allen dauerhaft +9 Angriff',
       function (c) {
         if (!zaehler(c.self, 'milim_unt2', 4)) return;
-        c.allies().forEach(function (u) { u.atk += 8; });
+        c.allies().forEach(function (u) { u.atk += 9; });
       }),
-    passiv('milim_unt3', 'Angriffsbefehl', 'onStart', [], ['tempo'],
-      'Führt ein Verbündeter Tempo, bekommt der Trupp +25 % Durchschlag und +10 % Tempo — sonst nur den Durchschlag',
+    passiv('milim_unt3', 'Drachenbrut', 'onStart', [], [],
+      'Der Trupp trifft Drachen und Bosse 35 % härter — Milims Blut erkennt seinesgleichen',
       function (c) {
-        var mit = truppFuehrt(c, 'tempo');
         c.allies().forEach(function (u) {
-          u.pierce = Math.max(u.pierce || 0, 0.25);
-          if (mit) u.spd = Math.round(u.spd * 1.1);
+          c.addEffect(u, { hook: 'onHit', name: 'Drachenbrut', fn: function (k) {
+            if (k.target.enrage || (k.target.tags || []).indexOf('drache') >= 0) k.dmg *= 1.35;
+          } });
         });
       }),
     passiv('milim_unt4', 'Bezwingerin der Drachen', 'onStart', [], [],
@@ -2701,34 +2719,6 @@
         andere.forEach(function (u) { u.atk = Math.round(u.atk * 1.35); });
         c.self.maxHp = Math.round(c.self.maxHp * 0.5);
         c.self.hp = Math.min(c.self.hp, c.self.maxHp);
-      }),
-
-    passiv('milim_def1', 'Drachenhaut', 'onStart', [], [],
-      'Beginnt mit einem Schild über 36 % ihres Lebens',
-      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.36)); }),
-    passiv('milim_def2', 'Unbeirrt', 'onDamaged', [], [],
-      'Jeder dritte erlittene Treffer heilt 9 % und gibt dauerhaft +6 Angriff',
-      function (c) {
-        if (!zaehler(c.self, 'milim_def2', 3)) return;
-        c.heal(c.self, c.self.maxHp * 0.09, 'Unbeirrt');
-        c.self.atk += 6;
-      }),
-    passiv('milim_def3', 'Drachenblut', 'onStart', [], ['heilung'],
-      'Führt ein Verbündeter Heilung, kostet kein Treffer mehr als 14 % ihres Lebens — sonst 20 %',
-      function (c) {
-        var d = truppFuehrt(c, 'heilung') ? 0.14 : 0.2;
-        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
-      }),
-    passiv('milim_def4', 'Unsterbliche Drachin', 'onDeath', [], [],
-      'Steht einmal mit 50 % Leben und doppeltem Angriff wieder auf — danach heilt sie nichts mehr',
-      function (c) {
-        if (c.self._auf) return;
-        c.self._auf = 1;
-        c.self.hp = Math.round(c.self.maxHp * 0.5);
-        c.self.atk = Math.round(c.self.atk * 2);
-        c.self.heilfaktor = -1;
-        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name,
-                     side: c.self.side, hp: c.self.hp });
       }),
 
     /* ---- Veldoras Linien: der Sturmdrache -----------------------------------
@@ -3538,10 +3528,12 @@
         if (!zaehler(c.self, 'hak_ang2', 3)) return;
         c.deal(c.target, c.self.atk * 0.8, 'Schwertmeister');
       }),
-    passiv('hak_ang3', 'Todeshieb', 'onHit', ['exekution'], [],
-      'Führt ein Verbündeter Exekution, trifft Hakuro Ziele unter 40 % Leben dreifach — sonst doppelt',
+    passiv('hak_ang3', 'Todeshieb', 'onHit', ['exekution'], ['exekution'],
+      'Ziele unter 40 % Leben trifft Hakuro doppelt, mit Exekution im Trupp dreifach. ' +
+      'Gegen Bosse gilt das schon ab der Hälfte — er hat schon Größeres gefällt.',
       function (c) {
-        if (c.target.hp >= c.target.maxHp * 0.4) return;
+        var schwelle = c.target.enrage ? 0.5 : 0.4;
+        if (c.target.hp >= c.target.maxHp * schwelle) return;
         c.dmg *= truppFuehrt(c, 'exekution') ? 3 : 2;
       }),
     passiv('hak_ang4', 'Hundert Schnitte', 'onStart', ['exekution'], [],
@@ -3800,12 +3792,9 @@
         if (c.rng() < (truppFuehrt(c, 'exekution') ? 0.35 : 0.12)) c.dmg *= 2;
       }),
     passiv('gobta_ang4', 'Unverschämtes Glück', 'onHit', ['exekution'], [],
-      'Jeder Treffer wird gewürfelt: 30 % dreifacher Schaden, 30 % fast keiner',
-      function (c) {
-        var w = c.rng();
-        if (w < 0.3) c.dmg *= 3;
-        else if (w > 0.7) c.dmg *= 0.15;
-      }),
+      'Jeder Schlag wird gewürfelt und schwankt zwischen 20 % und 260 % — im Mittel etwas mehr, ' +
+      'aber nie verlässlich. Gobtas ganzes Wesen in einer Passive.',
+      function (c) { c.dmg *= 0.2 + c.rng() * 2.4; }),
 
     passiv('gobta_mec1', 'Würfelglück', 'onStart', [], [],
       'Ein Wurf zu Kampfbeginn, und er wird mit dem Rang besser: +6 Angriff, +6 Rüstung oder +12 % Tempo — je Rang',
@@ -3829,12 +3818,13 @@
         c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.35);
         c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
       }),
-    passiv('gobta_mec4', 'Schicksalswende', 'onStart', ['verderbnis'], [],
-      'Jeder Zug legt allen Gegnern 2 Verderbnis an — dafür schlägt Gobta ein Drittel schwächer',
+    passiv('gobta_mec4', 'Schicksalswende', 'onStart', ['chaos'], ['chaos'],
+      'Jeder Zug wirft allen Gegnern 2 Chaos zu — ihre Werte werden neu gewürfelt, ' +
+      'und ihre Fähigkeiten verpuffen öfter. Dafür schlägt Gobta ein Drittel schwächer.',
       function (c) {
         c.self.atk = Math.round(c.self.atk * 0.67);
         c.addEffect(c.self, { hook: 'onTurnStart', name: 'Schicksalswende', fn: function (k) {
-          k.foes().forEach(function (f) { k.applyStatus(f, 'verderbnis', 2); });
+          k.foes().forEach(function (f) { k.chaos(f, 2); });
         } });
       }),
 
@@ -4001,9 +3991,11 @@
         c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.18));
       }),
     passiv('gobkyu_def3', 'Distanz halten', 'onStart', [], ['tempo'],
-      'Führt ein Verbündeter Tempo, kostet kein Treffer mehr als 17 % seines Lebens — sonst 23 %',
+      'Aus der Hinterreihe kostet Gobkyu kein Treffer mehr als 15 % seines Lebens — ganz vorn 26 %. ' +
+      'Ein Bogenschütze gehört nach hinten.',
       function (c) {
-        var d = truppFuehrt(c, 'tempo') ? 0.17 : 0.23;
+        var d = c.self.pos > 0 ? 0.15 : 0.26;
+        if (truppFuehrt(c, 'tempo')) d -= 0.03;
         c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
       }),
     passiv('gobkyu_def4', 'Windschritt', 'onStart', ['tempo'], [],
@@ -4070,11 +4062,13 @@
       }),
 
     passiv('rigurd_unt1', 'Häuptling', 'onStart', [], [],
-      'Zu Kampfbeginn +10 % Angriff und +10 % Rüstung für den ganzen Trupp',
+      'Zu Kampfbeginn +10 % Angriff und +10 % Rüstung für den ganzen Trupp — ' +
+      'steht Rigurd selbst ganz vorn, das Doppelte. Ein Häuptling führt von der Spitze.',
       function (c) {
+        var f = c.self.pos === 0 ? 1.2 : 1.1;
         c.allies().forEach(function (u) {
-          u.atk = Math.round(u.atk * 1.1);
-          u.def = Math.round(u.def * 1.1);
+          u.atk = Math.round(u.atk * f);
+          u.def = Math.round(u.def * f);
         });
       }),
     passiv('rigurd_unt2', 'Schutzbefehl', 'onDamaged', ['schild'], [],
@@ -5451,11 +5445,14 @@
       unterstuetzung: ['diablo_unt1', 'diablo_unt2', 'diablo_unt3', 'diablo_unt4'],
       defensive: ['diablo_def1', 'diablo_def2', 'diablo_def3', 'diablo_def4']
     },
+    /* Milim hat KEINE Defensivlinie — die einzige Einheit im Spiel. Wer sie
+       nimmt, bekommt zwölf Passive statt sechzehn und muss ihr Überleben aus
+       Relikten, Ausrüstung und Aufstellung bauen. */
     milim: {
       angriff: ['milim_ang1', 'milim_ang2', 'milim_ang3', 'milim_ang4'],
       mechanik: ['milim_mec1', 'milim_mec2', 'milim_mec3', 'milim_mec4'],
       unterstuetzung: ['milim_unt1', 'milim_unt2', 'milim_unt3', 'milim_unt4'],
-      defensive: ['milim_def1', 'milim_def2', 'milim_def3', 'milim_def4']
+      defensive: []
     },
     veldora: {
       angriff: ['veldora_ang1', 'veldora_ang2', 'veldora_ang3', 'veldora_ang4'],

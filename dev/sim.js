@@ -1347,6 +1347,54 @@ ok(rangS > rangC * 1.5,
 ok(jeTreffer('echsenfuerst', ['fuerst_ang3'], 3) > jeTreffer('echsenfuerst', [], 3) * 1.2,
    'Echsenmenschen-Passive wachsen mit der Kampfdauer');
 
+/* Jede Mechanik braucht mindestens zwei Träger — eine, die nur an einer Einheit
+   hängt, existiert für die meisten Runs nicht. Das ist kein Stilwunsch, sondern
+   der Grund, warum Dunkelheit und Frost in Phase 30 zweite Träger bekamen. */
+var MECHANIKEN = [
+  ['Verwandlung', /verwandle\(/], ['Deckung', /koenigsdeckung\(/],
+  ['liest Zustände', /gelesen\(/], ['göttliche Magie', /heiligerSchlag\(/],
+  ['Art-Bedingung', /tags\[0\]/], ['Zufallsschaden', /rng\(\)\s*\*\s*\d/],
+  ['Rang-Skalierung', /rangStufe\(/], ['Kampfdauer', /langerKampf\(/],
+  ['Schildbruch', /status\.schild\s*=\s*0/], ['Position', /\.pos\b/],
+  ['Selbstbetäubung', /applyStatus\(\w+\.self, 'erstarrung'/], ['Boss-Bonus', /\.enrage/]
+];
+var einsam = [];
+MECHANIKEN.forEach(function (m) {
+  var n = 0;
+  GD.units.forEach(function (u) {
+    var src = '';
+    Object.keys(AB.linien[u.id]).forEach(function (k) {
+      AB.linien[u.id][k].forEach(function (p) { src += String(AB.get(p).fn); });
+    });
+    src += String(AB.get(u.signature).fn);
+    if (m[1].test(src)) n++;
+  });
+  if (n < 2) einsam.push(m[0] + ' (' + n + ')');
+});
+ok(!einsam.length, 'jede Mechanik hat mindestens zwei Träger' +
+   (einsam.length ? ' — allein: ' + einsam.join(', ') : ''));
+
+/* Milims zwei Bauweisen müssen sich messbar unterscheiden: die Angriffslinie
+   macht sie langsam und wuchtig, die Mechaniklinie schnell und leicht. */
+function milimBau(pass) {
+  var m = R.member('milim'); m.rank = 3; m.passives = pass;
+  var o = { id: 'o', name: 'O', tags: ['bestie', 'front'], hp: 400000, atk: 25, def: 10,
+    spd: 18, actives: [], effects: [], keywords: [] };
+  var log = C.simulate([R.resolve(m)], [o], 7).log;
+  var tr = log.filter(function (l) { return l.type === 'hit' && l.side === 'enemy'; });
+  return {
+    treffer: tr.length,
+    schnitt: tr.length ? tr.reduce(function (a, l) { return a + l.dmg; }, 0) / tr.length : 0,
+    stun: log.filter(function (l) { return l.type === 'skip' && l.unit === 'Milim'; }).length
+  };
+}
+var wuchtig = milimBau(['milim_ang2']), flink = milimBau(['milim_mec1', 'milim_mec4']);
+ok(wuchtig.schnitt > flink.schnitt * 2 && flink.treffer > wuchtig.treffer * 2,
+   'Milims zwei Bauweisen trennen sich klar (' + Math.round(wuchtig.schnitt) + ' Schaden bei ' +
+   wuchtig.treffer + ' Treffern gegen ' + Math.round(flink.schnitt) + ' bei ' + flink.treffer + ')');
+ok(wuchtig.stun > 0 && flink.stun === 0,
+   'nur die wuchtige Bauweise betäubt sich selbst (' + wuchtig.stun + ' Aussetzer)');
+
 /* Geld nimmt seiner Reihe Schaden ab — unabhängig von der Aufstellung, anders
    als die Deckung des Kampfsystems, die an Platz 3 hängt. Gemessen am Restleben
    des Gedeckten, nicht am Treffer selbst: der Treffer fällt voll, der Anteil
@@ -1557,12 +1605,25 @@ function atkVon(m) {
 ok(atkVon(kMit) > atkVon(kOhne),
    'Kurobes Schmiede rechnet mit der angelegten Ausrüstung (' +
    atkVon(kOhne) + ' → ' + atkVon(kMit) + ' Angriff)');
+/* Milim trägt bewusst keine Defensivlinie — sie ist die einzige Ausnahme, und
+   das soll auffallen, wenn es jemand versehentlich nachmacht. */
+var ohneLinie = [];
+Object.keys(AB.linien).forEach(function (id) {
+  Object.keys(AB.linien[id]).forEach(function (l) {
+    if (!AB.linien[id][l].length) ohneLinie.push(id + '/' + l);
+  });
+});
+ok(ohneLinie.join(',') === 'milim/defensive',
+   'genau eine Einheit verzichtet auf eine ganze Linie: ' + (ohneLinie.join(', ') || 'keine'));
 ok(Object.keys(AB.linien).every(function (id) {
-  return Object.keys(AB.linien[id]).every(function (l) { return AB.linien[id][l].length >= 4; });
-}), 'jede Linie jeder Einheit hat mindestens vier Passive');
+  return Object.keys(AB.linien[id]).every(function (l) {
+    return AB.linien[id][l].length >= 4 || AB.linien[id][l].length === 0;
+  });
+}), 'jede vorhandene Linie hat mindestens vier Passive');
 ok(Object.keys(AB.linien).every(function (id) {
-  return Object.keys(AB.linien[id]).reduce(function (n, l) { return n + AB.linien[id][l].length; }, 0) >= 16;
-}), 'also mindestens 16 je Einheit — der Topf darf wachsen, ohne dass etwas bricht');
+  var n = Object.keys(AB.linien[id]).reduce(function (a, l) { return a + AB.linien[id][l].length; }, 0);
+  return n >= (id === 'milim' ? 12 : 16);
+}), 'und jede Einheit mindestens 16 Passive — Milim als erklärte Ausnahme 12');
 /* Die Preis-Marke hängt an der vierten Stelle, nicht an der letzten: sonst
    verlöre `shion_ang4` sie an die neue fünfte Passive. */
 ok(AB.linienAngebot('shion').filter(function (o) { return o.preis; })

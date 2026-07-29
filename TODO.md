@@ -347,6 +347,21 @@ Abgearbeitet in Phase 37:
 - [x] Ein Test hing an einer festen Zahl von Verwandlungsformen; er prüft jetzt,
       dass keine tot herumliegt.
 
+Abgearbeitet in Phase 38:
+
+- [x] **Milim hat keine Defensivlinie** — zwölf Passive statt sechzehn, die
+      einzige Einheit im Spiel. Ihre Angriffslinie ist die langsame Brecherin
+      (vierfache Schläge, danach Selbstbetäubung), ihre Mechaniklinie die
+      schnelle Schlägerin. Gemessen: 309 Schaden bei 27 Treffern gegen 99 bei
+      100. Dazu Boss- und Drachenboni über `enrage`.
+- [x] **Zweite Träger für sechs Mechaniken**: Chaos (Gobta), Zustände lesen
+      (Albis), Schildbruch (Orkkrieger), Zufallsschaden (Gobta),
+      Selbstbetäubung (Orkkrieger), Boss-Bonus (Hakuro).
+- [x] Die Aufstellung zählt jetzt auch für Einheiten: Gobkyu hält hinten
+      besser aus, Rigurds Häuptling wirkt doppelt an der Spitze.
+- [x] Ein Test verlangt für jede Mechanik zwei Träger. Kein Schlüsselwort und
+      keine Mechanik steht mehr allein.
+
 Balance und Werkzeug:
 
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller
