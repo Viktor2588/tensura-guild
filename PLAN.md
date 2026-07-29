@@ -1436,6 +1436,49 @@ weil ein variabler Bonus unsichtbar wäre, wenn er nur in der Rechnung stünde.
 
 `dev/balance.js 600`: 50 % frisch.
 
+### Phase 33 (2026-07-29): Zweite Bibliotheksschicht
+
+Die 34 geteilten Passiven waren fast alle „+X % gegen Y". Für eine Bibliothek
+ist das im Ansatz richtig — sie muss auf JEDER Einheit funktionieren, darf also
+kein Thema voraussetzen. Aber themenfrei heißt nicht ideenfrei. 24 neue lesen
+stattdessen die **Lage**: wo die Einheit steht, wie viele Gegner noch stehen,
+wie oft sie getroffen wurde, wie viel Leben ihr fehlt. Das funktioniert überall
+und ist trotzdem eine Entscheidung.
+
+- **Angriff:** `Vorhut` (+28 % ganz vorn) und `Hinterhalt` (+32 % dahinter) sind
+  ein Paar, das die Aufstellung zur Wahl macht. `Duellant` (+45 % gegen einen
+  einzelnen Gegner) ist die erste Passive, die ausdrücklich für Bosse gebaut
+  ist. Dazu `Anlauf`, `Zweitschlag`, `Grenzgang` (+55 % Angriff, ein Drittel
+  weniger Leben).
+- **Mechanik:** `Markierer` gibt jeder Einheit eine Verwundbar-Quelle — die
+  Marke gilt für den ganzen Trupp. `Panzerknacker` ignoriert Rüstung gegen
+  beschildete Ziele, `Zündschnur` zahlt für jeden Zustand, egal welchen.
+  `Brennglas` vergrößert alle eigenen Stapel um 50 % und kostet ein Drittel
+  Angriff.
+- **Unterstützung:** `Schlachtplan` (6 % je Truppmitglied) belohnt eine volle
+  Reihe, `Letztes Aufgebot` die letzte Stehende, `Wachablösung` beschildet den
+  Nachrücker, wenn vorn jemand fällt.
+- **Defensive:** `Standfest` (weniger Schaden je fehlendem Leben),
+  `Todesverachtung`, `Trotz`, `Rückendeckung`, `Zähe Haut`, `Festgewachsen`.
+
+Sechs davon tragen einen **Preis**. Damit ist die Bibliothek nicht mehr nur die
+brave Alternative neben einem Linien-Keystone, sondern kann selbst eine
+Ansage sein.
+
+Bibliothek: 34 → 58, gleichmäßig verteilt (15 Angriff, 15 Mechanik,
+13 Unterstützung, 15 Defensive). Damit ist TODO-Punkt 1 erfüllt — nicht durch
+Umbau der 34 Aktiven, sondern durch neue Passive; die Aktiven bleiben das
+Gegner-Repertoire, das sie ohnehin geworden sind.
+
+**Ein Irrtum beim Bauen:** `pos` ist 0-basiert, vorn ist 0. `Vorhut` und
+`Hinterhalt` waren dadurch um eins verschoben — Vorhut feuerte auf Platz 2,
+Hinterhalt gar nicht. Gemessen statt angenommen, und fünf Tests halten die neue
+Schicht jetzt fest. (Die Deckung im Kampf nutzt dieselbe 0-Basis mit `pos >= 2`;
+das Glossar sagt „ab Platz 3" und stimmt damit überein.)
+
+`dev/balance.js 600`: 51 % frisch, kein Build-Ausreißer — auch Konter nicht
+mehr, der sich zuletzt hartnäckig gehalten hatte.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

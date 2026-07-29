@@ -103,14 +103,12 @@ Abgearbeitet in Phase 20:
 
 Offen:
 
-1. **Den Aufstiegs-Pool in Passive umbauen.** *(entschieden, jetzt
-   entsperrt)* Die 34 aktiven Fähigkeiten sind totes Gewicht, seit jede Einheit
-   nur noch ihre Signatur führt. Sie werden zu Passiven umgeschrieben und in
-   die vier Kategorien einsortiert — damit wächst die Bibliothek von 34 auf
-   rund 68. Was Gegner brauchen, bleibt als Aktive erhalten.
-   Vorher war das sinnlos: die Bibliothek kam gar nicht mehr beim Spieler an
-   (siehe Phase 22). Seit sie auf Stufe 4 neben dem Keystone steht, lohnt der
-   Ausbau — jede neue Passive ist dort sofort ziehbar.
+1. **Der Aufstiegs-Pool bleibt Gegner-Repertoire.** *(erledigt, anders als
+   geplant)* Der Plan war, die 34 Aktiven zu Passiven umzuschreiben, damit die
+   Bibliothek wächst. Gewachsen ist sie in Phase 33 — durch 24 neu geschriebene
+   Passive, die die Lage lesen statt ein Thema vorauszusetzen (34 → 58). Die
+   Aktiven umzubauen hätte dem nichts hinzugefügt; sie sind als Gegnerinhalt
+   sinnvoll und bleiben es.
 
 2. **`GRUNDHAERTE` ist in einer Sitzung von 1.02 auf 1.08 gewandert.** Der
    globale Knopf hat die Siegquote geradegezogen, aber er trifft auch die 20
@@ -289,6 +287,15 @@ Abgearbeitet in Phase 32:
       Teufel` ab 20 Chaos über alle Gegner zusammen. Beide können fallen.
 - [x] Die Boni skalieren mit der Zahl der Stapel statt fest zu sein — 3 % bzw.
       2 % je Stapel, gedeckelt bei +90 %. Der Kampflog nennt Stapel und Bonus.
+
+Abgearbeitet in Phase 33:
+
+- [x] Zweite Bibliotheksschicht: 24 handgeschriebene geteilte Passive, die die
+      LAGE lesen (Position, Gegnerzahl, erlittene Treffer, fehlendes Leben)
+      statt ein Thema vorauszusetzen. Sechs davon tragen einen Preis.
+      Bibliothek 34 → 58, gleichmäßig über die vier Kategorien.
+- [x] `pos` ist 0-basiert — `Vorhut` und `Hinterhalt` waren um eins verschoben.
+      Nachgemessen und mit fünf Tests festgehalten.
 
 Balance und Werkzeug:
 

@@ -1281,6 +1281,33 @@ ok(rangaFusion(null) === 0 && rangaFusion('gobkyu') === 0,
    'die Schattenfusion greift weder allein noch mit einem anderen Goblin');
 ok(rangaFusion('gobta') === 1, 'mit Gobta verschmelzen die beiden — genau einmal');
 
+/* Die zweite Bibliotheksschicht liest die LAGE — und `pos` ist 0-basiert, was
+   beide Positions-Passiven zunächst um eins verschoben hatte. Also nachgemessen
+   statt angenommen. */
+function libSchaden(pass, hinten) {
+  var t = [];
+  if (hinten) {
+    var v = R.member('rigurd'); v.rank = 1; v.durfteWaehlen = 1; v.passives = [];
+    t.push(R.resolve(v));
+  }
+  var m = R.member('hakuro'); m.rank = 2; m.durfteWaehlen = 1; m.passives = pass;
+  t.push(R.resolve(m));
+  var o = { id: 'o', name: 'O', tags: ['bestie', 'front'], hp: 900000, atk: 2, def: 0,
+    spd: 2, actives: [], effects: [], keywords: [] };
+  return C.simulate(t, [o], 6).log
+    .filter(function (l) { return l.type === 'hit' && l.side === 'enemy'; })
+    .reduce(function (a, l) { return a + l.dmg; }, 0);
+}
+var basisVorn = libSchaden([], false), basisHinten = libSchaden([], true);
+ok(libSchaden(['vorhut'], false) > basisVorn && libSchaden(['vorhut'], true) === basisHinten,
+   'Vorhut zahlt nur ganz vorn');
+ok(libSchaden(['hinterhalt'], true) > basisHinten && libSchaden(['hinterhalt'], false) === basisVorn,
+   'Hinterhalt zahlt nur dahinter');
+ok(libSchaden(['anlauf'], false) > basisVorn, 'Anlauf wächst auf demselben Ziel');
+ok(libSchaden(['zweitschlag'], false) > basisVorn, 'Zweitschlag schlägt jeden dritten Angriff nach');
+ok(libSchaden(['zuendschnur'], false) === basisVorn,
+   'Zündschnur bleibt still, solange das Ziel keinen Zustand trägt');
+
 /* Shions zwei Verwandlungen: keine Zahlen, sondern Schwellen an
    verschiedenen Enden. Ordnung zählt, was sie SELBST trägt (10 Antichaos),
    Verderbnis, was auf dem FELD liegt (20 Chaos zusammen). */

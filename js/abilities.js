@@ -129,6 +129,165 @@
     passiv('kriegsherz', 'Kampfgeist', 'onStart', [], [], '+5 Angriff, +3 Rüstung',
       function (c) { c.self.atk += 5; c.self.def += 3; }),
 
+    /* ---- Zweite Bibliotheksschicht: Lage statt Prozent ----------------------
+       Die ersten 34 geteilten Passiven sind fast alle „+X % gegen Y". Das ist
+       für eine Bibliothek richtig — sie muss auf JEDER Einheit funktionieren,
+       darf also kein Thema voraussetzen. Aber themenfrei heißt nicht ideenfrei:
+       diese hier lesen die LAGE. Wo steht die Einheit, wie viele Gegner stehen
+       noch, wie oft wurde sie getroffen, wie viel Leben fehlt ihr. Das
+       funktioniert bei jeder Einheit und ist trotzdem eine Entscheidung.
+       Manche tragen einen Preis — sie stehen dann neben den Linien-Keystones
+       und sind nicht mehr nur die brave Alternative.                           */
+
+    /* -- Angriff -- */
+    passiv('vorhut', 'Vorhut', 'onHit', [], [],
+      '+28 % Schaden, solange die Einheit ganz vorn steht',
+      /* `pos` ist 0-basiert: vorn ist 0. */
+      function (c) { if (c.self.pos === 0) c.dmg *= 1.28; }),
+    passiv('hinterhalt', 'Hinterhalt', 'onHit', [], [],
+      '+32 % Schaden, solange die Einheit NICHT vorn steht',
+      function (c) { if (c.self.pos > 0) c.dmg *= 1.32; }),
+    passiv('duellant', 'Duellant', 'onHit', [], [],
+      '+45 % Schaden, solange nur noch ein Gegner steht — die Antwort auf Bosse',
+      function (c) { if (c.foes().length === 1) c.dmg *= 1.45; }),
+    passiv('anlauf', 'Anlauf', 'onHit', [], [],
+      'Jeder Schlag auf dasselbe Ziel trifft 9 % härter als der davor — höchstens +54 %, ein Zielwechsel setzt zurück',
+      function (c) {
+        if (c.self._anlauf_ziel !== c.target.key) { c.self._anlauf_ziel = c.target.key; c.self._anlauf = 0; }
+        c.self._anlauf = Math.min(6, (c.self._anlauf || 0) + 1);
+        c.dmg *= 1 + 0.09 * (c.self._anlauf - 1);
+      }),
+    passiv('zweitschlag', 'Zweitschlag', 'onHit', [], [],
+      'Jeder dritte Angriff schlägt sofort ein zweites Mal für 65 %',
+      function (c) {
+        if (!zaehler(c.self, 'zweitschlag', 3)) return;
+        c.deal(c.target, c.self.atk * 0.65, 'Zweitschlag');
+      }),
+    passiv('grenzgang', 'Grenzgang', 'onStart', [], [],
+      '+55 % Angriff, aber die Einheit hält nur noch zwei Drittel aus',
+      function (c) {
+        c.self.atk = Math.round(c.self.atk * 1.55);
+        c.self.maxHp = Math.round(c.self.maxHp * 0.67);
+        c.self.hp = Math.min(c.self.hp, c.self.maxHp);
+      }),
+
+    /* -- Mechanik -- */
+    passiv('markierer', 'Markierer', 'onHit', ['verwundbar'], [],
+      'Jeder dritte Treffer markiert das Ziel mit 3 Verwundbar — die Marke gilt für JEDEN Angreifer',
+      function (c) {
+        if (!zaehler(c.self, 'markierer', 3)) return;
+        c.markiere(c.target, 3);
+      }),
+    passiv('panzerknacker', 'Panzerknacker', 'onHit', [], [],
+      'Trägt das Ziel ein Schild, ignoriert der Treffer die Rüstung vollständig',
+      function (c) {
+        if ((c.target.status.schild || 0) > 0) c.self.pierce = Math.max(c.self.pierce || 0, 1);
+      }),
+    passiv('zuendschnur', 'Zündschnur', 'onHit', [], [],
+      '+20 % Schaden gegen jedes Ziel, das irgendeinen Zustand trägt — egal welchen',
+      function (c) { if (gelesen(c.target) > 0) c.dmg *= 1.2; }),
+    passiv('nachhall', 'Nachhall', 'onTurnStart', [], [],
+      'Zu Beginn jedes Zuges ein Schlag für 45 % auf das schwächste Ziel',
+      function (c) {
+        var f = schwaechstes(c.foes(), function (x) { return x.hp; });
+        if (f) c.deal(f, c.self.atk * 0.45, 'Nachhall');
+      }),
+    passiv('tempoanker', 'Tempoanker', 'onStart', ['tempo'], [],
+      'Mit jedem eigenen Zug +7 % Tempo — höchstens +70 %',
+      function (c) {
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Tempoanker', fn: function (k) {
+          k.self._anker = (k.self._anker || 0) + 1;
+          if (k.self._anker <= 8) k.self.spd = Math.round(k.self.spd * 1.07);
+        } });
+      }),
+    passiv('brennglas', 'Brennglas', 'onStart', [], [],
+      'Alle Zustände, die diese Einheit anlegt, fallen 50 % größer aus — dafür schlägt sie ein Drittel schwächer',
+      function (c) {
+        c.self.fluchmeister = (c.self.fluchmeister || 1) * 1.5;
+        c.self.atk = Math.round(c.self.atk * 0.67);
+      }),
+
+    /* -- Unterstützung -- */
+    passiv('schlachtplan', 'Schlachtplan', 'onStart', [], [],
+      'Der ganze Trupp schlägt 6 % härter je Mitglied — eine volle Reihe lohnt sich',
+      function (c) {
+        var n = c.allies().length;
+        c.allies().forEach(function (u) { u.atk = Math.round(u.atk * (1 + 0.06 * n)); });
+      }),
+    passiv('vorbild', 'Vorbild', 'onStart', [], [],
+      'Der stärkste Verbündete bekommt +20 % Angriff — auch die Einheit selbst, wenn sie es ist',
+      function (c) {
+        var best = c.allies().reduce(function (a, b) { return b.atk > a.atk ? b : a; }, c.allies()[0]);
+        if (best) best.atk = Math.round(best.atk * 1.2);
+      }),
+    passiv('feldsanitaeter', 'Feldsanitäter', 'onDamaged', ['heilung'], [],
+      'Jeder vierte Treffer auf den Trupp heilt den am schwersten Verwundeten um 14 %',
+      function (c) {
+        if (!zaehler(c.self, 'feldsanitaeter', 4)) return;
+        var u = schwaechstes(c.allies(), function (x) { return x.hp / x.maxHp; });
+        if (u) c.heal(u, u.maxHp * 0.14, 'Feldsanitäter');
+      }),
+    passiv('wachabloesung', 'Wachablösung', 'onAllyDeath', ['schild'], [],
+      'Fällt ein Verbündeter, bekommt der neue Vorderste ein Schild über 30 % seines Lebens',
+      function (c) {
+        var vorn = c.allies()[0];
+        if (vorn) c.applyStatus(vorn, 'schild', Math.round(vorn.maxHp * 0.3));
+      }),
+    passiv('letztes_aufgebot', 'Letztes Aufgebot', 'onTurnStart', [], [],
+      'Steht die Einheit als letzte, schlägt sie 55 % härter und ist 30 % schneller',
+      function (c) {
+        if (c.allies().length > 1 || c.self._aufgebot) return;
+        c.self._aufgebot = 1;
+        c.self.atk = Math.round(c.self.atk * 1.55);
+        c.self.spd = Math.round(c.self.spd * 1.3);
+      }),
+    passiv('opfergang', 'Opfergang', 'onStart', [], [],
+      'Die Verbündeten schlagen 22 % härter — die Einheit selbst nur noch mit der Hälfte',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        andere.forEach(function (u) { u.atk = Math.round(u.atk * 1.22); });
+        c.self.atk = Math.round(c.self.atk * 0.5);
+      }),
+
+    /* -- Defensive -- */
+    passiv('standfest', 'Standfest', 'onDamaged', [], [],
+      'Je 10 % fehlendem Leben erleidet die Einheit 5 % weniger Schaden — höchstens 40 %',
+      function (c) {
+        var fehlt = 1 - c.self.hp / c.self.maxHp;
+        c.self.minderung = Math.max(c.self.minderung || 0, Math.min(0.4, fehlt * 0.5));
+      }),
+    passiv('todesverachtung', 'Todesverachtung', 'onDamaged', [], [],
+      'Unter einem Viertel Leben schlägt die Einheit 45 % härter und ist 25 % schneller — einmal je Kampf',
+      function (c) {
+        if (c.self._verachtung || c.self.hp > c.self.maxHp * 0.25) return;
+        c.self._verachtung = 1;
+        c.self.atk = Math.round(c.self.atk * 1.45);
+        c.self.spd = Math.round(c.self.spd * 1.25);
+      }),
+    passiv('trotz', 'Trotz', 'onDamaged', [], [],
+      'Jeder erlittene Treffer gibt dauerhaft +3 Rüstung',
+      function (c) { c.self.def += 3; }),
+    passiv('rueckendeckung', 'Rückendeckung', 'onStart', [], [],
+      'Solange ein Verbündeter weniger Leben hat als die Einheit, erleidet sie 22 % weniger Schaden',
+      function (c) {
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Rückendeckung', fn: function (k) {
+          var schwaecher = k.allies().some(function (u) {
+            return u !== k.self && u.hp / u.maxHp < k.self.hp / k.self.maxHp;
+          });
+          k.self.minderung = schwaecher ? Math.max(k.self.minderung || 0, 0.22) : 0;
+        } });
+      }),
+    passiv('zaehe_haut', 'Zähe Haut', 'onStart', [], [],
+      'Kein Treffer kostet mehr als 18 % des maximalen Lebens',
+      function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.18); }),
+    passiv('festgewachsen', 'Festgewachsen', 'onStart', [], [],
+      'Kein Treffer kostet mehr als 11 % des maximalen Lebens — dafür ist die Einheit halb so schnell',
+      function (c) {
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.11);
+        c.self.spd = Math.max(1, Math.round(c.self.spd * 0.5));
+      }),
+
     /* ---- Shions Linien ----------------------------------------------------
        Vier Linien, vier Stufen: Angriff (Chaos in Werte), Mechanik (das Chaos
        selbst), Unterstützung (Antichaos für den Trupp), Defensive (Oger-Fleisch).
@@ -4854,7 +5013,18 @@
     /* Defensive: hält die eigene Einheit stehen. */
     schildwall: 'defensive', bollwerkmeister: 'defensive', regenerator: 'defensive',
     lebensraub: 'defensive', zaeh: 'defensive', wiederkehr: 'defensive',
-    dornenhaut: 'defensive', konterstoss: 'defensive', windschritt: 'defensive'
+    dornenhaut: 'defensive', konterstoss: 'defensive', windschritt: 'defensive',
+
+    /* Zweite Schicht: Lage statt Prozent. */
+    vorhut: 'angriff', hinterhalt: 'angriff', duellant: 'angriff', anlauf: 'angriff',
+    zweitschlag: 'angriff', grenzgang: 'angriff',
+    markierer: 'mechanik', panzerknacker: 'mechanik', zuendschnur: 'mechanik',
+    nachhall: 'mechanik', tempoanker: 'mechanik', brennglas: 'mechanik',
+    schlachtplan: 'unterstuetzung', vorbild: 'unterstuetzung',
+    feldsanitaeter: 'unterstuetzung', wachabloesung: 'unterstuetzung',
+    letztes_aufgebot: 'unterstuetzung', opfergang: 'unterstuetzung',
+    standfest: 'defensive', todesverachtung: 'defensive', trotz: 'defensive',
+    rueckendeckung: 'defensive', zaehe_haut: 'defensive', festgewachsen: 'defensive'
   };
   function kategorie(id) { return KATEGORIE[id] || null; }
 
@@ -5388,6 +5558,16 @@
     fluchweber: 4, frostschneide: 4, scharfrichter: 4, panzerbrecher: 4, kettenschlag: 4,
     wiederkehr: 5,
     wirrsal: 2, entropiewelle: 4, gesetzlos: 3,
+    /* Zweite Bibliotheksschicht: die Stufe sagt, wie eng die Lage ist, in der
+       die Passive zahlt. Eine, die immer wirkt, ist üblich; eine, die einen
+       Preis trägt oder eine seltene Lage braucht, ist episch. */
+    vorhut: 2, hinterhalt: 2, duellant: 3, anlauf: 3, zweitschlag: 3, grenzgang: 4,
+    markierer: 3, panzerknacker: 2, zuendschnur: 2, nachhall: 3, tempoanker: 3, brennglas: 4,
+    schlachtplan: 3, vorbild: 2, feldsanitaeter: 3, wachabloesung: 2,
+    letztes_aufgebot: 4, opfergang: 4,
+    standfest: 2, todesverachtung: 3, trotz: 2, rueckendeckung: 3,
+    zaehe_haut: 3, festgewachsen: 4,
+
     /* Shions Linien: die Stufe ist die Raritaet — Stufe 1 ungewoehnlich, Stufe 4 legendaer. */
     shion_ang1: 2, shion_mec1: 2, shion_unt1: 2, shion_def1: 2,
     shion_ang2: 3, shion_mec2: 3, shion_unt2: 3, shion_def2: 3,
