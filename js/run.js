@@ -90,7 +90,7 @@
   var PRAEDATOR_SLOTS = [0, 1, 2, 3];             // verschlungene Gegnerfähigkeiten
 
   var START_UNITS = ['rimuru', 'gobta', 'gobkyu', 'sturmwolf', 'riesenameise', 'skelettritter',
-    'rigurd', 'rigur', 'gobwa', 'kurobe', 'schattenwolf', 'souka', 'kaefergarde',
+    'rigurd', 'rigur', 'gobwa', 'kurobe', 'souka', 'kaefergarde',
     'giftfalter', 'daemonengarde', 'gruftwaechter', 'drachenknecht', 'quellenpriesterin',
     'ranga', 'shion', 'gabiru', 'wightkoenig'];
   var START_RELICS = ['kern_des_zorns', 'schuppenpanzer', 'lebensquell', 'windschuhe',

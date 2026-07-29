@@ -1225,6 +1225,48 @@ Tippfehler in dem Moment, in dem er entsteht.
 
 `dev/balance.js 600`: 51 % frisch, kein Build-Ausreißer, `GRUNDHAERTE` unverändert.
 
+### Phase 28 (2026-07-29): Weniger Wölfe, drei neue Kits
+
+**Vier Schattenwölfe waren zu viel.** Ranga (Donner, Schatten, Tempo) und drei
+weitere derselben Art, deren Rollen sich mit ihm überschnitten. Geblieben sind
+Ranga und der **Sturmwolf** — Hetzjagd, Exekution, Blutung, also die einzige der
+drei Wolfsrollen ohne Überschneidung. **Schattenwolf** und **Rudelalpha** sind
+gestrichen, samt Signaturen, 32 Linien-Passiven und Freischalt-Eintrag. Der
+Roster steht damit bei 38 Einheiten.
+
+Das Streichen legte zwei Löcher frei, und beide sind beim Handschreiben der
+nächsten drei Einheiten gefüllt worden:
+
+- **Dunkelheit** hatte im ganzen Roster nur einen Träger — den Schattenwolf.
+  Sie sitzt jetzt bei **Diablo**, dem Urtümlichen Schwarzen, wo sie ohnehin
+  hingehört. Sein Kit ist die einzige Zange im Spiel, die von zwei Seiten
+  drückt: Dunkelheit senkt, was der Gegner austeilt, Verderbnis erhöht, was bei
+  ihm ankommt. Dazu `Ewige Nacht`, die fünfte Fähigkeit, die einen Abbau
+  aussetzt (`dunkelheitBleibt`).
+- **Frost und Erstarrung** hatten seit Phase 20 überhaupt keinen Träger mehr —
+  ein Element lebte nur noch in der Bibliothek und bei Gegnern. **Veldora**
+  holt sie zurück: Sturm heißt bei ihm Fläche plus Frost, Böen über die ganze
+  Reihe und Gegner, die erstarren. Donner bleibt bei Ranga, damit sich die
+  beiden Wetterlagen nicht doppeln.
+
+**Milim** ist die dritte und die ungewöhnlichste: sie trägt als einzige Einheit
+im Spiel **gar keinen Zustand**. Ihre Linien sind reine Zahlen, die sich
+gegenseitig aufschaukeln — `Drachenzorn` schlägt auf dasselbe Ziel mit jedem
+Schlag 12 % härter, `Drakonische Wut` wächst pro Zug ohne Grenze, `Unsterbliche
+Drachin` steht mit doppeltem Angriff wieder auf. Das ist ihr Charakter und
+zugleich die Nische, die im Roster fehlte: ein Bau, der nichts anlegt.
+
+Zwei Namen saßen falsch und sind mitgewandert: Diablos Signatur hieß
+schlicht `Verderbnis` — im Kampflog nicht vom Zustand zu unterscheiden — und
+heißt jetzt `Belial`, was kanonisch ohnehin seine Fähigkeit ist. Rimurus
+Keystone trug diesen Namen zu Unrecht und heißt jetzt `Azathoth`.
+
+**Der Wächter-Test hat sich zum ersten Mal bezahlt gemacht.** Er fing
+`dunkelheitBleibt` in dem Moment, in dem ich es schrieb — dasselbe Muster, das
+bei `zaeherBrand` zwei Phasen lang unbemerkt blieb.
+
+`dev/balance.js 600`: 51 % frisch, `GRUNDHAERTE` unverändert.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

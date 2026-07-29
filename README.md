@@ -49,7 +49,7 @@ auf `file://` sparsam mit `localStorage` umgehen.
 index.html  style.css
 js/rng.js        deterministischer RNG (mulberry32), Seed = ganzer Run
 js/abilities.js  40 Signaturen, 16 Pool-Aktive, 34 Passive
-js/data.js       40 Einheiten, 49 Relikte, 27 Ausrüstungen, GLOSSAR (Tooltip-Texte)
+js/data.js       38 Einheiten, 52 Relikte, 32 Ausrüstungen, GLOSSAR (Tooltip-Texte)
 js/combat.js     simulate(teamA, teamB, seed, opts) — reine Funktion, kein DOM
 js/enemies.js    48 Gegner (mit eigenen Aktiven), 3 Bosse, 50 Begegnungen, 26 Ereignisse
 js/run.js        Karte, Ränge, Belohnungen, Shop, Prädator, Speicherstand

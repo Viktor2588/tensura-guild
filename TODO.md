@@ -226,6 +226,21 @@ Abgearbeitet in Phase 27:
 - [x] Wächter-Test gegen tote Felder: jedes Feld, das eine Fähigkeit setzt, muss
       in `combat.js` vorkommen. Fängt Tippfehler wie `zaeherBrand` sofort.
 
+Abgearbeitet in Phase 28:
+
+- [x] Schattenwolf und Rudelalpha gestrichen — vier Wölfe waren zu viel und
+      überschnitten sich mit Ranga. Geblieben: Ranga (Donner/Schatten) und
+      Sturmwolf (Exekution/Blutung). Roster: 38 Einheiten.
+- [x] Diablo handgeschrieben: Dunkelheit + Verderbnis, die einzige Zange, die
+      von zwei Seiten drückt. Er erbt Dunkelheit vom gestrichenen Schattenwolf.
+- [x] Veldora handgeschrieben: Fläche + Frost. Holt Frost und Erstarrung
+      zurück, die seit Phase 20 gar keinen Träger mehr im Roster hatten.
+- [x] Milim handgeschrieben: trägt als einzige Einheit gar keinen Zustand —
+      reine, sich aufschaukelnde Zahlen.
+- [x] `dunkelheitBleibt` als fünfte Abbau-Ausnahme (Diablos Ewige Nacht).
+- [x] Diablos Signatur `Verderbnis` → `Belial`, Rimurus Keystone `Belial` →
+      `Azathoth`. Generator: noch 15 Einheiten.
+
 Balance und Werkzeug:
 
 - `dev/linien.js` braucht seit Phase 23 über zehn Minuten statt drei — die

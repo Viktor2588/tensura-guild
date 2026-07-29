@@ -485,11 +485,12 @@
            Verwundbar  kein Tick-Schaden — 15 % Rüstung ignoriert, für JEDEN Angreifer
            Donner      kein Tick — lädt, bis 6 (4) Stapel liegen, dann Entladung
 
-         Abbau: jeder Zustand verliert je Trägerzug 1 Stapel. Vier Fähigkeiten
+         Abbau: jeder Zustand verliert je Trägerzug 1 Stapel. Fünf Fähigkeiten
          dürfen das aussetzen — dann bleibt der Stapel liegen und tickt weiter,
          was den Schaden über Zeit vervielfacht statt ihn nur zu erhöhen:
            brandBleibt        auf dem Ziel   (Benimaru: Dauerbrand)
            verderbnisBleibt   auf dem Ziel   (Adalmann: Verfluchtes Wort)
+           dunkelheitBleibt   auf dem Ziel   (Diablo: Ewige Nacht)
            offeneWunde        auf dem Ziel   (Souei: Offene Wunde)
            zaehesChaos        auf dem Ziel   (Shion: Gesetzlosigkeit)
          Gemessen ist der Unterschied gewaltig: 6 Brand-Ticks ohne Flag gegen
@@ -528,11 +529,11 @@
         if (!alive(u)) return;
       }
       if (u.status.schatten > 0) u.status.schatten--;
-      if (u.status.dunkelheit > 0) u.status.dunkelheit--;
+      if (u.status.dunkelheit > 0 && !u.dunkelheitBleibt) u.status.dunkelheit--;
       if (u.status.verwundbar > 0 && !u.offeneWunde) u.status.verwundbar--;
       /* Der Würfelwurf der Runde: neue Werte, solange Chaos oder Antichaos liegt. */
       var negC = u.status.chaos || 0;
-      /* `antichaosDoppelt` (Rimurus Belial und Herr der Monster): das
+      /* `antichaosDoppelt` (Rimurus Azathoth und Herr der Monster): das
          Aufwärts-Rad zählt doppelt, ohne dass mehr Stapel liegen. */
       var posC = (u.status.antichaos || 0) * (u.antichaosDoppelt ? 2 : 1);
       if (negC || posC) {

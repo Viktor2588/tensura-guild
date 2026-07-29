@@ -63,7 +63,9 @@ function def(id, rank) { return R.resolve(mit(id, rank)); }
 
 /* ---------------------------------------------------------------- Daten */
 head('Daten');
-ok(GD.units.length >= 40, GD.units.length + ' Einheiten');
+/* 38, nicht 40: Schattenwolf und Rudelalpha sind bewusst gestrichen — vier
+   Wölfe waren zu viel, und ihre Rollen überschnitten sich mit Ranga. */
+ok(GD.units.length >= 38, GD.units.length + ' Einheiten');
 ok(EN.all.length >= 30, EN.all.length + ' Gegner');
 ok(GD.relics.length >= 30, GD.relics.length + ' Relikte');
 /* Eine Signatur je Einheit, plus die Verwandlungsformen: Shions Chaosklinge
@@ -459,7 +461,7 @@ ok(AB.keywords(teile).gift && AB.keywords(teile).gift.verstaerker >= 1,
    'die Synergie-Anzeige sieht den Relikt-Verstärker');
 
 /* Verstärker sollen früh greifen, sonst entsteht der Build nie. */
-var frueh = ['apito', 'giftfalter', 'diablo', 'benimaru', 'schattenwolf', 'testarossa'];
+var frueh = ['apito', 'giftfalter', 'diablo', 'benimaru', 'veldora', 'testarossa'];
 ok(frueh.every(function (id) {
   var erste = AB.get(GD.unit(id).passives[0]);
   return (erste.amplifies || []).length > 0;
@@ -468,11 +470,11 @@ ok(frueh.every(function (id) {
 /* Bosse widerstehen Erstarrung — sonst gewinnt Frost jeden Einzelkampf. */
 /* Linien-Einheiten tragen ohne ausdrückliche Wahl KEINE Passiven — der
    Frostträger muss sie also bekommen. */
-/* Frost lebt seit dem Umbau von Schattenwolf und Ranga nur noch in der
-   Bibliothek und bei den Gegnern — der Träger bekommt ihn also von dort. */
-var frostM = R.member('schattenwolf');
+/* Frost hat mit Veldora wieder einen Träger im Roster — sein Eissturm und
+   sein Frostatem lassen erstarren. */
+var frostM = R.member('veldora');
 frostM.rank = 3; frostM.durfteWaehlen = 1;
-frostM.passives = ['frostkern', 'frostschneide'];
+frostM.passives = ['veldora_mec1', 'veldora_ang2'];
 var frostTeam = [R.resolve(frostM)];
 var trefferBoss = 0, trefferNormal = 0, widerstand = 0;
 for (var fb = 0; fb < 30; fb++) {
@@ -1080,8 +1082,9 @@ function mitPassiven(id, rank, pas) {
   var m = R.member(id); m.rank = rank; m.passives = pas || [];
   return R.resolve(m);
 }
-/* Schatten: Treffer gehen ganz daneben — Ausweichen gab es vorher nicht. */
-var schattenM = mitPassiven('schattenwolf', 3, ['schatten_mec1', 'schatten_mec3']);
+/* Schatten: Treffer gehen ganz daneben — Ausweichen gab es vorher nicht.
+   Seit die Schattenwölfe weg sind, trägt Souei den Schatten. */
+var schattenM = mitPassiven('souei', 3, ['souei_def1', 'souei_def4']);
 var schattenLog = C.simulate([schattenM], [sandsack(60000, { atk: 40, spd: 30 })], 4).log;
 ok(schattenLog.some(function (l) { return l.type === 'ausweichen'; }),
    'Schatten lässt Treffer ganz danebengehen');
@@ -1096,9 +1099,11 @@ function spaeterSchaden(dunkel) {
      messbare Dunkelheit braucht es die Linie, nicht einen Stapel. */
   /* Der Sack steht VORN und hält den Schläger — sonst stirbt die Quelle der
      Dunkelheit, und die späten Treffer sind wieder ungedämpft. */
+  /* Dunkelheit sitzt seit dem Wolf-Umbau bei Diablo — als Urtümlicher
+     Schwarzer ist er ihr einziger Träger im Roster. */
   var team = dunkel
     ? [sandsack(400000, { spd: 8 }),
-       mitPassiven('schattenwolf', 3, ['schatten_mec2', 'schatten_mec4', 'schatten_unt4'])]
+       mitPassiven('diablo', 3, ['diablo_mec1', 'diablo_mec3', 'diablo_mec4'])]
     : [sandsack(400000, { spd: 8 })];
   var treffer = C.simulate(team, [boese], 6).log
     .filter(function (l) { return l.type === 'hit' && l.source === 'Schläger'; });

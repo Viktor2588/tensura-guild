@@ -397,9 +397,9 @@ Schadensarten gehen durch Schilde. Verderbnis und Verwundbar ticken gar nicht �
 sie liegen einfach und verändern, was ankommt.
 
 **Abbau und die vier Ausnahmen.** Normalerweise verliert jeder Zustand pro
-Trägerzug einen Stapel. Vier Fähigkeiten setzen das aus: Benimarus *Dauerbrand*,
-Adalmanns *Verfluchtes Wort*, Soueis *Offene Wunde* und Shions
-*Gesetzlosigkeit*. Der Unterschied ist keine Feinheit, sondern eine
+Trägerzug einen Stapel. Fünf Fähigkeiten setzen das aus: Benimarus *Dauerbrand*,
+Adalmanns *Verfluchtes Wort*, Diablos *Ewige Nacht*, Soueis *Offene Wunde* und
+Shions *Gesetzlosigkeit*. Der Unterschied ist keine Feinheit, sondern eine
 Größenordnung — ein Brand, der nicht abbaut, tickt gemessen 150 statt 6 Mal.
 Wer eine davon zieht, sollte den Trupp darum herum bauen.
 

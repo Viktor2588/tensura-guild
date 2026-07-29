@@ -280,6 +280,392 @@
       'Kein einzelner Treffer nimmt Shion mehr als 16 % ihres maximalen Lebens',
       function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.155); }),
 
+    /* ---- Diablos Linien: der Urtümliche Schwarze ---------------------------
+       Noir. Er blendet und verdirbt: Dunkelheit senkt, was der Gegner AUSTEILT,
+       Verderbnis erhöht, was bei ihm ANKOMMT. Beides zusammen ist die einzige
+       Zange im Spiel, die von zwei Seiten gleichzeitig drückt — und seit den
+       Schattenwölfen ist er der einzige Träger von Dunkelheit.                */
+
+    passiv('diablo_ang1', 'Zeitgleiche Verachtung', 'onHit', ['dunkelheit'], [],
+      'Der erste Schlag des Kampfes trifft 140 % härter und hüllt jeden Gegner in 4 Dunkelheit',
+      function (c) {
+        if (c.self._auftakt) return;
+        c.self._auftakt = 1;
+        c.dmg *= 2.4;
+        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 4); });
+      }),
+    passiv('diablo_ang2', 'Zwiefacher Griff', 'onHit', ['verderbnis'], ['dunkelheit'],
+      'Jeder dritte Schlag trifft für jeden Stapel Dunkelheit UND Verderbnis auf dem Ziel 8 % härter — höchstens doppelt',
+      function (c) {
+        if (!zaehler(c.self, 'diablo_ang2', 3)) return;
+        var n = (c.target.status.dunkelheit || 0) + (c.target.status.verderbnis || 0);
+        c.dmg *= 1 + Math.min(1, 0.08 * n);
+      }),
+    passiv('diablo_ang3', 'Höllenflamme', 'onHit', ['verderbnis'], ['verderbnis'],
+      'Führt ein Verbündeter Verderbnis, legt jeder Schlag 3 Verderbnis an und trifft verdorbene Ziele 25 % härter — sonst 1 Verderbnis',
+      function (c) {
+        var mit = truppFuehrt(c, 'verderbnis');
+        if (mit && (c.target.status.verderbnis || 0) > 0) c.dmg *= 1.25;
+        c.applyStatus(c.target, 'verderbnis', mit ? 3 : 1);
+      }),
+    passiv('diablo_ang4', 'Zeitstopp', 'onStart', ['dunkelheit'], [],
+      'Diablo schlägt in jedem Zug ein zweites Mal für 70 % — dafür bleibt von seiner Rüstung nichts',
+      function (c) {
+        c.self.def = 0;
+        c.addEffect(c.self, { hook: 'onHit', name: 'Zeitstopp', fn: function (k) {
+          if (k.self._zeitstopp) return;
+          k.self._zeitstopp = 1;
+          k.deal(k.target, k.self.atk * 0.7, 'Zeitstopp');
+          k.self._zeitstopp = 0;
+        } });
+      }),
+
+    passiv('diablo_mec1', 'Umnachtung', 'onStart', ['dunkelheit'], [],
+      'Hüllt zu Kampfbeginn jeden Gegner in 5 Dunkelheit — sie schlagen fühlbar schwächer zu',
+      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 5); }); }),
+    passiv('diablo_mec2', 'Verderbte Seele', 'onHit', ['verderbnis', 'dunkelheit'], [],
+      'Jeder dritte Schlag legt 4 Verderbnis und 3 Dunkelheit auf alle Gegner',
+      function (c) {
+        if (!zaehler(c.self, 'diablo_mec2', 3)) return;
+        c.foes().forEach(function (f) {
+          c.applyStatus(f, 'verderbnis', 4);
+          c.applyStatus(f, 'dunkelheit', 3);
+        });
+      }),
+    passiv('diablo_mec3', 'Vollendete Zange', 'onTurnStart', ['dunkelheit'], ['verderbnis'],
+      'Führt ein Verbündeter Verderbnis, legt Diablo jeden Zug 2 Dunkelheit auf alle Gegner nach — sonst 1',
+      function (c) {
+        var n = truppFuehrt(c, 'verderbnis') ? 2 : 1;
+        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', n); });
+      }),
+    passiv('diablo_mec4', 'Ewige Nacht', 'onStart', ['dunkelheit'], [],
+      'Dunkelheit auf Diablos Zielen baut sich nicht mehr ab — dafür legt er nur noch halb so viel an',
+      function (c) {
+        c.self.fluchmeister = (c.self.fluchmeister || 1) * 0.5;
+        c.addEffect(c.self, { hook: 'onHit', name: 'Ewige Nacht', fn: function (k) {
+          k.target.dunkelheitBleibt = 1;
+          k.applyStatus(k.target, 'dunkelheit', 2);
+        } });
+      }),
+
+    passiv('diablo_unt1', 'Diener des Herrn', 'onStart', [], [],
+      'Zu Kampfbeginn +12 % Angriff für den Trupp und 3 Dunkelheit auf jeden Gegner',
+      function (c) {
+        c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.12); });
+        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 3); });
+      }),
+    passiv('diablo_unt2', 'Zerrüttung', 'onDamaged', ['verderbnis'], [],
+      'Jeder vierte Treffer auf den Trupp legt allen Gegnern 4 Verderbnis an',
+      function (c) {
+        if (!zaehler(c.self, 'diablo_unt2', 4)) return;
+        c.foes().forEach(function (f) { c.applyStatus(f, 'verderbnis', 4); });
+      }),
+    passiv('diablo_unt3', 'Schleier des Noir', 'onStart', ['dunkelheit'], ['dunkelheit'],
+      'Führt ein Verbündeter Dunkelheit, blendet jeder Treffer des Trupps mit 2 — sonst mit 1',
+      function (c) {
+        var n = truppFuehrt(c, 'dunkelheit') ? 2 : 1;
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Schleier des Noir', fn: function (k) {
+            k.applyStatus(k.target, 'dunkelheit', n);
+          } });
+        });
+      }),
+    passiv('diablo_unt4', 'Perfekter Diener', 'onStart', ['dunkelheit'], [],
+      'Der Trupp trifft umnachtete Ziele 30 % härter — Diablo selbst schlägt nur noch mit einem Drittel',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Perfekter Diener', fn: function (k) {
+            if ((k.target.status.dunkelheit || 0) > 0) k.dmg *= 1.3;
+          } });
+        });
+      }),
+
+    passiv('diablo_def1', 'Dämonenleib', 'onStart', ['schild'], [],
+      'Beginnt mit einem Schild über 30 % seines Lebens',
+      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.3)); }),
+    passiv('diablo_def2', 'Blendwerk', 'onDamaged', ['dunkelheit'], [],
+      'Jeder dritte erlittene Treffer hüllt den Angreifer in 4 Dunkelheit',
+      function (c) {
+        if (!zaehler(c.self, 'diablo_def2', 3)) return;
+        var f = c.foes()[0];
+        if (f) c.applyStatus(f, 'dunkelheit', 4);
+      }),
+    passiv('diablo_def3', 'Unantastbar', 'onStart', [], ['dunkelheit'],
+      'Führt ein Verbündeter Dunkelheit, kostet kein Treffer mehr als 14 % seines Lebens — sonst 20 %',
+      function (c) {
+        var d = truppFuehrt(c, 'dunkelheit') ? 0.14 : 0.2;
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+      }),
+    passiv('diablo_def4', 'Ultimative Hingabe', 'onDeath', ['dunkelheit'], [],
+      'Steht einmal mit 45 % Leben wieder auf und hüllt alle Gegner in 8 Dunkelheit — danach heilt ihn nichts mehr',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1;
+        c.self.hp = Math.round(c.self.maxHp * 0.45);
+        c.self.heilfaktor = -1;
+        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 8); });
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name,
+                     side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* ---- Milims Linien: rohe Zerstörung ------------------------------------
+       Als einzige Einheit im Spiel trägt sie GAR KEINEN Zustand — kein Gift,
+       kein Brand, keine Marke. Ihre Linien sind reine Zahlen, die sich
+       gegenseitig aufschaukeln: je länger sie draufhält, desto härter trifft
+       sie. Das ist ihr Charakter und zugleich die Nische, die im Roster fehlte.  */
+
+    passiv('milim_ang1', 'Drachenfaust', 'onHit', [], [],
+      'Der erste Schlag des Kampfes trifft dreifach und ignoriert die Rüstung',
+      function (c) {
+        if (c.self._auftakt) return;
+        c.self._auftakt = 1;
+        c.dmg *= 3;
+        c.self.pierce = Math.max(c.self.pierce || 0, 1);
+      }),
+    passiv('milim_ang2', 'Drachenzorn', 'onHit', [], [],
+      'Jeder Schlag auf dasselbe Ziel trifft 12 % härter als der davor — ein Zielwechsel setzt zurück',
+      function (c) {
+        if (c.self._zorn_ziel !== c.target.key) { c.self._zorn_ziel = c.target.key; c.self._zorn = 0; }
+        c.self._zorn = Math.min(10, (c.self._zorn || 0) + 1);
+        c.dmg *= 1 + 0.12 * (c.self._zorn - 1);
+      }),
+    passiv('milim_ang3', 'Zerstörerin', 'onHit', ['exekution'], ['exekution'],
+      'Führt ein Verbündeter Exekution, trifft Milim Ziele unter 50 % Leben doppelt — sonst 30 % härter',
+      function (c) {
+        if (c.target.hp >= c.target.maxHp * 0.5) return;
+        c.dmg *= truppFuehrt(c, 'exekution') ? 2 : 1.3;
+      }),
+    passiv('milim_ang4', 'Drakonische Wut', 'onStart', [], [],
+      'Milim wird mit jedem eigenen Zug 8 % stärker, ohne Grenze — dafür heilt sie nichts mehr',
+      function (c) {
+        c.self.heilfaktor = -1;
+        c.self.regen = 0;
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Drakonische Wut', fn: function (k) {
+          k.self.atk = Math.round(k.self.atk * 1.08);
+        } });
+      }),
+
+    passiv('milim_mec1', 'Drachenpanzer', 'onStart', [], [],
+      'Beginnt den Kampf mit 60 % Rüstungsdurchschlag und +8 Rüstung',
+      function (c) {
+        c.self.pierce = Math.max(c.self.pierce || 0, 0.6);
+        c.self.def += 8;
+      }),
+    passiv('milim_mec2', 'Nachschlag', 'onHit', [], [],
+      'Jeder dritte Schlag schlägt sofort ein zweites Mal für 110 %',
+      function (c) {
+        if (!zaehler(c.self, 'milim_mec2', 3)) return;
+        c.deal(c.target, c.self.atk * 1.1, 'Nachschlag');
+      }),
+    passiv('milim_mec3', 'Übermacht', 'onHit', [], ['exekution'],
+      'Führt ein Verbündeter Exekution, ignoriert Milim jede Rüstung — sonst die Hälfte',
+      function (c) {
+        c.self.pierce = Math.max(c.self.pierce || 0, truppFuehrt(c, 'exekution') ? 1 : 0.5);
+      }),
+    passiv('milim_mec4', 'Drachenbrecher', 'onStart', ['flaeche'], [],
+      'Jeder Schlag trifft alle übrigen Gegner für 60 % mit — dafür hält Milim nur noch 60 % aus',
+      function (c) {
+        c.self.maxHp = Math.round(c.self.maxHp * 0.6);
+        c.self.hp = Math.min(c.self.hp, c.self.maxHp);
+        c.addEffect(c.self, { hook: 'onHit', name: 'Drachenbrecher', fn: function (k) {
+          k.foes().forEach(function (f) {
+            if (f !== k.target) k.deal(f, k.self.atk * 0.6, 'Drachenbrecher');
+          });
+        } });
+      }),
+
+    passiv('milim_unt1', 'Kraft der Demonlord', 'onStart', [], [],
+      'Zu Kampfbeginn +16 % Angriff für den ganzen Trupp',
+      function (c) { c.allies().forEach(function (u) { u.atk = Math.round(u.atk * 1.16); }); }),
+    passiv('milim_unt2', 'Mitreißen', 'onDamaged', [], [],
+      'Jeder vierte Treffer auf den Trupp gibt allen dauerhaft +8 Angriff',
+      function (c) {
+        if (!zaehler(c.self, 'milim_unt2', 4)) return;
+        c.allies().forEach(function (u) { u.atk += 8; });
+      }),
+    passiv('milim_unt3', 'Angriffsbefehl', 'onStart', [], ['tempo'],
+      'Führt ein Verbündeter Tempo, bekommt der Trupp +25 % Durchschlag und +10 % Tempo — sonst nur den Durchschlag',
+      function (c) {
+        var mit = truppFuehrt(c, 'tempo');
+        c.allies().forEach(function (u) {
+          u.pierce = Math.max(u.pierce || 0, 0.25);
+          if (mit) u.spd = Math.round(u.spd * 1.1);
+        });
+      }),
+    passiv('milim_unt4', 'Bezwingerin der Drachen', 'onStart', [], [],
+      'Der Trupp schlägt 35 % härter — Milim selbst hält nur noch die Hälfte aus',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        andere.forEach(function (u) { u.atk = Math.round(u.atk * 1.35); });
+        c.self.maxHp = Math.round(c.self.maxHp * 0.5);
+        c.self.hp = Math.min(c.self.hp, c.self.maxHp);
+      }),
+
+    passiv('milim_def1', 'Drachenhaut', 'onStart', ['schild'], [],
+      'Beginnt mit einem Schild über 36 % ihres Lebens',
+      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.36)); }),
+    passiv('milim_def2', 'Unbeirrt', 'onDamaged', [], [],
+      'Jeder dritte erlittene Treffer heilt 9 % und gibt dauerhaft +6 Angriff',
+      function (c) {
+        if (!zaehler(c.self, 'milim_def2', 3)) return;
+        c.heal(c.self, c.self.maxHp * 0.09, 'Unbeirrt');
+        c.self.atk += 6;
+      }),
+    passiv('milim_def3', 'Drachenblut', 'onStart', [], ['heilung'],
+      'Führt ein Verbündeter Heilung, kostet kein Treffer mehr als 14 % ihres Lebens — sonst 20 %',
+      function (c) {
+        var d = truppFuehrt(c, 'heilung') ? 0.14 : 0.2;
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+      }),
+    passiv('milim_def4', 'Unsterbliche Drachin', 'onDeath', [], [],
+      'Steht einmal mit 50 % Leben und doppeltem Angriff wieder auf — danach heilt sie nichts mehr',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1;
+        c.self.hp = Math.round(c.self.maxHp * 0.5);
+        c.self.atk = Math.round(c.self.atk * 2);
+        c.self.heilfaktor = -1;
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name,
+                     side: c.self.side, hp: c.self.hp });
+      }),
+
+    /* ---- Veldoras Linien: der Sturmdrache -----------------------------------
+       Sturm heißt hier Fläche plus Frost: Böen, die die ganze Reihe treffen und
+       Gegner erstarren lassen. Frost hatte seit Phase 20 gar keinen Träger mehr
+       im Roster — Veldora holt ihn zurück, und Donner bleibt bei Ranga, damit
+       sich die beiden Wetterlagen nicht doppeln.                              */
+
+    passiv('veldora_ang1', 'Sturmbö', 'onHit', ['flaeche'], [],
+      'Der erste Schlag des Kampfes fährt in die ganze Reihe: 130 % härter, und jeder andere Gegner nimmt 70 %',
+      function (c) {
+        if (c.self._auftakt) return;
+        c.self._auftakt = 1;
+        c.dmg *= 2.3;
+        c.foes().forEach(function (f) {
+          if (f !== c.target) c.deal(f, c.self.atk * 0.7, 'Sturmbö');
+        });
+      }),
+    passiv('veldora_ang2', 'Eissturm', 'onHit', ['frost'], [],
+      'Jeder dritte Schlag trifft 80 % härter und lässt das Ziel erstarren',
+      function (c) {
+        if (!zaehler(c.self, 'veldora_ang2', 3)) return;
+        c.dmg *= 1.8;
+        c.applyStatus(c.target, 'erstarrung', 1);
+      }),
+    passiv('veldora_ang3', 'Wirbel', 'onHit', ['flaeche'], ['flaeche'],
+      'Führt ein Verbündeter Fläche, schlägt Veldora 12 % härter je Gegner — sonst 5 %',
+      function (c) {
+        c.dmg *= 1 + (truppFuehrt(c, 'flaeche') ? 0.12 : 0.05) * c.foes().length;
+      }),
+    passiv('veldora_ang4', 'Ungezähmt', 'onStart', ['flaeche'], [],
+      'Jeder Schlag trifft die ganze Reihe voll — dafür nur noch mit 50 % Schaden',
+      function (c) {
+        c.addEffect(c.self, { hook: 'onHit', name: 'Ungezähmt', fn: function (k) {
+          k.dmg *= 0.5;
+          k.foes().forEach(function (f) {
+            if (f !== k.target) k.deal(f, k.dmg, 'Ungezähmt');
+          });
+        } });
+      }),
+
+    passiv('veldora_mec1', 'Frostatem', 'onStart', ['frost'], [],
+      'Lässt zu Kampfbeginn jeden Gegner erstarren',
+      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'erstarrung', 1); }); }),
+    passiv('veldora_mec2', 'Wetterwechsel', 'onDamaged', ['frost'], [],
+      'Jeder dritte erlittene Treffer lässt den Angreifer erstarren',
+      function (c) {
+        if (!zaehler(c.self, 'veldora_mec2', 3)) return;
+        var f = c.foes()[0];
+        if (f) c.applyStatus(f, 'erstarrung', 1);
+      }),
+    passiv('veldora_mec3', 'Bitterkälte', 'onHit', ['frost'], ['frost'],
+      'Führt ein Verbündeter Frost, lässt jeder Schlag zu 35 % erstarren — sonst zu 12 %',
+      function (c) {
+        if (c.rng() >= (truppFuehrt(c, 'frost') ? 0.35 : 0.12)) return;
+        c.applyStatus(c.target, 'erstarrung', 1);
+      }),
+    passiv('veldora_mec4', 'Sturmherr', 'onStart', ['flaeche', 'frost'], [],
+      'Jeder Zug fegt für 55 % über alle Gegner und lässt einen erstarren — dafür schlägt Veldora selbst 35 % schwächer',
+      function (c) {
+        c.self.atk = Math.round(c.self.atk * 0.65);
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Sturmherr', fn: function (k) {
+          var f = k.foes();
+          f.forEach(function (x) { k.deal(x, k.self.atk * 0.55, 'Sturmherr'); });
+          if (f[0]) k.applyStatus(f[0], 'erstarrung', 1);
+        } });
+      }),
+
+    passiv('veldora_unt1', 'Sturmfront', 'onStart', ['tempo'], [],
+      'Zu Kampfbeginn +14 % Tempo für den Trupp und 60 % Schaden auf jeden Gegner',
+      function (c) {
+        c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.14); });
+        c.foes().forEach(function (f) { c.deal(f, c.self.atk * 0.6, 'Sturmfront'); });
+      }),
+    passiv('veldora_unt2', 'Gewitterwand', 'onDamaged', ['flaeche'], [],
+      'Jeder vierte Treffer auf den Trupp fegt für 50 % über alle Gegner',
+      function (c) {
+        if (!zaehler(c.self, 'veldora_unt2', 4)) return;
+        c.foes().forEach(function (f) { c.deal(f, c.self.atk * 0.5, 'Gewitterwand'); });
+      }),
+    passiv('veldora_unt3', 'Auge des Sturms', 'onStart', [], ['flaeche'],
+      'Führt ein Verbündeter Fläche, trifft der Trupp gegen mehrere Gegner 26 % härter — sonst 10 %',
+      function (c) {
+        var m = truppFuehrt(c, 'flaeche') ? 1.26 : 1.1;
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Auge des Sturms', fn: function (k) {
+            if (k.foes().length >= 2) k.dmg *= m;
+          } });
+        });
+      }),
+    passiv('veldora_unt4', 'Sturm der Vernichtung', 'onStart', ['flaeche'], [],
+      'Jeder Treffer des Trupps fegt für 25 % über alle übrigen Gegner — Veldora selbst schlägt nur noch mit einem Drittel',
+      function (c) {
+        var andere = c.allies().filter(function (u) { return u !== c.self; });
+        if (!andere.length) return;
+        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.allies().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Sturm der Vernichtung', fn: function (k) {
+            k.foes().forEach(function (f) {
+              if (f !== k.target) k.deal(f, k.self.atk * 0.25, 'Sturm der Vernichtung');
+            });
+          } });
+        });
+      }),
+
+    passiv('veldora_def1', 'Drachenschuppen', 'onStart', ['schild'], [],
+      'Beginnt mit einem Schild über 34 % seines Lebens',
+      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.34)); }),
+    passiv('veldora_def2', 'Sturmauge', 'onDamaged', [], [],
+      'Jeder dritte erlittene Treffer heilt 9 % seines Lebens',
+      function (c) {
+        if (!zaehler(c.self, 'veldora_def2', 3)) return;
+        c.heal(c.self, c.self.maxHp * 0.09, 'Sturmauge');
+      }),
+    passiv('veldora_def3', 'Eispanzer', 'onStart', [], ['frost'],
+      'Führt ein Verbündeter Frost, kostet kein Treffer mehr als 14 % seines Lebens — sonst 20 %',
+      function (c) {
+        var d = truppFuehrt(c, 'frost') ? 0.14 : 0.2;
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
+      }),
+    passiv('veldora_def4', 'Wiederkehr des Sturms', 'onDeath', ['flaeche', 'frost'], [],
+      'Steht einmal mit 45 % Leben wieder auf, fegt für 120 % über alle Gegner und lässt sie erstarren — danach heilt ihn nichts mehr',
+      function (c) {
+        if (c.self._auf) return;
+        c.self._auf = 1;
+        c.self.hp = Math.round(c.self.maxHp * 0.45);
+        c.self.heilfaktor = -1;
+        c.foes().forEach(function (f) {
+          c.deal(f, c.self.atk * 1.2, 'Wiederkehr des Sturms');
+          c.applyStatus(f, 'erstarrung', 1);
+        });
+        c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name,
+                     side: c.self.side, hp: c.self.hp });
+      }),
+
     /* ---- Rimurus Linien: Prädator, Analyse und Ordnung ----------------------
        Er hat als einziger keine eigene Marke, die er anlegt — er LIEST, was
        andere angelegt haben. Jeder verschiedene Zustand auf einem Gegner ist
@@ -311,11 +697,11 @@
         var f = truppFuehrt(c, 'chaos') ? 0.03 : 0.01;
         c.dmg *= 1 + Math.min(0.6, f * (c.self.status.antichaos || 0));
       }),
-    passiv('rimuru_ang4', 'Belial', 'onStart', ['chaos'], [],
+    passiv('rimuru_ang4', 'Azathoth', 'onStart', ['chaos'], [],
       'Rimurus Antichaos zählt doppelt für alles, was daran hängt — dafür verliert er in jedem Zug einen Stapel obendrein',
       function (c) {
         c.self.antichaosDoppelt = 1;
-        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Belial', fn: function (k) {
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Azathoth', fn: function (k) {
           if ((k.self.status.antichaos || 0) > 0) k.self.status.antichaos--;
         } });
       }),
@@ -2027,238 +2413,6 @@
         } });
       }),
 
-    /* ---- Schattenwölfe: Dunkelheit ----------------------------------------
-       Der Schattenwolf nimmt dem Gegner die Wucht, statt selbst zuzuschlagen.
-       Dunkelheit senkt fremden Schaden, Schatten lässt Treffer danebengehen.  */
-
-    passiv('schatten_ang1', 'Aus dem Dunkel', 'onHit', ['dunkelheit'], [],
-      'Der erste Schlag des Kampfes trifft 130 % härter und hüllt alle Gegner in 3 Dunkelheit',
-      function (c) {
-        if (c.self._auftakt) return;
-        c.self._auftakt = 1;
-        c.dmg *= 2.3;
-        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 3); });
-      }),
-    passiv('schatten_ang2', 'Blindschlag', 'onHit', ['dunkelheit'], [],
-      'Jeder dritte Schlag trifft 80 % härter und legt 3 Dunkelheit nach',
-      function (c) {
-        if (!zaehler(c.self, 'schatten_ang2', 3)) return;
-        c.dmg *= 1.8;
-        c.applyStatus(c.target, 'dunkelheit', 3);
-      }),
-    passiv('schatten_ang3', 'Nachtklinge', 'onHit', [], ['dunkelheit'],
-      'Führt ein Verbündeter Dunkelheit, trifft der Wolf umnachtete Ziele 32 % härter — sonst 10 %',
-      function (c) {
-        if ((c.target.status.dunkelheit || 0) > 0) {
-          c.dmg *= truppFuehrt(c, 'dunkelheit') ? 1.32 : 1.1;
-        }
-      }),
-    passiv('schatten_ang4', 'Herz der Finsternis', 'onStart', ['dunkelheit'], [],
-      'Im Schatten schlägt der Wolf doppelt — außerhalb nur noch halb',
-      function (c) {
-        c.addEffect(c.self, { hook: 'onHit', name: 'Herz der Finsternis', fn: function (k) {
-          k.dmg *= (k.self.status.schatten || 0) > 0 ? 2 : 0.5;
-        } });
-      }),
-
-    passiv('schatten_mec1', 'Schattenmantel', 'onStart', ['schatten'], [],
-      'Beginnt den Kampf tief im Schatten',
-      function (c) { c.applyStatus(c.self, 'schatten', 6); }),
-    passiv('schatten_mec2', 'Verdunkeln', 'onDamaged', ['dunkelheit'], [],
-      'Jeder dritte erlittene Treffer hüllt alle Gegner in 3 Dunkelheit',
-      function (c) {
-        if (!zaehler(c.self, 'schatten_mec2', 3)) return;
-        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 3); });
-      }),
-    passiv('schatten_mec3', 'Tiefer Schatten', 'onStart', ['schatten'], [],
-      'Führt ein Verbündeter Schatten, legt jeder Zug 3 Schatten nach — sonst 1',
-      function (c) {
-        var n = truppFuehrt(c, 'schatten') ? 3 : 1;
-        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Tiefer Schatten', fn: function (k) {
-          k.applyStatus(k.self, 'schatten', n);
-        } });
-      }),
-    passiv('schatten_mec4', 'Neumond', 'onStart', ['dunkelheit'], [],
-      'Jeder Zug hüllt alle Gegner in 4 Dunkelheit — dafür schlägt der Wolf nur noch mit einem Drittel',
-      function (c) {
-        c.self.atk = Math.round(c.self.atk * 0.34);
-        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Neumond', fn: function (k) {
-          k.foes().forEach(function (f) { k.applyStatus(f, 'dunkelheit', 4); });
-        } });
-      }),
-
-    passiv('schatten_unt1', 'Schattenwurf', 'onStart', ['schatten'], [],
-      'Zu Kampfbeginn 3 Schatten für den ganzen Trupp',
-      function (c) { c.allies().forEach(function (u) { c.applyStatus(u, 'schatten', 3); }); }),
-    passiv('schatten_unt2', 'Blendung', 'onDamaged', ['dunkelheit'], [],
-      'Jeder vierte Treffer auf den Trupp hüllt alle Gegner in 3 Dunkelheit',
-      function (c) {
-        if (!zaehler(c.self, 'schatten_unt2', 4)) return;
-        c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 3); });
-      }),
-    passiv('schatten_unt3', 'Nachtjagd', 'onStart', [], ['dunkelheit'],
-      'Führt ein Verbündeter Dunkelheit, legt jeder Treffer des Trupps 2 nach — sonst 1',
-      function (c) {
-        var n = truppFuehrt(c, 'dunkelheit') ? 2 : 1;
-        c.allies().forEach(function (u) {
-          c.addEffect(u, { hook: 'onHit', name: 'Nachtjagd', fn: function (k) {
-            k.applyStatus(k.target, 'dunkelheit', n);
-          } });
-        });
-      }),
-    passiv('schatten_unt4', 'Mondlose Nacht', 'onStart', ['schatten'], [],
-      'Der ganze Trupp bleibt im Schatten — der Wolf selbst schlägt nur noch mit einem Viertel',
-      function (c) {
-        var andere = c.allies().filter(function (u) { return u !== c.self; });
-        if (!andere.length) return;
-        c.self.atk = Math.round(c.self.atk * 0.25);
-        c.allies().forEach(function (u) {
-          c.addEffect(u, { hook: 'onTurnStart', name: 'Mondlose Nacht', fn: function (k) {
-            k.applyStatus(k.self, 'schatten', 2);
-          } });
-        });
-      }),
-
-    passiv('schatten_def1', 'Schattenhaut', 'onStart', ['schatten', 'schild'], [],
-      'Beginnt im Schatten und mit einem Schild über 25 % seines Lebens',
-      function (c) {
-        c.applyStatus(c.self, 'schatten', 4);
-        c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.25));
-      }),
-    passiv('schatten_def2', 'Schattengestalt', 'onDamaged', ['schatten'], [],
-      'Jeder dritte erlittene Treffer wirft den Wolf zurück in den Schatten',
-      function (c) {
-        if (!zaehler(c.self, 'schatten_def2', 3)) return;
-        c.applyStatus(c.self, 'schatten', 5);
-      }),
-    passiv('schatten_def3', 'Umkehrschatten', 'onDamaged', ['konter'], [],
-      'Führt ein Verbündeter Konter, zahlt der Wolf 40 % des Angriffs zurück — sonst 15 %',
-      function (c) {
-        var f = c.foes()[0];
-        if (f) c.deal(f, c.self.atk * (truppFuehrt(c, 'konter') ? 0.4 : 0.15), 'Umkehrschatten');
-      }),
-    passiv('schatten_def4', 'Nebelwolf', 'onStart', ['schatten'], [],
-      'Kein Treffer kostet mehr als 14 % seines Lebens — dafür heilt den Wolf nichts mehr',
-      function (c) {
-        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.135);
-        c.self.heilfaktor = -1;
-        c.self.regen = 0;
-      }),
-
-    /* ---- Rudelalpha: das Rudel ---------------------------------------------
-       Der Alpha ist nur so stark wie die Wölfe um ihn herum. Fast alles zählt,
-       wie viele noch stehen.                                                  */
-
-    passiv('alpha_ang1', 'Leitwolf', 'onHit', [], [],
-      'Der erste Schlag des Kampfes trifft 100 % härter, je Verbündetem weitere 20 %',
-      function (c) {
-        if (c.self._auftakt) return;
-        c.self._auftakt = 1;
-        c.dmg *= 2 + 0.2 * (c.allies().length - 1);
-      }),
-    passiv('alpha_ang2', 'Erster Biss', 'onHit', [], [],
-      'Jeder dritte Schlag trifft doppelt und gibt dem Trupp +4 Angriff',
-      function (c) {
-        if (!zaehler(c.self, 'alpha_ang2', 3)) return;
-        c.dmg *= 2;
-        c.allies().forEach(function (u) { u.atk += 4; });
-      }),
-    passiv('alpha_ang3', 'Alphaschlag', 'onHit', [], ['tempo'],
-      'Führt ein Verbündeter Tempo, schlägt der Alpha 30 % härter — sonst 10 %',
-      function (c) { c.dmg *= truppFuehrt(c, 'tempo') ? 1.3 : 1.1; }),
-    passiv('alpha_ang4', 'Rudelführer', 'onStart', [], [],
-      'Der Alpha schlägt 12 % härter je stehendem Verbündeten — allein nur noch halb so hart',
-      function (c) {
-        c.addEffect(c.self, { hook: 'onHit', name: 'Rudelführer', fn: function (k) {
-          var n = k.allies().length - 1;
-          k.dmg *= n > 0 ? 1 + 0.12 * n : 0.5;
-        } });
-      }),
-
-    passiv('alpha_mec1', 'Hetze', 'onStart', ['tempo'], [],
-      'Beginnt den Kampf mit +28 % Tempo',
-      function (c) { c.self.spd = Math.round(c.self.spd * 1.28); }),
-    passiv('alpha_mec2', 'Zweiter Wind', 'onDamaged', [], [],
-      'Jeder dritte erlittene Treffer heilt 10 % und gibt +10 % Tempo',
-      function (c) {
-        if (!zaehler(c.self, 'alpha_mec2', 3)) return;
-        c.heal(c.self, c.self.maxHp * 0.07, 'Zweiter Wind');
-        c.self.spd = Math.round(c.self.spd * 1.1);
-      }),
-    passiv('alpha_mec3', 'Sturmlauf', 'onStart', [], ['tempo'],
-      'Führt ein Verbündeter Tempo, bekommt der ganze Trupp +18 % Tempo — sonst +6 %',
-      function (c) {
-        var f = truppFuehrt(c, 'tempo') ? 1.18 : 1.06;
-        c.allies().forEach(function (u) { u.spd = Math.round(u.spd * f); });
-      }),
-    passiv('alpha_mec4', 'Rudelrausch', 'onStart', ['tempo'], [],
-      'Jeder gefallene Verbündete gibt dem Alpha +35 % Angriff — dafür heilt ihn nichts mehr',
-      function (c) {
-        c.self.heilfaktor = -1;
-        c.self.regen = 0;
-        c.addEffect(c.self, { hook: 'onAllyDeath', name: 'Rudelrausch', fn: function (k) {
-          k.self.atk = Math.round(k.self.atk * 1.35);
-        } });
-      }),
-
-    passiv('alpha_unt1', 'Rudelbefehl', 'onStart', [], [],
-      'Zu Kampfbeginn +12 % Angriff und +10 % Tempo für den ganzen Trupp',
-      function (c) {
-        c.allies().forEach(function (u) {
-          u.atk = Math.round(u.atk * 1.12);
-          u.spd = Math.round(u.spd * 1.1);
-        });
-      }),
-    passiv('alpha_unt2', 'Beschützer', 'onDamaged', ['schild'], [],
-      'Jeder vierte Treffer auf den Trupp legt allen ein Schild an',
-      function (c) {
-        if (!zaehler(c.self, 'alpha_unt2', 4)) return;
-        c.allies().forEach(function (u) { c.applyStatus(u, 'schild', Math.round(c.self.atk * 0.6)); });
-      }),
-    passiv('alpha_unt3', 'Gemeinsam stark', 'onStart', [], ['tempo'],
-      'Führt ein Verbündeter Tempo, schlägt der Trupp 6 % härter je Mitglied — sonst 2 %',
-      function (c) {
-        var f = (truppFuehrt(c, 'tempo') ? 0.06 : 0.02) * c.allies().length;
-        c.allies().forEach(function (u) { u.atk = Math.round(u.atk * (1 + f)); });
-      }),
-    passiv('alpha_unt4', 'Das Rudel', 'onStart', [], [],
-      'Die Verbündeten bekommen +30 % Angriff und Leben — der Alpha selbst greift kaum noch an',
-      function (c) {
-        var andere = c.allies().filter(function (u) { return u !== c.self; });
-        if (!andere.length) return;
-        andere.forEach(function (u) {
-          u.atk = Math.round(u.atk * 1.3);
-          var add = Math.round(u.maxHp * 0.3);
-          u.maxHp += add; u.hp += add;
-        });
-        c.self.atk = Math.round(c.self.atk * 0.2);
-      }),
-
-    passiv('alpha_def1', 'Dickes Winterfell', 'onStart', ['schild'], [],
-      'Beginnt mit einem Schild über 34 % seines Lebens',
-      function (c) { c.applyStatus(c.self, 'schild', Math.round(c.self.maxHp * 0.34)); }),
-    passiv('alpha_def2', 'Wachsam', 'onDamaged', [], [],
-      'Jeder dritte erlittene Treffer heilt 8 % seines Lebens',
-      function (c) {
-        if (!zaehler(c.self, 'alpha_def2', 3)) return;
-        c.heal(c.self, c.self.maxHp * 0.08, 'Wachsam');
-      }),
-    passiv('alpha_def3', 'Nie allein', 'onStart', [], ['schild'],
-      'Führt ein Verbündeter Schild, kostet kein Treffer mehr als 17 % seines Lebens — sonst 23 %',
-      function (c) {
-        var d = truppFuehrt(c, 'schild') ? 0.17 : 0.23;
-        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
-      }),
-    passiv('alpha_def4', 'Alter Alpha', 'onStart', [], [],
-      'Der Alpha erleidet 12 % weniger Schaden je Verbündetem — allein 30 % mehr',
-      function (c) {
-        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Alter Alpha', fn: function (k) {
-          var n = k.allies().length - 1;
-          k.self.minderung = n > 0 ? Math.min(0.5, 0.12 * n) : -0.3;
-        } });
-        var n0 = c.allies().length - 1;
-        c.self.minderung = n0 > 0 ? Math.min(0.5, 0.12 * n0) : -0.3;
-      }),
     /* ---- Gabiru: der Wirbelspeer -------------------------------------------
        Der selbsternannte Held trifft breit statt tief. Seine Linien zahlen für
        jeden zusätzlichen Gegner.                                              */
@@ -2832,8 +2986,8 @@
 
   var LINE_UNITS = [
     'zegion', 'apito', 'riesenameise', 'kaefergarde', 'giftfalter',
-    'diablo', 'testarossa', 'ultima', 'carrera', 'daemonengarde',
-    'veldora', 'milim', 'drachenwelpe', 'windrache',
+ 'testarossa', 'ultima', 'carrera', 'daemonengarde',
+ 'drachenwelpe', 'windrache',
     'wightkoenig', 'skelettritter', 'gruftwaechter', 'seelenhexe'
   ];
 
@@ -2843,13 +2997,10 @@
     riesenameise: 'Riesenameise',
     kaefergarde: 'Käfergarde',
     giftfalter: 'Giftfalter',
-    diablo: 'Diablo',
     testarossa: 'Testarossa',
     ultima: 'Ultima',
     carrera: 'Carrera',
     daemonengarde: 'Dämonengarde',
-    veldora: 'Veldora',
-    milim: 'Milim',
     drachenwelpe: 'Drachenwelpe',
     windrache: 'Windrache',
     wightkoenig: 'Wight-König',
@@ -2865,14 +3016,11 @@
     kaefergarde: { kind: 'shield', defRevive: false },
     giftfalter: { kind: 'status', statusKey: 'gift', defRevive: false },
 
-    diablo: { kind: 'status', statusKey: 'verderbnis', defRevive: false },
     testarossa: { kind: 'exekution', defRevive: false },
     ultima: { kind: 'status', statusKey: 'verderbnis', defRevive: false },
     carrera: { kind: 'status', statusKey: 'brand', defRevive: false },
     daemonengarde: { kind: 'status', statusKey: 'verderbnis', defRevive: false },
 
-    veldora: { kind: 'flaeche', defRevive: false },
-    milim: { kind: 'exekution', defRevive: false },
     drachenwelpe: { kind: 'status', statusKey: 'brand', defRevive: false },
     windrache: { kind: 'tempo', defRevive: false },
 
@@ -3202,6 +3350,24 @@
     /* Rimuru und Adalmann standen im Generator, bis ihre Kits eigene Linien
        verlangten: Rimuru liest fremde Zustände statt eigene anzulegen, und der
        Priester in Adalmann führt Licht neben der Totenmagie. */
+    diablo: {
+      angriff: ['diablo_ang1', 'diablo_ang2', 'diablo_ang3', 'diablo_ang4'],
+      mechanik: ['diablo_mec1', 'diablo_mec2', 'diablo_mec3', 'diablo_mec4'],
+      unterstuetzung: ['diablo_unt1', 'diablo_unt2', 'diablo_unt3', 'diablo_unt4'],
+      defensive: ['diablo_def1', 'diablo_def2', 'diablo_def3', 'diablo_def4']
+    },
+    milim: {
+      angriff: ['milim_ang1', 'milim_ang2', 'milim_ang3', 'milim_ang4'],
+      mechanik: ['milim_mec1', 'milim_mec2', 'milim_mec3', 'milim_mec4'],
+      unterstuetzung: ['milim_unt1', 'milim_unt2', 'milim_unt3', 'milim_unt4'],
+      defensive: ['milim_def1', 'milim_def2', 'milim_def3', 'milim_def4']
+    },
+    veldora: {
+      angriff: ['veldora_ang1', 'veldora_ang2', 'veldora_ang3', 'veldora_ang4'],
+      mechanik: ['veldora_mec1', 'veldora_mec2', 'veldora_mec3', 'veldora_mec4'],
+      unterstuetzung: ['veldora_unt1', 'veldora_unt2', 'veldora_unt3', 'veldora_unt4'],
+      defensive: ['veldora_def1', 'veldora_def2', 'veldora_def3', 'veldora_def4']
+    },
     rimuru: {
       angriff: ['rimuru_ang1', 'rimuru_ang2', 'rimuru_ang3', 'rimuru_ang4'],
       mechanik: ['rimuru_mec1', 'rimuru_mec2', 'rimuru_mec3', 'rimuru_mec4'],
@@ -3286,18 +3452,6 @@
       unterstuetzung: ['sturm_unt1', 'sturm_unt2', 'sturm_unt3', 'sturm_unt4'],
       defensive: ['sturm_def1', 'sturm_def2', 'sturm_def3', 'sturm_def4']
     },
-    schattenwolf: {
-      angriff: ['schatten_ang1', 'schatten_ang2', 'schatten_ang3', 'schatten_ang4'],
-      mechanik: ['schatten_mec1', 'schatten_mec2', 'schatten_mec3', 'schatten_mec4'],
-      unterstuetzung: ['schatten_unt1', 'schatten_unt2', 'schatten_unt3', 'schatten_unt4'],
-      defensive: ['schatten_def1', 'schatten_def2', 'schatten_def3', 'schatten_def4']
-    },
-    rudelalpha: {
-      angriff: ['alpha_ang1', 'alpha_ang2', 'alpha_ang3', 'alpha_ang4'],
-      mechanik: ['alpha_mec1', 'alpha_mec2', 'alpha_mec3', 'alpha_mec4'],
-      unterstuetzung: ['alpha_unt1', 'alpha_unt2', 'alpha_unt3', 'alpha_unt4'],
-      defensive: ['alpha_def1', 'alpha_def2', 'alpha_def3', 'alpha_def4']
-    },
     gabiru: {
       angriff: ['gab_ang1', 'gab_ang2', 'gab_ang3', 'gab_ang4'],
       mechanik: ['gab_mec1', 'gab_mec2', 'gab_mec3', 'gab_mec4'],
@@ -3334,8 +3488,8 @@
   [
     'rimuru',
     'zegion', 'apito', 'riesenameise', 'kaefergarde', 'giftfalter',
-    'diablo', 'testarossa', 'ultima', 'carrera', 'daemonengarde',
-    'veldora', 'milim', 'drachenwelpe', 'windrache',
+    'testarossa', 'ultima', 'carrera', 'daemonengarde',
+    'milim', 'drachenwelpe', 'windrache',
     'wightkoenig', 'skelettritter', 'gruftwaechter', 'seelenhexe'
   ].forEach(function (unitId) {
     linien[unitId] = {
@@ -3684,22 +3838,6 @@
           if (naechstes) c.attack(1.2, naechstes);
         }
       }),
-    aktiv('sig_schattenwolf', 'Schattenbiss', 3, ['schatten', 'dunkelheit'],
-      '120 % Schaden, legt 2 Dunkelheit auf das Ziel und hüllt sich selbst in 2 Schatten. ' +
-      'Gegen ein bereits verdunkeltes Ziel sind es 190 %.',
-      function (c) {
-        c.attack(c.target.status.dunkelheit > 0 ? 1.9 : 1.2);
-        c.applyStatus(c.target, 'dunkelheit', 2);
-        c.applyStatus(c.self, 'schatten', 2);
-      }),
-    aktiv('sig_rudelalpha', 'Rudelbefehl', 4, ['tempo'],
-      'Alle Verbündeten dauerhaft +20 % Tempo, die schnellste Einheit zusätzlich +10 % Angriff.',
-      function (c) {
-        var alle2 = c.allies();
-        alle2.forEach(function (u) { u.spd = Math.round(u.spd * 1.2); });
-        var schnellste = alle2.reduce(function (a, b) { return b.spd > a.spd ? b : a; });
-        schnellste.atk = Math.round(schnellste.atk * 1.1);
-      }),
 
     /* --- Echsenmenschen --- */
     aktiv('sig_gabiru', 'Wirbelspeer', 3, ['flaeche'],
@@ -3777,12 +3915,12 @@
       }),
 
     /* --- Dämonen --- */
-    aktiv('sig_diablo', 'Verderbnis', 3, ['verderbnis'],
+    aktiv('sig_diablo', 'Belial', 3, ['verderbnis'],
       '140 % Schaden und 3 Verderbnis. Ist das Ziel bereits vollständig verderbt, reißt der Fluch zusätzlich 12 % seines maximalen Lebens heraus.',
       function (c) {
         var voll = (c.target.status.verderbnis || 0) >= 5;
         c.attack(1.4);
-        if (voll) c.deal(c.target, c.target.maxHp * 0.12, 'Verderbnis', { pure: true });
+        if (voll) c.deal(c.target, c.target.maxHp * 0.12, 'Belial', { pure: true });
         c.applyStatus(c.target, 'verderbnis', 3);
       }),
     aktiv('sig_testarossa', 'Todesstreich', 4, ['exekution'],
