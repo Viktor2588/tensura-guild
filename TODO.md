@@ -374,6 +374,12 @@ Abgearbeitet in Phase 39:
       nachgereicht — diese Kombination kann nur durch den Bug entstanden sein.
 - [x] Geld heißt Gerudo.
 
+- Die Stärke von Items & relikten ist nicht sauber gebalanced. Manche items fühlen sich viel zu stark an dafür das sie ungewühnlich sind & mache legendary items fühlen sich zu schwach an.
+- Erste begegnung sollte immer ein kampf sein.
+- Relikt freischalten sollte schneller gehen
+- Ich brauche eine Möglichkeit alle Fähigkeiten jeder Einheit einzusehen
+- Bedrohungsstufe ist immer 0, kein fortschritt zu sehen. obwohl ein run gewonnen wird. 
+
 Balance und Werkzeug:
 
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller
@@ -389,6 +395,3 @@ Balance und Werkzeug:
 - Anfänger/Veteran-Abstand bei 12 Punkten (50 gegen 62 % Siege).
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
   oder „eine auf S" besser ist, misst er damit nicht.
-- Die Stärke von Items & relikten ist nicht sauber gebalanced. Manche items fühlen sich viel zu stark an dafür das sie ungewühnlich sind & mache legendary items fühlen sich zu schwach an.
-- Erste begegnung sollte immer ein kampf sein.
-- Relikt freischalten sollte schneller gehen
