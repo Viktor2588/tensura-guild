@@ -79,7 +79,7 @@ var formen = AB.signatures.filter(function (a) {
 ok(AB.signatures.length - formen.length === GD.units.length,
    'genau eine Signatur je Einheit (' + (AB.signatures.length - formen.length) + ')');
 var formIds = formen.map(function (a) { return a.id; }).sort().join(',');
-ok(formIds === 'sig_ranga_fusion,sig_shion_verdorben',
+ok(formIds === 'sig_ranga_fusion,sig_shion_ordnung,sig_shion_verdorben',
    'dazu die Verwandlungsformen, die keiner Einheit fest gehören (' + formIds + ')');
 ok(AB.pool.length >= 12 && AB.passives.length >= 20,
    AB.pool.length + ' Pool-Aktive, ' + AB.passives.length + ' Passive');
@@ -1281,23 +1281,39 @@ ok(rangaFusion(null) === 0 && rangaFusion('gobkyu') === 0,
    'die Schattenfusion greift weder allein noch mit einem anderen Goblin');
 ok(rangaFusion('gobta') === 1, 'mit Gobta verschmelzen die beiden — genau einmal');
 
-/* Shions Verwandlung: keine Zahl, sondern eine Schwelle. Sie darf nur fallen,
-   wenn der Bau sie trägt — zehn Chaos auf dem Ziel UND zehn Antichaos auf ihr. */
+/* Shions zwei Verwandlungen: keine Zahlen, sondern Schwellen an
+   verschiedenen Enden. Ordnung zählt, was sie SELBST trägt (10 Antichaos),
+   Verderbnis, was auf dem FELD liegt (20 Chaos zusammen). */
 function shionLauf(pass) {
   var m = R.member('shion'); m.rank = 3; m.passives = pass;
   var sack = { id: 's', name: 'Sack', tags: ['bestie', 'front'], hp: 60000, atk: 20,
     def: 0, spd: 8, actives: [], effects: [], keywords: [] };
   var log = C.simulate([R.resolve(m)], [sack], 14).log;
+  var v = log.filter(function (l) { return l.type === 'verwandlung'; });
   return {
-    verwandelt: log.filter(function (l) { return l.type === 'verwandlung'; }).length,
+    formen: v.map(function (l) { return l.form; }),
+    bonus: v.length ? v[0].bonus : 0,
+    stapel: v.length ? v[0].stapel : 0,
+    ordnung: log.filter(function (l) { return l.source === 'Klinge der Ordnung'; }).length,
     klinge: log.filter(function (l) { return l.source === 'Chaosklinge des Verdorbenen'; }).length
   };
 }
-ok(shionLauf(['shion_ang5']).verwandelt === 0,
-   'ohne Antichaos-Quelle verwandelt sich Shion nie');
-var verdorben = shionLauf(['shion_ang5', 'shion_unt1']);
-ok(verdorben.verwandelt === 1, 'mit dem Realitätswarp fällt die Schwelle — genau einmal');
-ok(verdorben.klinge > 0, 'und danach schlägt die Chaosklinge des Verdorbenen statt des Chaosschlags');
+ok(shionLauf(['shion_ang5']).formen.length === 0,
+   'ohne Antichaos-Quelle wird Shion nie zum Ordnungsteufel');
+var ordnung = shionLauf(['shion_ang5', 'shion_unt1']);
+ok(ordnung.formen.length === 1 && ordnung.formen[0] === 'Ordnungsteufel',
+   'mit dem Realitätswarp fällt die Ordnungs-Schwelle — genau einmal');
+ok(ordnung.ordnung > 0, 'und danach schlägt die Klinge der Ordnung');
+
+var verdorben = shionLauf(['shion_ang6', 'shion_mec1']);
+ok(verdorben.formen.length === 1 && verdorben.formen[0] === 'Verdorbener Teufel',
+   'zwanzig Chaos auf dem Feld machen sie zum Verdorbenen Teufel');
+ok(verdorben.klinge > 0, 'und danach schlägt die Chaosklinge des Verdorbenen');
+
+/* Der Bonus hängt an der Zahl der Stapel, nicht nur am Erreichen der Schwelle. */
+ok(verdorben.stapel >= 20 && verdorben.bonus === Math.min(90, 2 * verdorben.stapel),
+   'der Bonus skaliert mit den Stapeln (' + verdorben.stapel + ' Stapel → +' +
+   verdorben.bonus + ' %)');
 
 /* Zwei Fähigkeiten setzen den Abbau eines Zustands aus. Das ist genau die Art
    Flag, die still ins Leere läuft, wenn der Name nicht zur Engine passt —

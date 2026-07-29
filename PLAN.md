@@ -1407,6 +1407,35 @@ n=28 und der größten Lauftiefe aller Eimer (15,0 von 16) — zwei Runden Trimm
 haben ihn um null Punkte bewegt. Das riecht nach Auswahl, nicht nach Stärke;
 vor dem nächsten Eingriff gehört das gezielt nachgemessen, so wie bei Frost.
 
+### Phase 32 (2026-07-29): Shions zwei Schwellen
+
+`Verdorbener Teufel` verlangte beides auf einmal — 10 Chaos auf dem Ziel UND
+10 Antichaos auf Shion. Das ist jetzt in zwei Passive geteilt, an
+verschiedenen Enden desselben Rades:
+
+- **Ordnungsteufel** zählt, was Shion **selbst** trägt: ab 10 Antichaos.
+  Signatur wird zur `Klinge der Ordnung`, die den ganzen Trupp mit Antichaos
+  versorgt.
+- **Verdorbener Teufel** zählt, was auf dem **Feld** liegt: ab 20 Chaos über
+  alle Gegner zusammen. Signatur bleibt die `Chaosklinge des Verdorbenen`.
+
+Beide können in einem Kampf fallen — ein voller Chaos/Antichaos-Bau bekommt
+beide, und die Chaosklinge setzt sich als die stärkere Form durch.
+
+**Der Bonus hängt jetzt an der Zahl der Stapel, nicht mehr am bloßen Erreichen
+der Schwelle.** Ordnung gibt 3 % je Antichaos-Stapel, Verderbnis 2 % je
+Chaos-Stapel — auf Angriff voll, auf Tempo halb, auf Leben zu 60 %, gedeckelt
+bei +90 %. Wer nur knapp über die Schwelle kommt, bekommt wenig; wer den Bau
+wirklich fährt, viel. Gemessen: Ordnung mit dem Realitätswarp +36 %, Verderbnis
+mit Chaosmeisterschaft und Gesetzlosigkeit +52 %.
+
+`verwandle()` ist die eine Stelle, an der eine Verwandlung passiert — sonst
+wären die beiden über die Zeit auseinandergelaufen. Der Kampflog nennt die
+Stapel und den Bonus mit (`✦ Shion wird zum Ordnungsteufel (12 Stapel → +36 %)`),
+weil ein variabler Bonus unsichtbar wäre, wenn er nur in der Rechnung stünde.
+
+`dev/balance.js 600`: 50 % frisch.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

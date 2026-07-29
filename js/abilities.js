@@ -165,24 +165,28 @@
        überhaupt erst erreicht — zehn Chaos auf dem Ziel bekommt nur, wer
        stapelt, und zehn Antichaos auf sich selbst nur, wer den Realitätswarp
        trägt. Deshalb kostet sie nichts: die Bedingung IST der Preis. */
-    passiv('shion_ang5', 'Verdorbener Teufel', 'onHit', ['chaos'], ['chaos'],
-      'Triffst du ein Ziel mit 10 Chaos, während du selbst 10 Antichaos hältst, ' +
-      'wirst du zum Verdorbenen Teufel: +45 % Angriff, +25 % Leben, +20 % Tempo — ' +
-      'und die Signatur wird zur Chaosklinge des Verdorbenen (230 % Schaden, doppeltes Chaos). ' +
-      'Einmal je Kampf.',
+    passiv('shion_ang5', 'Ordnungsteufel', 'onHit', ['chaos'], ['chaos'],
+      'Ab 10 Antichaos auf dir selbst wirst du zum Ordnungsteufel: je Stapel ' +
+      '+3 % Angriff, +1,5 % Tempo und +1,8 % Leben — höchstens +90 %. Deine Signatur ' +
+      'wird zur Klinge der Ordnung, die den ganzen Trupp mit Antichaos versorgt. Einmal je Kampf.',
+      function (c) {
+        if (c.self._ordnung) return;
+        var anti = c.self.status.antichaos || 0;
+        if (anti < 10) return;
+        c.self._ordnung = 1;
+        verwandle(c, 'Ordnungsteufel', 'sig_shion_ordnung', anti, 10, 0.03, 0.9);
+      }),
+    passiv('shion_ang6', 'Verdorbener Teufel', 'onHit', ['chaos'], ['chaos'],
+      'Liegen zusammen 20 Chaos auf den Gegnern, wirst du zum Verdorbenen Teufel: ' +
+      'je Stapel +2 % Angriff, +1 % Tempo und +1,2 % Leben — höchstens +90 %. Deine Signatur ' +
+      'wird zur Chaosklinge des Verdorbenen (230 % Schaden, doppeltes Chaos). Einmal je Kampf.',
       function (c) {
         if (c.self._verdorben) return;
-        if ((c.target.status.chaos || 0) < 10 || (c.self.status.antichaos || 0) < 10) return;
+        var chaos = 0;
+        c.foes().forEach(function (f) { chaos += f.status.chaos || 0; });
+        if (chaos < 20) return;
         c.self._verdorben = 1;
-        c.self.atk = Math.round(c.self.atk * 1.45);
-        c.self.spd = Math.round(c.self.spd * 1.2);
-        var mehr = Math.round(c.self.maxHp * 0.25);
-        c.self.maxHp += mehr;
-        c.self.hp += mehr;
-        var sig = byId('sig_shion_verdorben');
-        if (sig) c.self.actives = [sig];
-        c.log.push({ t: 0, type: 'verwandlung', key: c.self.key, unit: c.self.name,
-                     side: c.self.side, form: 'Verdorbener Teufel' });
+        verwandle(c, 'Verdorbener Teufel', 'sig_shion_verdorben', chaos, 20, 0.02, 0.9);
       }),
 
     /* Chaos und Antichaos sind dasselbe Rad, einmal nach unten und einmal nach
@@ -4561,6 +4565,28 @@
     return n;
   }
 
+  /* Zwei Verwandlungen an denselben zwei Rädern, aber an verschiedenen
+   Enden: Ordnung zählt, was Shion SELBST trägt, Verderbnis, was auf dem
+   FELD liegt. Beide sind Schwellen, keine Zahlen — und was sie geben, hängt
+   daran, wie weit man über die Schwelle hinaus gestapelt hat. Wer nur
+   knapp hinkommt, bekommt wenig; wer den Bau wirklich fährt, viel.
+   `verwandle` ist die eine Stelle dafür, damit die beiden nicht mit der
+   Zeit auseinanderlaufen.                                                  */
+  function verwandle(c, form, sigId, stapel, schwelle, proStapel, deckel) {
+    var f = Math.min(deckel, proStapel * stapel);
+    c.self.atk = Math.round(c.self.atk * (1 + f));
+    c.self.spd = Math.round(c.self.spd * (1 + f * 0.5));
+    var mehr = Math.round(c.self.maxHp * f * 0.6);
+    c.self.maxHp += mehr;
+    c.self.hp += mehr;
+    var sig = byId(sigId);
+    if (sig) c.self.actives = [sig];
+    c.log.push({ t: 0, type: 'verwandlung', key: c.self.key, unit: c.self.name,
+                 side: c.self.side, form: form,
+                 stapel: Math.round(stapel), bonus: Math.round(f * 100) });
+  }
+
+
   /* Göttliche Angriffsmagie: Schaden, der weder Rüstung noch Schild kennt.
      Genau deshalb müssen die Anteile klein bleiben. Eine Stelle, damit Shuna
      und Adalmann dasselbe Licht führen und nicht zwei leicht verschiedene. */
@@ -4593,7 +4619,7 @@
      die drei festen Passiven aus data.js. */
   var linien = {
     shion: {
-      angriff: ['shion_ang1', 'shion_ang2', 'shion_ang3', 'shion_ang4', 'shion_ang5'],
+      angriff: ['shion_ang1', 'shion_ang2', 'shion_ang3', 'shion_ang4', 'shion_ang5', 'shion_ang6'],
       mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4', 'shion_mec5'],
       unterstuetzung: ['shion_unt1', 'shion_unt2', 'shion_unt3', 'shion_unt4', 'shion_unt5'],
       defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4', 'shion_def5']
@@ -5083,6 +5109,16 @@
       function (c) {
         c.attack(1.6);
         c.chaos(c.target, CHAOS_JE_RANG[c.self.rank || 0]);
+      }),
+    /* Die Signatur des Ordnungsteufels — das Gegenstück zur Chaosklinge:
+       sie verteilt Ordnung, statt Unordnung zu säen. */
+    aktiv('sig_shion_ordnung', 'Klinge der Ordnung', 4, ['chaos'],
+      '190 % Schaden. Danach bekommt der ganze Trupp Antichaos in Höhe des Rangs — ' +
+      '1 auf C, 2 auf B, 3 auf A, 5 auf S. Die Signatur des Ordnungsteufels.',
+      function (c) {
+        c.attack(1.9);
+        var n = CHAOS_JE_RANG[c.self.rank || 0];
+        c.allies().forEach(function (u) { c.applyStatus(u, 'antichaos', n); });
       }),
     /* Die Signatur der Schattenfusion — Ranga trägt sie erst, wenn Gobta im
        Trupp sitzt und die Verschmelzung greift. */

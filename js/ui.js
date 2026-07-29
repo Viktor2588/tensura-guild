@@ -351,7 +351,10 @@
     else if (l.type === 'entladung') text = '⚡ Entladung an ' + esc(l.unit) + ': ' + l.stapel + ' Stapel schlagen in die ganze Reihe';
     /* Eine Verwandlung ist der seltenste Moment im Kampf — sie darf nicht
        stumm im Log fehlen, sonst merkt niemand, dass die Schwelle fiel. */
-    else if (l.type === 'verwandlung') text = '✦ ' + esc(l.unit) + ' wird zum ' + esc(l.form);
+    /* Der Bonus ist nicht mehr fest, sondern hängt an den Stapeln — dann muss
+       er auch im Log stehen, sonst sieht niemand, was das Stapeln gebracht hat. */
+    else if (l.type === 'verwandlung') text = '✦ ' + esc(l.unit) + ' wird zum ' + esc(l.form) +
+      (l.bonus ? ' (' + l.stapel + ' Stapel → +' + l.bonus + ' %)' : '');
     else if (l.type === 'wut') text = '🔥 ' + esc(l.unit) + ' gerät in Rage: Angriff ' + l.atk;
     else if (l.type === 'aktiv') { text = '⚡ ' + esc(l.unit) + ' setzt ' + esc(l.name) + ' ein';
                                    klasse = (l.side === 'player' ? 'spieler' : 'feind') + ' aktiv'; }

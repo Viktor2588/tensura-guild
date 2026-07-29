@@ -282,6 +282,14 @@ Abgearbeitet in Phase 31:
       Einheitennamen zusammen und lief bei kurzen Präfixen ins Leere; die
       Deckungs-Prüfung verglich „vorderste Einheit" mit einem festen Namen.
 
+Abgearbeitet in Phase 32:
+
+- [x] Shions Verwandlung in zwei Schwellen geteilt: `Ordnungsteufel` ab 10
+      Antichaos auf ihr selbst (Signatur `Klinge der Ordnung`), `Verdorbener
+      Teufel` ab 20 Chaos über alle Gegner zusammen. Beide können fallen.
+- [x] Die Boni skalieren mit der Zahl der Stapel statt fest zu sein — 3 % bzw.
+      2 % je Stapel, gedeckelt bei +90 %. Der Kampflog nennt Stapel und Bonus.
+
 Balance und Werkzeug:
 
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller
