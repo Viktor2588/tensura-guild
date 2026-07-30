@@ -513,18 +513,29 @@ beantwortet, ob dieses Spiel überhaupt ein Raumspiel sein will.
 
 Balance und Werkzeug:
 
-- **Die Build-Eimer sind mit der Truppzusammensetzung verwechselt.** Phase 45 hat
-  gemessen, dass am Heilungs-Vorsprung (71 gegen 46 % Schild) weder das Angebot
-  hängt (85 gegen 61 Quellen, je 17 Träger), noch die Resonanz (halbiert: null
-  Punkte), noch `regen`+`lifesteal` (ganz abgeschaltet: alle Eimer verlieren
-  gleich viel). Damit ist der wahrscheinlichste Rest: `heilung` heißt faktisch
-  „hat einen funktionierenden Unterstützer", und `schild` ist mit 223 von 600
-  Runs der Auffang-Eimer. Vor jedem weiteren Trimmen die Zuordnung in
-  `dev/balance.js` um die Zusammensetzung bereinigen — sonst wird eine
-  Korrelation nachbalanciert.
-- **20 von 39 Einheiten werden nie gespielt** (Benimaru, Souei, Shuna, Hakuro,
-  Zegion, Diablo, Veldora, Milim … aus der 500-Run-Messung). Der Bot draftet sie
-  nicht, also messen alle Build-Zahlen nur die halbe Besetzung.
+- **Der Heilungs-Vorsprung ist echt.** Phase 46 hat den Startdraft des Bots
+  repariert (er nahm jahrelang immer Karte 1) — und Heilung steht danach
+  unverändert bei 70 % gegen 40-46 % für alles andere, bei n=237 von 600 der
+  größte Eimer. Die Vermutung aus Phase 45, die Eimer messten nur die
+  Truppzusammensetzung, ist damit teilweise widerlegt: ein Bot, der wirklich
+  nach Build draftet, landet trotzdem bei denselben 25-30 Punkten Abstand.
+  Weder Angebot (85 gegen 61 Quellen) noch Resonanz (halbiert: null Punkte) noch
+  `regen`+`lifesteal` (abgeschaltet: alle Eimer verlieren gleich viel) erklären
+  ihn. Der nächste Verdacht ist die Wiederbelebung: sie macht einen Tod
+  rückgängig, und keine andere Linie hat etwas Vergleichbares. Gezielt messen,
+  wie oft `revive` in gewonnenen gegen verlorene Runs feuert.
+- **14 Einheiten werden nie gekauft, auch bei voller Freischaltung** — Benimaru,
+  Hakuro, Echsenfürst, Zegion, Apito, Diablo, Testarossa, Ultima, Carrera,
+  Veldora, Milim, Windrache, Gerudo, Adalmann. Alle haben **Kosten 4-5**. Der
+  Bot bewertet Marktposten nach Wert je Magicule (`sc / price`), und das
+  bestraft teure Einheiten doppelt, weil `passt()` die Kosten schon einmal
+  enthält. Entweder ist die Heuristik zu geizig oder die Preiskurve zu steil —
+  beides ist messbar, aber es sind zwei verschiedene Eingriffe. Solange das
+  offen ist, messen alle Build-Zahlen nur die günstige Hälfte der Besetzung.
+- **Rang A gewinnt in 103 Runs kein einziges Mal** (Rang B in 12 auch nicht),
+  Rang S in 483 Runs zu 64 %. Eine so harte Null ist keine Kurve, sondern eine
+  Schwelle: entweder man zieht eine Einheit auf S, oder der Run ist verloren.
+  Prüfen, ob das gewollt ist — es entwertet jede Breitenstrategie.
 
 
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller

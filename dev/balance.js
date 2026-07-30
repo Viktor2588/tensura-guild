@@ -127,11 +127,21 @@ function play(seed, voll) {
   while (!run.over && schritte < 500) {
     schritte++;
     if (run.phase === 'start') {
-      /* Startdraft: die Einheit mit den meisten Schlüsselwörtern nehmen. */
+      /* Startdraft: die Einheit mit den meisten Schlüsselwörtern nehmen.
+
+         Ein Angebot ist `{ unit, relic, passive }`, nicht eine Id — genau das
+         ging hier bis Phase 46 schief. `passt(o)` bekam das ganze Objekt,
+         `GD.unit(objekt)` gab `undefined`, die Funktion lieferte für jedes
+         Angebot 0, und `0 > -1` traf nur beim ersten zu: der Bot nahm immer
+         Karte 1. Die Startwahl war damit keine Wahl, sondern eine Konstante —
+         und weil der ganze Run auf dem Startdraft aufbaut, hing daran die
+         halbe Besetzung, die nie gespielt wurde. Ein stiller Fehler, der die
+         Messung leise wertlos machte und nicht auffiel, weil er nichts
+         abstürzen ließ. */
       var kws = teamKeywords(run);
       var bs = 0, bw = -1;
-      run.startwahl.offers.forEach(function (id, i) {
-        var sc = passt(id, kws);
+      run.startwahl.offers.forEach(function (o, i) {
+        var sc = passt(o.unit, kws);
         if (sc > bw) { bw = sc; bs = i; }
       });
       R.chooseStart(run, bs);

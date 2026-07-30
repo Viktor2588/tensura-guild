@@ -2002,6 +2002,58 @@ wiederholt neu, und sie haelt am Deckel), `dev/uitest.js` 107/107.
 Worktree `/home/viktor/tensura/worktree/phase-45-builds`, Branch
 `phase-45-builds`.
 
+### Phase 46 (2026-07-30): Der Bot nahm immer Karte 1
+
+Voraussetzung, die Phase 45 selbst notiert hatte: bevor weiter an Zahlen gedreht
+wird, muss die Messung stimmen. Sie stimmte nicht.
+
+**Der Befund.** Ein Startangebot ist `{ unit, relic, passive }`, keine Id. Der Bot
+in `dev/balance.js` uebergab das ganze Objekt an `passt()`, dort lief
+`GD.unit(objekt)` auf `undefined`, die Funktion gab fuer jedes Angebot 0 zurueck
+— und `0 > -1` traf nur beim ersten Angebot zu. **Der Bot nahm in jedem Run die
+erste Karte.** Die Startwahl war keine Wahl, sondern eine Konstante, und weil
+der ganze Run auf dem Startdraft aufbaut, hing daran alles Weitere.
+
+Ein stiller Fehler: nichts stuerzte ab, nichts sah falsch aus, die Zahlen waren
+plausibel. Genau diese Art macht eine Messung wertlos, ohne dass es auffaellt.
+
+**Was er gekostet hat.** Mit repariertem Draft springt die Siegquote von 52 auf
+**64 %** — der Bot war zwoelf Punkte schlechter als das Spiel annahm. Damit ist
+jede Grundhaerte, die je gegen ihn getunt wurde, gegen einen Bot getunt worden,
+der immer Karte 1 nahm. Neu gesetzt: **1.16 → 1.35**, gemessen 50 % bei 500 und
+52 % bei 600 Runs (die Streuung liegt bei rund zwei Punkten, das gehoert dazu).
+
+**Was er NICHT erklaert.** Die 20 nie gespielten Einheiten aus Phase 45 haben
+zwei ganz andere Ursachen, und keine davon ist der Draft:
+
+- **6 waren nur nicht freigeschaltet.** Der Standardlauf ist ein frischer
+  Spieler, dem gehoeren die meisten Einheiten noch nicht. Kein Fehler, sondern
+  die Bedeutung von „frischer Spieler" — meine Notiz in TODO.md war falsch und
+  ist korrigiert.
+- **14 werden auch bei `--voll` nie gekauft**, und zwar genau die mit Kosten 4-5.
+  Der Bot bewertet Marktposten nach Wert je Magicule, und `passt()` enthaelt die
+  Kosten schon einmal — teure Einheiten werden doppelt bestraft. Ob die
+  Heuristik zu geizig oder die Preiskurve zu steil ist, sind zwei verschiedene
+  Eingriffe; in TODO.md getrennt notiert.
+
+**Und was jetzt belastbar ist.** Der Heilungs-Ausreisser ueberlebt die Reparatur:
+70 % gegen 40-46 % fuer alles andere, bei n=237 von 600 sogar der groesste Eimer.
+Die Vermutung aus Phase 45 — die Eimer messten die Truppzusammensetzung statt das
+Schluesselwort — ist damit teilweise widerlegt. Ein Bot, der wirklich nach Build
+draftet, landet bei denselben 25-30 Punkten Abstand. Der naechste Verdacht steht
+in TODO.md: die Wiederbelebung, weil sie einen Tod rueckgaengig macht und keine
+andere Linie etwas Vergleichbares hat.
+
+Nebenbefund, ebenfalls in TODO.md: **Rang A gewinnt in 103 Runs kein einziges
+Mal**, Rang S in 483 zu 64 %. Eine so harte Null ist keine Kurve, sondern eine
+Schwelle.
+
+Am Spiel selbst aendert diese Phase nur die Grundhaerte. `dev/sim.js` 409/409,
+`dev/uitest.js` 107/107.
+
+Worktree `/home/viktor/tensura/worktree/phase-46-messung`, Branch
+`phase-46-messung`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
