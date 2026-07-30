@@ -453,7 +453,16 @@ table.dbg i.ab { color: #e77; }
 }
 
 /* ---- Schlachtfeld: Lagekarte, kein Spielbrett ---- */
-#kampfbrett { margin-bottom: .5rem; }
+/* Das Brett bricht aus der 860px-Spalte aus. Es ist der Grund, warum die Hexe
+   überhaupt eine Größe haben können: bei fester Breite ist die Breite der
+   Deckel, und alles andere — Kippung, Rahmenhöhe — verschiebt nur Leerraum.
+   Auf schmalen Fenstern läuft min() auf die volle Breite zurück. */
+#kampfbrett {
+  margin-bottom: .5rem;
+  width: min(96vw, 1400px);
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
 .brett3d {
   width: 100%; height: auto; display: block;
   border: 1px solid var(--rand); border-radius: 8px;

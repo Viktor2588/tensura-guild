@@ -410,6 +410,21 @@ Die Figuren sind vorerst Silhouetten: Umriss und Waffe kommen aus der Rolle
 (Klinge = Frontlinie, Bogen = Fernkampf, Stab = alles Magische), die Farbe aus
 der Seite. Echte Charakterbilder ersetzen sie, sobald es welche gibt.
 
+### Was du bei einer Signatur siehst
+
+Jede Signatur zeigt ihr **Schlüsselwort** — nicht ihren Namen. Wer eine Linie
+baut, sieht sie also auch, egal welche Einheit gerade wirkt:
+
+| | sieht aus wie |
+|---|---|
+| Gift, Brand, Frost, Blutung, Verderbnis, Chaos, Fläche | fliegt in einem Bogen hinüber und schlägt ein |
+| Donner, Licht, Dunkelheit, Exekution | schlägt sofort am Ziel ein, ohne Flug |
+| Heilung, Schild, Tempo, Schatten, Konter | steigt an der eigenen Figur auf |
+
+Die Farbe ist die des Elements: Brand orange, Gift grün, Frost hellblau, Donner
+gelb, Licht cremeweiß, Dunkelheit violett, Blutung rot. Eine Signatur ohne
+Schlüsselwort schlägt schlicht weiß ein.
+
 ## Wann Zustände ticken
 
 Das ist die eine Regel, die man kennen muss, weil sie fast jede Rechnung

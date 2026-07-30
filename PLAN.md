@@ -1848,6 +1848,49 @@ Projekts.
 Am Kampf ändert sich nichts: `dev/sim.js` 401/401, `dev/uitest.js` 107/107,
 `dev/hextest.js` 18/18, Balance unangetastet.
 
+### Phase 43 (2026-07-30): Ein größeres Feld, und Effekte je Element
+
+**Das Feld größer machen ging gemessen anders aus als gedacht.** Der erste
+Versuch war der naheliegende: die Leinwand höher, 260 → 417 Pixel. Ergebnis
+gemessen: **49 % Höhenfüllung, 132 Pixel leer unten**, und die Hexe genau so
+groß wie vorher. Bei fester Breite fasst die Kamera die Breite — ein höherer
+Rahmen fügt nur Himmel hinzu. Kippung, Sichtfeld, Rahmenhöhe verschieben alle
+nur Leerraum.
+
+Der Deckel war die **860 Pixel breite Spalte**. Also zwei Änderungen, die
+wirklich greifen:
+
+- Das Brett bricht aus der Spalte aus (`width: min(96vw, 1400px)`). Gemessen im
+  echten Layout: Leinwand **1400 × 501** statt 834 × 260.
+- Die Rahmenhöhe folgt jetzt dem Brett statt umgekehrt: erst der Abstand, der
+  die Breite ausfüllt, dann genau die Höhe, die das Brett dabei braucht.
+  Gemessen **96 % Breite, 83 % Höhe** gefüllt, 20 gegen 28 Pixel Rand oben und
+  unten — vorher 75 / 78 mit schiefer Verteilung. Gezielt wird etwas über die
+  Brettebene, weil die Figuren nach oben ragen.
+
+Zusammen sind die Hexe **mehr als doppelt so groß** wie in Phase 42.
+
+**Effekte hängen am Schlüsselwort, nicht am Namen.** Vierzig Signaturen hätten
+vierzig Effekte bedeutet; das Schlüsselwort ist aber ohnehin das, worum die
+Fähigkeit gebaut ist und was der Spieler beim Bauen auswählt. Wer Brand spielt,
+soll Brand sehen — gleich von welcher Einheit. Zwei Bewegungen decken alles ab:
+etwas fliegt im Bogen hinüber und schlägt ein, oder etwas steigt an der eigenen
+Figur auf. Der Rest ist Farbe, Streuung und Tempo (`FARBE`, `AN_SICH`, `SOFORT`
+in `js/brett3d.js`). Donner, Licht, Dunkelheit und Exekution schlagen ohne Flug
+ein; Heilung, Schild, Tempo, Schatten und Konter steigen auf.
+
+Dafür trägt das Kampflog zwei Felder mehr: `kw` und `ziel` am `aktiv`-Eintrag.
+Die Stelle, die dabei still bricht, ist der Aufbau der Einheit — `keywords`
+wurde in `actives` nicht mitkopiert. Genau darauf zielen die drei neuen
+Zusicherungen in `dev/sim.js`.
+
+Gemessen im Browser, weil jsdom kein WebGL hat: ein Effekt hebt die Zahl heller
+Bildpunkte von 360 auf 714 und ist danach vollständig wieder abgeräumt (zurück
+auf 360). Die Renderschleife ruht weiter, sobald nichts mehr läuft.
+
+`dev/sim.js` 404/404, `dev/uitest.js` 107/107, `dev/hextest.js` 18/18. Am Kampf
+selbst ändert sich nichts, die Balance ist unangetastet.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

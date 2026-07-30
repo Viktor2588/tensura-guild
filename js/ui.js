@@ -332,6 +332,12 @@
     if (l.type === 'heal' && u) { u.hp = l.hp; }
     if (l.type === 'death' && u) { u.tot = true; u.hp = 0; }
     if (l.type === 'zug' && u) { u.hex = { q: l.q, r: l.r }; }
+    /* Eine Signatur ist der Höhepunkt eines Zuges — sie soll auch so aussehen.
+       Welcher Effekt, entscheidet das Schlüsselwort der Fähigkeit; die Ansicht
+       braucht nur zu wissen, von wem nach wem. */
+    if (l.type === 'aktiv' && u && Brett3D.verfuegbar()) {
+      Brett3D.effekt(l.key, l.ziel, l.kw);
+    }
     if (l.type === 'revive' && u) { u.tot = false; u.hp = l.hp; }
     if (l.type === 'status' && u) { u.status[l.status] = l.stacks; }
     /* Der Würfelwurf der Runde gehört an die Einheit, nicht nur ins Log —

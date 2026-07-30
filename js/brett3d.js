@@ -124,6 +124,129 @@
     return { x: p.x, z: p.y };
   }
 
+  /* ---- Effekte -------------------------------------------------------------
+     Vierzig Signaturen, aber KEINE vierzig Effekte: der Effekt hängt am
+     SCHLÜSSELWORT, nicht am Namen. Das ist nicht die faule Abkürzung, sondern
+     die richtige Zuordnung — das Schlüsselwort ist bereits das, worum die
+     ganze Fähigkeit gebaut ist, und was der Spieler beim Bauen auswählt. Wer
+     Brand spielt, soll Brand SEHEN, gleich von welcher Einheit.
+
+     Zwei Bewegungen reichen für alles: etwas fliegt hinüber und schlägt ein,
+     oder etwas steigt an der eigenen Figur auf. Alles andere ist Farbe,
+     Streuung und Tempo. */
+  var FARBE = {
+    brand: 0xff7a2a, gift: 0x86d94a, frost: 0x8fe0ff, donner: 0xffe14a,
+    blutung: 0xd8382f, verderbnis: 0xc44ad8, chaos: 0xff5fbf,
+    schatten: 0x8b5cf6, dunkelheit: 0x6c34a8, licht: 0xfff0b0,
+    heilung: 0x6ee7a8, schild: 0x6aa8ff, konter: 0xffc46a,
+    exekution: 0xff3b3b, verwundbar: 0xff9a5a, tempo: 0xa8ffe0,
+    flaeche: 0xffb347
+  };
+
+  /* Wer sich selbst stärkt, schickt nichts hinüber. */
+  var AN_SICH = { heilung: 1, schild: 1, tempo: 1, schatten: 1, konter: 1 };
+  /* Wer schlägt statt zu werfen: kein Flug, nur der Einschlag. */
+  var SOFORT = { donner: 1, licht: 1, dunkelheit: 1, exekution: 1 };
+
+  var funkeTex = null;
+  function funke() {
+    if (funkeTex) return funkeTex;
+    var c = root.document.createElement('canvas');
+    c.width = c.height = 64;
+    var x = c.getContext('2d');
+    var g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.35, 'rgba(255,255,255,.75)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+    funkeTex = new root.THREE.CanvasTexture(c);
+    return funkeTex;
+  }
+
+  function teilchen(farbe, groesse) {
+    var T = root.THREE;
+    var m = new T.SpriteMaterial({ map: funke(), color: farbe, transparent: true,
+                                   depthWrite: false, blending: T.AdditiveBlending });
+    var s = new T.Sprite(m);
+    s.scale.set(groesse, groesse, 1);
+    return s;
+  }
+
+  /* Ein Effekt ist eine Handvoll Funken mit Startpunkt, Richtung und Laufzeit.
+     Gerechnet wird beim Zeichnen, nicht gespeichert — kein Zustand, der
+     zwischen zwei Kämpfen hängenbleiben kann. */
+  function effekt(vonKey, nachKey, kw) {
+    if (!zustand) return;
+    var vonF = zustand.figuren[vonKey], nachF = zustand.figuren[nachKey || vonKey];
+    if (!vonF) return;
+    var farbe = FARBE[kw] || 0xdfe6f0;
+    var anSich = AN_SICH[kw] || !nachF || nachF === vonF;
+    var a = vonF.gruppe.position, b = (nachF || vonF).gruppe.position;
+    var zahl = anSich ? 12 : 16;
+    var dauer = anSich ? 620 : 520;
+    var flug = SOFORT[kw] ? 0.12 : 0.5;               // Anteil der Zeit bis zum Ziel
+    var funken = [];
+
+    for (var i = 0; i < zahl; i++) {
+      var s = teilchen(farbe, 0.5 + Math.random() * 0.5);
+      s.renderOrder = 3;
+      zustand.scene.add(s);
+      funken.push({
+        s: s,
+        /* Streuung am Ziel, damit es einschlägt statt zu treffen wie ein Punkt. */
+        streuX: (Math.random() - 0.5) * 1.7,
+        streuY: Math.random() * 1.9,
+        streuZ: (Math.random() - 0.5) * 1.7,
+        /* Versatz am Start: der Schwarm bricht auf, statt aus einem Loch zu kommen. */
+        abX: (Math.random() - 0.5) * 0.7,
+        abZ: (Math.random() - 0.5) * 0.7,
+        verzug: Math.random() * 0.22
+      });
+    }
+
+    zustand.effekte.push({
+      funken: funken, start: 0, dauer: dauer, flug: flug, anSich: anSich,
+      ax: a.x, ay: SPRITE_H * 0.5, az: a.z, bx: b.x, by: SPRITE_H * 0.45, bz: b.z
+    });
+    if (!zustand.raf) zustand.raf = root.requestAnimationFrame(schleife);
+  }
+
+  /* Einen Effekt auf den Stand `p` (0..1) bringen. Gibt false zurück, wenn er
+     abgelaufen ist. */
+  function zeichneEffekt(e, p) {
+    e.funken.forEach(function (f) {
+      var q = Math.max(0, Math.min(1, (p - f.verzug) / (1 - f.verzug)));
+      var s = f.s;
+      if (e.anSich) {
+        /* Aufsteigen und ausblenden: eine Stärkung geht nach oben. */
+        s.position.set(e.ax + f.abX * (1 + q), e.ay + f.streuY * q * 1.6, e.az + f.abZ * (1 + q));
+        s.material.opacity = Math.sin(q * Math.PI);
+      } else if (q < e.flug) {
+        /* Flug. Ein leichter Bogen, sonst sieht es aus wie ein Schieberegler. */
+        var w = e.flug ? q / e.flug : 1;
+        var bogen = Math.sin(w * Math.PI) * 1.5;
+        s.position.set(e.ax + (e.bx - e.ax) * w + f.abX,
+                       e.ay + (e.by - e.ay) * w + bogen,
+                       e.az + (e.bz - e.az) * w + f.abZ);
+        s.material.opacity = 1;
+      } else {
+        /* Einschlag: auseinanderstieben und verlöschen. */
+        var v = (q - e.flug) / (1 - e.flug);
+        s.position.set(e.bx + f.streuX * v, e.by + f.streuY * v * 0.8, e.bz + f.streuZ * v);
+        s.material.opacity = 1 - v;
+      }
+      s.material.opacity *= 0.95;
+    });
+    return p < 1;
+  }
+
+  function raeumeEffekt(e) {
+    e.funken.forEach(function (f) {
+      zustand.scene.remove(f.s);
+      f.s.material.dispose();
+    });
+  }
+
   /* ---- Aufbau -------------------------------------------------------------- */
 
   function baueKacheln(scene, einheiten) {
@@ -198,7 +321,10 @@
     if (!verfuegbar() || !einheiten.length) return false;
     var T = root.THREE;
 
-    var breite = el.clientWidth || 640, hoehe = 260;
+    /* ponytail: Breite wird nur beim Aufbau gelesen — wer das Fenster MITTEN im
+       Kampf umzieht, sieht das Brett erst beim nächsten neu gefasst. Ein
+       ResizeObserver, der Kamera und Leinwand nachzieht, wenn das je stört. */
+    var breite = el.clientWidth || 640;
     var scene = new T.Scene();
     scene.add(new T.HemisphereLight(0xbfd4ff, 0x201820, 1.1));
     var sonne = new T.DirectionalLight(0xffffff, 0.55);
@@ -207,28 +333,37 @@
 
     var mass = baueKacheln(scene, einheiten);
 
-    /* Kamera fest, rund 50° gekippt, von der eigenen Seite her. Der Blick auf
-       das Feld ist damit derselbe wie der auf die Aufstellungsliste: eigener
-       Trupp vorn, Gegner hinten.
+    /* Kamera fest, 46° gekippt, von der eigenen Seite her. Der Blick auf das
+       Feld ist damit derselbe wie der auf die Aufstellungsliste: eigener Trupp
+       vorn, Gegner hinten.
 
-       Der Abstand wird AUSGERECHNET, nicht geschätzt: aus dem Sichtfeld und
-       dem, was das Brett belegt. Geschätzt stand das Feld als Briefmarke in
-       einem leeren Rahmen — und ein Streifen von 834 x 260 Pixeln verzeiht
-       das nicht, weil senkrecht und waagerecht ganz verschieden viel Platz
-       ist. Maßgeblich ist, was zuerst anstößt. */
+       Die HÖHE der Leinwand folgt dem Brett, statt vorgegeben zu werden — das
+       ist der Punkt, an dem „mach das Feld größer" gemessen anders ausgeht als
+       gedacht. Ein höherer Rahmen macht die Hexe NICHT größer: bei fester
+       Breite fasst die Kamera die Breite, und alles darüber hinaus ist leerer
+       Himmel. Bei 417 Pixeln Höhe waren gemessen 49 % gefüllt, 132 davon leer
+       unten. Also umgekehrt gerechnet: erst der Abstand, der die Breite
+       ausfüllt, dann genau die Höhe, die das Brett dabei braucht. Damit sind
+       die Hexe so groß, wie die Breite es überhaupt erlaubt, und kein Pixel
+       geht an Rand verloren. */
     var sicht = 38 * Math.PI / 180;                 // senkrechtes Sichtfeld
-    var seiten = breite / hoehe;
     var kippung = 46 * Math.PI / 180;
-    var camera = new T.PerspectiveCamera(38, seiten, 0.1, 200);
     /* Senkrecht zählt nicht nur das Brett: die Figuren stehen darauf und
        ragen darüber hinaus, und der Lebensbalken noch einmal darüber. */
-    var senkrecht = mass.tiefe * Math.sin(kippung) + (SPRITE_H + 0.5) * Math.cos(kippung);
+    var senkrecht = mass.tiefe * Math.sin(kippung) + (SPRITE_H + 0.9) * Math.cos(kippung);
+    var hoehe = Math.round(Math.max(220, Math.min(560,
+                  breite * senkrecht / mass.breite)));
+    var seiten = breite / hoehe;
+    var camera = new T.PerspectiveCamera(38, seiten, 0.1, 200);
     var nachHoehe = (senkrecht / 2) / Math.tan(sicht / 2);
     var nachBreite = (mass.breite / 2) / (Math.tan(sicht / 2) * seiten);
-    var d = Math.max(nachHoehe, nachBreite) * 1.14;
+    var d = Math.max(nachHoehe, nachBreite) * 1.04;
     camera.position.set(mass.mitteX, d * Math.sin(kippung),
                         mass.mitteZ + d * Math.cos(kippung));
-    camera.lookAt(mass.mitteX, 0, mass.mitteZ);
+    /* Gezielt wird etwas ÜBER die Brettebene: die Figuren ragen nach oben, also
+       sitzt der Inhalt sonst am oberen Rand und lässt unten Luft. Gemessen 0
+       Pixel oben gegen 49 unten — das hebt der Versatz auf. */
+    camera.lookAt(mass.mitteX, SPRITE_H * 0.2, mass.mitteZ);
 
     var renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(root.devicePixelRatio || 1, 2));
@@ -241,7 +376,7 @@
     einheiten.forEach(function (u) { figuren[u.key] = baueFigur(scene, u); });
 
     zustand = { renderer: renderer, scene: scene, camera: camera,
-                figuren: figuren, el: el, raf: 0 };
+                figuren: figuren, el: el, raf: 0, effekte: [] };
     aktualisiere(einheiten);
     schleife();
     return true;
@@ -249,8 +384,9 @@
 
   /* Bewegung wird weich nachgezogen statt gesetzt: das Log kennt nur „steht
      jetzt dort", und ein Sprung über zwei Felder liest sich wie ein Fehler. */
-  function schleife() {
+  function schleife(zeit) {
     if (!zustand) return;
+    zeit = zeit || (root.performance ? root.performance.now() : Date.now());
     var f = zustand.figuren, weiter = false;
     Object.keys(f).forEach(function (k) {
       var g = f[k].gruppe, z = f[k].ziel;
@@ -260,6 +396,15 @@
         weiter = true;
       }
     });
+    /* Rueckwaerts, weil abgelaufene Effekte hier herausfallen. */
+    for (var i = zustand.effekte.length - 1; i >= 0; i--) {
+      var e = zustand.effekte[i];
+      if (!e.start) e.start = zeit;
+      if (zeichneEffekt(e, (zeit - e.start) / e.dauer)) { weiter = true; continue; }
+      raeumeEffekt(e);
+      zustand.effekte.splice(i, 1);
+      weiter = true;                                  // ein Bild noch, sonst bleibt der Rest stehen
+    }
     zustand.renderer.render(zustand.scene, zustand.camera);
     /* Steht alles still, ruht auch die Schleife — eine Lagekarte muss nicht
        sechzig Mal je Sekunde dasselbe Bild zeichnen. */
@@ -296,5 +441,5 @@
   function montiert(el) { return !!zustand && zustand.el === el; }
 
   root.Brett3D = { verfuegbar: verfuegbar, montiere: montiere, montiert: montiert,
-                   aktualisiere: aktualisiere, loese: loese };
+                   aktualisiere: aktualisiere, effekt: effekt, loese: loese };
 })(globalThis);

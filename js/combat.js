@@ -165,7 +165,10 @@
          Abklingzeit: Fähigkeiten kühlen nicht mehr ab, aber die Zahl war schon
          immer ein Maß für ihre Wucht und dient jetzt als Reihenfolge. */
       actives: (def.actives || []).map(function (a) {
-        return { id: a.id, name: a.name, wucht: a.cd, fn: a.fn, wenn: a.wenn };
+        /* `keywords` wird im Kampf selbst nicht gelesen — die Anzeige braucht
+           sie: der Effekt einer Signatur richtet sich nach ihrem Element. */
+        return { id: a.id, name: a.name, wucht: a.cd, fn: a.fn, wenn: a.wenn,
+                 keywords: (a.keywords || []).slice() };
       }),
       keywords: (def.keywords || []).slice(), resistenz: def.resistenz || 0,
       side: side, pos: pos, gauge: 0, status: {}, regen: 0, lifesteal: 0,
@@ -696,7 +699,9 @@
       }
 
       if (aktive) {
-        log.push({ t: t, type: 'aktiv', key: u.key, unit: u.name, side: u.side, name: aktive.name });
+        /* `kw` und `ziel` trägt nur die Anzeige: woher, wohin, welches Element. */
+        log.push({ t: t, type: 'aktiv', key: u.key, unit: u.name, side: u.side,
+                   name: aktive.name, kw: aktive.keywords[0] || null, ziel: target.key });
         aktive.fn(ctx(u, {
           attacker: u, target: target,
           /* aktive liegt im ctx, damit eine Fähigkeit ihre eigene Abklingzeit

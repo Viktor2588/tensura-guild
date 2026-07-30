@@ -1368,6 +1368,17 @@ ok(raum.roster.some(function (r) { return r.reichweite === 1; }) &&
 ok(raum.log.some(function (l) { return l.type === 'zug'; }),
    'wer nicht heranreicht, läuft — und das steht im Log');
 
+/* Die Anzeige sucht sich den Effekt einer Signatur über ihr Schlüsselwort und
+   braucht das Ziel, um zu wissen, wohin er fliegt. Beides kommt aus dem Log —
+   und `keywords` reicht nur dann bis hierher, wenn es beim Aufbau der Einheit
+   mitkopiert wurde. Genau das ist die Stelle, die still bricht. */
+var aktivLog = raum.log.filter(function (l) { return l.type === 'aktiv'; });
+ok(aktivLog.length > 0, 'Signaturen stehen im Log (' + aktivLog.length + ')');
+ok(aktivLog.every(function (l) { return !!l.ziel; }),
+   'jede Signatur nennt ihr Ziel');
+ok(aktivLog.some(function (l) { return !!l.kw; }),
+   'und ihr Schlüsselwort, wo sie eins hat');
+
 /* Der eigentliche Gewinn: Reichweite ist ein Vorteil. Ein Fernkämpfer schlägt
    früher zu als ein Nahkämpfer, der erst über das halbe Feld muss. */
 function ersterTreffer(id) {
