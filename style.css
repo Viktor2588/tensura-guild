@@ -454,6 +454,11 @@ table.dbg i.ab { color: #e77; }
 
 /* ---- Schlachtfeld: Lagekarte, kein Spielbrett ---- */
 #kampfbrett { margin-bottom: .5rem; }
+.brett3d {
+  width: 100%; height: auto; display: block;
+  border: 1px solid var(--rand); border-radius: 8px;
+  background: linear-gradient(#151a24, #0e1117);
+}
 .brett { width: 100%; max-height: 9rem; display: block; }
 .feld-einheit circle { fill: var(--bg3); stroke: var(--rand); stroke-width: 1.5; }
 .feld-einheit .leben { stroke: none; }

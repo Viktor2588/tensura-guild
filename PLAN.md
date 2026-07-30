@@ -1803,6 +1803,51 @@ Das Heranlaufen kostet Züge und damit Schaden, also musste die Grundhärte
 nachgeben: **1.31 → 1.21**, gemessen 51 % Siege frisch bei `dev/balance.js 500`.
 `dev/sim.js` 401/401, `dev/uitest.js` 107/107.
 
+### Phase 42 (2026-07-30): 2.5D — echtes Brett, flache Figuren
+
+Die SVG-Lagekarte aus Phase 41 zeigte Punkte. Gewünscht war eine 2.5D-Ansicht
+mit echten Charaktermodellen — und der ehrliche Befund dazu lautet: gerigte
+3D-Modelle für vierzig Charaktere gibt es nicht und lassen sich hier auch nicht
+erzeugen. Bilder schon. Also der Weg von Final Fantasy Tactics und Disgaea:
+**das Brett ist echt dreidimensional, die Figuren sind flache Bilder darauf,
+die sich immer zur Kamera drehen.** Genau diese Mischung heißt 2.5D.
+
+`js/brett3d.js` (three.js r149, lokal unter `js/vendor/`, kein CDN und kein
+Bauschritt — siehe ASSETS.md): sechseckige Kacheln aus `CylinderGeometry`,
+Hemisphären- plus Richtungslicht, feste Kamera, 46° gekippt, Blick von der
+eigenen Seite. Keine Steuerung, keine Auswahl — es bleibt eine Lagekarte, und
+was man nicht bedienen kann, soll auch nicht wie ein Spielbrett aussehen.
+
+Zwei Dinge waren nicht offensichtlich und wurden gemessen statt geschätzt:
+
+- **Der Kameraabstand.** Geschätzt („Spanne × 0,95") stand das Brett als
+  Briefmarke in einem leeren Rahmen: gemessen füllte es **43 %** der Fläche.
+  Ein Streifen von 834 × 260 Pixeln verzeiht das nicht, weil senkrecht und
+  waagerecht ganz verschieden viel Platz ist. Jetzt wird der Abstand aus dem
+  Sichtfeld ausgerechnet — beide Richtungen einzeln, maßgeblich ist, was zuerst
+  anstößt, und senkrecht zählen die Figuren mit, nicht nur das Brett. Gemessen
+  **75 % Breite, 78 % Höhe**, nichts abgeschnitten.
+- **Der Rand nur in Laufrichtung.** Quer dazu stehen ohnehin alle drei Reihen;
+  zwei leere Reihen mehr machen das Brett tiefer, und je tiefer es im flachen
+  Streifen ist, desto kleiner werden die Figuren.
+
+Bewegung wird weich nachgezogen, nicht gesetzt — das Log kennt nur „steht jetzt
+dort", und ein Sprung über zwei Felder liest sich als Fehler. Steht alles still,
+ruht auch die Renderschleife.
+
+**Ohne WebGL passiert nichts**, dann bleibt die SVG-Karte aus Phase 41 stehen.
+Das ist keine Höflichkeit gegenüber alten Browsern: `dev/uitest.js` läuft in
+jsdom, und die Rückfallebene ist das, was er prüft.
+
+Figuren sind vorerst zur Laufzeit gezeichnete Silhouetten — Umriss und Waffe aus
+der Rolle, Farbe aus der Seite, bewusst ohne Gesicht. Echte Bilder tropfen ohne
+Codeänderung ein, sobald `assets/einheiten/<id>.png` existiert; Anforderungen
+und Herkunftspflicht stehen in **ASSETS.md**, der ersten Assetdatei des
+Projekts.
+
+Am Kampf ändert sich nichts: `dev/sim.js` 401/401, `dev/uitest.js` 107/107,
+`dev/hextest.js` 18/18, Balance unangetastet.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

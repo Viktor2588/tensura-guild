@@ -302,7 +302,8 @@
   function starteReplay(res) {
     replay = { res: res, i: 0, u: {}, zeilen: [], fertig: false, timer: null };
     res.roster.forEach(function (r) {
-      replay.u[r.key] = { name: r.name, side: r.side, hp: r.maxHp, maxHp: r.maxHp,
+      replay.u[r.key] = { key: r.key, id: r.id, name: r.name, side: r.side,
+                          hp: r.maxHp, maxHp: r.maxHp,
                           atk: r.atk, def: r.def, spd: r.spd, role: r.role,
                           hex: r.hex ? { q: r.hex.q, r: r.hex.r } : null,
                           aktive: (r.actives || [])[0] || null, status: {}, tot: false };
@@ -430,10 +431,22 @@
       }).join('') + '</svg>';
   }
 
+  /* Zwei Lagekarten, dieselben Daten: die 2.5D-Ansicht, wenn WebGL da ist, sonst
+     das SVG. Das SVG ist kein Almosen für alte Browser — der UI-Test läuft in
+     jsdom und käme sonst gar nicht an die Aufstellung heran. */
   function aktualisiereFeld() {
     if (!replay) return;
     var brett = $('kampfbrett');
-    if (brett) brett.innerHTML = brettHtml();
+    if (brett) {
+      var aufDemFeld = Object.keys(replay.u).map(function (k) { return replay.u[k]; })
+        .filter(function (u) { return u.hex; });
+      if (aufDemFeld.length && Brett3D.verfuegbar()) {
+        if (!Brett3D.montiert(brett)) Brett3D.montiere(brett, aufDemFeld);
+        Brett3D.aktualisiere(aufDemFeld);
+      } else {
+        brett.innerHTML = brettHtml();
+      }
+    }
     var feld = $('kampffeld');
     if (feld) feld.innerHTML = seiteHtml('player', 'Dein Trupp') + seiteHtml('enemy', 'Gegner');
     var log = $('kampflog');
@@ -1186,8 +1199,8 @@
       R.devour(run, d.id, ziel ? ziel.value : run.team[0].uid);
       render(); speichern();
     },
-    'zum-markt': function () { R.zumMarkt(run); replay = null; render(); speichern(); },
-    weiter: function () { R.advance(run); replay = null; render(); speichern(); },
+    'zum-markt': function () { R.zumMarkt(run); replay = null; Brett3D.loese(); render(); speichern(); },
+    weiter: function () { R.advance(run); replay = null; Brett3D.loese(); render(); speichern(); },
     stufe: function (d) {
       if (!run.over && run.step + run.act > 1 &&
           !confirm('Die Stufe zu wechseln setzt den laufenden Run neu auf. Fortfahren?')) return;
@@ -1413,7 +1426,7 @@
     var meta = R.loadMeta();
     R.clear();
     run = R.create(Math.floor(Math.random() * 0xffffffff), meta);
-    replay = null;
+    replay = null; Brett3D.loese();
     $('menu').close();
     render();
     speichern();

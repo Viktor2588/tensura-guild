@@ -400,8 +400,15 @@ als dessen Ziel, übernimmt er ein Drittel des Treffers. Ein zäher Körper vorn
 schützt die Reihe dahinter also wirklich — und zwar dort, wo er wirklich steht.
 Gift, Brand und Blutung gehen durch die Deckung hindurch.
 
-Die Lagekarte über dem Kampflog zeigt, wo alle stehen. Eingreifen kannst du
-während des Kampfes nicht — die Entscheidungen fallen davor.
+Die Lagekarte über dem Kampflog zeigt in 2.5D, wo alle stehen: das Hexfeld ist
+dreidimensional und gekippt, die Figuren sind flache Bilder darauf, die sich
+immer zur Kamera drehen. Wer heranläuft, gleitet sichtbar über die Felder; der
+Balken über dem Kopf ist das Leben. Eingreifen kannst du während des Kampfes
+nicht — die Entscheidungen fallen davor.
+
+Die Figuren sind vorerst Silhouetten: Umriss und Waffe kommen aus der Rolle
+(Klinge = Frontlinie, Bogen = Fernkampf, Stab = alles Magische), die Farbe aus
+der Seite. Echte Charakterbilder ersetzen sie, sobald es welche gibt.
 
 ## Wann Zustände ticken
 
