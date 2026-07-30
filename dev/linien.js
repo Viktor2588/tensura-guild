@@ -13,6 +13,7 @@
    Überleben tut.                                                              */
 'use strict';
 require('../js/rng.js');
+require('../js/hex.js');
 require('../js/abilities.js');
 require('../js/data.js');
 require('../js/combat.js');

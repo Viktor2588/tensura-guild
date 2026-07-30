@@ -376,6 +376,33 @@ Handschuh der Brutmutter wirkt nur bei einer Einheit, die selbst Gift erzeugt,
 die Zwillingsklinge zahlt sich erst ab Rang B aus, das Rangabzeichen ist auf
 Rang C wertlos.
 
+## Das Schlachtfeld
+
+Der Kampf findet auf einem Hexfeld statt. Die Reihenfolge, die du in der
+Aufstellung wählst, wird dort zur Position: **Plätze 1–3 stehen im vorderen
+Glied, 4–6 dahinter**, und die Gegner stehen gegenüber.
+
+**Reichweite** hängt an der Rolle:
+
+| Rolle | erreicht |
+|---|---|
+| Frontlinie, Verstärker | 1 Feld |
+| Unterstützer | 2 Felder |
+| Fernkampf, Magier | 3 Felder |
+
+Wer niemanden in Reichweite hat, **läuft** in seinem Zug heran statt zuzuschlagen
+— bis zu zwei Felder. Ein Nahkämpfer verliert damit die ersten Züge eines
+Kampfes, ein Fernkämpfer schießt sofort. Genau darin steckt der Preis und der
+Vorteil einer Aufstellung.
+
+**Deckung** hängt jetzt an der Lage: Steht ein Verbündeter näher am Angreifer
+als dessen Ziel, übernimmt er ein Drittel des Treffers. Ein zäher Körper vorn
+schützt die Reihe dahinter also wirklich — und zwar dort, wo er wirklich steht.
+Gift, Brand und Blutung gehen durch die Deckung hindurch.
+
+Die Lagekarte über dem Kampflog zeigt, wo alle stehen. Eingreifen kannst du
+während des Kampfes nicht — die Entscheidungen fallen davor.
+
 ## Wann Zustände ticken
 
 Das ist die eine Regel, die man kennen muss, weil sie fast jede Rechnung

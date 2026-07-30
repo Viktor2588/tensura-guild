@@ -1759,6 +1759,50 @@ sieht, keiner ist.
 
 `dev/balance.js 600`: 51 % frisch, kein Build-Ausreißer.
 
+### Phase 41 (2026-07-30): Das Hexfeld
+
+Die Aufstellung war eine Liste, und „Deckung" eine Regel über Listenplätze
+(„ab Platz 3 gibt ein Drittel an die vorderste Einheit ab"). Das war eine
+Abstraktion von einer Lage, die es gar nicht gab. Jetzt gibt es sie.
+
+`js/hex.js` ist reine Geometrie in achsialen Koordinaten (q, r) und kennt das
+Spiel nicht: Distanz, Nachbarn, Umkreis, Ring, ein gieriger Schritt und `laufe`,
+das auf Reichweite anhält statt in den Gegner hineinzurennen. Kein A* — auf
+einem Feld dieser Größe ohne Mauern reicht der gierige Schritt, und wer sich
+festläuft, bleibt stehen statt zu zappeln. `dev/hextest.js` prüft das Modul für
+sich allein (18 Zusicherungen, inklusive Dreiecksungleichung an 200 Punktepaaren
+— der Test, der eine falsche Distanzformel zuverlässig auffliegen lässt).
+
+Im Kampf folgt daraus alles Weitere:
+
+| Rolle | Reichweite |
+|---|---|
+| Frontlinie, Verstärker | 1 |
+| Unterstützer | 2 |
+| Fernkampf, Magier | 3 |
+
+Zwei Glieder je Seite (Plätze 1–3 vorn, 4–6 dahinter), einander gegenüber. Wer
+niemanden erreicht, **läuft** in seinem Zug bis zu zwei Felder heran, statt
+zuzuschlagen — der Nahkämpfer verliert die ersten Züge, der Fernkämpfer schießt
+sofort. Die Rolle war bisher nur Zielwahl und hat damit zum ersten Mal
+räumliche Bedeutung. Die Deckung hängt jetzt an der Lage: Wer dem Angreifer
+näher steht als das Ziel, fängt ein Drittel ab. Gift, Brand und Blutung gehen
+weiter hindurch.
+
+Die Fähigkeiten bleiben vorerst global — Schritt 1 des gestuften Wegs aus
+TODO.md („Reichweiten für alle 290 Flächenfähigkeiten") ist bewusst NICHT
+mitgemacht. Erst soll sich zeigen, ob der Raum sich überhaupt gut anfühlt; sonst
+definiert man 290 Formen für ein Spiel, das kein Raumspiel sein will.
+
+Sichtbar wird das über eine SVG-Lagekarte über dem Kampflog (ein Punkt je
+Einheit, Größe = Lebensanteil). Ohne Bild wäre die Aufstellung eine unsichtbare
+Regel, und man wunderte sich nur, warum der Nahkämpfer erst nichts tut.
+Eingreifen kann man nicht — es bleibt eine Autoschlacht.
+
+Das Heranlaufen kostet Züge und damit Schaden, also musste die Grundhärte
+nachgeben: **1.31 → 1.21**, gemessen 51 % Siege frisch bei `dev/balance.js 500`.
+`dev/sim.js` 401/401, `dev/uitest.js` 107/107.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

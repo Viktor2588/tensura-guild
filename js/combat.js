@@ -11,8 +11,33 @@
    Hooks der Passiven: onStart onTurnStart onHit onDamaged onKill onDeath onAllyDeath */
 'use strict';
 (function (root) {
+  var H = root.Hex;
 
   var TICK_CAP = 3000;                                   // Patt-Bremse
+
+  /* ---- Der Raum ------------------------------------------------------------
+     Bis hierher war die Aufstellung eine Liste und „Deckung" eine Regel über
+     Listenplätze. Jetzt steht jede Einheit auf einem Hexfeld (js/hex.js), und
+     daraus folgt alles Weitere: Wer wen erreicht, wer wen deckt, wer erst
+     laufen muss.
+
+     Die Schlacht bleibt eine Autoschlacht — die Einheiten laufen selbst. Der
+     Spieler entscheidet vorher: Zusammensetzung und Reihenfolge, aus der die
+     Aufstellung auf dem Feld entsteht.
+
+     REICHWEITE je Rolle. Sie war bisher nur Zielwahl; jetzt ist sie Abstand,
+     und damit bekommt die Rolle zum ersten Mal eine räumliche Bedeutung.       */
+  var REICHWEITE = { front: 1, verstaerker: 1, unterstuetzer: 2, fernkampf: 3, magier: 3 };
+  var SCHRITTE = 2;                                      // Hexfelder je eigenem Zug
+
+  /* Zwei Glieder je Seite, einander gegenüber. Index 0-2 vorn, 3-5 dahinter —
+     dieselbe Ordnung, die der Spieler in der Aufstellung sieht. */
+  function startfeld(seite, i) {
+    var reihe = i < 3 ? 0 : 1;
+    var r = (i % 3) - 1;
+    var q = seite === 'player' ? -reihe : 5 + reihe;
+    return { q: q, r: r };
+  }
   /* Ohne Obergrenzen läuft alles davon, was pro Treffer stapelt. */
   /* Stapel sind unbegrenzt — wer eine Linie zu Ende baut, soll das auch sehen.
      Gedeckelt wird stattdessen die WIRKUNG, dort wo sie sonst unsinnig würde:
@@ -144,6 +169,7 @@
       }),
       keywords: (def.keywords || []).slice(), resistenz: def.resistenz || 0,
       side: side, pos: pos, gauge: 0, status: {}, regen: 0, lifesteal: 0,
+      hex: startfeld(side, pos), reichweite: REICHWEITE[roleOf(def)] || 1, schritte: SCHRITTE,
       heilfaktor: 0, schildfaktor: 0, fluchmeister: 1, segenmeister: 1,
       chaos: null, enrage: def.enrage || 0, wut: 1, verschlungen: def.verschlungen || 0,
       schattenPlus: 0, dunkelPlus: 0, lichtPlus: 0,
@@ -194,15 +220,23 @@
       var v = target.status.verderbnis || 0;
       amount = amount * (1 + v * (gegen(target, 'verderbnis') ? 0.13 : 0.1));
 
-      /* Deckung: wer hinten steht, gibt ein Drittel des Schadens an die vorderste
-         lebende Einheit ab. Damit ist die Frontlinie mehr als Reihenfolge —
-         ein zäher Körper vorn schützt die Reihe dahinter wirklich. */
-      if (!opt.umgeleitet && !opt.pure && target.pos >= 2) {
-        var vorn = living(target.side)[0];
-        if (vorn && vorn !== target) {
+      /* Deckung, jetzt räumlich: Wer zwischen dir und dem Angreifer steht, fängt
+         ein Drittel ab. Vorher hing das an „Listenplatz 3 oder weiter hinten"
+         und gab immer an die vorderste Einheit ab — eine Abstraktion von genau
+         dieser Lage. Jetzt ist es die Lage selbst. Gift und Brand gehen weiter
+         hindurch, und ohne bekannten Angreifer gibt es nichts zu decken. */
+      if (!opt.umgeleitet && !opt.pure && opt.von) {
+        var meine = H.distanz(target.hex, opt.von.hex);
+        var schild = null, beste = meine;
+        living(target.side).forEach(function (a) {
+          if (a === target) return;
+          var d = H.distanz(a.hex, opt.von.hex);
+          if (d < beste) { beste = d; schild = a; }
+        });
+        if (schild) {
           var abgabe = amount / 3;
           amount -= abgabe;
-          deal(vorn, abgabe, 'Deckung', { umgeleitet: true });
+          deal(schild, abgabe, 'Deckung', { umgeleitet: true });
         }
       }
       if (!opt.pure && target.status.schild > 0) {
@@ -412,7 +446,7 @@
       if (res[u.side].flaeche && living(other(u.side)).length >= 2) c.dmg *= 1.08;
       if (!alive(target)) return 0;
       var done = deal(target, c.dmg, quelle || u.name,
-        { pure: !!u.durchschlag || !!opt.pure, durchLicht: u.status.licht > 0 });
+        { pure: !!u.durchschlag || !!opt.pure, durchLicht: u.status.licht > 0, von: u });
       u.dmgDealt += done;
       if (u.lifesteal > 0 && done) heal(u, done * u.lifesteal, 'Lebensraub');
       /* Wer den Gegner umlegt, darf das merken — Grundlage für Exekutions-Builds,
@@ -453,6 +487,7 @@
 
     var roster = units.map(function (u) {
       return { key: u.key, id: u.id, name: u.name, side: u.side, pos: u.pos,
+               hex: { q: u.hex.q, r: u.hex.r }, reichweite: u.reichweite,
                maxHp: u.maxHp, atk: u.atk, def: u.def, spd: u.spd, role: u.role,
                tags: u.tags.slice(), actives: u.actives.map(function (a) { return a.name; }) };
     });
@@ -467,8 +502,14 @@
 
     /* ---- Zug -------------------------------------------------------------- */
 
+    /* Wen erreicht u von seinem Feld aus? */
+    function inReichweite(u, f) { return H.distanz(u.hex, f.hex) <= u.reichweite; }
+
     function pickTarget(u) {
       var foes = living(other(u.side));
+      var nah = foes.filter(function (f) { return inReichweite(u, f); });
+      /* Steht niemand in Reichweite, gilt die Wahl unten dem LAUFZIEL. */
+      if (nah.length) foes = nah;
       if (!foes.length) return null;
       /* Jagdbefehl: der Trupp geht auf das, was der Assassine aufgerissen hat. */
       if (u.jagdbefehl) {
@@ -617,8 +658,24 @@
         return;
       }
 
+      /* Kann u jemanden erreichen? Wenn nicht, kostet das Heranlaufen den Zug.
+         Genau darin steckt der Preis einer schlechten Aufstellung: wer hinten
+         steht und kurze Arme hat, schlägt die ersten Züge gar nicht zu. */
       var target = pickTarget(u);
       if (!target) return;
+      if (!inReichweite(u, target)) {
+        var belegt = {};
+        units.forEach(function (x) { if (alive(x) && x !== u) belegt[H.schluessel(x.hex)] = 1; });
+        var neu = H.laufe(u.hex, target.hex, u.schritte, u.reichweite,
+                          function (hx) { return !!belegt[H.schluessel(hx)]; });
+        if (!H.gleich(neu, u.hex)) {
+          u.hex = neu;
+          log.push({ t: t, type: 'zug', key: u.key, unit: u.name, side: u.side,
+                     q: neu.q, r: neu.r, ziel: target.name });
+        }
+        /* Nach dem Laufen darf geschlagen werden, wenn es jetzt reicht. */
+        if (!inReichweite(u, target)) return;
+      }
       var aktive = waehleAktive(u, target);
 
       /* Unterstützer heilen, wenn gerade keine Fähigkeit bereit ist. */

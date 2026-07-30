@@ -451,3 +451,16 @@ table.dbg i.ab { color: #e77; }
   font-size: .64rem; padding: .05rem .28rem; border-radius: 4px;
   background: #2e1a1a; border: 1px solid #7a3a34; color: #ffb0a8;
 }
+
+/* ---- Schlachtfeld: Lagekarte, kein Spielbrett ---- */
+#kampfbrett { margin-bottom: .5rem; }
+.brett { width: 100%; max-height: 9rem; display: block; }
+.feld-einheit circle { fill: var(--bg3); stroke: var(--rand); stroke-width: 1.5; }
+.feld-einheit .leben { stroke: none; }
+.feld-einheit.player .leben { fill: #4a7fbf; }
+.feld-einheit.enemy .leben { fill: #a8433c; }
+.feld-einheit text {
+  fill: var(--text); font-size: 11px; font-weight: 700;
+  text-anchor: middle; dominant-baseline: middle; pointer-events: none;
+}
+.feld-einheit.tot { opacity: .25; }

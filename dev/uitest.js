@@ -32,7 +32,7 @@ win.Math.random = (function (z) {
 win.HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
 win.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
 
-['js/rng.js', 'js/abilities.js', 'js/data.js', 'js/combat.js', 'js/enemies.js',
+['js/rng.js', 'js/hex.js', 'js/abilities.js', 'js/data.js', 'js/combat.js', 'js/enemies.js',
  'js/run.js', 'js/ui.js'].forEach(function (f) {
   win.eval(fs.readFileSync(path.join(wurzel, f), 'utf8'));
 });
@@ -172,6 +172,12 @@ for (var versuch = 0; versuch < 20 && kampfIndex < 0; versuch++) {
 ok(kampfIndex >= 0, 'ein Kampfknoten ist erreichbar');
 klick(karten()[kampfIndex]);
 ok($('#kampffeld') && $$('#kampffeld .kaempfer').length >= 4, 'das Kampffeld zeigt beide Seiten');
+/* Die Aufstellung ist seit dem Hexfeld eine echte Regel — sie muss sichtbar
+   sein, sonst wundert man sich nur, warum der Nahkämpfer erst nichts tut. */
+ok($('#kampfbrett svg.brett'), 'die Lagekarte zeigt das Schlachtfeld');
+ok($$('#kampfbrett .feld-einheit').length >= 4, 'mit einem Punkt je Einheit');
+ok($$('#kampfbrett .feld-einheit.player').length > 0 &&
+   $$('#kampfbrett .feld-einheit.enemy').length > 0, 'und beide Seiten unterscheidbar');
 ok($('[data-a=ueberspringen]'), 'der Kampf lässt sich überspringen');
 klick($('[data-a=ueberspringen]'));
 /* Nicht an einer Zeilenzahl festmachen — die hängt daran, wie lang der Kampf

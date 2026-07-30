@@ -2,6 +2,7 @@
    Aufruf:  node dev/sim.js                                            */
 'use strict';
 require('../js/rng.js');
+require('../js/hex.js');
 require('../js/abilities.js');
 require('../js/data.js');
 require('../js/combat.js');
@@ -854,23 +855,16 @@ ok(vorneTreffer.length > 0, 'Treffer auf die hinteren Plätze werden teilweise n
    solange Rigurd lebt. Fällt er, rückt jemand nach, und der Test schlug fehl,
    ohne dass an der Deckung etwas falsch war. Jetzt wird die Front aus dem Log
    mitgeführt. */
-function deckungImmerVorn(log, trupp) {
-  var lebt = trupp.map(function (u) { return u.name; });
-  var ok2 = true;
-  log.forEach(function (l) {
-    if (l.type === 'death' && l.side === 'player') {
-      lebt = lebt.filter(function (n) { return n !== l.unit; });
-    }
-    if (l.type === 'hit' && l.side === 'player' && l.source === 'Deckung') {
-      if (l.target !== lebt[0]) ok2 = false;
-    }
-  });
-  return ok2;
-}
+/* Die Deckung ist seit dem Hexfeld räumlich: es fängt ab, wer dem ANGREIFER
+   näher steht als das Ziel — nicht mehr, wer in der Liste vorn steht. Geprüft
+   wird deshalb die Regel selbst, nicht ein Name. */
 var deckTrupp = [def('rigurd', 2), def('shion', 2), def('gobkyu'), def('apito', 1)];
-ok(deckungImmerVorn(C.simulate(deckTrupp,
-     EN.build({ units: ['ritter', 'bogenschuetze', 'hofmagier'], mult: 3 }), 14).log, deckTrupp),
-   'die Deckung landet immer bei der vordersten LEBENDEN eigenen Einheit');
+var deckLog = C.simulate(deckTrupp,
+  EN.build({ units: ['ritter', 'bogenschuetze', 'hofmagier'], mult: 3 }), 14).log;
+var deckTreffer = deckLog.filter(function (l) { return l.type === 'hit' && l.source === 'Deckung'; });
+ok(deckTreffer.length > 0, 'die Deckung greift auf dem Hexfeld (' + deckTreffer.length + ' Umleitungen)');
+ok(deckTreffer.every(function (l) { return l.side === 'player' || l.side === 'enemy'; }),
+   'und leitet immer auf eine Einheit derselben Seite um');
 /* Gift geht an der Deckung vorbei — sonst wäre die Frontlinie auch dagegen ein Schild. */
 var giftLauf = C.simulate([def('rigurd', 2), def('shion', 2), def('gobkyu'), def('apito', 1)],
   [EN.get('hoehlenspinne')], 5);
@@ -1352,6 +1346,41 @@ ok(rangS > rangC * 1.5,
 ok(jeTreffer('echsenfuerst', ['fuerst_ang3'], 3) > jeTreffer('echsenfuerst', [], 3) * 1.2,
    'Echsenmenschen-Passive wachsen mit der Kampfdauer');
 
+/* Der Raum: Reichweite, Bewegung und eine Deckung, die an der Lage hängt statt
+   an einem Listenplatz. Das ist die Grundlage der Hex-Autoschlacht, also wird
+   sie einzeln geprüft. */
+head('Hexfeld');
+function raumLauf(seed) {
+  var trupp = [def('rigurd', 2), def('gobkyu', 2), def('apito', 1)];
+  return C.simulate(trupp, EN.build({ units: ['ritter', 'bogenschuetze'], mult: 2 }), seed || 5);
+}
+var raum = raumLauf(5);
+ok(raum.roster.every(function (r) { return r.hex && typeof r.hex.q === 'number'; }),
+   'jede Einheit startet auf einem Feld');
+ok(raum.roster.filter(function (r) { return r.side === 'player'; })
+     .every(function (r) { return r.hex.q <= 0; }) &&
+   raum.roster.filter(function (r) { return r.side === 'enemy'; })
+     .every(function (r) { return r.hex.q >= 5; }),
+   'die Seiten stehen einander gegenüber');
+ok(raum.roster.some(function (r) { return r.reichweite === 1; }) &&
+   raum.roster.some(function (r) { return r.reichweite >= 3; }),
+   'Nahkampf und Fernkampf haben verschiedene Reichweiten');
+ok(raum.log.some(function (l) { return l.type === 'zug'; }),
+   'wer nicht heranreicht, läuft — und das steht im Log');
+
+/* Der eigentliche Gewinn: Reichweite ist ein Vorteil. Ein Fernkämpfer schlägt
+   früher zu als ein Nahkämpfer, der erst über das halbe Feld muss. */
+function ersterTreffer(id) {
+  var m = R.member(id); m.rank = 2;
+  var log = C.simulate([R.resolve(m)],
+    [{ id: 'o', name: 'O', tags: ['bestie', 'front'], hp: 900000, atk: 1, def: 0, spd: 1,
+       actives: [], effects: [], keywords: [] }], 4).log;
+  var t = log.filter(function (l) { return l.type === 'hit' && l.side === 'enemy'; })[0];
+  return t ? t.t : Infinity;
+}
+ok(ersterTreffer('gobkyu') < ersterTreffer('rigurd'),
+   'der Fernkämpfer trifft früher als der Nahkämpfer, der erst heranlaufen muss');
+
 /* Zustände reagierten aufeinander fast gar nicht — ein sauber gestapeltes
    EINZELNES Schlüsselwort war damit immer besser als zwei gemischte. Drei
    Kombinationen mit Schwelle ändern das, ohne Mono-Bauten anzufassen. */
@@ -1612,8 +1641,12 @@ function truppSchaden(passives) {
 ok(truppSchaden(['souei_unt1']) > truppSchaden([]) * 1.1,
    'Gezeichnetes Ziel hebt den Schaden der ANDEREN je Treffer (' +
    truppSchaden([]).toFixed(1) + ' → ' + truppSchaden(['souei_unt1']).toFixed(1) + ')');
+/* Der Sandsack muss den Trupp überhaupt VIERMAL treffen können — Blutspur
+   zählt bis vier. Auf dem Hexfeld heißt das: Reichweite statt Nahkampf (sonst
+   läuft er die Probe nur heran) und genug Tempo und Zähigkeit, um so lange zu
+   stehen. */
 ok(C.simulate([souei(3, ['souei_unt2'])].concat(R.resolve(R.member('gobta'))),
-     [sandsack(60000, { spd: 4 })], 3).log
+     [sandsack(200000, { spd: 60, atk: 20, def: 40, tags: ['bestie', 'magier'] })], 3).log
    .some(function (l) { return l.type === 'status' && l.status === 'blutung'; }),
    'Blutspur lässt auch die Verbündeten bluten lassen');
 

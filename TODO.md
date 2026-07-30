@@ -409,6 +409,12 @@ Offen aus der Recherche (Ideen 1, 2, 3, 5):
 
 ## Entwurf: Hexagonales Taktik-RPG
 
+**Stand 2026-07-30 (Phase 41): Schritt 3 des gestuften Wegs unten ist umgesetzt**
+— Hexkoordinaten, Reichweite je Rolle, Bewegung, lagebedingte Deckung, weiterhin
+Autoschlacht. Schritt 1 (Reichweiten für alle ~290 Flächenfähigkeiten) wurde
+bewusst übersprungen und ist damit weiter offen; Schritt 2 (zwei Reihen) hat
+sich mit Schritt 3 erledigt. Offen bleibt Schritt 4: Spielerzüge.
+
 Notiert am 2026-07-29 auf Nachfrage. Das ist kein Feature, sondern ein
 Genre-Wechsel: der Kampf ist heute eine *Auflösung* — `simulate()` rechnet ihn
 komplett durch, die UI spielt ihn nur nach, und der Spieler hat währenddessen

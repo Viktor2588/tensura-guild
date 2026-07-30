@@ -304,6 +304,7 @@
     res.roster.forEach(function (r) {
       replay.u[r.key] = { name: r.name, side: r.side, hp: r.maxHp, maxHp: r.maxHp,
                           atk: r.atk, def: r.def, spd: r.spd, role: r.role,
+                          hex: r.hex ? { q: r.hex.q, r: r.hex.r } : null,
                           aktive: (r.actives || [])[0] || null, status: {}, tot: false };
     });
     zeichneKampf();
@@ -329,6 +330,7 @@
     if (l.type === 'hit' && u) { u.hp = l.hp; }
     if (l.type === 'heal' && u) { u.hp = l.hp; }
     if (l.type === 'death' && u) { u.tot = true; u.hp = 0; }
+    if (l.type === 'zug' && u) { u.hex = { q: l.q, r: l.r }; }
     if (l.type === 'revive' && u) { u.tot = false; u.hp = l.hp; }
     if (l.type === 'status' && u) { u.status[l.status] = l.stacks; }
     /* Der Würfelwurf der Runde gehört an die Einheit, nicht nur ins Log —
@@ -395,8 +397,43 @@
     return html + '</div>';
   }
 
+  /* Das Schlachtfeld. Ohne Bild wäre die Aufstellung eine unsichtbare Regel:
+     man sähe Treffer, aber nicht, warum der Nahkämpfer die ersten Züge nichts
+     tut. Bewusst klein und schematisch — es ist eine Lagekarte, kein Spielbrett,
+     denn eingreifen kann man ohnehin nicht. */
+  function brettHtml() {
+    var alle = Object.keys(replay.u).map(function (k) { return replay.u[k]; })
+      .filter(function (u) { return u.hex; });
+    if (!alle.length) return '';
+    var minQ = 99, maxQ = -99, minR = 99, maxR = -99;
+    alle.forEach(function (u) {
+      minQ = Math.min(minQ, u.hex.q); maxQ = Math.max(maxQ, u.hex.q);
+      minR = Math.min(minR, u.hex.r); maxR = Math.max(maxR, u.hex.r);
+    });
+    var g = 17, rand = g * 2;
+    var punkte = alle.map(function (u) {
+      var pos = Hex.pixel({ q: u.hex.q - minQ, r: u.hex.r - minR }, g);
+      return { u: u, x: pos.x + rand, y: pos.y + rand };
+    });
+    var breite = Hex.pixel({ q: maxQ - minQ, r: maxR - minR }, g).x + rand * 2;
+    var hoehe = Hex.pixel({ q: 0, r: maxR - minR }, g).y + rand * 2;
+    return '<svg class="brett" viewBox="0 0 ' + Math.round(breite) + ' ' + Math.round(hoehe) +
+      '" role="img" aria-label="Aufstellung im Kampf">' +
+      punkte.map(function (p) {
+        var anteil = Math.max(0, Math.min(1, p.u.hp / p.u.maxHp));
+        return '<g class="feld-einheit ' + p.u.side + (p.u.tot ? ' tot' : '') + '">' +
+          '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + (g * 0.7) + '"/>' +
+          '<circle class="leben" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' +
+            (g * 0.7 * Math.max(0.12, anteil)).toFixed(1) + '"/>' +
+          '<text x="' + p.x.toFixed(1) + '" y="' + (p.y + 4).toFixed(1) + '">' +
+            esc((p.u.name || '?').slice(0, 2)) + '</text></g>';
+      }).join('') + '</svg>';
+  }
+
   function aktualisiereFeld() {
     if (!replay) return;
+    var brett = $('kampfbrett');
+    if (brett) brett.innerHTML = brettHtml();
     var feld = $('kampffeld');
     if (feld) feld.innerHTML = seiteHtml('player', 'Dein Trupp') + seiteHtml('enemy', 'Gegner');
     var log = $('kampflog');
@@ -406,7 +443,8 @@
   function zeichneKampf() {
     var p = run.pending;
     var html = '<h2>' + esc(p.node.name) + '</h2>';
-    if (replay) html += '<div class="feld" id="kampffeld"></div><div id="kampflog"></div>';
+    if (replay) html += '<div id="kampfbrett"></div>' +
+      '<div class="feld" id="kampffeld"></div><div id="kampflog"></div>';
     if (replay && !replay.fertig) {
       html += '<div class="reihe"><button type="button" data-a="ueberspringen">Überspringen</button></div>';
     } else {
