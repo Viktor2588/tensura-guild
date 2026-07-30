@@ -513,6 +513,16 @@ beantwortet, ob dieses Spiel überhaupt ein Raumspiel sein will.
 
 Balance und Werkzeug:
 
+- **Gewürfelte Passive treffen die Rollen ungleich.** Phase 51 hat die
+  Passivwahl durch den Wurf am Marktposten ersetzt, und die Rollen-Spreizung ist
+  von 15 auf **26 Punkte** zurückgewachsen (Unterstützer 66 %, Verstärker 40 %).
+  Verstärker hängen mehr als andere an bestimmten Kombinationen, Zufall trifft
+  sie also härter — dasselbe Bild wie unten. Wenn der Wurf bleiben soll, braucht
+  Verstärker Passive, die einzeln tragen.
+- **8 unbezahlbare Marktangebote je Run** (vorher 1,2). Vier Posten mit Rangwurf
+  heißt, dass regelmäßig ein S-Paket dasteht, das man sich nicht leisten kann.
+  Als sichtbares Ziel brauchbar, als toter Posten nicht — im Spiel prüfen, ob es
+  sich anders anfühlt als es sich liest.
 - **Verstärker ist die schwächste Rolle, und es sind die Kits.** Phase 49 hat ihm
   Reichweite 2 und 3 Schritte gegeben — genau das, was Unterstützer hat. Der
   steht bei 60 %, Verstärker bei **46 %** (n=756). Damit ist die Lage als Ursache

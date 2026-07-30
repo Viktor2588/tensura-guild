@@ -506,10 +506,16 @@
         tags.push(tag('kw-' + k, kwName(k), kwName(k),
           (G.keywords[k] || '') + (G.zustaende[k] ? '\n\n' + G.zustaende[k] : '')));
       });
+      /* Der Rang ist die wichtigste Zahl am Posten — er sagt Werte UND wie viele
+         Passive dabei sind. Deshalb steht er als eigener Chip da. */
+      if (r.rangName) {
+        tags.push(tag('tag-rang', 'Rang ' + r.rangName, 'Rang ' + r.rangName,
+          G.begriffe.rang + '\n\n' + ((r.rang || 0) + 1) + ' Passive gehören zu diesem Rang.'));
+      }
       if (AB.linien[u.id]) {
         tags.push(tag('tag-linien', 'Vier Linien', 'Eigene Entwicklungslinien',
-          'Diese Einheit wählt bei jedem Aufstieg aus vier Passiven — je eine aus Angriff, ' +
-          'eigener Mechanik, Unterstützung und Defensive.'));
+          'Diese Einheit hat sechzehn eigene Passive in vier Linien. Welche davon ' +
+          'sie mitbringt, steht am Marktposten — gewürfelt, nach Rang.'));
       }
       return tags.join('');
     }
@@ -539,9 +545,6 @@
         tags.push(tag('kw-' + k, kwName(k), kwName(k), G.keywords[k] || ''));
       });
       return tags.join('');
-    }
-    if (r.kind === 'rang') {
-      return tag('tag-rang', 'Aufstieg', 'Namensweihe', G.begriffe.rang);
     }
     return tag('tag-mag', 'Vorräte', 'Vorräte', G.begriffe.magicule);
   }
@@ -637,21 +640,27 @@
     if (o.kind === 'unit') {
       var u = GD.unit(o.id), sig = AB.get(u.signature);
       var zeilen = ['<b>' + esc(sig.name) + '</b> — ' + esc(sig.text)];
-      if (AB.linien[u.id]) {
-        if (o.passive) {
-          var p = AB.get(o.passive);
-          zeilen.push('Startet mit <b>' + esc(p.name) + '</b> (Linie ' + esc(o.passiveLinieName) +
-            '): ' + esc(p.text));
-        } else {
-          zeilen.push('Wählt bei jedem Aufstieg aus <b>vier</b> eigenen Passiven — sechzehn insgesamt, frei kombinierbar.');
-        }
-      } else {
+      /* Das ganze Paket steht da, nicht nur die erste Passive: es gibt keinen
+         Aufstieg mehr, bei dem man nachwählen könnte. Was hier steht, ist was
+         man bekommt. */
+      var pas = o.passives || (o.passive ? [o.passive] : []);
+      if (pas.length) {
+        zeilen.push(pas.map(function (pid) {
+          var pp = AB.get(pid);
+          return '· <b>' + esc(pp ? pp.name : pid) + '</b> — ' + esc(pp ? pp.text : '');
+        }).join('<br>'));
+      } else if (!AB.linien[u.id]) {
         zeilen.push('Erste Passive: ' + (u.passives || []).slice(0, 1).map(function (id) {
           var pp = AB.get(id); return '<b>' + esc(pp.name) + '</b> — ' + esc(pp.text);
         }).join(''));
       }
-      var d = R.resolve(R.member(o.id));
-      zeilen.push('Werte auf Rang C: ' + d.hp + '❤ ' + d.atk + '⚔ ' + d.def + '🛡 ' + d.spd + '⚡');
+      /* Werte auf DEM Rang, der im Angebot steht — sonst liest man die Zahlen
+         einer Einheit, die man so nicht kauft. */
+      var mm = R.member(o.id);
+      mm.rank = o.rang || 0;
+      var d = R.resolve(mm);
+      zeilen.push('Werte auf Rang ' + R.RANK_NAME[o.rang || 0] + ': ' +
+        d.hp + '❤ ' + d.atk + '⚔ ' + d.def + '🛡 ' + d.spd + '⚡');
       return zeilen.join('<br>');
     }
     if (o.kind === 'relic') {
@@ -882,8 +891,6 @@
   function einheitHtml(m, aufBank) {
     var d = R.resolve(m);
     var basis = GD.unit(m.id);
-    var kosten = R.rankCost(m, run);
-    var kannAufsteigen = m.rank < 3 && run.magicules >= kosten && !R.passivWahl(run);
     var abs = R.abilities(m);
     var aktive = abs.filter(function (a) { return a.art === 'aktiv'; });
     var passive = abs.filter(function (a) { return a.art === 'passiv'; });
@@ -982,16 +989,13 @@
         R.entlassenWert(m) + ' Magicule zurück — ein Viertel dessen, was in dieser Einheit ' +
         'steckt (Anwerbung und Rangaufstiege). Ausrüstung wandert zurück in den Beutel, ' +
         'die Art wird wieder frei.') + '>ziehen: +' + R.entlassenWert(m) + '✦</span>';
-    html += '<button class="' + (kannAufsteigen ? 'haupt' : '') + '" data-a="aufstieg" data-uid="' + m.uid + '"' +
-      (kannAufsteigen ? '' : ' disabled') +
-      tip(m.rank >= 3 ? 'Höchster Rang' : 'Aufstieg auf Rang ' + R.RANK_NAME[m.rank + 1],
-        m.rank >= 3 ? 'Weiter geht es nicht.' :
-        'Kostet ' + kosten + ' Magicule (du hast ' + run.magicules + ').\n\nGibt: +30 % Leben und Angriff, ' +
-        '+1 Rüstung, +1 Tempo, ' + (m.rank === 2 ? 'ZWEI Item-Slots' : 'einen Item-Slot') +
-        ', einen aktiven Slot mit Auswahl aus drei Fähigkeiten (zwei davon passen ' +
-        'zur Linie dieser Einheit), die Passive „' +
-        (AB.get(basis.passives[R.passivSlots(m)]) || { name: '—' }).name + '" und einen Prädator-Slot.') + '>' +
-      (m.rank >= 3 ? 'Rang S erreicht' : 'Aufstieg ' + R.RANK_NAME[m.rank + 1] + ' — ' + kosten + '✦') + '</button>';
+    /* Kein Aufwerten-Knopf mehr: Rang kauft man im Markt, an der Einheit selbst.
+       Statt eines toten Knopfes steht hier, was der Rang dieser Einheit bedeutet. */
+    html += '<span class="chip"' +
+      tip('Rang ' + R.RANK_NAME[m.rank], G.begriffe.rang +
+        '\n\nRänge werden nicht mehr gekauft — Einheiten stehen im Markt schon auf ' +
+        'ihrem Rang, mit den Passiven, die dazugehören. Ein Gratisaufstieg kommt ' +
+        'nur noch aus dem Lager.') + '>Rang ' + R.RANK_NAME[m.rank] + '</span>';
     html += '</div></div>';
     return html;
   }
@@ -1222,7 +1226,6 @@
     kaufen: function (d) { R.buy(run, +d.i); render(); speichern(); },
     event: function (d) { R.eventChoose(run, +d.i); render(); speichern(); },
     lager: function (d) { R.camp(run, +d.i); render(); speichern(); },
-    aufstieg: function (d) { R.rankUp(run, d.uid); render(); speichern(); },
     pwahl: function (d) { R.choosePassive(run, +d.i); render(); speichern(); },
     platz: function (d) {
       if (!tauschUid || tauschUid === d.uid) tauschUid = tauschUid === d.uid ? null : d.uid;

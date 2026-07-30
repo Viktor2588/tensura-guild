@@ -140,7 +140,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.35;   // Bot draftet wieder (Phase 46); gemessen 50 % bei 500, 52 % bei 600 Runs
+  var GRUNDHAERTE = 1.15;   // Einheiten kommen fertig aus dem Markt (Phase 51)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -160,7 +160,6 @@
      mit Gold bezahlt und damit fast gratis. */
   var PREIS_EINHEIT = 130, PREIS_ITEM = 3, PREIS_RELIKT = 340;
   /* Anteil am regulären Rangpreis (140/300/560) — die Weihe bleibt günstiger. */
-  var PREIS_RANG_FAKTOR = 0.8;
 
   /* Der Start bleibt bescheiden: höchstens ungewöhnliche Relikte. Ein
      legendäres in der ersten Wahl nimmt dem Run seine Kurve — das Starke soll
@@ -472,6 +471,59 @@
     return p;
   }
 
+  /* ---- Einheiten kommen fertig aus dem Markt ------------------------------
+     Vorher gab es zwei Wege zu einem starken Trupp: Einheiten anwerben und sie
+     danach einzeln aufwerten (plus die Namensweihe als verbilligter Aufstieg auf
+     ein ausgelostes Ziel). Das waren drei Posten fuer eine Frage, und die
+     Namensweihe war nur ein Rabatt mit Wuerfel davor.
+
+     Jetzt ist es EIN Posten: eine Einheit steht im Markt schon auf ihrem Rang,
+     mit den Passiven, die zu diesem Rang gehoeren. Man kauft ein fertiges
+     Paket und sieht vorher genau, was drin ist.
+
+     Passive je Rang — dieselbe Zahl, die `PASSIV_SLOTS` ohnehin freischaltet:
+       C = 1, B = 2, A = 3, S = 4                                               */
+  var RANG_GEWICHT = [40, 22, 10, 3];             // C, B, A, S — S ist das Seltene
+
+  /* Die Inhaltsstufe verschiebt das Gewicht nach oben: in Akt 1 stehen fast nur
+     C und B im Markt, spaeter wird S ueberhaupt erreichbar. Dieselbe Idee wie
+     bei der Raritaet, damit Fortschritt sich im Angebot zeigt und nicht nur im
+     Geldbeutel. */
+  function wuerfleRang(rng, stufe) {
+    var gew = RANG_GEWICHT.map(function (g, r) {
+      return Math.max(1, Math.round(g * Math.pow(1 + (stufe || 0) * 0.28, r)));
+    });
+    var summe = gew.reduce(function (a, b) { return a + b; }, 0);
+    var wurf = rng() * summe;
+    for (var r = 0; r < gew.length; r++) {
+      wurf -= gew[r];
+      if (wurf < 0) return r;
+    }
+    return 0;
+  }
+
+  /* `anzahl` Passive aus dem eigenen Topf der Einheit, ohne Wiederholung.
+     Passive MIT Preis (die Keystones, die eine Regel gegen einen Nachteil
+     tauschen) bleiben draussen: sie sind eine Entscheidung, und aufgedraengt
+     bekommt man sie schon beim Startzustand bewusst nicht. */
+  function wuerfleLinienPassive(unitId, anzahl, rng) {
+    var topf = AB.linienAngebot(unitId).filter(function (o) { return !o.preis; });
+    var out = [];
+    while (out.length < anzahl && topf.length) {
+      out.push(topf.splice(Math.floor(rng() * topf.length), 1)[0].id);
+    }
+    return out;
+  }
+
+  /* Was eine fertige Einheit kostet: der Anwerbepreis plus genau die Aufstiege,
+     die man sonst bezahlt haette. Kein Rabatt und kein Zuschlag — der Markt
+     nimmt einem die Arbeit ab, nicht das Geld. */
+  function rangPreis(u, rang) {
+    var p = PREIS_EINHEIT + u.cost * 45;
+    for (var r = 0; r < rang; r++) p += RANK_COST[r];
+    return p;
+  }
+
   /* ---- Rarität: steuert, was überhaupt angeboten wird ---------------------
      Seltenes ist von Anfang an möglich, wird aber erst in den späteren Akten
      wahrscheinlich. Ohne diese Verschiebung wäre die Stufe nur eine Farbe.    */
@@ -717,12 +769,26 @@
 
   /* ---- Belohnungen -------------------------------------------------------- */
 
-  function unitPool(run) {
+  /* Belegte Arten waren hier ausgeschlossen — richtig, solange eine Einheit
+     nur EINMAL in den Trupp konnte. Seit Phase 51 ist der Markt aber der
+     Aufwertungsweg: eine belegte Art darf angeboten werden, wenn der Rang des
+     Angebots ueber dem liegt, was schon da steht. Ohne diese Ausnahme erschien
+     nie ein Aufstieg, und der Trupp blieb auf seinen Startraengen sitzen —
+     gemessen 2 % Siege und 3,3 Rangstufen statt 14. */
+  function unitPool(run, hoechsterRang) {
     var st = inhaltsStufe(run);
     var maxCost = st <= 2 ? 3 : st === 3 ? 4 : 5;
     var belegt = belegteArten(run);
+    var raenge = {};
+    run.team.concat(run.bank).forEach(function (m) {
+      var a = GD.unit(m.id).art;
+      if (raenge[a] === undefined || m.rank < raenge[a]) raenge[a] = m.rank;
+    });
     return run.meta.unlockedUnits.map(GD.unit).filter(function (u) {
-      return u && u.cost <= maxCost && belegt.indexOf(u.art) < 0;
+      if (!u || u.cost > maxCost) return false;
+      if (belegt.indexOf(u.art) < 0) return true;
+      /* Belegt: nur, wenn ueberhaupt ein besserer Rang gezogen werden KANN. */
+      return (hoechsterRang || 0) > raenge[u.art];
     });
   }
   function relicPool(run) {
@@ -740,10 +806,46 @@
     return GD.artName(u.art) + ' · ' + GD.rolleName(u.tags[1]) + ' · ' + (sig ? sig.name : '');
   }
 
-  function addUnit(run, id, startPassiveId) {
+  /* Wen ersetzt dieses Angebot? Seit Phase 51 ist der Markt der Aufwertungsweg:
+     Raenge werden nicht mehr einzeln gekauft, also muss eine bessere Fassung
+     derselben Art die alte ERSETZEN koennen. Ohne das war der Rang bei vollem
+     Trupp fuer immer eingefroren — gemessen fiel die Siegquote damit auf 2 %,
+     weil `addUnit` an der belegten Art scheiterte und niemand je aufstieg.
+
+     Nur nach oben: eine schwaechere Fassung zu kaufen ist kein Aufstieg, sondern
+     ein Versehen. Der Einsatz der alten Einheit kommt als Anrechnung zurueck,
+     wie beim Entlassen — sonst zahlt man denselben Weg zweimal. */
+  function ersetzbar(run, u, rang) {
+    if (freieArt(run, u.art)) return null;
+    var alt = run.team.concat(run.bank).filter(function (m) {
+      return GD.unit(m.id).art === u.art;
+    })[0];
+    return (alt && rang > alt.rank) ? alt : null;
+  }
+
+  function addUnit(run, id, startPassiveId, rang, passiveListe) {
     var u = GD.unit(id);
-    if (!u || !freieArt(run, u.art)) return false;      // eine Einheit je Art
+    if (!u) return false;
+    if (!freieArt(run, u.art)) {
+      /* Aufwertung derselben Art: die alte Einheit macht Platz und ihr Einsatz
+         wird angerechnet. Die Ausruestung wandert zurueck in den Beutel. */
+      var weg = ersetzbar(run, u, rang || 0);
+      if (!weg) return false;
+      var platz = run.team.map(function (x) { return x.uid; }).indexOf(weg.uid);
+      weg.items.slice().forEach(function (iid) { unequip(run, weg.uid, iid); });
+      /* Der GANZE Einsatz zurueck, nicht ein Viertel wie beim Entlassen: das
+         hier ist kein Verkauf, sondern derselbe Weg ein Stueck weiter. Mit nur
+         einem Viertel kostete eine Aufwertung gemessen das Zweieinhalbfache
+         eines alten Rangschritts, und die Siegquote blieb bei 15 %. Netto zahlt
+         man jetzt die Differenz — genau das, was „aufwerten" hiess. */
+      run.magicules += investiert(weg);
+      run.chronik.push('Aufwertung: ' + GD.unit(weg.id).name + ' (Rang ' + rankName(weg) +
+        ') weicht ' + u.name + ' (Rang ' + RANK_NAME[rang || 0] + ')');
+      if (platz >= 0) run.team.splice(platz, 1);
+      else run.bank.splice(run.bank.map(function (x) { return x.uid; }).indexOf(weg.uid), 1);
+    }
     var m = member(id);
+    if (rang) m.rank = Math.max(0, Math.min(3, rang));
     /* ponytail: Frontlinie rückt beim Anwerben direkt auf Platz 1 — Abkürzung
        aus TODO.md, damit man zum Testen nicht jedes Mal von Hand umstellt.
        Wieder auf `push` setzen, sobald die Aufstellung Spielerentscheidung ist. */
@@ -756,13 +858,18 @@
     /* Task 3: Startzustand ist zufällig — die erste Linien-Passive wird
        vorausgewählt, damit beim Anwerben keine Auswahl-Karten erscheinen. */
     if (hatLinien(m)) {
-      if (startPassiveId) m.passives = [startPassiveId];
+      /* Eine gekaufte Einheit bringt ihr Paket schon mit — dann wird hier nichts
+         mehr gezogen und danach keine Wahl geoeffnet. Der Spieler hat am
+         Marktposten entschieden, ein zweiter Bildschirm waere ein Klick ohne
+         Inhalt (dasselbe Argument wie bei der alten Namensweihe). */
+      if (passiveListe && passiveListe.length) m.passives = passiveListe.slice();
+      else if (startPassiveId) m.passives = [startPassiveId];
       else {
         var preset = presetLinePassive(run, id);
         if (preset) m.passives = [preset.id];
       }
     }
-    passivAngebot(run, m, true);
+    if (!(passiveListe && passiveListe.length)) passivAngebot(run, m, true);
     return true;
   }
 
@@ -839,7 +946,10 @@
 
   /* ---- Rangaufstieg ------------------------------------------------------- */
 
-  function rankUp(run, uid, gratis, festePassive) {
+  /* Rang steigt seit Phase 51 nicht mehr gegen Geld: Einheiten kommen fertig aus
+     dem Markt. Uebrig bleibt der GRATIS-Aufstieg aus dem Lager — eine Belohnung,
+     kein Kaufposten. Der Parameter `festePassive` ist mit der Namensweihe weg. */
+  function rankUp(run, uid, gratis, egal) {
     var m = find(run, uid);
     if (!m || m.rank >= 3 || passivWahl(run)) return false;
     var cost = gratis ? 0 : rankCost(m, run);
@@ -847,16 +957,7 @@
     run.magicules -= cost;
     m.rank++;
     run.chronik.push('Aufstieg: ' + GD.unit(m.id).name + ' auf Rang ' + rankName(m));
-    /* Die Namensweihe bringt ihre Passive schon mit: sie steht im Angebot, also
-       hat der Spieler beim Kauf bereits entschieden. Eine zweite Wahl danach
-       wäre nur ein Klick ohne Inhalt. */
-    if (festePassive) {
-      m.passives = (m.passives || []).concat(festePassive);
-      var ab = AB.get(festePassive);
-      run.chronik.push('Namensweihe: ' + GD.unit(m.id).name + ' erhält ' + (ab ? ab.name : festePassive));
-    } else {
-      passivAngebot(run, m);
-    }
+    passivAngebot(run, m);
     return true;
   }
 
@@ -978,13 +1079,29 @@
     /* Kriegsrecht: EIN Angebot statt drei. Ganz ohne Einheiten war die Stufe
        gemessen härter als die nächsthöhere (13 gegen 20 % Siege) — die Kurve lief
        rückwärts, weil ein Trupp, dem eine Rolle fehlt, gar nicht mehr aufholt. */
-    themenWahl(run, rng, unitPool(run), st, (regel(run, 'kriegsrecht') ? 1 : 2) + (extra || 0))
+    /* Vier Einheiten, jede auf einem gewuerfelten Rang. Das ist der Markt: die
+       Frage ist nicht mehr „anwerben oder aufwerten", sondern welches der vier
+       fertigen Pakete zum Trupp passt. */
+    themenWahl(run, rng, unitPool(run, 3), st, (regel(run, 'kriegsrecht') ? 2 : 4) + (extra || 0))
       .forEach(function (u) {
-        var preset = presetLinePassive(run, u.id, rng);
-        offers.push({ kind: 'unit', id: u.id, name: u.name, price: PREIS_EINHEIT + u.cost * 45,
+        var rang = wuerfleRang(rng, st);
+        /* Steht die Art schon im Trupp, ist das Angebot eine Aufwertung — dann
+           muss der Rang darueber liegen, sonst waere der Posten unkaufbar. */
+        var vorhanden = run.team.concat(run.bank).filter(function (m) {
+          return GD.unit(m.id).art === u.art;
+        })[0];
+        if (vorhanden) rang = Math.max(rang, Math.min(3, vorhanden.rank + 1));
+        var pas = wuerfleLinienPassive(u.id, rang + 1, rng);
+        offers.push({ kind: 'unit', id: u.id, name: u.name,
+                      rang: rang, rangName: RANK_NAME[rang],
+                      price: rangPreis(u, rang),
                       text: unitText(u), rarity: u.rarity,
-                      passive: preset ? preset.id : null,
-                      passiveLinieName: preset ? preset.linieName : null });
+                      passive: pas[0] || null,
+                      passives: pas,
+                      passiveNamen: pas.map(function (pid) {
+                        var ab = AB.get(pid);
+                        return ab ? ab.name : pid;
+                      }) });
       });
     themenWahl(run, rng, GD.items, st, 1 + (extra || 0)).forEach(function (it) {
       offers.push({ kind: 'item', id: it.id, name: it.name, price: Math.round(it.cost * PREIS_ITEM),
@@ -1000,32 +1117,6 @@
       offers.push({ kind: 'relic', id: r.id, name: r.name, price: PREIS_RELIKT,
                     text: r.text, rarity: r.rarity });
     }
-    /* Namensweihe: ein Rang unter dem regulären Preis — aber NICHT für eine
-       Einheit deiner Wahl. Das Ziel wird beim Aufbau des Markts gezogen und
-       steht für diesen Bildschirm fest. Wer sie will, nimmt sie für die Einheit,
-       die das Los bestimmt hat; sonst hebt man den Rang eben regulär.
-       Der Preis hängt am Rang des Ziels: ein Sprung auf S kostet mehr als einer
-       auf B. */
-    var faehig = run.team.filter(function (m) { return m.rank < 3; });
-    if (faehig.length) {
-      var ziel = root.RNG.pick(rng, faehig);
-      /* Die Passive wird hier mitgezogen und steht im Angebot. Vorher hob die
-         Weihe nur den Rang und öffnete danach eine Auswahl — zwei Bildschirme
-         für eine Entscheidung. Jetzt sieht man beides auf einmal und entscheidet
-         einmal: dieses Paket zu diesem Preis, oder nicht. */
-      var hat = ziel.passives || [];
-      var offen = AB.linienAngebot(ziel.id).filter(function (o) { return hat.indexOf(o.id) < 0; });
-      var mit = offen.length ? root.RNG.pick(rng, offen) : null;
-      var mitAb = mit ? AB.get(mit.id) : null;
-      offers.push({ kind: 'rang', uid: ziel.uid, passive: mit ? mit.id : null,
-                    name: 'Namensweihe: ' + GD.unit(ziel.id).name,
-                    price: Math.round(RANK_COST[ziel.rank] * PREIS_RANG_FAKTOR),
-                    text: 'Hebt ' + GD.unit(ziel.id).name + ' von Rang ' + RANK_NAME[ziel.rank] +
-                          ' auf ' + RANK_NAME[ziel.rank + 1] + '. Das Ziel ist ausgelost und ' +
-                          'steht für diese Verwaltung fest.' +
-                          (mitAb ? ' Dazu fest: ' + mitAb.name + ' (' + mit.linieName + ') — ' +
-                                   mitAb.text : '') });
-    }
     commit(run, rng);
     return offers;
   }
@@ -1034,13 +1125,8 @@
     var liste = run.pending && (run.pending.markt || run.pending.offers);
     var o = liste && liste[i];
     if (!o || o.sold || run.magicules < o.price) return false;
-    if (o.kind === 'unit' && !addUnit(run, o.id, o.passive)) return false;
-    if (o.kind === 'rang') {
-      /* Das Ziel steht im Angebot. Ist es inzwischen verkauft oder schon auf S,
-         verfällt der Posten — nachgewürfelt wird nicht. */
-      var ziel = find(run, o.uid);
-      if (!ziel || ziel.rank >= 3 || !rankUp(run, ziel.uid, true, o.passive)) return false;
-    }
+    if (o.kind === 'unit' &&
+        !addUnit(run, o.id, o.passive, o.rang, o.passives)) return false;
     if (o.kind === 'relic') run.relics.push(o.id);
     if (o.kind === 'item') (run.bag = run.bag || []).push(o.id);
     run.magicules -= o.price;
@@ -1382,7 +1468,8 @@
     belegteArten: belegteArten, freieArt: freieArt, waehle: waehle, gewicht: gewicht,
     inhaltsStufe: inhaltsStufe, boss: bossOf, STUFEN: STUFEN, ertrag: ertrag,
     PRUEFUNGEN: PRUEFUNGEN, pruefung: pruefung, TYP_NAME: TYP_NAME,
-    PREIS_RANG_FAKTOR: PREIS_RANG_FAKTOR, RANK_COST: RANK_COST,
+    RANK_COST: RANK_COST, wuerfleRang: wuerfleRang, rangPreis: rangPreis,
+    ersetzbar: ersetzbar,
     buildTeile: buildTeile, resonanzen: resonanzen, analyse: analyse,
     save: save, load: load, clear: clear, loadMeta: loadMeta, saveMeta: saveMeta,
     serialize: serialize, deserialize: deserialize,

@@ -117,11 +117,11 @@ function play(seed, voll) {
         if (run.team[i].items.length < R.itemSlots(run.team[i])) { R.equip(run, run.team[i].uid, iid); break; }
       }
     });
-    // aufsteigen, sobald bezahlbar: vorderste Einheit zuerst
-    for (var j = 0; j < run.team.length && !R.passivWahl(run); j++) {
-      var m = run.team[j];
-      if (R.rankCost(m) && run.magicules >= R.rankCost(m)) { R.rankUp(run, m.uid); break; }
-    }
+    /* Kein Aufsteigen mehr: Rang wird seit Phase 51 nicht gekauft, sondern kommt
+       mit der Einheit aus dem Markt. Damit ist auch der alte TODO-Punkt erledigt,
+       dass der Bot stur die vorderste Einheit hochzog und deshalb nie gemessen
+       hat, ob „vier auf B" oder „eine auf S" besser ist — die Frage stellt der
+       Markt jetzt selbst, an vier Posten. */
   }
 
   /* An den Run gehaengt, nicht lokal: die Auswertung laeuft ausserhalb von
@@ -210,19 +210,23 @@ function play(seed, voll) {
       if (p.markt) {
         var kw2 = teamKeywords(run);
         var posten = p.markt.map(function (o, i) {
-          var sc = o.kind === 'unit' ? 12 + passt(o.id, kw2)
+          /* Seit Phase 51 gibt es keinen Aufstiegsposten: eine Einheit bringt
+             ihren Rang mit, und der Rang ist ihr Wert. Rang+1 Passive und je
+             Stufe rund 30 % mehr Werte — deshalb zaehlt der Rang doppelt in die
+             Bewertung, sonst kauft der Bot nur die billigen C-Einheiten und
+             misst wieder die halbe Besetzung. */
+          var sc = o.kind === 'unit' ? 12 + passt(o.id, kw2) + (o.rang || 0) * 14
             : o.kind === 'relic' ? reliktWert(run, o.id)
-            : o.kind === 'item' ? 7
-            : o.kind === 'rang' ? 14 : 5;
+            : o.kind === 'item' ? 7 : 5;
           return { i: i, wert: sc / Math.max(1, o.price) * 100 };
         }).sort(function (a, b) { return b.wert - a.wert; });
         posten.forEach(function (x) {
           var o = p.markt[x.i];
           if (o.sold) return;
           if (run.magicules < o.price) { unbezahlbar++; return; }
-          /* Rang und Aufstieg konkurrieren um dieselben Magicule — etwas
-             Reserve für den nächsten Aufstieg bleibt stehen. */
-          if (run.magicules - o.price < 140 && o.kind !== 'rang') return;
+          /* Etwas Reserve bleibt stehen, damit nicht der erste Posten alles
+             frisst und die naechste Runde nichts mehr geht. */
+          if (run.magicules - o.price < 140) return;
           if (R.buy(run, x.i, run.team[0] && run.team[0].uid)) kaeufe[o.kind] = (kaeufe[o.kind] || 0) + 1;
         });
       }

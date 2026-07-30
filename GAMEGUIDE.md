@@ -66,17 +66,34 @@ Magicule, steht dabei, wie viele.
 Es gibt **keinen Händler-Knoten** mehr auf der Karte — der wäre doppelt. Die
 freien Slots sind Kämpfe geworden.
 
-### Namensweihe
+### Einheiten kommen fertig aus dem Markt
 
-Ein Rangaufstieg für **80 % des regulären Preises** — aber du suchst die Einheit
-nicht aus. Das Ziel wird beim Aufbau des Markts **ausgelost** und steht für diese
-Verwaltung fest; es steht im Titel des Postens. Weil der Preis am Rang des Ziels
-hängt, kostet ein Sprung auf S mehr als einer auf B (112 / 240 / 448 ✦).
+**Ränge werden nicht gekauft.** Es gibt kein „Aufwerten" an der Einheit und keine
+Namensweihe mehr. Stattdessen stehen im Markt **vier Einheiten**, jede schon auf
+ihrem Rang und mit den Passiven, die zu diesem Rang gehören:
 
-Das macht sie zur Wette statt zur Abkürzung: Fällt das Los auf die Einheit, die
-du ohnehin hochziehen wolltest, ist es ein Schnäppchen. Sonst hebst du den Rang
-regulär — oder nimmst sie trotzdem, weil billig billig ist. Verkaufst du das
-Ziel, verfällt der Posten.
+| Rang | Passive dabei |
+|---|---|
+| C | 1 |
+| B | 2 |
+| A | 3 |
+| S | 4 |
+
+Welchen Rang ein Posten hat, wird gewürfelt, und **S ist das Seltene** — auf
+frühen Knoten sieht man fast nur C und B, später wird S überhaupt erreichbar.
+Welche Passiven dabei sind, wird ebenfalls gewürfelt (Keystones mit Nachteil
+bleiben draußen). Alles davon steht am Posten, bevor du kaufst: Rang, Werte auf
+diesem Rang, und jede einzelne Passive mit ihrem Text.
+
+**Aufwerten heißt jetzt: eine bessere Fassung derselben Art kaufen.** Steht die
+Art schon in deinem Trupp, ist der Posten eine Aufwertung — er ersetzt die alte
+Einheit, und ihr **ganzer Einsatz wird angerechnet** (nicht nur ein Viertel wie
+beim Entlassen). Netto zahlst du also die Differenz. Angeboten wird eine belegte
+Art nur mit höherem Rang; eine schwächere Fassung wäre kein Aufstieg. Die
+Ausrüstung der alten Einheit wandert zurück in den Beutel.
+
+Ein Gratisaufstieg kommt weiterhin aus dem **Lager** — das ist eine Belohnung,
+kein Kaufposten.
 
 ### Verkaufen
 
@@ -94,11 +111,14 @@ ist ein verzichteter Aufstieg von C auf B plus die Hälfte des nächsten.
 
 | Was | Preis |
 |---|---|
-| Rang C → B / B → A / A → S | 140 / 300 / 560 |
-| Einheit im Laden | 130 + 45 je Kostenpunkt |
+| Einheit auf Rang C | 130 + 45 je Kostenpunkt |
+| dieselbe auf B / A / S | zusätzlich 140 / +300 / +560 |
+| Aufwertung (dieselbe Art, höherer Rang) | der Paketpreis minus dem ganzen Einsatz der alten Einheit |
 | Relikt im Laden | 340 |
-| Namensweihe (ein Rang, günstiger) | 80 % des regulären Rangpreises |
 | Ausrüstung | das Dreifache ihres Grundwerts |
+
+Eine Einheit auf S kostet also genau so viel wie dieselbe Einheit auf C plus die
+drei Aufstiege — der Markt nimmt dir die Arbeit ab, nicht das Geld.
 
 Zurück bekommst du etwas nur beim **Entlassen**: ein Viertel dessen, was in der
 Einheit steckt (Anwerbung plus Rangaufstiege), und ihre Ausrüstung wandert in
@@ -368,7 +388,6 @@ konkurrieren um denselben Beutel:
 
 - **Einheiten** (65–180 Gold) — mehr Körper, eine neue Art, eine neue Signatur.
 - **Ausrüstung** (35–100 Gold) — macht eine vorhandene Einheit deutlich besser.
-- **Namensweihe** (130 Gold) — ein Rang ohne Magicule, für eine Einheit deiner Wahl.
 
 Ausrüstung liegt im Beutel, bis du sie einer Einheit anlegst — die Slots hängen
 am Rang. Ein Teil der Ausrüstung schaut darauf, **wen** du ausrüstest: der

@@ -239,11 +239,10 @@ rRun2.phase = 'karte';
 ok(!R.STEPS.some(function (t) { return t.indexOf('shop') >= 0; }),
    'kein Händler-Knoten mehr in der Wegleiste');
 var markt = R.marktOffers(rRun2, { type: 'kampf' }, false);
-ok(markt.filter(function (o) { return o.kind !== 'rang'; })
-   .every(function (o) { return STUFEN.indexOf(o.rarity) >= 0; }),
-   'jeder Marktposten mit Gegenstand trägt seine Stufe');
-ok(markt.some(function (o) { return o.kind === 'rang'; }),
-   'der Markt bietet auch einen Rang an');
+ok(markt.every(function (o) { return STUFEN.indexOf(o.rarity) >= 0; }),
+   'jeder Marktposten trägt seine Stufe');
+ok(!markt.some(function (o) { return o.kind === 'rang'; }),
+   'der Markt bietet keinen Aufstieg mehr an — Rang kommt mit der Einheit');
 ok(R.marktOffers(rRun2, { type: 'elite' }, false).length >= markt.length,
    'Elite füllt den Markt mindestens so gut wie ein gewöhnlicher Kampf');
 
@@ -392,47 +391,103 @@ ok(dGeladen.phase === 'start' && dGeladen.startwahl, 'ein Speicherstand mitten i
 
 head('Eine Währung');
 ok(R.create(1, R.newMeta()).gold === undefined, 'ein Run kennt kein Gold mehr');
+/* ---- Einheiten kommen fertig aus dem Markt (Phase 51) --------------------
+   Vorher: anwerben, dann einzeln aufwerten, dazu die Namensweihe als
+   verbilligter Aufstieg auf ein ausgelostes Ziel — drei Posten fuer eine Frage.
+   Jetzt steht eine Einheit im Markt schon auf ihrem Rang, mit den Passiven, die
+   dazugehoeren. Geprueft wird die Kopplung Rang <-> Passivzahl, der Preis und
+   dass der Kauf danach keine Wahl mehr oeffnet. */
 var kRun = fertigerRun(88);
-kRun.magicules = 4000;
-var weihe = R.marktOffers(kRun, { type: 'kampf' }, false)
-  .filter(function (o) { return o.kind === 'rang'; })[0];
-ok(!!weihe && !!weihe.uid, 'die Namensweihe nennt ihr Ziel');
-var zielM = R.find(kRun, weihe.uid);
-ok(!!zielM && zielM.rank < 3, 'das Ziel ist eine aufstiegsfähige Einheit aus dem Trupp');
-ok(weihe.price === Math.round(R.RANK_COST[zielM.rank] * R.PREIS_RANG_FAKTOR),
-   'der Preis hängt am Rang des Ziels (' + weihe.price + ' ✦ auf Rang ' + R.rankName(zielM) + ')');
-ok(weihe.price < R.rankCost(zielM), 'und liegt unter dem regulären Aufstieg');
+kRun.magicules = 40000;
+while (R.passivWahl(kRun)) R.choosePassive(kRun, 0);
+var kEinheiten = R.marktOffers(kRun, { type: 'kampf' }, false)
+  .filter(function (o) { return o.kind === 'unit'; });
+ok(kEinheiten.length >= 4, 'der Markt bietet vier Einheiten (' + kEinheiten.length + ')');
+ok(kEinheiten.every(function (o) { return o.rang >= 0 && o.rang <= 3; }),
+   'jede steht auf einem Rang zwischen C und S');
+/* C 1, B 2, A 3, S 4 — dieselbe Zahl, die PASSIV_SLOTS ohnehin freischaltet. */
+ok(kEinheiten.every(function (o) { return o.passives.length === o.rang + 1; }),
+   'die Zahl der Passiven haengt am Rang (C 1, B 2, A 3, S 4)');
+ok(kEinheiten.every(function (o) {
+     var seen = {};
+     return o.passives.every(function (pid) {
+       if (seen[pid]) return false;
+       seen[pid] = 1;
+       return !!AB.get(pid);
+     });
+   }), 'und es sind echte, verschiedene Passive');
+/* Der Preis ist Anwerbung plus genau die Aufstiege, die man sonst zahlen wuerde. */
+ok(kEinheiten.every(function (o) {
+     return o.price === R.rangPreis(GD.unit(o.id), o.rang);
+   }), 'der Preis ist Anwerbung plus die enthaltenen Aufstiege');
+ok(R.rangPreis(GD.unit(kEinheiten[0].id), 3) > R.rangPreis(GD.unit(kEinheiten[0].id), 0),
+   'eine S-Einheit kostet mehr als dieselbe auf C (' +
+   R.rangPreis(GD.unit(kEinheiten[0].id), 0) + ' gegen ' +
+   R.rangPreis(GD.unit(kEinheiten[0].id), 3) + ' ✦)');
 
-/* Fest je Verwaltung: derselbe Markt nennt immer dasselbe Ziel. */
-kRun.pending = { markt: [weihe] };
-kRun.phase = 'markt';
-var vorRang = zielM.rank, vorMag = kRun.magicules;
-ok(R.buy(kRun, 0), 'die Namensweihe ist bezahlbar');
-ok(zielM.rank === vorRang + 1, 'sie hebt genau die ausgeloste Einheit');
-ok(kRun.magicules === vorMag - weihe.price, 'und kostet Magicule wie alles andere');
+/* Kaufen: Rang und Passive landen an der Einheit, und danach steht keine Wahl
+   offen — entschieden wurde am Posten. */
+/* Eine Einheit nehmen, deren ART noch frei ist — dann ist der Kauf ein Zugang
+   und keine Aufwertung, und die Zahlen sind einfach zu pruefen. Die Aufwertung
+   hat ihren eigenen Test darunter. */
+var belegteArten = kRun.team.concat(kRun.bank).map(function (m) { return GD.unit(m.id).art; });
+var teuer = kEinheiten.filter(function (o) {
+  return belegteArten.indexOf(GD.unit(o.id).art) < 0;
+}).reduce(function (a, b) { return (!a || b.rang > a.rang) ? b : a; }, null) || kEinheiten[0];
+kRun.pending = { markt: [teuer] }; kRun.phase = 'markt';
+var vorMag = kRun.magicules, vorTeam = kRun.team.length + kRun.bank.length;
+ok(R.buy(kRun, 0), 'eine Einheit mit Rang ist kaufbar');
+ok(kRun.magicules === vorMag - teuer.price, 'und kostet Magicule wie alles andere');
+var neuM = kRun.team.concat(kRun.bank).filter(function (m) { return m.id === teuer.id; })[0];
+ok(!!neuM && kRun.team.length + kRun.bank.length === vorTeam + 1,
+   'sie steht danach im Trupp');
+ok(neuM.rank === teuer.rang,
+   'auf dem Rang aus dem Angebot (' + R.RANK_NAME[neuM.rank] + ')');
+ok(neuM.passives.length === teuer.rang + 1 &&
+   teuer.passives.every(function (pid) { return neuM.passives.indexOf(pid) >= 0; }),
+   'mit genau den Passiven aus dem Angebot');
+ok(!R.passivWahl(kRun), 'der Kauf oeffnet keine Passivwahl — das Paket war die Entscheidung');
 
-/* Höherer Rang, höherer Preis. */
-var p0 = Math.round(R.RANK_COST[0] * R.PREIS_RANG_FAKTOR);
-var p2 = Math.round(R.RANK_COST[2] * R.PREIS_RANG_FAKTOR);
-ok(p2 > p0, 'ein Sprung auf S kostet mehr als einer auf B (' + p0 + ' gegen ' + p2 + ' ✦)');
+/* Aufwertung: dieselbe Art, hoeherer Rang. Sie ersetzt die alte Einheit, rechnet
+   deren Einsatz an und ist damit der Ersatz fuer das alte „Aufwerten" — ohne sie
+   waere der Rang bei vollem Trupp fuer immer eingefroren (gemessen 2 % Siege). */
+(function () {
+  var aRun = fertigerRun(91);
+  while (R.passivWahl(aRun)) R.choosePassive(aRun, 0);
+  aRun.magicules = 40000;
+  var alt0 = aRun.team[0];
+  var artId = GD.unit(alt0.id).art;
+  ok(!!R.ersetzbar(aRun, GD.unit(alt0.id), alt0.rank + 1),
+     'eine bessere Fassung derselben Art darf ersetzen');
+  ok(!R.ersetzbar(aRun, GD.unit(alt0.id), alt0.rank),
+     'eine gleich gute nicht — das waere kein Aufstieg');
+  var vorRang = alt0.rank, vorN = aRun.team.length + aRun.bank.length;
+  var vorGeld = aRun.magicules;
+  aRun.pending = { markt: [{ kind: 'unit', id: alt0.id, rang: vorRang + 1,
+                             passives: [], price: 500 }] };
+  aRun.phase = 'markt';
+  ok(R.buy(aRun, 0), 'die Aufwertung ist kaufbar');
+  var jetzt = aRun.team.concat(aRun.bank).filter(function (m) {
+    return GD.unit(m.id).art === artId;
+  });
+  ok(jetzt.length === 1 && jetzt[0].rank === vorRang + 1,
+     'danach steht genau eine Einheit dieser Art da, einen Rang hoeher');
+  ok(aRun.team.length + aRun.bank.length === vorN, 'der Trupp wird nicht groesser');
+  ok(aRun.magicules > vorGeld - 500,
+     'und der Einsatz der alten Einheit wird angerechnet');
+})();
 
-/* Ist das Ziel weg, verfällt der Posten — nachgewürfelt wird nicht. */
-var wRun = fertigerRun(89);
-wRun.magicules = 4000;
-var w2 = R.marktOffers(wRun, { type: 'kampf' }, false)
-  .filter(function (o) { return o.kind === 'rang'; })[0];
-wRun.pending = { markt: [w2] }; wRun.phase = 'markt';
-while (R.passivWahl(wRun)) R.choosePassive(wRun, 0);
-R.entlassen(wRun, w2.uid);
-ok(!R.buy(wRun, 0), 'ein verkauftes Ziel lässt die Namensweihe verfallen');
-/* Die Weihe bringt ihre Passive mit, statt danach eine Wahl zu öffnen: ein
-   Klick, eine Entscheidung. Was man bekommt, steht vorher im Angebot. */
-ok(!R.passivWahl(kRun), 'die Namensweihe öffnet keine zweite Wahl mehr');
-ok(weihe.passive && zielM.passives.indexOf(weihe.passive) >= 0,
-   'sie legt die im Angebot genannte Passive direkt an');
-ok(weihe.text.indexOf(AB.get(weihe.passive).name) >= 0,
-   'und das Angebot nennt sie beim Namen, bevor man kauft');
-R.choosePassive(kRun, 0);
+/* Der Rangwurf: S muss das Seltene sein, sonst ist der Rang keine Stufe. */
+(function () {
+  var rng = globalThis.RNG(7), zahl = [0, 0, 0, 0];
+  for (var i2 = 0; i2 < 4000; i2++) zahl[R.wuerfleRang(rng, 0)]++;
+  ok(zahl[0] > zahl[1] && zahl[1] > zahl[2] && zahl[2] > zahl[3],
+     'C haeufiger als B haeufiger als A haeufiger als S (' + zahl.join('/') + ')');
+  var spaet = [0, 0, 0, 0], rng2 = globalThis.RNG(8);
+  for (var i3 = 0; i3 < 4000; i3++) spaet[R.wuerfleRang(rng2, 4)]++;
+  ok(spaet[3] > zahl[3],
+     'auf hoher Inhaltsstufe kommt S oefter (' + zahl[3] + ' → ' + spaet[3] + ')');
+})();
 
 /* Ein Ereignis, das einen Rang schenkt, muss auch ohne Magicule wirken. */
 var gRun = fertigerRun(89);

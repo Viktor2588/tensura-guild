@@ -240,31 +240,42 @@ if (sieg) {
   ok(run.phase === 'karte', 'nach der Niederlage steht wieder die Karte');
 }
 
-/* -------------------------------------------------------- Rangaufstieg */
-head('Rangaufstieg');
+/* ------------------------------------------------- Einheiten nach Rang */
+head('Einheitenkauf nach Rang');
 run.magicules = 5000;
-/* Eine offene Passiv-Wahl blockiert den Aufstieg — erst abräumen. */
+/* Eine offene Passiv-Wahl aus dem Startdraft erst abräumen. */
 while (win.Run.passivWahl(run)) win.Run.choosePassive(run, 0);
 win.UI.render();
-var aufstieg = $('[data-a=aufstieg]');
-ok(aufstieg && !aufstieg.disabled, 'der Aufstiegsknopf ist mit genug Magicule aktiv');
-klick(aufstieg);
-ok($('#wahl .karte'), 'nach dem Aufstieg stehen Passive zur Wahl');
-/* Keine Stufen, keine Bindung: je eine Passive aus jeder der vier Linien. */
-ok($$('#wahl .karte').length >= 4 && $$('#wahl .linie').length >= 4,
-   'vier Angebote, jedes mit seiner Linie beschriftet');
-ok(text('#wahl .hinweis').indexOf('Quote') >= 0 ||
-   text('#wahl .hinweis').indexOf('Preis') >= 0,
-   'und die Box erklärt, dass frei gezogen wird');
-ok(!$('[data-a=pwahl-skip]'), 'es gibt keinen Weg, die Passive auszulassen');
-var vorherPassive = $$('.einheit')[0].querySelectorAll('.fk.passiv').length;
-klick($('#wahl .karte'));
-ok(!win.Run.passivWahl(run) &&
-   $$('.einheit')[0].querySelectorAll('.fk.passiv').length === vorherPassive + 1,
-   'die gewählte Passive steht auf der Karte');
-ok($$('.einheit')[0].querySelectorAll('.fk.aktiv').length === 1,
-   'die Einheit hat weiterhin genau eine Aktive');
-ok($$('.einheit')[0].querySelector('.fk.passiv'), 'die erste Passive ist freigeschaltet');
+/* Seit Phase 51 gibt es keinen Aufwerten-Knopf und keine Namensweihe: Rang
+   kauft man als fertige Einheit im Markt. */
+ok(!$('[data-a=aufstieg]'), 'es gibt keinen Aufwertungsknopf mehr an der Einheit');
+
+/* Denselben Run benutzen, den die Oberflaeche haelt — ein zweiter Run waere
+   nicht der, der gerendert wird. */
+var posten = win.Run.marktOffers(run, { type: 'kampf' }, false);
+var einheiten = posten.filter(function (o) { return o.kind === 'unit'; });
+ok(einheiten.length >= 4, 'der Markt bietet vier Einheiten (' + einheiten.length + ')');
+ok(!posten.some(function (o) { return o.kind === 'rang'; }),
+   'und keinen Aufstiegsposten mehr');
+/* Der Rang bestimmt, wie viele Passive dabei sind: C 1, B 2, A 3, S 4. */
+ok(einheiten.every(function (o) { return o.passives.length === o.rang + 1; }),
+   'jede Einheit bringt Rang+1 Passive mit');
+ok(einheiten.every(function (o) { return o.rangName === win.Run.RANK_NAME[o.rang]; }),
+   'und nennt ihren Rang im Angebot');
+
+/* Der Marktbildschirm muss das Paket auch zeigen, sonst kauft man blind. */
+run.phase = 'markt';
+run.pending = { markt: posten, result: { winner: 'player' }, bilanz: {}, gold: 0 };
+run.magicules = 9000;
+win.UI.render();
+var kartenText = ($$('.karte').length ? [].map.call($$('.karte'), function (k) {
+  return k.textContent;
+}).join(' | ') : '');
+ok(/Rang [CBAS]/.test(kartenText), 'der Marktposten nennt den Rang auf der Karte');
+var teuerste = einheiten.reduce(function (a, b) { return b.rang > a.rang ? b : a; });
+var ersteAb = win.Abilities.get(teuerste.passives[0]);
+ok(!!ersteAb && kartenText.indexOf(ersteAb.name) >= 0,
+   'und listet die Passiven, die im Paket stecken');
 
 /* ------------------------------------------------------------- Markt */
 head('Markt und Verkaufen');

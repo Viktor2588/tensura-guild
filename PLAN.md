@@ -2288,6 +2288,71 @@ normale Maus-API, kein Handy-Zugestaendnis.
 Worktree `/home/viktor/tensura/worktree/phase-50-desktop`, Branch
 `phase-50-desktop`.
 
+### Phase 51 (2026-07-30): Einheiten kommen fertig aus dem Markt
+
+Auf Wunsch: Aufwerten und Namensweihe sind weg. Stattdessen stehen **vier
+Einheiten** im Markt, jede auf einem gewuerfelten Rang und mit den Passiven, die
+zu diesem Rang gehoeren — **C 1, B 2, A 3, S 4**, dieselbe Zahl, die
+`PASSIV_SLOTS` ohnehin freischaltet. S ist das Seltene (Gewichte 40/22/10/3), und
+die Inhaltsstufe verschiebt sie nach oben, damit Fortschritt sich im Angebot
+zeigt und nicht nur im Geldbeutel. Keystones mit Nachteil bleiben aus dem Wurf
+draussen — aufgedraengte Nachteile waren schon beim Startzustand bewusst
+ausgeschlossen.
+
+Preis: Anwerbung plus genau die Aufstiege, die man sonst bezahlt haette. Kein
+Rabatt, kein Zuschlag.
+
+**Zwei Loecher, die die Messung aufgedeckt hat.** Die erste Fassung war fertig
+und funktionierte — und lag bei **2 % Siege**:
+
+1. **Bei vollem Trupp war der Rang fuer immer eingefroren.** `addUnit` scheitert
+   an einer belegten Art, also gab es nach dem sechsten Kauf keinen Weg mehr nach
+   oben. Gemessen 3,3 Rangstufen je Run statt 14,4. Loesung: eine bessere Fassung
+   derselben Art ERSETZT die alte — der Markt ist der Aufwertungsweg. Nur nach
+   oben, denn eine schwaechere Fassung ist kein Aufstieg, sondern ein Versehen.
+2. **Der Aufwertungsposten erschien nie**, weil `unitPool` belegte Arten
+   ausfilterte — richtig, solange eine Art nur einmal in den Trupp konnte. Jetzt
+   darf eine belegte Art angeboten werden, wenn der Rang darueber liegt. Damit
+   2 % → 15 %.
+
+Dann eine dritte Messung: 15 % waren noch zu wenig, weil eine Aufwertung das
+**Zweieinhalbfache** eines alten Rangschritts kostete (voller Paketpreis minus
+einem Viertel Rueckgabe). Eine Aufwertung ist aber kein Verkauf, sondern derselbe
+Weg ein Stueck weiter — also wird der **ganze** Einsatz angerechnet. Netto zahlt
+man die Differenz, genau das, was „aufwerten" hiess. Damit 15 % → 30 %.
+
+Den Rest macht die Grundhaerte: **1.35 → 1.15**, gemessen **52 %** bei 600 Runs.
+Die Rangstufen liegen wieder bei **14,4 je Run** — genau dem Wert von vorher, die
+Wirtschaft ist also aequivalent, nur die Entscheidung ist eine andere.
+
+**Was der Umbau kostet, und das gehoert dazu:** die Passiven sind jetzt
+gewuerfelt statt gewaehlt, und das trifft die Rollen ungleich. Die Spreizung, die
+Phase 49 von 24 auf 15 Punkte gebracht hatte, ist wieder auf **26** gewachsen —
+Unterstuetzer 66 %, Verstaerker 40 %. Verstaerker verstaerken, also haengen sie
+mehr als andere an bestimmten Kombinationen, und Zufall trifft sie haerter. Das
+bestaetigt den Befund aus Phase 49 („es sind die Kits") und steht als offener
+Punkt in TODO.md.
+
+Ebenfalls notiert: **8 unbezahlbare Angebote je Run** (vorher 1,2). Vier Posten
+mit Rangwurf heisst, dass regelmaessig ein S-Paket dasteht, das man sich nicht
+leisten kann. Als sichtbares Ziel ist das brauchbar, als toter Posten nicht —
+messen, ob es sich anders anfuehlt als es sich liest.
+
+Entfernt: `PREIS_RANG_FAKTOR`, der `rang`-Postentyp, sein Chip in der
+Oberflaeche, der Aufwerten-Knopf samt `aufstieg`-Aktion, der `festePassive`-Zweig
+in `rankUp` und der Aufstiegs-Zweig im Balance-Bot. Damit ist auch ein alter
+TODO-Punkt erledigt: der Bot zog stur die vorderste Einheit hoch und hat deshalb
+nie gemessen, ob „vier auf B" oder „eine auf S" besser ist — diese Frage stellt
+jetzt der Markt selbst, an vier Posten.
+
+`dev/sim.js` 419/419 (sechs neue Zusicherungen: Rang↔Passivzahl, Preisformel,
+Kauf, Aufwertung, und dass der Rangwurf S wirklich selten macht),
+`dev/uitest.js` 104/104 (der alte Aufstiegs-Abschnitt ist ein Marktabschnitt
+geworden).
+
+Worktree `/home/viktor/tensura/worktree/phase-51-rangkauf`, Branch
+`phase-51-rangkauf`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
