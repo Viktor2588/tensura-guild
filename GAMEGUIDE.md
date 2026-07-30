@@ -504,14 +504,19 @@ sich dann in die ganze Reihe.
 
 ## Nachschlagen im Spiel
 
+Tensura Guild ist ein **Desktop-Spiel im Vollbild**. Es gibt keine
+Handy-Ansicht: das Fenster wird ausgenutzt, statt in eine Lesespalte zu passen,
+und die Breite des Fensters ist es, aus der das Schlachtfeld seine Größe zieht.
+
 Fast jedes Element hat einen Tooltip: Art, Rolle, Rang, jede aktive und passive
 Fähigkeit, Ausrüstung, Relikte, Statusmarken im Kampf, die Werte oben in der
-Leiste und die Knoten auf der Karte. Am Rechner beim Überfahren, am Handy beim
-Antippen.
+Leiste und die Knoten auf der Karte — beim Überfahren mit der Maus.
 
 Alles zusammen steht unter **Menü → Glossar**: Zustände, Schlüsselwörter,
 Rollen, Arten und Begriffe wie Rang, Prädator, Aufstellung — sowie „Ticken" und
-„Abbau" für die Regeln oben.
+„Abbau" für die Regeln oben. Das Menü nimmt den ganzen Bildschirm, weil es ein
+Nachschlagewerk ist: das Glossar steht in Spalten nebeneinander, die vier
+Entwicklungslinien einer Einheit ebenso.
 
 ## Tipps
 

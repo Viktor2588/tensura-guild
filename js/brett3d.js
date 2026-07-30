@@ -351,7 +351,12 @@
     /* Senkrecht zählt nicht nur das Brett: die Figuren stehen darauf und
        ragen darüber hinaus, und der Lebensbalken noch einmal darüber. */
     var senkrecht = mass.tiefe * Math.sin(kippung) + (SPRITE_H + 0.9) * Math.cos(kippung);
-    var hoehe = Math.round(Math.max(220, Math.min(560,
+    /* Der obere Deckel begrenzt, wie viel Bildschirm das Brett dem Kampflog
+       wegnimmt. Bei 560 kostete er auf einem Vollbild-Desktop (Leinwand 2093
+       breit) Fuellung: gemessen 81 statt 96 % der Breite, weil die Kamera
+       zurueckweichen muss, um in die gedeckelte Hoehe zu passen. 760 laesst das
+       Brett auch dort noch vollstaendig aufgehen. */
+    var hoehe = Math.round(Math.max(220, Math.min(760,
                   breite * senkrecht / mass.breite)));
     var seiten = breite / hoehe;
     var camera = new T.PerspectiveCamera(38, seiten, 0.1, 200);

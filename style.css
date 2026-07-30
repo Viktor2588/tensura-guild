@@ -65,7 +65,9 @@ select {
 #hud-mag { color: var(--mag); }
 #hud-leben { color: var(--rot); }
 
-main, #unten { max-width: 860px; margin: 0 auto; padding: .8rem; }
+/* Kein zentrierter Lesespalten-Deckel: das ist ein Desktop-Spiel im Vollbild,
+   und die Breite ist der Platz, aus dem das Schlachtfeld seine Größe zieht. */
+main, #unten { padding: .8rem 1.4rem; }
 
 /* ---- Wegleiste: der Akt auf einen Blick ---- */
 #pfad {
@@ -85,8 +87,9 @@ main, #unten { max-width: 860px; margin: 0 auto; padding: .8rem; }
 .pfad-boss { color: var(--rot); margin-left: .2rem; font-size: .76rem; }
 
 /* ---- Karten ---- */
-.karten { display: grid; gap: .6rem; grid-template-columns: 1fr; }
-@media (min-width: 620px) { .karten { grid-template-columns: 1fr 1fr; } }
+/* Statt „ab 620px zwei Spalten" so viele, wie hineinpassen — im Vollbild sind
+   drei Wegkarten nebeneinander der Sinn der Sache. */
+.karten { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)); }
 
 .karte {
   background: var(--bg2);
@@ -146,8 +149,7 @@ main, #unten { max-width: 860px; margin: 0 auto; padding: .8rem; }
 
 /* ---- Team ---- */
 #unten { border-top: 1px solid var(--rand); margin-top: .5rem; }
-.einheiten { display: grid; gap: .5rem; grid-template-columns: 1fr; }
-@media (min-width: 620px) { .einheiten { grid-template-columns: 1fr 1fr; } }
+.einheiten { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); }
 
 .einheit {
   background: var(--bg2); border: 1px solid var(--rand); border-radius: 9px; padding: .5rem .6rem;
@@ -193,9 +195,20 @@ dialog {
   background: var(--bg2); color: var(--text);
   border: 1px solid var(--rand); border-radius: 10px; max-width: 520px; width: 92%;
 }
-/* Das Menü ist ein Nachschlagewerk, kein Dialog mit drei Knöpfen — es bekommt
-   die Breite und die Reiter, damit die Linien nicht zwischen Text untergehen. */
-#menu { max-width: 900px; }
+/* Das Menü ist ein Nachschlagewerk, kein Dialog mit drei Knöpfen: Glossar,
+   Entwicklungslinien, Fortschritt und Chronik. In einem 520px-Kasten mit 85vh
+   Höhe hat man davon immer nur einen Ausschnitt gesehen und den Rest gescrollt.
+   Also nimmt es den Bildschirm. Kein Rahmen und keine Ecken, weil es an keiner
+   Kante mehr etwas gibt, wovon es sich abgrenzen müsste.
+
+   Die Id gewinnt über die `dialog`-Regeln weiter unten (Spezifität), die Höhe
+   muss also nicht hinterhergeräumt werden. */
+#menu {
+  max-width: none; max-height: none;
+  width: 100vw; height: 100vh;
+  border: none; border-radius: 0;
+  padding: 1.4rem 2rem 2.4rem;
+}
 .reiter { display: flex; flex-wrap: wrap; gap: .3rem; margin: .7rem 0 .6rem;
   border-bottom: 1px solid var(--rand); }
 .reiter button {
@@ -204,7 +217,7 @@ dialog {
 }
 .reiter button.an { color: var(--text); background: var(--bg3); border-color: var(--rand); }
 dialog::backdrop { background: rgba(0,0,0,.65); }
-#menu-chronik { font-size: .82rem; color: var(--grau); padding-left: 1.1rem; max-height: 12rem; overflow-y: auto; }
+#menu-chronik { font-size: .82rem; color: var(--grau); padding-left: 1.1rem; }
 
 /* ---- Ränge und Fähigkeiten ---- */
 .rang {
@@ -239,7 +252,7 @@ dialog::backdrop { background: rgba(0,0,0,.65); }
 /* ---- Tooltips ---- */
 .tooltip {
   position: absolute; z-index: 50; display: none;
-  max-width: min(22rem, 88vw);
+  max-width: 22rem;
   background: #0c0d13; color: var(--text);
   border: 1px solid var(--lila); border-radius: 8px;
   padding: .5rem .65rem;
@@ -267,22 +280,31 @@ button[data-tip], .karte[data-tip] { cursor: pointer; }
 .frei-art { text-decoration: underline dotted; text-underline-offset: 2px; }
 
 .glossar { margin: 0 0 .8rem; font-size: .82rem; }
+/* Spalten, nicht eine Zeile über den ganzen Bildschirm. Das ist der Punkt, an
+   dem „Vollbild" ohne Nachdenken schlechter wäre als der alte Kasten: eine
+   2000px lange Zeile Glossartext liest niemand. `columns` nimmt die Breite und
+   hält die Zeile trotzdem bei rund 26rem. Ein Eintrag wird nicht in der Mitte
+   umgebrochen. */
+.glossar { columns: 26rem auto; column-gap: 2.2rem; }
 .glossar dt { font-weight: 700; color: var(--text); margin-top: .35rem; }
-.glossar dd { margin: 0 0 .1rem; color: var(--grau); }
+.glossar dd { margin: 0 0 .1rem; color: var(--grau); break-inside: avoid; }
+.glossar dt { break-after: avoid; }
 dialog h4 { margin: .6rem 0 .2rem; color: var(--lila); font-size: .9rem; }
 dialog { max-height: 85vh; overflow-y: auto; }
 
 .linien-wahl label { font-size: .82rem; color: var(--grau); margin-right: .35rem; }
 .linien-uebersicht {
-  font-size: .82rem; max-height: 60vh; overflow-y: auto;
+  font-size: .82rem;
   margin: .4rem 0 .8rem; padding: .45rem .55rem;
   background: var(--bg3); border: 1px solid var(--rand); border-radius: 8px;
 }
 .linien-uebersicht .linien-kopf { margin: 0 0 .35rem; font-size: .88rem; }
 .linien-uebersicht .linien-kopf small { color: var(--grau); font-weight: normal; }
-/* Ab Tablet nebeneinander: vier Linien auf einen Blick statt vier Mal scrollen. */
-.linien-uebersicht .linien-blaetter { display: grid; gap: .5rem; }
-@media (min-width: 700px) { .linien-uebersicht .linien-blaetter { grid-template-columns: 1fr 1fr; } }
+/* Vier Linien auf einen Blick statt vier Mal scrollen — im Vollbild-Menü ist
+   dafür immer Platz, es braucht keine Schwelle. */
+.linien-uebersicht .linien-blaetter {
+  display: grid; gap: .5rem; grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));
+}
 .linien-uebersicht .linie-block {
   margin-bottom: 0; padding: .35rem .45rem;
   background: var(--bg2); border: 1px solid var(--rand); border-radius: 6px;
@@ -453,16 +475,10 @@ table.dbg i.ab { color: #e77; }
 }
 
 /* ---- Schlachtfeld: Lagekarte, kein Spielbrett ---- */
-/* Das Brett bricht aus der 860px-Spalte aus. Es ist der Grund, warum die Hexe
-   überhaupt eine Größe haben können: bei fester Breite ist die Breite der
-   Deckel, und alles andere — Kippung, Rahmenhöhe — verschiebt nur Leerraum.
-   Auf schmalen Fenstern läuft min() auf die volle Breite zurück. */
-#kampfbrett {
-  margin-bottom: .5rem;
-  width: min(96vw, 1400px);
-  margin-left: 50%;
-  transform: translateX(-50%);
-}
+/* Der Ausbruch aus der 860px-Spalte ist weg, weil die Spalte weg ist: das Brett
+   nimmt schlicht die Breite, die da ist. Die Breite ist der Deckel für die
+   Hexgröße, alles andere verschiebt nur Leerraum. */
+#kampfbrett { margin-bottom: .5rem; }
 .brett3d {
   width: 100%; height: auto; display: block;
   border: 1px solid var(--rand); border-radius: 8px;

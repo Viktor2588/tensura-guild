@@ -2245,6 +2245,49 @@ ersten Anlauf noch die alte Verstaerker-Reichweite an.
 Worktree `/home/viktor/tensura/worktree/phase-49-brand`, Branch
 `phase-49-brand`.
 
+### Phase 50 (2026-07-30): Vollbild-Desktop, kein Handy
+
+Auf Wunsch: das Menue nimmt den Bildschirm, und die Handy-Vorkehrungen kommen
+raus. Reine Layoutphase, am Spiel aendert sich nichts.
+
+**Das Menue.** Es ist ein Nachschlagewerk — Glossar, Entwicklungslinien,
+Fortschritt, Chronik — und stand in einem 520px-Kasten mit 85vh Hoehe. Davon sah
+man immer einen Ausschnitt und scrollte den Rest. Jetzt `100vw × 100vh`, ohne
+Rahmen und ohne Ecken, weil es keine Kante mehr gibt, wovon es sich abgrenzen
+muesste. Die Id gewinnt ueber die `dialog`-Regeln per Spezifitaet, die
+`max-height: 85vh` weiter unten musste also nicht angefasst werden. Kein
+Javascript geaendert: es bleibt ein `<dialog>` mit `showModal()`.
+
+**Vollbild heisst nicht einfach breiter.** Ein naives Vollbild waere hier
+SCHLECHTER als der Kasten gewesen: eine 2000px lange Zeile Glossartext liest
+niemand. Also `columns: 26rem auto` — gemessen vier Spalten a 488px auf einem
+2138px-Fenster, Zeilenlaenge damit wieder lesbar. Dieselbe Logik fuer die
+Linien-Uebersicht. Die inneren Scroll-Deckel (`max-height` auf Chronik und
+Linien) sind weg; sie waren nur da, um in den kleinen Kasten zu passen.
+
+**Die Handy-Vorkehrungen.** Alle vier `@media`-Abfragen sind weg — sie schalteten
+Raster ab 620 bzw. 700px auf zwei Spalten. Statt einer Schwelle jetzt
+`repeat(auto-fill, minmax(...))`: das Raster nimmt so viele Spalten, wie
+hineinpassen. Der `88vw`-Rueckfall der Tooltips ebenfalls weg. Und der
+860px-Deckel auf `main` ist gefallen, womit der Ausbruchstrick aus Phase 43
+(`margin-left: 50%; transform: translateX(-50%)`) hinfaellig wurde und
+geloescht ist — vier Zeilen weniger fuer dasselbe Ergebnis.
+
+**Eine Folge musste nachgezogen werden.** Mit voller Breite ist die Leinwand des
+Schlachtfelds 2093px breit, und der Hoehendeckel von 560 aus Phase 43 zwang die
+Kamera zurueck: gemessen nur noch 81 % Breitenfuellung statt 96. Deckel auf 760,
+damit geht das Brett auch dort vollstaendig auf — gemessen **2093 × 698, 96 %
+Breite, 83 % Hoehe, 35 % der Fensterhoehe.**
+
+Bewusst NICHT angefasst: `<meta name="viewport">` in `index.html` (auf dem
+Desktop wirkungslos) und die Pointer-Events der Verkaufsflaeche — die sind die
+normale Maus-API, kein Handy-Zugestaendnis.
+
+`dev/uitest.js` 107/107, `dev/sim.js` 411/411.
+
+Worktree `/home/viktor/tensura/worktree/phase-50-desktop`, Branch
+`phase-50-desktop`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
