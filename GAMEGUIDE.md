@@ -79,10 +79,22 @@ ihrem Rang und mit den Passiven, die zu diesem Rang gehören:
 | A | 3 |
 | S | 4 |
 
-Welchen Rang ein Posten hat, wird gewürfelt, und **S ist das Seltene** — auf
-frühen Knoten sieht man fast nur C und B, später wird S überhaupt erreichbar.
-Welche Passiven dabei sind, wird ebenfalls gewürfelt (Keystones mit Nachteil
-bleiben draußen). Alles davon steht am Posten, bevor du kaufst: Rang, Werte auf
+**Welche Ränge im Markt stehen, hängt am Fortschritt** — und es sind immer nur
+zwei benachbarte. Das Fenster wandert mit:
+
+| Wo du bist | Angebot |
+|---|---|
+| der Anfang | 70 % C, 30 % B |
+| kurz danach | 10 % C, 90 % B — C ist durch |
+| die Mitte | 50 % B, 50 % A |
+| weiter | 90 % A, 10 % S |
+| das Endspiel | 30 % A, 70 % S |
+
+Ein C-Posten im Endspiel wäre ein toter Posten, und genau den gibt es nicht mehr.
+Elite- und Bosskämpfe schieben das Fenster zusätzlich eine Stufe nach oben.
+
+Welche Passiven dabei sind, wird gewürfelt (Keystones mit Nachteil bleiben
+draußen). Alles davon steht am Posten, bevor du kaufst: Rang, Werte auf
 diesem Rang, und jede einzelne Passive mit ihrem Text.
 
 **Aufwerten heißt jetzt: eine bessere Fassung derselben Art kaufen.** Steht die

@@ -140,7 +140,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.15;   // Einheiten kommen fertig aus dem Markt (Phase 51)
+  var GRUNDHAERTE = 1.12;   // Rangfenster wandert mit dem Fortschritt (Phase 52); gemessen 52 %
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -483,23 +483,37 @@
 
      Passive je Rang — dieselbe Zahl, die `PASSIV_SLOTS` ohnehin freischaltet:
        C = 1, B = 2, A = 3, S = 4                                               */
-  var RANG_GEWICHT = [40, 22, 10, 3];             // C, B, A, S — S ist das Seltene
+  /* Der Rang ist eine ACHSE, nicht ein Lostopf. Auf ihr steht ein Fenster aus
+     zwei Nachbarraengen, und das Fenster wandert mit dem Fortschritt:
 
-  /* Die Inhaltsstufe verschiebt das Gewicht nach oben: in Akt 1 stehen fast nur
-     C und B im Markt, spaeter wird S ueberhaupt erreichbar. Dieselbe Idee wie
-     bei der Raritaet, damit Fortschritt sich im Angebot zeigt und nicht nur im
-     Geldbeutel. */
+       Inhaltsstufe 1   0,3   70 % C / 30 % B      der Anfang
+       Inhaltsstufe 2   0,9   10 % C / 90 % B      C ist praktisch durch
+       Inhaltsstufe 3   1,5   50 % B / 50 % A      die Mitte
+       Inhaltsstufe 4   2,1   90 % A / 10 % S
+       Inhaltsstufe 5   2,7   30 % A / 70 % S      das Endspiel
+
+     Vorher war es eine gewichtete Verteilung ueber alle vier Raenge, die sich
+     nach oben verschob (40/22/10/3, mal einem Faktor je Stufe). Das hatte den
+     Fehler, dass C NIE verschwand: im Endspiel stand immer noch ein C-Posten im
+     Markt, den niemand mehr anschauen wollte. Ein Fenster loest das ohne Tabelle
+     — der gebrochene Anteil der Position IST die Wahrscheinlichkeit fuer den
+     oberen der beiden Raenge.
+
+     Die Grenzen 0,3 und 2,85 sind bewusst keine glatten 0 und 3: an beiden Enden
+     soll gemischt bleiben, sonst ist der Markt eine Stufe lang eine Konstante. */
+  var RANG_VON = 0.3, RANG_BIS = 2.85;
+
+  function rangFenster(stufe) {
+    var st = Math.max(1, Math.min(6, stufe || 1));
+    /* Stufe 1..5 spannt die Achse; Elite und Boss geben +1 Stufe und schieben das
+       Fenster damit ueber das Ende hinaus — dort greift die Obergrenze. */
+    return Math.min(RANG_BIS, RANG_VON + (st - 1) / 4 * (2.7 - RANG_VON));
+  }
+
   function wuerfleRang(rng, stufe) {
-    var gew = RANG_GEWICHT.map(function (g, r) {
-      return Math.max(1, Math.round(g * Math.pow(1 + (stufe || 0) * 0.28, r)));
-    });
-    var summe = gew.reduce(function (a, b) { return a + b; }, 0);
-    var wurf = rng() * summe;
-    for (var r = 0; r < gew.length; r++) {
-      wurf -= gew[r];
-      if (wurf < 0) return r;
-    }
-    return 0;
+    var t = rangFenster(stufe);
+    var unten = Math.floor(t);
+    return (rng() < t - unten) ? Math.min(3, unten + 1) : unten;
   }
 
   /* `anzahl` Passive aus dem eigenen Topf der Einheit, ohne Wiederholung.

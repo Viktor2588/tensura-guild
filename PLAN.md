@@ -2353,6 +2353,51 @@ geworden).
 Worktree `/home/viktor/tensura/worktree/phase-51-rangkauf`, Branch
 `phase-51-rangkauf`.
 
+### Phase 52 (2026-07-30): Der Rang ist ein Fenster, keine Verteilung
+
+Rueckmeldung zu Phase 51: der Rangwurf soll fortschrittsbasiert sein — anfangs
+70 % C und 30 % B, kurz danach ist C nutzlos und es geht um B/A, im Endspiel um
+A/S.
+
+Phase 51 hatte eine gewichtete Verteilung ueber alle vier Raenge (40/22/10/3,
+mal einem Faktor je Inhaltsstufe). Deren Fehler war, dass **C nie verschwand**:
+im Endspiel stand weiter ein C-Posten im Markt, den niemand mehr anschauen wollte
+— einer von vier Plaetzen, dauerhaft tot.
+
+Der Rang ist aber eine ACHSE, nicht ein Lostopf. Also ein **Fenster aus zwei
+Nachbarraengen**, das mit dem Fortschritt wandert, und der gebrochene Anteil der
+Position IST die Wahrscheinlichkeit fuer den oberen der beiden. Das braucht keine
+Tabelle, nur eine Position von 0,3 bis 2,85 — und liefert gemessen genau die
+gewuenschten Zahlen:
+
+| Inhaltsstufe | Position | C | B | A | S |
+|---|---|---|---|---|---|
+| 1 | 0,30 | **70 %** | **30 %** | — | — |
+| 2 | 0,90 | 10 % | 90 % | — | — |
+| 3 | 1,50 | — | **50 %** | **50 %** | — |
+| 4 | 2,10 | — | — | 90 % | 10 % |
+| 5 | 2,70 | — | — | **30 %** | **70 %** |
+| 6 (Elite/Boss im Endspiel) | 2,85 | — | — | 15 % | 85 % |
+
+Die Grenzen sind bewusst keine glatten 0 und 3: an beiden Enden soll gemischt
+bleiben, sonst ist der Markt eine Stufe lang eine Konstante.
+
+Nebenwirkung, und eine gute: die **unbezahlbaren Angebote fallen von 8,0 auf 5,7
+je Run.** Das Fenster nimmt beide Enden weg — frueh das S-Paket, das man sich
+nicht leisten kann, spaet das C-Paket, das man nicht mehr will.
+
+Grundhaerte **1.15 → 1.12**, gemessen 52 % bei 600 Runs (1.13 gab 49 %, 1.10 gab
+54 % — die Kurve ist hier steil, deshalb der Zwischenwert). Rangstufen je Run 14,0
+gegen 14,4 vorher, die Wirtschaft bleibt also aequivalent.
+
+`dev/sim.js` 427/427 — acht neue Zusicherungen: die drei Eckpunkte der Kurve
+(70/30 am Anfang, B/A in der Mitte, A/S im Endspiel) und fuer jede Stufe, dass das
+Fenster **hoechstens zwei** Raenge breit ist. Genau das ist die Absicht; eine
+dritte Zeile waere wieder ein Lostopf. `dev/uitest.js` 104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-52-rangfenster`, Branch
+`phase-52-rangfenster`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

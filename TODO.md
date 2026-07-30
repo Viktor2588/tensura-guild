@@ -519,10 +519,10 @@ Balance und Werkzeug:
   Verstärker hängen mehr als andere an bestimmten Kombinationen, Zufall trifft
   sie also härter — dasselbe Bild wie unten. Wenn der Wurf bleiben soll, braucht
   Verstärker Passive, die einzeln tragen.
-- **8 unbezahlbare Marktangebote je Run** (vorher 1,2). Vier Posten mit Rangwurf
-  heißt, dass regelmäßig ein S-Paket dasteht, das man sich nicht leisten kann.
-  Als sichtbares Ziel brauchbar, als toter Posten nicht — im Spiel prüfen, ob es
-  sich anders anfühlt als es sich liest.
+- **5,7 unbezahlbare Marktangebote je Run** (vor Phase 51: 1,2; nach Phase 51:
+  8,0). Das Rangfenster aus Phase 52 hat es schon gedrittelt, weil früh kein
+  S-Paket mehr erscheint. Ob der Rest störend ist, muss man spielen — als
+  sichtbares Ziel ist ein zu teurer Posten brauchbar, als toter nicht.
 - **Verstärker ist die schwächste Rolle, und es sind die Kits.** Phase 49 hat ihm
   Reichweite 2 und 3 Schritte gegeben — genau das, was Unterstützer hat. Der
   steht bei 60 %, Verstärker bei **46 %** (n=756). Damit ist die Lage als Ursache

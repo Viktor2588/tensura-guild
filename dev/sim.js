@@ -477,16 +477,33 @@ ok(!R.passivWahl(kRun), 'der Kauf oeffnet keine Passivwahl — das Paket war die
      'und der Einsatz der alten Einheit wird angerechnet');
 })();
 
-/* Der Rangwurf: S muss das Seltene sein, sonst ist der Rang keine Stufe. */
+/* Der Rangwurf ist ein FENSTER aus zwei Nachbarraengen, das mit dem Fortschritt
+   wandert — nicht eine Verteilung ueber alle vier. Der Unterschied ist, dass C
+   im Endspiel wirklich verschwindet, statt als toter Posten stehenzubleiben.
+   Geprueft werden die Eckpunkte, weil genau die die Absicht sind. */
 (function () {
-  var rng = globalThis.RNG(7), zahl = [0, 0, 0, 0];
-  for (var i2 = 0; i2 < 4000; i2++) zahl[R.wuerfleRang(rng, 0)]++;
-  ok(zahl[0] > zahl[1] && zahl[1] > zahl[2] && zahl[2] > zahl[3],
-     'C haeufiger als B haeufiger als A haeufiger als S (' + zahl.join('/') + ')');
-  var spaet = [0, 0, 0, 0], rng2 = globalThis.RNG(8);
-  for (var i3 = 0; i3 < 4000; i3++) spaet[R.wuerfleRang(rng2, 4)]++;
-  ok(spaet[3] > zahl[3],
-     'auf hoher Inhaltsstufe kommt S oefter (' + zahl[3] + ' → ' + spaet[3] + ')');
+  function verteilung(stufe) {
+    var z = [0, 0, 0, 0], rng = globalThis.RNG(stufe * 13);
+    for (var i2 = 0; i2 < 20000; i2++) z[R.wuerfleRang(rng, stufe)]++;
+    return z.map(function (n) { return n / 20000; });
+  }
+  var s1 = verteilung(1), s3 = verteilung(3), s5 = verteilung(5);
+  ok(Math.abs(s1[0] - 0.7) < 0.03 && Math.abs(s1[1] - 0.3) < 0.03,
+     'am Anfang 70 % C und 30 % B (' + Math.round(s1[0] * 100) + '/' +
+     Math.round(s1[1] * 100) + ')');
+  ok(s1[2] === 0 && s1[3] === 0, 'und kein A oder S — die gibt es noch nicht');
+  ok(s3[0] === 0 && s3[1] > 0.4 && s3[2] > 0.4,
+     'in der Mitte B und A, kein C mehr (' + Math.round(s3[1] * 100) + '/' +
+     Math.round(s3[2] * 100) + ')');
+  ok(s5[0] === 0 && s5[1] === 0 && s5[2] > 0.2 && s5[3] > 0.6,
+     'im Endspiel A und S (' + Math.round(s5[2] * 100) + '/' +
+     Math.round(s5[3] * 100) + ')');
+  /* Das Fenster ist nur zwei Raenge breit: mehr waere wieder ein Lostopf. */
+  [1, 2, 3, 4, 5, 6].forEach(function (st) {
+    var v = verteilung(st);
+    ok(v.filter(function (a) { return a > 0; }).length <= 2,
+       'Stufe ' + st + ' bietet hoechstens zwei Raenge an');
+  });
 })();
 
 /* Ein Ereignis, das einen Rang schenkt, muss auch ohne Magicule wirken. */
