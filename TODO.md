@@ -409,11 +409,12 @@ Offen aus der Recherche (Ideen 1, 2, 3, 5):
 
 ## Entwurf: Hexagonales Taktik-RPG
 
-**Stand 2026-07-30 (Phase 41): Schritt 3 des gestuften Wegs unten ist umgesetzt**
-— Hexkoordinaten, Reichweite je Rolle, Bewegung, lagebedingte Deckung, weiterhin
-Autoschlacht. Schritt 1 (Reichweiten für alle ~290 Flächenfähigkeiten) wurde
-bewusst übersprungen und ist damit weiter offen; Schritt 2 (zwei Reihen) hat
-sich mit Schritt 3 erledigt. Offen bleibt Schritt 4: Spielerzüge.
+**Stand 2026-07-30 (Phasen 41-44): Schritte 1-3 des gestuften Wegs unten sind
+umgesetzt** — Hexkoordinaten, Reichweite je Rolle, Bewegung, lagebedingte
+Deckung, 2.5D-Ansicht mit Effekten, und seit Phase 44 fassen Flächen einen
+Umkreis statt das ganze Feld. Schritt 1 brauchte KEINE 290 Formdefinitionen,
+sondern zwei Zeilen in `ctx()`; Schritt 2 (zwei Reihen) hat sich mit Schritt 3
+erledigt. **Offen bleibt allein Schritt 4: Spielerzüge.**
 
 Notiert am 2026-07-29 auf Nachfrage. Das ist kein Feature, sondern ein
 Genre-Wechsel: der Kampf ist heute eine *Auflösung* — `simulate()` rechnet ihn

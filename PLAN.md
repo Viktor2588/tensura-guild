@@ -1891,6 +1891,60 @@ auf 360). Die Renderschleife ruht weiter, sobald nichts mehr läuft.
 `dev/sim.js` 404/404, `dev/uitest.js` 107/107, `dev/hextest.js` 18/18. Am Kampf
 selbst ändert sich nichts, die Balance ist unangetastet.
 
+### Phase 44 (2026-07-30): Flächen bekommen eine Form
+
+Der offene Punkt aus TODO.md, und die zentrale Zahl des Hex-Umbaus: **129
+Fähigkeiten trafen „alle Gegner", 160 fassten den ganzen Trupp.** Solange das
+global bleibt, ist der Raum Dekoration — man kann sich hinstellen, wo man will.
+
+TODO.md rechnete mit „rund 290 Fähigkeiten, die eine Formdefinition brauchen".
+Die brauchen sie nicht. `c.foes()` und `c.allies()` sind der Trichter, durch den
+jede Massenwirkung läuft: **zwei Zeilen in `ctx()`**, und jede der 290 hat eine
+Form. Eine Definition je Fähigkeit wären 290 Entscheidungen gewesen, von denen
+280 dasselbe gesagt hätten.
+
+Die Form ist ein Umkreis — bei Gegnern um das ZIEL, bei Verbündeten um sich
+selbst. Radius 1, und 2 wenn die *Fähigkeit* `flaeche` trägt (nicht die Einheit,
+sonst würde ein Flächenträger auch mit Einzelzielen weit fassen; für Passive
+ohne Fähigkeit im Rücken gilt die Einheit). Ohne Ziel — Passive zu Kampfbeginn —
+ist der Mittelpunkt der nächststehende Gegner.
+
+**Damit wird die Aufstellung erstmals eine Rechnung, die man anstellen kann.**
+Gemessen, wen ein Umkreis von 1 aus jedem Platz erreicht:
+
+| von Platz | erreicht |
+|---|---|
+| 1 | 1, 2, 4, 5 |
+| **2** | **1, 2, 3, 5, 6** |
+| 3 | 2, 3, 6 |
+| 4 | 1, 4, 5 |
+| **5** | **1, 2, 4, 5, 6** |
+| 6 | 2, 3, 5, 6 |
+
+Wer den Trupp stärkt, gehört in die Mitte. Von Platz 3 erreicht derselbe Buff
+drei statt fünf Plätze. Das ist keine Feinheit, das ist ein Drittel Wirkung.
+
+Zwei Tests sichern genau das ab, und zwar die Regel, nicht eine Schwelle:
+Apitos Brutnest („vergiftet jeden Gegner") trifft gegen sechs Gegner **3 von 6**
+statt sechs, mit `flaeche` **5 von 6**; und derselbe Truppbuff von Souei wirkt
+aus der Mitte messbar stärker als vom Rand. Beim Schreiben fielen zwei eigene
+Fehler auf, die beide still gewesen wären: `def()` löst die Einheit schon auf,
+eine danach gesetzte Passivwahl verpufft — und über vier Runden gezählt vergiftet
+Apitos Signatur die Nachzügler einzeln nach, also stehen am Ende doch sechs da.
+Gezählt wird deshalb nur `t === 0`.
+
+Balance: der Umbau nimmt beiden Seiten die Massenwirkung, kostet den Spieler aber
+netto — gemessen **45 %** Siege. Grundhärte **1.21 → 1.16**, damit wieder
+**51 %** bei `node dev/balance.js 500`. Der Heilungsbau bleibt mit 69 % der
+stärkste; er steht damit weiter oben auf der Liste, ist aber nicht Gegenstand
+dieser Phase.
+
+`dev/sim.js` 407/407, `dev/uitest.js` 107/107.
+
+Gearbeitet im Worktree `/home/viktor/tensura/worktree/phase-44-flaechen`
+(Branch `phase-44-flaechen`). Das Schema aus CLAUDE.md nennt
+`/tensura/worktree/...` — dort fehlt das Schreibrecht, deshalb unter `$HOME`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

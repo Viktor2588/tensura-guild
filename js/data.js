@@ -87,7 +87,7 @@
       heilung: 'Regeneration, Lebensraub und Wiederbelebung. Gewinnt lange Kämpfe.',
       konter: 'Schaden zurück an den Angreifer. Skaliert mit der Zahl der Treffer, die man einsteckt.',
       exekution: 'Quellen sind Fähigkeiten, die gezielt auf schwache Ziele gehen; Verstärker schlagen extra hart gegen Angeschlagene zu. Zusammen räumen sie ab, sobald der erste Gegner wackelt.',
-      flaeche: 'Trifft mehrere Gegner gleichzeitig. Stark gegen Gruppen, schwach gegen Bosse.',
+      flaeche: 'Trifft mehrere Gegner gleichzeitig — und zwar WEITER als alles andere. Jede Wirkung, die \u201aalle\u2018 oder \u201aden Trupp\u2018 nennt, fasst einen Umkreis von 1 Feld; mit Fl\u00e4che sind es 2. Das ist der Unterschied zwischen \u201adrei von sechs\u2018 und \u201af\u00fcnf von sechs\u2018. Stark gegen Gruppen, die eng stehen, schwach gegen Bosse.',
       tempo: 'Mehr Züge. Da die Signatur in jedem Zug feuert, ist jeder zusätzliche Zug ein zusätzlicher Einsatz.',
       donner: 'Aufladen und entladen. Quellen laden das Ziel auf, Verstärker schlagen härter zu, je mehr Ladung liegt. Belohnt es, viele Gegner gleichzeitig aufzuladen — die Entladung trifft alle.',
       schatten: 'Ausweichen. Quellen hüllen die eigene Einheit ein, Verstärker schlagen aus der Deckung härter zu. Das erste Element, das Treffer ganz vermeidet statt sie abzufedern.',
@@ -128,7 +128,7 @@
       resonanz: 'Drei Teile mit demselben Schlüsselwort — Fähigkeiten, Ausrüstung, Relikte zusammengezählt — schalten für den ganzen Trupp einen Bonus frei. Das ist der Grund, eine Linie zu Ende zu bauen statt überall etwas mitzunehmen. Gegner haben dieselbe Regel.',
       art: 'Volk der Einheit. Gibt KEINE Boni: Arten regeln nur, dass von jeder genau eine Einheit im Trupp stehen darf.',
       rolle: 'Bestimmt, wen die Einheit im Kampf angreift.',
-      aufstellung: 'Die Reihenfolge ist die Aufstellung auf dem Schlachtfeld: Plätze 1-3 bilden das vordere Glied, 4-6 das hintere. Wer vorn steht, kommt zuerst in Reichweite — und fängt für die Hinteren mit ab: Steht jemand näher am Angreifer als sein Ziel, übernimmt er ein Drittel des Treffers. Gift, Brand und Blutung gehen durch die Deckung hindurch.',
+      aufstellung: 'Die Reihenfolge ist die Aufstellung auf dem Schlachtfeld: Plätze 1-3 bilden das vordere Glied, 4-6 das hintere. Wer vorn steht, kommt zuerst in Reichweite — und fängt für die Hinteren mit ab: Steht jemand näher am Angreifer als sein Ziel, übernimmt er ein Drittel des Treffers. Gift, Brand und Blutung gehen durch die Deckung hindurch. Der Platz entscheidet ausserdem, wie weit Truppwirkungen tragen: aus der MITTE (Platz 2 und 5) erreicht ein Umkreis von 1 Feld fünf der sechs Plätze, von Platz 3 nur drei. Wer den Trupp stärkt oder heilt, gehört in die Mitte.',
       deckung: 'Steht ein lebender Verbündeter näher am Angreifer als das Ziel, fängt er ein Drittel des Treffers ab. Es zählt die Lage auf dem Hexfeld, nicht der Listenplatz. Gift, Brand und Blutung gehen daran vorbei.',
       bank: 'Abgestellte Einheiten. Sie kämpfen nicht, belegen ihre Art aber weiterhin.',
       raritaet: 'Üblich → ungewöhnlich → selten → episch → legendär. Die Stufe steuert nicht nur die Farbe, sondern wie wahrscheinlich etwas überhaupt angeboten wird: In Akt 1 dominiert Übliches, in Akt 3 tauchen Episches und Legendäres deutlich öfter auf. Elite- und Bosskämpfe würfeln eine Stufe besser, und je höher der Rang einer Einheit, desto besser das Angebot beim Aufstieg.'

@@ -391,12 +391,58 @@
       }
     }
 
+    /* ---- Wie weit eine Fläche fasst ----------------------------------------
+       129 Fähigkeiten trafen „alle Gegner", 160 fassten den ganzen Trupp. Auf
+       einem Hexfeld ist das die zentrale Frage: bleibt es global, ist der Raum
+       Dekoration.
+
+       Sie wird HIER entschieden, in zwei Zeilen, und nicht an 290 Fähigkeiten.
+       `foes()` und `allies()` sind der Trichter, durch den jede Massenwirkung
+       läuft — jede von ihnen bekommt damit eine Form, ohne dass eine einzige
+       angefasst wird. Eine Formdefinition je Fähigkeit wäre 290 Entscheidungen,
+       von denen 280 dasselbe sagen würden.
+
+       Die Form: ein Umkreis. Bei Gegnern um das ZIEL, bei Verbündeten um sich
+       selbst. Radius 1 — und 2, wenn die Fähigkeit `flaeche` trägt. Damit ist
+       das Schlüsselwort zum ersten Mal räumlich: es kauft Reichweite, nicht nur
+       einen Schadensbonus. Und es folgt die Entscheidung, um die es geht: eng
+       stehen macht den Trupp für Flächen angreifbar, weit stehen kostet die
+       eigenen Truppbuffs. */
+    var FASSUNG = 1, FASSUNG_FLAECHE = 2;
+
+    function fassung(self, extra) {
+      /* Die Fähigkeit selbst zählt, nicht die Einheit — sonst würde ein
+         Träger von `flaeche` auch mit seinen Einzelzielen weit fassen. Für
+         Passive, die keine Fähigkeit im Rücken haben, gilt die Einheit. */
+      var kws = (extra && extra.aktive && extra.aktive.keywords) || self.keywords || [];
+      return kws.indexOf('flaeche') >= 0 ? FASSUNG_FLAECHE : FASSUNG;
+    }
+
+    function umkreis(mitte, liste, r) {
+      return liste.filter(function (x) { return H.distanz(x.hex, mitte.hex) <= r; });
+    }
+
     function ctx(self, extra) {
       var c = {
         rng: rng, log: log, self: self, deal: deal, heal: heal,
         applyStatus: function (ziel, key, stapel) { return applyStatus(ziel, key, stapel, self); },
-        allies: function () { return living(self.side); },
-        foes: function () { return living(other(self.side)); },
+        allies: function () {
+          return umkreis(self, living(self.side), fassung(self, extra));
+        },
+        foes: function () {
+          var alle = living(other(self.side));
+          if (!alle.length) return alle;
+          /* Mittelpunkt ist das Ziel des Zuges. Fehlt es — Passive am
+             Kampfbeginn etwa —, ist es der nächststehende Gegner: eine Wirkung
+             muss irgendwo ansetzen, und „bei mir am nächsten" ist die einzige
+             Lesart, die ohne Ziel Sinn ergibt. */
+          var mitte = extra && extra.target && extra.target.side !== self.side &&
+                      alive(extra.target) ? extra.target
+            : alle.reduce(function (a, b) {
+                return H.distanz(b.hex, self.hex) < H.distanz(a.hex, self.hex) ? b : a;
+              });
+          return umkreis(mitte, alle, fassung(self, extra));
+        },
         addEffect: function (u, e) { u.effects.push(e); },
         /* Chaos anlegen — eine Stelle, damit Meisterschaft, Realitätswarp und
            der onChaos-Hook nicht an jeder einzelnen Fähigkeit hängen. */

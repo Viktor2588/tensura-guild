@@ -400,6 +400,29 @@ als dessen Ziel, übernimmt er ein Drittel des Treffers. Ein zäher Körper vorn
 schützt die Reihe dahinter also wirklich — und zwar dort, wo er wirklich steht.
 Gift, Brand und Blutung gehen durch die Deckung hindurch.
 
+### „Alle Gegner" heißt jetzt: ein Umkreis
+
+Eine Fähigkeit, die „alle Gegner" trifft oder „den Trupp" stärkt, fasst **einen
+Umkreis von 1 Feld** — bei Gegnern um das Ziel herum, bei Verbündeten um sich
+selbst. Trägt die Fähigkeit das Schlüsselwort **Fläche**, sind es **2 Felder**.
+Damit kauft Fläche zum ersten Mal Reichweite und nicht bloß einen Bonus.
+
+Wen ein Umkreis von 1 Feld aus welchem Platz erreicht:
+
+| von Platz | erreicht |
+|---|---|
+| 1 | 1, 2, 4, 5 |
+| **2** | **1, 2, 3, 5, 6** |
+| 3 | 2, 3, 6 |
+| 4 | 1, 4, 5 |
+| **5** | **1, 2, 4, 5, 6** |
+| 6 | 2, 3, 5, 6 |
+
+Daraus folgt die wichtigste neue Regel der Aufstellung: **wer den Trupp stärkt
+oder heilt, gehört in die Mitte** (Platz 2 oder 5). Von Platz 3 aus erreicht
+derselbe Buff nur die Hälfte. Umgekehrt gilt dasselbe für den Gegner — eine
+Massenwirkung von ihm trifft nie mehr den ganzen Trupp auf einmal.
+
 Die Lagekarte über dem Kampflog zeigt in 2.5D, wo alle stehen: das Hexfeld ist
 dreidimensional und gekippt, die Figuren sind flache Bilder darauf, die sich
 immer zur Kamera drehen. Wer heranläuft, gleitet sichtbar über die Felder; der

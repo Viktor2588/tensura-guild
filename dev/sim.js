@@ -1379,6 +1379,43 @@ ok(aktivLog.every(function (l) { return !!l.ziel; }),
 ok(aktivLog.some(function (l) { return !!l.kw; }),
    'und ihr Schlüsselwort, wo sie eins hat');
 
+/* ---- Phase 44: die Fläche hat eine Form --------------------------------
+   `Brutnest` vergiftet „jeden Gegner" — vor Phase 44 waren das buchstäblich
+   alle, gleich wo sie standen. Jetzt fasst es einen Umkreis. Geprüft an sechs
+   Gegnern in zwei Reihen, also weiter auseinander als Radius 1 reicht.
+
+   Das ist der Test, der die ganze Phase trägt: trifft Brutnest wieder alle
+   sechs, ist der Raum zurück zur Dekoration geworden. */
+function sechsOpfer() {
+  var out = [];
+  for (var i = 0; i < 6; i++) {
+    out.push({ id: 'o' + i, name: 'Opfer' + i, tags: ['bestie', i < 3 ? 'front' : 'magier'],
+               hp: 30000, atk: 1, def: 0, spd: 1, actives: [], effects: [], keywords: [] });
+  }
+  return out;
+}
+/* `weit` gibt der Einheit das Schlüsselwort `flaeche` — für eine Passive ohne
+   Fähigkeit im Rücken ist die Einheit maßgeblich, genau dieser Zweig. */
+function vergiftet(weit) {
+  /* Passive VOR dem Auflösen setzen — `def()` löst schon auf, danach ist die
+     Wahl wirkungslos. */
+  var m = R.member('apito');
+  m.rank = 3; m.passives = ['apito_mec1'];
+  var traeger = R.resolve(m);
+  if (weit) traeger.keywords = (traeger.keywords || []).concat('flaeche');
+  /* Nur `t === 0`: das ist Brutnest zu Kampfbeginn. Über die ganzen vier Runden
+     gezählt vergiftet Apitos Signatur die Nachzügler ohnehin einzeln — dann
+     stünden immer sechs da und der Test wäre blind. */
+  var wer = {};
+  C.simulate([traeger], sechsOpfer(), 4).log.forEach(function (l) {
+    if (l.t === 0 && l.type === 'status' && l.status === 'gift') wer[l.target] = 1;
+  });
+  return Object.keys(wer).length;
+}
+var eng = vergiftet(false), weit = vergiftet(true);
+ok(eng > 0 && eng < 6, 'Brutnest fasst einen Umkreis, nicht das Feld (' + eng + ' von 6)');
+ok(weit > eng, 'mit `flaeche` reicht dieselbe Wirkung weiter (' + eng + ' → ' + weit + ' von 6)');
+
 /* Der eigentliche Gewinn: Reichweite ist ein Vorteil. Ein Fernkämpfer schlägt
    früher zu als ein Nahkämpfer, der erst über das halbe Feld muss. */
 function ersterTreffer(id) {
@@ -1641,17 +1678,29 @@ ok(blutSchaden(8000) > blutSchaden(2000) * 2,
 /* Unterstützungslinie: der Trupp, nicht Souei, wird stärker. */
 /* Schaden JE TREFFER, nicht in der Summe: mit der Passiven stirbt der Sandsack
    früher, also fällt die Summe trotz stärkerer Treffer gleich aus. */
-function truppSchaden(passives) {
-  var team = [souei(3, passives), R.resolve(R.member('gobta')), R.resolve(R.member('gobkyu'))];
+/* `mitte` schiebt Souei von Platz 1 auf Platz 2. Seit Phase 44 ist das keine
+   Kosmetik: ein Truppbuff fasst einen Umkreis, und von Platz 1 aus liegt Platz
+   3 zwei Felder weg — der dritte Mann geht leer aus. */
+function truppSchaden(passives, mitte) {
+  var s = souei(3, passives), a = R.resolve(R.member('gobta')), b = R.resolve(R.member('gobkyu'));
+  var team = mitte ? [a, s, b] : [s, a, b];
   var log = C.simulate(team, [sandsack(60000, { def: 20, spd: 4 })], 8).log;
   var meine = { 'Gobta': 1, 'Gobtas Glück': 1, 'Gobkyu': 1, 'Windpfeil': 1 };
   var treffer = log.filter(function (l) { return l.type === 'hit' && meine[l.source]; });
   if (!treffer.length) return 0;
   return treffer.reduce(function (a, l) { return a + l.dmg; }, 0) / treffer.length;
 }
-ok(truppSchaden(['souei_unt1']) > truppSchaden([]) * 1.1,
+ok(truppSchaden(['souei_unt1']) > truppSchaden([]) * 1.04,
    'Gezeichnetes Ziel hebt den Schaden der ANDEREN je Treffer (' +
    truppSchaden([]).toFixed(1) + ' → ' + truppSchaden(['souei_unt1']).toFixed(1) + ')');
+/* Und das ist der Kern von Phase 44: dieselbe Passive, dieselben Einheiten,
+   nur ein Platz weiter — und sie wirkt stärker, weil sie von der Mitte aus
+   jeden erreicht. Wenn dieser Test fällt, ist die Aufstellung wieder
+   bedeutungslos geworden. */
+ok(truppSchaden(['souei_unt1'], true) > truppSchaden(['souei_unt1']),
+   'derselbe Truppbuff wirkt aus der MITTE stärker als vom Rand (' +
+   truppSchaden(['souei_unt1']).toFixed(1) + ' → ' +
+   truppSchaden(['souei_unt1'], true).toFixed(1) + ')');
 /* Der Sandsack muss den Trupp überhaupt VIERMAL treffen können — Blutspur
    zählt bis vier. Auf dem Hexfeld heißt das: Reichweite statt Nahkampf (sonst
    läuft er die Probe nur heran) und genug Tempo und Zähigkeit, um so lange zu
