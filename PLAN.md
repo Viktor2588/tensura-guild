@@ -2054,6 +2054,60 @@ Am Spiel selbst aendert diese Phase nur die Grundhaerte. `dev/sim.js` 409/409,
 Worktree `/home/viktor/tensura/worktree/phase-46-messung`, Branch
 `phase-46-messung`.
 
+### Phase 47 (2026-07-30): Drei Verdachte gepruefte, drei fast leer
+
+Fortsetzung des Heilungs-Ausreissers — und zwei Messtellen, die vorher nichts
+sagten.
+
+**Der Rang war eine Tautologie.** „Rang A gewinnt in 103 Runs kein einziges Mal"
+klang nach einer Schwelle. `dev/balance.js` liest den Rang aber am RUN-ENDE: ein
+Run, der in Akt 1 stirbt, hatte nie Geld fuer S. Die Tabelle misst also die
+Laufzeit, nicht den Rang. Die alte Tabelle ist jetzt so beschriftet („Folge der
+Laufzeit, nicht Ursache"), und daneben steht eine **feste Messstelle: der Rang
+bei Akt-2-Beginn.**
+
+Deren Ergebnis ist selbst ein Befund: **dort gibt es nur eine Zeile, Rang S,
+n=296.** Jeder Run, der Akt 2 erreicht, hat bereits eine S-Einheit; die anderen
+204 kommen nie so weit. Der Rang ist damit keine Entscheidung, sondern ein
+Meilenstein — man erreicht ihn und spielt weiter (84 % Siege von dort), oder der
+Run ist vorher zu Ende. Ob das gewollt ist, steht in TODO.md.
+
+**Die Wiederbelebung erklaert 4 von 25 Punkten.** Erst je Run gezaehlt: 4,35 in
+gewonnenen gegen 0,94 in verlorenen Runs — Faktor 4,6, sah nach der Antwort aus.
+Je KNOTEN normalisiert bleiben 0,272 gegen 0,118, Faktor 2,3: die Haelfte des
+Effekts war Laufzeit. `dev/balance.js` gibt jetzt beides aus, mit dem Hinweis
+daneben.
+
+Dann kausal geprueft statt korreliert. Es gibt 22 Wiederbelebungen in
+`js/abilities.js` und keinen gemeinsamen Helfer — abschalten liess sich das
+trotzdem an EINER Stelle, weil alle `onDeath`-Haken sind: wer nach dem Hook
+wieder lebt, wird zurueckgelegt. Vorher verifiziert, dass die Probe wirklich
+beisst (Tod bei t=167 statt t=234, sechs statt neun eingesteckte Treffer) —
+nach drei Fehlmessungen in dieser Sitzung nicht mehr ohne Gegenprobe. Ergebnis:
+Heilung **70 → 66 %**, Gesamtquote 50 → 49 %.
+
+**Damit sind drei Verdachte durch und keiner traegt den Ausreisser:**
+
+| geprueft | Wirkung auf den Heilungs-Eimer |
+|---|---|
+| Resonanz halbiert (Phase 45) | 1 Punkt |
+| `regen` + `lifesteal` ganz aus (Phase 45) | 0 Punkte relativ (alle Eimer fielen gleich) |
+| alle 22 Wiederbelebungen aus (Phase 47) | 4 Punkte |
+
+Der Vorsprung ist also nicht ein Hebel, sondern verteilt. Und Breite allein
+erklaert ihn auch nicht: Schild hat mit 61 Quellen und ebenfalls 17 Traegern
+fast dieselbe Breite und sitzt 25 Punkte darunter. Was noch nicht geprueft ist:
+die DIREKTEN Heilungen — `heal()` und besonders die Regel, dass ein
+Unterstuetzer ohne bereite Faehigkeit den am schwersten Verletzten heilt. Die
+haengt an der ROLLE, nicht am Schluesselwort, und ist in keiner der drei Proben
+mit abgeschaltet worden. Sie steht als naechster Verdacht in TODO.md.
+
+Diese Phase aendert am Spiel nichts — nur das Messwerkzeug. `dev/sim.js`
+409/409, `dev/uitest.js` 107/107.
+
+Worktree `/home/viktor/tensura/worktree/phase-47-revive`, Branch
+`phase-47-revive`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

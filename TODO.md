@@ -521,9 +521,15 @@ Balance und Werkzeug:
   nach Build draftet, landet trotzdem bei denselben 25-30 Punkten Abstand.
   Weder Angebot (85 gegen 61 Quellen) noch Resonanz (halbiert: null Punkte) noch
   `regen`+`lifesteal` (abgeschaltet: alle Eimer verlieren gleich viel) erklären
-  ihn. Der nächste Verdacht ist die Wiederbelebung: sie macht einen Tod
-  rückgängig, und keine andere Linie hat etwas Vergleichbares. Gezielt messen,
-  wie oft `revive` in gewonnenen gegen verlorene Runs feuert.
+  ihn. Phase 47 hat auch die Wiederbelebung geprüft — alle 22 abgeschaltet:
+  4 Punkte. Damit sind drei Verdachte durch (Resonanz 1, `regen`+`lifesteal` 0
+  relativ, Wiederbelebung 4) und keiner trägt die 25 Punkte. **Nächster und
+  letzter naheliegender Verdacht: die direkten Heilungen** — vor allem die
+  Regel, dass ein Unterstützer ohne bereite Fähigkeit den am schwersten
+  Verletzten heilt (`js/combat.js`, Rollen-Zweig). Die hängt an der ROLLE, nicht
+  am Schlüsselwort, und war in keiner Probe mit abgeschaltet. Wenn auch das
+  nichts trägt, ist der Vorsprung wirklich diffus und die Frage lautet nicht
+  „was nerfen", sondern „warum sind die schmalen Linien schwächer".
 - **14 Einheiten werden nie gekauft, auch bei voller Freischaltung** — Benimaru,
   Hakuro, Echsenfürst, Zegion, Apito, Diablo, Testarossa, Ultima, Carrera,
   Veldora, Milim, Windrache, Gerudo, Adalmann. Alle haben **Kosten 4-5**. Der
@@ -532,10 +538,14 @@ Balance und Werkzeug:
   enthält. Entweder ist die Heuristik zu geizig oder die Preiskurve zu steil —
   beides ist messbar, aber es sind zwei verschiedene Eingriffe. Solange das
   offen ist, messen alle Build-Zahlen nur die günstige Hälfte der Besetzung.
-- **Rang A gewinnt in 103 Runs kein einziges Mal** (Rang B in 12 auch nicht),
-  Rang S in 483 Runs zu 64 %. Eine so harte Null ist keine Kurve, sondern eine
-  Schwelle: entweder man zieht eine Einheit auf S, oder der Run ist verloren.
-  Prüfen, ob das gewollt ist — es entwertet jede Breitenstrategie.
+- **Der Rang ist keine Entscheidung, sondern ein Meilenstein.** Die alte Zahl
+  („Rang A gewinnt nie") war eine Tautologie: `dev/balance.js` las den Rang am
+  Run-Ende, und ein früh gestorbener Run hatte nie Geld für S. Phase 47 misst
+  jetzt an fester Stelle, bei Akt-2-Beginn — und dort gibt es nur eine Zeile:
+  **Rang S, n=296, 84 % Siege.** Jeder Run, der Akt 2 erreicht, hat schon eine
+  S-Einheit; die anderen 204 kommen nie so weit. Zu klären, ob das gewollt ist:
+  eine Breitenstrategie (vier auf B statt eine auf S) ist damit nicht schwach,
+  sondern nicht existent.
 
 
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller

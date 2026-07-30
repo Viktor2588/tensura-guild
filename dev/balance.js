@@ -124,7 +124,14 @@ function play(seed, voll) {
     }
   }
 
+  /* An den Run gehaengt, nicht lokal: die Auswertung laeuft ausserhalb von
+     `play()` und sieht nur, was zurueckkommt. */
+  run._revives = 0; run._rangAkt2 = null;
   while (!run.over && schritte < 500) {
+    /* Einmal beim Uebergang in Akt 2 festhalten, wie weit der Trupp da war. */
+    if (run._rangAkt2 === null && run.act >= 2) {
+      run._rangAkt2 = run.team.reduce(function (a, m) { return Math.max(a, m.rank); }, 0);
+    }
     schritte++;
     if (run.phase === 'start') {
       /* Startdraft: die Einheit mit den meisten Schlüsselwörtern nehmen.
@@ -172,6 +179,11 @@ function play(seed, voll) {
     }
     if (run.phase === 'kampf' || run.phase === 'markt') {
       var p = run.pending;
+      if (p.result && p.result.log) {
+        p.result.log.forEach(function (l) {
+          if (l.type === 'revive' && l.side === 'player') run._revives++;
+        });
+      }
       if (p.devour && p.devour.length) {
         for (var k2 = 0; k2 < run.team.length; k2++) {
           if (R.devour(run, p.devour[0].id, run.team[k2].uid)) break;
@@ -241,6 +253,15 @@ var bossKampf = {}, bossSieg = {};
 var kaeufe = {}, unbezahlbar = 0, kostenSum = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
 var ohneFront = 0, ohneStuetze = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
 var proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {}, proResonanz = {};
+/* Der Rang am RUN-ENDE ist eine Folge der Laufzeit, keine Ursache: ein Run, der
+   in Akt 1 stirbt, hatte nie Geld fuer S. Deshalb zusaetzlich der Rang zu einem
+   FESTEN Zeitpunkt — Beginn von Akt 2 —, und von dort aus die Siegquote. Das ist
+   die Zahl, die etwas darueber sagt, ob Rang traegt. */
+var proRangAkt2 = {};
+/* Wiederbelebungen: der offene Verdacht hinter dem Heilungs-Vorsprung. Ein Tod,
+   der rueckgaengig gemacht wird, hat kein Gegenstueck in einer anderen Linie. */
+var reviveGewonnen = 0, reviveVerloren = 0, reviveRunsG = 0, reviveRunsV = 0;
+var reviveKnotenG = 0, reviveKnotenV = 0;
 
 /* Jeder Eimer trägt seine durchschnittliche Lauftiefe mit. Ohne sie liest sich
    ein kleiner Eimer mit 0 % wie ein kaputter Build — dabei sind es Runs, die in
@@ -277,6 +298,12 @@ for (var s = 0; s < N; s++) {
     bump(proEinheit, m.id, won);
   });
   bump(proRang, R.RANK_NAME[hoechster], won);
+  if (run._rangAkt2 !== null) bump(proRangAkt2, R.RANK_NAME[run._rangAkt2], won);
+  /* JE KNOTEN, nicht je Run: ein gewonnener Run spielt 16 Knoten, ein
+     verlorener oft die Haelfte. Je Run gezaehlt misst man die Laufzeit. */
+  var knoten = Math.max(1, (run.act - 1) * R.STEPS.length + run.step);
+  if (won) { reviveGewonnen += run._revives; reviveRunsG++; reviveKnotenG += knoten; }
+  else { reviveVerloren += run._revives; reviveRunsV++; reviveKnotenV += knoten; }
   /* Ein Build ist erst einer, wenn Quellen UND Verstärker zusammenkommen.
      Ohne diese Hürde wandert jeder ziellose Trupp in den größten Eimer und
      verfälscht dessen Siegquote. */
@@ -334,7 +361,16 @@ console.log('Käufe im Laden: ' + Object.keys(kaeufe).map(function (k) {
 
 var kwRows = tabelle('Winrate nach Build (Quellen + Verstärker):', proKeyword, function (k) { return k; }, Math.max(10, N / 40));
 tabelle('Winrate nach Resonanz (drei Teile derselben Linie):', proResonanz, function (k) { return k; }, 10);
-tabelle('Winrate nach höchstem Rang im Trupp:', proRang, function (k) { return 'Rang ' + k; }, 10);
+tabelle('Winrate nach höchstem Rang AM RUN-ENDE (Folge der Laufzeit, nicht Ursache):',
+  proRang, function (k) { return 'Rang ' + k; }, 10);
+tabelle('Winrate nach höchstem Rang BEI AKT-2-BEGINN (feste Messstelle):',
+  proRangAkt2, function (k) { return 'Rang ' + k; }, 10);
+console.log('\nWiederbelebungen JE KNOTEN: gewonnen ' +
+  (reviveKnotenG ? (reviveGewonnen / reviveKnotenG).toFixed(3) : '-') +
+  ' · verloren ' + (reviveKnotenV ? (reviveVerloren / reviveKnotenV).toFixed(3) : '-') +
+  '   (je Run: ' + (reviveRunsG ? (reviveGewonnen / reviveRunsG).toFixed(2) : '-') +
+  ' gegen ' + (reviveRunsV ? (reviveVerloren / reviveRunsV).toFixed(2) : '-') +
+  ', aber je Run misst die Laufzeit mit)');
 var relRows = tabelle('Winrate nach Relikt:', proRelikt, function (k) {
   var r = GD.relic(k); return r ? r.name : k;
 }, Math.max(15, N / 30));
