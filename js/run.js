@@ -140,7 +140,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.12;   // Rangfenster wandert mit dem Fortschritt (Phase 52); gemessen 52 %
+  var GRUNDHAERTE = 1.01;   // S bleibt auch im Endspiel selten (Phase 53); gemessen 51 %
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -483,31 +483,41 @@
 
      Passive je Rang — dieselbe Zahl, die `PASSIV_SLOTS` ohnehin freischaltet:
        C = 1, B = 2, A = 3, S = 4                                               */
-  /* Der Rang ist eine ACHSE, nicht ein Lostopf. Auf ihr steht ein Fenster aus
-     zwei Nachbarraengen, und das Fenster wandert mit dem Fortschritt:
+  /* Der Rang ist eine ACHSE, nicht ein Lostopf: auf ihr steht ein Fenster aus
+     zwei Nachbarraengen, und der gebrochene Anteil der Position IST die
+     Wahrscheinlichkeit fuer den oberen der beiden.
 
-       Inhaltsstufe 1   0,3   70 % C / 30 % B      der Anfang
-       Inhaltsstufe 2   0,9   10 % C / 90 % B      C ist praktisch durch
-       Inhaltsstufe 3   1,5   50 % B / 50 % A      die Mitte
-       Inhaltsstufe 4   2,1   90 % A / 10 % S
-       Inhaltsstufe 5   2,7   30 % A / 70 % S      das Endspiel
+     Die Positionen stehen als Tabelle da und nicht als Formel, weil sie eine
+     ABSICHT ausdruecken und keine Rechnung: C ist nach kurzer Zeit durch, die
+     Mitte gehoert B und A, und **S bleibt auch im Endspiel selten** — es soll
+     etwas sein, worueber man sich freut, kein Normalfall. Eine lineare Formel
+     kann das nicht, weil sie am Anfang und am Ende dieselbe Steigung haette.
 
-     Vorher war es eine gewichtete Verteilung ueber alle vier Raenge, die sich
-     nach oben verschob (40/22/10/3, mal einem Faktor je Stufe). Das hatte den
-     Fehler, dass C NIE verschwand: im Endspiel stand immer noch ein C-Posten im
-     Markt, den niemand mehr anschauen wollte. Ein Fenster loest das ohne Tabelle
-     — der gebrochene Anteil der Position IST die Wahrscheinlichkeit fuer den
-     oberen der beiden Raenge.
+       Stufe 1   0,30    70 % C / 30 % B      der Anfang
+       Stufe 2   1,05    95 % B /  5 % A      C ist durch
+       Stufe 3   1,55    45 % B / 55 % A      die Mitte
+       Stufe 4   1,90    10 % B / 90 % A
+       Stufe 5   2,15    85 % A / 15 % S      das Endspiel — S ist der Glueckstreffer
+       Stufe 6   2,30    70 % A / 30 % S      nur nach Elite und Boss
 
-     Die Grenzen 0,3 und 2,85 sind bewusst keine glatten 0 und 3: an beiden Enden
-     soll gemischt bleiben, sonst ist der Markt eine Stufe lang eine Konstante. */
-  var RANG_VON = 0.3, RANG_BIS = 2.85;
+     Stufe 6 gibt es nur durch den Elite- und Bossbonus. Damit ist der beste Ort
+     fuer ein S der Markt nach einem schweren Kampf — die Freude haengt an einer
+     Leistung statt an der Rundenzahl. */
+  var RANG_POSITION = [0.30, 1.05, 1.55, 1.90, 2.15, 2.30];
 
   function rangFenster(stufe) {
-    var st = Math.max(1, Math.min(6, stufe || 1));
-    /* Stufe 1..5 spannt die Achse; Elite und Boss geben +1 Stufe und schieben das
-       Fenster damit ueber das Ende hinaus — dort greift die Obergrenze. */
-    return Math.min(RANG_BIS, RANG_VON + (st - 1) / 4 * (2.7 - RANG_VON));
+    var st = Math.max(1, Math.min(RANG_POSITION.length, stufe || 1));
+    return RANG_POSITION[st - 1];
+  }
+
+  /* Der hoechste Rang, den das Fenster ueberhaupt hergibt. Zwei Stellen brauchen
+     ihn: der Wurf selbst und — wichtiger — die AUFWERTUNG. Ohne diese Grenze
+     umging sie das Fenster vollstaendig: `vorhanden.rank + 1` machte aus jeder
+     A-Einheit im Trupp ein S-Angebot, egal was die Stufe sagt. Ein Trupp aus
+     A-Einheiten haette im Endspiel also dauernd S-Posten gesehen, und die
+     Seltenheit waere genau dort verschwunden, wo sie zaehlt. */
+  function rangObergrenze(stufe) {
+    return Math.min(3, Math.floor(rangFenster(stufe)) + 1);
   }
 
   function wuerfleRang(rng, stufe) {
@@ -1096,7 +1106,11 @@
     /* Vier Einheiten, jede auf einem gewuerfelten Rang. Das ist der Markt: die
        Frage ist nicht mehr „anwerben oder aufwerten", sondern welches der vier
        fertigen Pakete zum Trupp passt. */
-    themenWahl(run, rng, unitPool(run, 3), st, (regel(run, 'kriegsrecht') ? 2 : 4) + (extra || 0))
+    /* Der Pool kennt dieselbe Obergrenze wie der Wurf — sonst stehen Arten im
+       Angebot, deren Aufwertung das Fenster gar nicht hergibt. */
+    var obergrenze = rangObergrenze(st);
+    themenWahl(run, rng, unitPool(run, obergrenze), st,
+               (regel(run, 'kriegsrecht') ? 2 : 4) + (extra || 0))
       .forEach(function (u) {
         var rang = wuerfleRang(rng, st);
         /* Steht die Art schon im Trupp, ist das Angebot eine Aufwertung — dann
@@ -1104,7 +1118,7 @@
         var vorhanden = run.team.concat(run.bank).filter(function (m) {
           return GD.unit(m.id).art === u.art;
         })[0];
-        if (vorhanden) rang = Math.max(rang, Math.min(3, vorhanden.rank + 1));
+        if (vorhanden) rang = Math.max(rang, Math.min(obergrenze, vorhanden.rank + 1));
         var pas = wuerfleLinienPassive(u.id, rang + 1, rng);
         offers.push({ kind: 'unit', id: u.id, name: u.name,
                       rang: rang, rangName: RANK_NAME[rang],
@@ -1483,6 +1497,7 @@
     inhaltsStufe: inhaltsStufe, boss: bossOf, STUFEN: STUFEN, ertrag: ertrag,
     PRUEFUNGEN: PRUEFUNGEN, pruefung: pruefung, TYP_NAME: TYP_NAME,
     RANK_COST: RANK_COST, wuerfleRang: wuerfleRang, rangPreis: rangPreis,
+    rangObergrenze: rangObergrenze,
     ersetzbar: ersetzbar,
     buildTeile: buildTeile, resonanzen: resonanzen, analyse: analyse,
     save: save, load: load, clear: clear, loadMeta: loadMeta, saveMeta: saveMeta,

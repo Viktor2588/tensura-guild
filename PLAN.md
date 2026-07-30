@@ -2398,6 +2398,58 @@ dritte Zeile waere wieder ein Lostopf. `dev/uitest.js` 104/104.
 Worktree `/home/viktor/tensura/worktree/phase-52-rangfenster`, Branch
 `phase-52-rangfenster`.
 
+### Phase 53 (2026-07-31): S bleibt ein Glueckstreffer
+
+Rueckmeldung zu Phase 52: S soll auch im Endspiel eine Seltenheit sein, etwas,
+worueber man sich freut. Mit 30 % A / 70 % S war es dort das Gegenteil — der
+Normalfall.
+
+**Und dabei kam ein Leck heraus, das die Seltenheit ohnehin unmoeglich machte.**
+Die Aufwertung umging das Fenster vollstaendig: `rang = max(rang, vorhanden.rank
++ 1)` machte aus jeder A-Einheit im Trupp ein S-Angebot, egal was die Stufe
+sagte. Ein Trupp aus A-Einheiten haette also dauernd S-Posten gesehen, und zwar
+genau dort, wo die Seltenheit zaehlt. Jetzt gilt fuer Wurf UND Aufwertung
+dieselbe Obergrenze, `rangObergrenze(stufe)` — der Pool kennt sie ebenfalls,
+sonst stehen Arten im Angebot, deren Aufwertung das Fenster nicht hergibt.
+
+Die Positionen stehen jetzt als **Tabelle** statt als Formel, weil sie eine
+Absicht ausdruecken und keine Rechnung. Eine lineare Formel kann das nicht: sie
+haette am Anfang und am Ende dieselbe Steigung, und genau das soll sie nicht.
+
+| Stufe | Position | C | B | A | S |
+|---|---|---|---|---|---|
+| 1 | 0,30 | 70 % | 30 % | — | — |
+| 2 | 1,05 | — | 95 % | 5 % | — |
+| 3 | 1,55 | — | 45 % | 55 % | — |
+| 4 | 1,90 | — | 10 % | 90 % | — |
+| 5 | 2,15 | — | — | 85 % | **15 %** |
+| 6 (nur Elite/Boss) | 2,30 | — | — | 70 % | **30 %** |
+
+Gemessen als Erlebnis, nicht nur als Prozentzahl: **Chance auf mindestens ein S
+unter den vier Posten** — Stufe 4: 0 %, Stufe 5: 47 %, nach Elite oder Boss:
+76 %. Vor dem Endspiel gibt es also gar kein S, dort etwa jeden zweiten Markt
+eines, und am wahrscheinlichsten nach einem schweren Kampf. Die Freude haengt
+damit an einer Leistung statt an der Rundenzahl.
+
+Der Trupp wird dadurch deutlich schwaecher — Rangstufen 12,8 statt 14,0, und die
+Siegquote fiel auf 42 %. Grundhaerte **1.12 → 1.01**, gemessen **51 %** bei 600
+Runs. Nebenbefund: die unbezahlbaren Angebote sind von 5,7 auf **2,0 je Run**
+gefallen, weil kein S mehr frueh im Markt haengt — der Punkt aus TODO.md ist
+damit erledigt.
+
+Auch der Heilungs-Eimer ist mitgesunken (70 → 61 %), waehrend Chaos auf 71 %
+sprang (n=42, kleine Stichprobe). Wer sich festlegt, gewinnt weiter — nur ist es
+jetzt nicht mehr dieselbe Linie. Nicht nachgesteuert, nur notiert.
+
+`dev/sim.js` 430/430 — drei neue Zusicherungen: S bleibt unter 25 % im Endspiel,
+vor dem Endspiel kommt es gar nicht vor, und die Aufwertung bleibt im Fenster
+statt einfach einen Rang draufzulegen. Die letzte ist die wichtige: sie ist der
+Waechter fuer genau das Leck, das diese Phase gefunden hat. `dev/uitest.js`
+104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-53-s-selten`, Branch
+`phase-53-s-selten`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

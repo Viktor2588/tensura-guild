@@ -85,13 +85,20 @@ zwei benachbarte. Das Fenster wandert mit:
 | Wo du bist | Angebot |
 |---|---|
 | der Anfang | 70 % C, 30 % B |
-| kurz danach | 10 % C, 90 % B — C ist durch |
-| die Mitte | 50 % B, 50 % A |
-| weiter | 90 % A, 10 % S |
-| das Endspiel | 30 % A, 70 % S |
+| kurz danach | 95 % B, 5 % A — C ist durch |
+| die Mitte | 45 % B, 55 % A |
+| weiter | 10 % B, 90 % A |
+| das Endspiel | 85 % A, **15 % S** |
 
 Ein C-Posten im Endspiel wäre ein toter Posten, und genau den gibt es nicht mehr.
-Elite- und Bosskämpfe schieben das Fenster zusätzlich eine Stufe nach oben.
+Elite- und Bosskämpfe schieben das Fenster eine Stufe nach oben (dann 70 % A,
+30 % S).
+
+**S bleibt selten, auch am Ende.** Vor dem Endspiel kommt es überhaupt nicht vor;
+dort steht in etwa jedem zweiten Markt eines (47 % Chance auf mindestens ein S
+unter den vier Posten), und nach einem Elite- oder Bosskampf in drei von vier.
+Der beste Ort für ein S ist also der Markt nach einem schweren Kampf — es hängt
+an einer Leistung, nicht an der Rundenzahl.
 
 Welche Passiven dabei sind, wird gewürfelt (Keystones mit Nachteil bleiben
 draußen). Alles davon steht am Posten, bevor du kaufst: Rang, Werte auf

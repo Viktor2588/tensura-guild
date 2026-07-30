@@ -495,9 +495,29 @@ ok(!R.passivWahl(kRun), 'der Kauf oeffnet keine Passivwahl — das Paket war die
   ok(s3[0] === 0 && s3[1] > 0.4 && s3[2] > 0.4,
      'in der Mitte B und A, kein C mehr (' + Math.round(s3[1] * 100) + '/' +
      Math.round(s3[2] * 100) + ')');
-  ok(s5[0] === 0 && s5[1] === 0 && s5[2] > 0.2 && s5[3] > 0.6,
-     'im Endspiel A und S (' + Math.round(s5[2] * 100) + '/' +
+  /* Im Endspiel gehoert der Markt dem A-Rang, und S ist der Glueckstreffer —
+     nicht der Normalfall. Genau das war die Rueckmeldung zu Phase 52, wo S mit
+     70 % das Uebliche war. */
+  ok(s5[0] === 0 && s5[1] === 0 && s5[2] > 0.7 && s5[3] > 0.05 && s5[3] < 0.25,
+     'im Endspiel vor allem A, S bleibt selten (' + Math.round(s5[2] * 100) + '/' +
      Math.round(s5[3] * 100) + ')');
+  /* Vor dem Endspiel gibt es gar kein S. Die Freude soll ein Ziel haben. */
+  ok(verteilung(4)[3] === 0, 'vor dem Endspiel kommt S nicht vor');
+  /* Und die AUFWERTUNG darf das Fenster nicht umgehen — sie tat es: aus jeder
+     A-Einheit im Trupp wurde ein S-Angebot, egal was die Stufe sagte. */
+  ok(R.rangObergrenze(4) === 2 && R.rangObergrenze(5) === 3,
+     'die Obergrenze des Fensters liegt vor dem Endspiel bei A, dort bei S');
+  (function () {
+    var uRun = fertigerRun(93);
+    while (R.passivWahl(uRun)) R.choosePassive(uRun, 0);
+    uRun.team[0].rank = 2;                            // eine A-Einheit im Trupp
+    uRun.act = 1; uRun.step = 0;                      // frühe Stufe
+    var art = GD.unit(uRun.team[0].id).art;
+    var posten = R.marktOffers(uRun, { type: 'kampf' }, false)
+      .filter(function (o) { return o.kind === 'unit' && GD.unit(o.id).art === art; });
+    ok(posten.every(function (o) { return o.rang <= R.rangObergrenze(R.inhaltsStufe(uRun)); }),
+       'eine Aufwertung bleibt im Fenster, statt einfach einen Rang draufzulegen');
+  })();
   /* Das Fenster ist nur zwei Raenge breit: mehr waere wieder ein Lostopf. */
   [1, 2, 3, 4, 5, 6].forEach(function (st) {
     var v = verteilung(st);
