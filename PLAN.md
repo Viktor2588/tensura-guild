@@ -2108,6 +2108,69 @@ Diese Phase aendert am Spiel nichts — nur das Messwerkzeug. `dev/sim.js`
 Worktree `/home/viktor/tensura/worktree/phase-47-revive`, Branch
 `phase-47-revive`.
 
+### Phase 48 (2026-07-30): Die Eimer zeigten die falsche Rangfolge
+
+Der vierte und letzte naheliegende Verdacht hinter dem Heilungs-Vorsprung — und
+dann eine Messstelle, die die ganze Rangfolge umdreht.
+
+**Die Unterstuetzer-Heilung feuert 33.735 Mal und entscheidet nichts.** Der Zweig
+in `js/combat.js` („Unterstuetzer heilen, wenn gerade keine Faehigkeit bereit
+ist") sah nach totem Code aus, weil Faehigkeiten seit Phase 10 nicht mehr
+abkuehlen. Gemessen ist das Gegenteil richtig: von 41.432 Unterstuetzer-Zuegen
+in 150 Runs nehmen **81 % genau diesen Zweig** — die Signaturen der
+Unterstuetzer haben `wenn`-Bedingungen, die meistens nicht greifen. Komplett
+abgeschaltet (Unterstuetzer schlagen dann zu, statt zu heilen): Heilung bleibt
+bei **70 %**, Gesamtquote 52 %. **Null Wirkung.**
+
+Ein Rollenzweig, der zehntausende Male feuert und an keinem Ergebnis etwas
+aendert, ist ein eigener Befund und steht in TODO.md.
+
+**Damit sind vier Verdachte durch:**
+
+| geprueft | Wirkung auf den Heilungs-Eimer |
+|---|---|
+| Resonanz halbiert | 1 Punkt |
+| `regen` + `lifesteal` ganz aus | 0 relativ |
+| alle 22 Wiederbelebungen aus | 4 Punkte |
+| Unterstuetzer-Auto-Heilung ganz aus (81 % der Zuege) | 0 Punkte |
+
+**Also die Frage anders gestellt:** liegt der Vorsprung am Schluesselwort oder an
+den EINHEITEN, die es tragen? `dev/balance.js` hat dafuer jetzt eine feste
+Tabelle — Siegquote der Einheiten mit einem Schluesselwort gegen die ohne,
+gewichtet je Einheitenauftritt, nicht je Run. Bei 500 Runs:
+
+| stark | | schwach | |
+|---|---|---|---|
+| donner | +20 | brand | -16 |
+| licht | +17 | frost | -12 |
+| chaos | +13 | konter | -7 |
+| gift | +13 | blutung | -3 |
+| schatten | +12 | exekution | -2 |
+| flaeche | +11 | tempo / schild | -1 |
+| **heilung** | **+8** | | |
+
+**Das ist fast die umgekehrte Rangfolge der Build-Eimer.** Heilung liegt auf
+Einheitenebene nur 8 Punkte vorn, nicht 25. Der Eimer-Vorsprung kommt also nicht
+daher, dass Heilungs-Einheiten stark sind — er kommt aus der FESTLEGUNG: ein
+Eimer erfordert zwei Quellen und einen Verstaerker, und wer sich auf Heilung
+festlegt, gewinnt zu 70 %, wer sich auf Schild festlegt, zu 45 %.
+
+Und die eigentlich starken Schluesselwoerter sind gar nicht baubar: Donner hat
+2 Traeger, Licht 3, Frost 2. Ihr Eimer bildet sich nie, deshalb war nie zu
+sehen, dass ihre Traeger 17-20 Punkte ueber dem Rest liegen. Umgekehrt waren
+**Brand (-16) und Frost (-12) als die schwaechsten Schluesselwoerter des Spiels
+unsichtbar** — Brand hat 54 Quellen auf 4 Traegern, ist also tief gebaut und
+verliert trotzdem. Tiefe ist es damit auch nicht.
+
+Zwei getrennte Aufgaben, beide in TODO.md: die starken Schluesselwoerter baubar
+machen (mehr Traeger) und die schwachen (Brand, Frost, Konter) reparieren.
+
+Am Spiel aendert diese Phase nichts. `dev/sim.js` 409/409, `dev/uitest.js`
+107/107.
+
+Worktree `/home/viktor/tensura/worktree/phase-48-heilung`, Branch
+`phase-48-heilung`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

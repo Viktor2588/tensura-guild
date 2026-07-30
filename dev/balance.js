@@ -389,6 +389,45 @@ kwRows.forEach(function (r) {
 relRows.forEach(function (r) {
   if (r.wr < 20 || r.wr > 80) { console.log('  ! Relikt ' + GD.relic(r.k).name + ': ' + r.wr + '%'); flags++; }
 });
+/* Der entscheidende Vergleich: liegt der Vorsprung am SCHLUESSELWORT oder an den
+   EINHEITEN, die es tragen? Fuer jedes Schluesselwort die mittlere Siegquote der
+   Runs mit Traeger gegen die ohne — je Einheit gewichtet, nicht je Run, damit
+   nicht wieder die Laufzeit mitgemessen wird. */
+(function () {
+  var traegt = {};
+  GD.units.forEach(function (u) {
+    var kws = [];
+    function sammel(a) { if (a) kws = kws.concat(a.keywords || [], a.amplifies || []); }
+    sammel(AB.get(u.signature));
+    (u.passives || []).forEach(function (p2) { sammel(AB.get(p2)); });
+    var L = (AB.linien && AB.linien[u.id]) || {};
+    Object.keys(L).forEach(function (kat) {
+      (L[kat] || []).forEach(function (id) { sammel(AB.get(id)); });
+    });
+    kws.forEach(function (k) { (traegt[k] = traegt[k] || {})[u.id] = 1; });
+  });
+  var zeilen = [];
+  Object.keys(traegt).forEach(function (k) {
+    var mit = { n: 0, w: 0 }, ohne = { n: 0, w: 0 };
+    Object.keys(proEinheit).forEach(function (uid) {
+      var e = proEinheit[uid], eimer = traegt[k][uid] ? mit : ohne;
+      eimer.n += e.n; eimer.w += e.w;
+    });
+    if (mit.n >= 30 && ohne.n >= 30) {
+      zeilen.push({ k: k, mit: mit.w / mit.n * 100, ohne: ohne.w / ohne.n * 100,
+                    n: mit.n });
+    }
+  });
+  zeilen.sort(function (a, b) { return (b.mit - b.ohne) - (a.mit - a.ohne); });
+  console.log('\nSiegquote der EINHEITEN, die ein Schluesselwort tragen, gegen die ohne:');
+  zeilen.forEach(function (z) {
+    console.log('  ' + z.k.padEnd(16) + z.mit.toFixed(0).padStart(4) + '% mit  ' +
+      z.ohne.toFixed(0).padStart(4) + '% ohne   Abstand ' +
+      (z.mit - z.ohne >= 0 ? '+' : '') + (z.mit - z.ohne).toFixed(0).padStart(3) +
+      '   (n=' + z.n + ')');
+  });
+})();
+
 var nie = GD.units.filter(function (u) { return !proEinheit[u.id]; });
 if (nie.length) console.log('  ! nie gespielt: ' + nie.map(function (u) { return u.name; }).join(', '));
 if (!flags && !nie.length) console.log('  keine — Kurve sieht gesund aus');

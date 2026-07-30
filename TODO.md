@@ -513,23 +513,31 @@ beantwortet, ob dieses Spiel überhaupt ein Raumspiel sein will.
 
 Balance und Werkzeug:
 
-- **Der Heilungs-Vorsprung ist echt.** Phase 46 hat den Startdraft des Bots
-  repariert (er nahm jahrelang immer Karte 1) — und Heilung steht danach
-  unverändert bei 70 % gegen 40-46 % für alles andere, bei n=237 von 600 der
-  größte Eimer. Die Vermutung aus Phase 45, die Eimer messten nur die
-  Truppzusammensetzung, ist damit teilweise widerlegt: ein Bot, der wirklich
-  nach Build draftet, landet trotzdem bei denselben 25-30 Punkten Abstand.
-  Weder Angebot (85 gegen 61 Quellen) noch Resonanz (halbiert: null Punkte) noch
-  `regen`+`lifesteal` (abgeschaltet: alle Eimer verlieren gleich viel) erklären
-  ihn. Phase 47 hat auch die Wiederbelebung geprüft — alle 22 abgeschaltet:
-  4 Punkte. Damit sind drei Verdachte durch (Resonanz 1, `regen`+`lifesteal` 0
-  relativ, Wiederbelebung 4) und keiner trägt die 25 Punkte. **Nächster und
-  letzter naheliegender Verdacht: die direkten Heilungen** — vor allem die
-  Regel, dass ein Unterstützer ohne bereite Fähigkeit den am schwersten
-  Verletzten heilt (`js/combat.js`, Rollen-Zweig). Die hängt an der ROLLE, nicht
-  am Schlüsselwort, und war in keiner Probe mit abgeschaltet. Wenn auch das
-  nichts trägt, ist der Vorsprung wirklich diffus und die Frage lautet nicht
-  „was nerfen", sondern „warum sind die schmalen Linien schwächer".
+- **Die Build-Eimer zeigen die falsche Rangfolge.** Phase 48 misst die Siegquote
+  auf EINHEITEN-Ebene (Träger eines Schlüsselworts gegen Nicht-Träger), und die
+  ist fast umgekehrt zu den Eimern. Stark: **Donner +20, Licht +17, Chaos +13,
+  Gift +13, Schatten +12, Fläche +11**. Heilung nur **+8**. Schwach: **Brand
+  −16, Frost −12, Konter −7**. Vier Verdachte hinter dem Heilungs-Eimer sind
+  durch und erklären zusammen 5 von 25 Punkten (Resonanz 1, `regen`+`lifesteal`
+  0, Wiederbelebung 4, Unterstützer-Auto-Heilung 0) — der Eimer-Vorsprung kommt
+  aus der FESTLEGUNG, nicht aus der Stärke der Heilungs-Einheiten. Daraus zwei
+  getrennte Aufgaben:
+  - **Die starken Schlüsselwörter sind nicht baubar.** Donner hat 2 Träger,
+    Licht 3, Frost 2. Ihr Eimer bildet sich nie, obwohl ihre Träger 17-20 Punkte
+    über dem Rest liegen. Mehr Träger geben — das ist eine Content-Aufgabe, und
+    Phase 30 und 38 haben genau das schon zweimal angefangen.
+  - **Brand und Frost sind die schwächsten Schlüsselwörter des Spiels.** Brand
+    hat 54 Quellen auf 4 Trägern, ist also tief gebaut, und seine Träger
+    verlieren 16 Punkte gegen den Rest. Tiefe ist nicht das Problem, die Wirkung
+    ist es. Gezielt nachmessen, was Brand eigentlich leistet — er halbiert
+    Heilung, und wenn Heilung nichts entscheidet (siehe unten), leistet die
+    Halbierung auch nichts.
+- **Ein Rollenzweig feuert 33.735 Mal und entscheidet nichts.** Die Regel
+  „Unterstützer heilen, wenn gerade keine Fähigkeit bereit ist" nimmt 81 % aller
+  Unterstützer-Züge (41.432 in 150 Runs) — sie ist also kein Sonderfall, sondern
+  das Normalverhalten der Rolle. Komplett abgeschaltet ändert sich an keiner
+  Siegquote etwas. Entweder soll die Rolle etwas anderes tun, oder die
+  Signaturen der vier Unterstützer brauchen `wenn`-Bedingungen, die auch greifen.
 - **14 Einheiten werden nie gekauft, auch bei voller Freischaltung** — Benimaru,
   Hakuro, Echsenfürst, Zegion, Apito, Diablo, Testarossa, Ultima, Carrera,
   Veldora, Milim, Windrache, Gerudo, Adalmann. Alle haben **Kosten 4-5**. Der
