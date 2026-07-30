@@ -1,4 +1,5 @@
-/* style.css — mobile-first, keine Fremdressourcen, läuft auch über file:// */
+/* style.css — Desktop im Vollbild (keine Handy-Ansicht, keine @media-Abfragen),
+   keine Fremdressourcen, läuft auch über file:// */
 
 :root {
   --bg: #12131a;
