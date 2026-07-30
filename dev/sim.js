@@ -795,6 +795,28 @@ function ersterSchild(extra) {
 }
 ok(ersterSchild(['schild', 'schild', 'schild']) > ersterSchild([]),
    'Schild-Resonanz macht die Barrieren messbar dicker');
+/* Seit Phase 45 ist die Schild-Resonanz nicht mehr nur ein dickerer Vorrat,
+   sondern eine RATE: die Barriere baut sich je eigenem Zug nach. Genau daran
+   lagen Schild und Heilung 35 Punkte auseinander — 15 % auf einen Vorrat sind
+   nicht 15 % auf eine Rate. Geprüft am wiederholten Nachbau und am Deckel. */
+function schildBau(extra) {
+  var d = def('rigurd', 1);
+  d.keywords = d.keywords.concat(extra);
+  var r = C.simulate([d], [EN.get('felsgolem')], 5);
+  var eigene = r.log.filter(function (l) {
+    return l.status === 'schild' && l.side === 'player';
+  });
+  var hoechster = eigene.reduce(function (a, l) { return Math.max(a, l.stacks); }, 0);
+  return { anlagen: eigene.length, hoechster: hoechster,
+           maxHp: r.roster.filter(function (x) { return x.side === 'player'; })[0].maxHp };
+}
+var mitReso = schildBau(['schild', 'schild', 'schild']), ohne = schildBau([]);
+ok(mitReso.anlagen > ohne.anlagen,
+   'die Schild-Resonanz legt die Barriere immer wieder neu (' + ohne.anlagen +
+   ' → ' + mitReso.anlagen + ' Anlagen)');
+ok(mitReso.hoechster <= mitReso.maxHp * C.SCHILD_KAPPE + 1,
+   'und läuft nicht davon, sondern hält am Deckel (' + mitReso.hoechster +
+   ' von ' + Math.round(mitReso.maxHp * C.SCHILD_KAPPE) + ')');
 /* Die Anzeige darf nichts versprechen, was der Kampf nicht einlöst. */
 var resoRun = fertigerRun(88);
 ok(typeof R.resonanzen(resoRun) === 'object', 'der Run kann seine Resonanzen benennen');

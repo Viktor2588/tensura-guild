@@ -491,6 +491,11 @@ Wer eine davon zieht, sollte den Trupp darum herum bauen.
 
 Schild ist der einzige Zustand, der sich überhaupt nicht abbaut: er wird nur
 verbraucht, und höchstens 60 % des maximalen Lebens liegen gleichzeitig darauf.
+**Mit Schild-Resonanz** (drei Teile derselben Linie) baut sich die Barriere
+zusätzlich je eigenem Zug um 22 nach, bis zu 35 % des Maximallebens. Das ist
+der Punkt, an dem die Schildlinie vom Vorrat zur Rate wird — vorher hielt sie
+den ersten Schlag, jetzt hält sie, solange du nicht überrannt wirst. Gemessen
+hebt das die Schildlinie von 34 auf 46 % Siegquote.
 Donner baut sich ebenfalls nicht ab, sondern lädt bis zur Schwelle und entlädt
 sich dann in die ganze Reihe.
 

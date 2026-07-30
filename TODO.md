@@ -513,6 +513,20 @@ beantwortet, ob dieses Spiel überhaupt ein Raumspiel sein will.
 
 Balance und Werkzeug:
 
+- **Die Build-Eimer sind mit der Truppzusammensetzung verwechselt.** Phase 45 hat
+  gemessen, dass am Heilungs-Vorsprung (71 gegen 46 % Schild) weder das Angebot
+  hängt (85 gegen 61 Quellen, je 17 Träger), noch die Resonanz (halbiert: null
+  Punkte), noch `regen`+`lifesteal` (ganz abgeschaltet: alle Eimer verlieren
+  gleich viel). Damit ist der wahrscheinlichste Rest: `heilung` heißt faktisch
+  „hat einen funktionierenden Unterstützer", und `schild` ist mit 223 von 600
+  Runs der Auffang-Eimer. Vor jedem weiteren Trimmen die Zuordnung in
+  `dev/balance.js` um die Zusammensetzung bereinigen — sonst wird eine
+  Korrelation nachbalanciert.
+- **20 von 39 Einheiten werden nie gespielt** (Benimaru, Souei, Shuna, Hakuro,
+  Zegion, Diablo, Veldora, Milim … aus der 500-Run-Messung). Der Bot draftet sie
+  nicht, also messen alle Build-Zahlen nur die halbe Besetzung.
+
+
 - Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller
   Eimer. Zwei Runden Trimmen bewegten ihn um null Punkte — vor dem nächsten
   Eingriff gezielt nachmessen (wie bei Frost), statt weiter an Zahlen zu drehen.

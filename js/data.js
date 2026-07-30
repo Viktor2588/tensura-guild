@@ -83,7 +83,7 @@
       brand: 'Schaden über Zeit plus halbierte Heilung. Die Antwort auf Gegner, die sich selbst hochheilen.',
       frost: 'Erstarrung: geraubte Züge. Stark gegen Gruppen und Elite — Bosse widerstehen ihr allerdings meistens.',
       verderbnis: 'Erhöht allen Schaden am Ziel. Wirkt als Verstärker für jeden anderen Build.',
-      schild: 'Vorgezogene Lebenspunkte. Hält die Front so lange, bis der Schaden durchkommt.',
+      schild: 'Vorgezogene Lebenspunkte. Hält die Front, bis der Schaden durchkommt — und mit RESONANZ (drei Teile) baut sich die Barriere je eigenem Zug um 22 nach, bis zu 35 % des Maximallebens. Ohne Resonanz ist Schild ein Vorrat, mit Resonanz eine Rate: das ist der Unterschied zwischen \u201ahält den ersten Schlag\u2018 und \u201ahält, solange du nicht überrannt wirst\u2018.',
       heilung: 'Regeneration, Lebensraub und Wiederbelebung. Gewinnt lange Kämpfe.',
       konter: 'Schaden zurück an den Angreifer. Skaliert mit der Zahl der Treffer, die man einsteckt.',
       exekution: 'Quellen sind Fähigkeiten, die gezielt auf schwache Ziele gehen; Verstärker schlagen extra hart gegen Angeschlagene zu. Zusammen räumen sie ab, sobald der erste Gegner wackelt.',

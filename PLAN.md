@@ -1945,6 +1945,63 @@ Gearbeitet im Worktree `/home/viktor/tensura/worktree/phase-44-flaechen`
 (Branch `phase-44-flaechen`). Das Schema aus CLAUDE.md nennt
 `/tensura/worktree/...` — dort fehlt das Schreibrecht, deshalb unter `$HOME`.
 
+### Phase 45 (2026-07-30): Schild war ein Vorrat, Heilung eine Rate
+
+Gemessener Befund aus Phase 44: **Heilung 69 %, Schild 34 % Siege** — 35 Punkte
+zwischen den beiden groessten Buckets.
+
+Erst geprueft, ob das ueberhaupt Balance ist oder das Sammelbegriff-Risiko aus
+Abschnitt 5. Die erste Zaehlung war selbst falsch: sie sah nur `u.passives`
+(drei je Einheit) und uebersah die 16 Linien-Passiven — 789 Faehigkeiten statt
+100. Richtig gezaehlt:
+
+| Schluesselwort | Quellen | Verstaerker | Traeger |
+|---|---|---|---|
+| heilung | 85 | 17 | 17 von 39 |
+| schild | 61 | 20 | 17 von 39 |
+| tempo | 46 | 21 | 19 |
+| blutung | 9 | 4 | 5 |
+
+Also **kein Angebotsproblem**: die beiden liegen praktisch gleich auf und sind
+trotzdem 35 Punkte auseinander. Der Unterschied ist strukturell — **Heilung ist
+eine Rate, Schild ein Vorrat.** Ein Vorrat wird einmal verbraucht, eine Rate
+jeden Zug neu, und dieselben 15 % Resonanz wirken auf beides voellig
+verschieden.
+
+Also bekommt Schild ebenfalls eine Rate: die Schild-Resonanz baut die Barriere
+je eigenem Zug um 22 nach, gedeckelt bei 35 % des Maximallebens. Dieselbe
+Mechanik wie Regeneration, nur auf den Schild. Gemessen **34 → 46 %**, Abstand
+zu Heilung von 35 auf 25 Punkte, Gesamtsiegquote unveraendert bei 52 % — die
+Aenderung verteilt um, sie schenkt nichts. Grundhaerte bleibt 1.16.
+
+**Zwei Messungen ergaben nichts, und das ist das eigentliche Ergebnis.**
+
+1. Die Heilungs-Resonanz halbiert (15 % → 8 %): Bucket 70 % → 69 %. Der Regler
+   traegt den Ausreisser nicht. Nerf zurueckgenommen, statt ihn stehen zu
+   lassen — dieselbe Lehre wie beim Konter-Eimer in TODO.md.
+2. `regen` UND `lifesteal` komplett abgeschaltet: die Gesamtquote fiel von 52
+   auf 39 %, aber der Abstand Heilung↔Schild blieb bei 24 Punkten. Jeder Bucket
+   verlor gleich viel. Heilung traegt seinen Vorsprung also nicht ueber diese
+   zwei Mechaniken.
+
+Auch dieser Probeeingriff war zweimal falsch, bevor er etwas sagte: er nullte
+`regen` **vor** `onStart`, wo es gesetzt wird — und die Flagge landete im
+Blockkommentar von `balance.js`, weshalb zwei Laeufe byte-identische Zahlen
+lieferten. Byte-identisch heisst nie „kein Effekt", sondern „nicht ausgefuehrt".
+
+**Was daraus folgt (offen, in TODO.md):** wenn kein Regler und keine Mechanik
+den Vorsprung erklaert, messen die Buckets womoeglich nicht das
+Schluesselwort, sondern die Truppzusammensetzung — `heilung` heisst faktisch
+„hat einen funktionierenden Unterstuetzer", `schild` ist mit 223 von 600 Runs
+der Auffangbucket. Bevor hier weiter getrimmt wird, muss die Zuordnung um die
+Zusammensetzung bereinigt werden.
+
+`dev/sim.js` 409/409 (zwei neue Zusicherungen: die Resonanz legt die Barriere
+wiederholt neu, und sie haelt am Deckel), `dev/uitest.js` 107/107.
+
+Worktree `/home/viktor/tensura/worktree/phase-45-builds`, Branch
+`phase-45-builds`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

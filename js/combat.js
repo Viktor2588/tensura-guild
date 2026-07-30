@@ -115,12 +115,14 @@
      ist der Grund, eine Linie zu Ende zu bauen statt überall etwas
      mitzunehmen. Gilt für beide Seiten. */
   var RESONANZ_SCHWELLE = 3;
+  /* Wie stark sich die Schild-Resonanz je Zug nachbaut, und wo sie aufhört. */
+  var SCHILD_RESONANZ_REGEN = 22, SCHILD_KAPPE = 0.35;
   var RESONANZ = {
     gift: 'Gift richtet 20 % mehr Schaden an',
     brand: 'Brand richtet 20 % mehr Schaden an',
     frost: 'Gegnerischer Widerstand gegen Erstarrung sinkt um 30 %',
     verderbnis: 'Jeder Verderbnis-Stapel erhöht den Schaden um 13 % statt 10 %',
-    schild: 'Alle Schilde sind 15 % stärker',
+    schild: 'Alle Schilde sind 15 % stärker und bauen sich je eigenem Zug um 22 nach, bis zu 35 % des Maximallebens',
     heilung: 'Alle Heilung wirkt 15 % stärker',
     tempo: 'Der ganze Trupp ist 6 % schneller',
     konter: 'Jede Einheit wirft 3 plus 7 % ihres Angriffs auf Angreifer zurück',
@@ -524,7 +526,16 @@
         if (r.dunkelheit) u.dunkelPlus = 0.02;
         if (r.licht) u.lichtPlus = 1;
         if (r.tempo) u.spd = Math.round(u.spd * 1.06);
-        if (r.schild) u.schildfaktor += 0.15;
+        /* Schild war „+15 % Schildstärke" — und damit 15 % auf einen VORRAT,
+           während dieselben 15 % bei Heilung auf eine RATE gehen. Gemessen lagen
+           die beiden Linien deshalb 35 Punkte auseinander (34 gegen 69 % Siege),
+           obwohl ihr Angebot fast gleich ist: 81 gegen 102 Quellen, je 17
+           Träger. Ein Vorrat wird einmal verbraucht, eine Rate jeden Zug neu.
+           Also bekommt Schild ebenfalls eine Rate: die Barriere baut sich je
+           eigenem Zug nach. Das ist dieselbe Mechanik wie Regeneration, nur auf
+           den Schild statt auf das Leben — und es ändert die Schildlinie von
+           „hält den ersten Schlag" zu „hält, solange du nicht überrannt wirst". */
+        if (r.schild) { u.schildfaktor += 0.15; u.schildRegen = SCHILD_RESONANZ_REGEN; }
         if (r.heilung) u.heilfaktor += 0.15;
         if (r.konter) u.effects.push({ hook: 'onDamaged', name: 'Resonanz: Konter',
           fn: function (c) { var f = c.foes()[0]; if (f) c.deal(f, 3 + c.self.atk * 0.07, 'Konter-Resonanz'); } });
@@ -700,6 +711,17 @@
         if (u.status.antichaos > 0) u.status.antichaos--;
       } else u.chaos = null;
       if (u.regen > 0) heal(u, u.regen, 'Regeneration');
+      /* Baut sich nur bis zur eigenen Obergrenze auf, sonst wächst die Barriere
+         in einem langen Kampf über jedes Maß. Gedeckelt am Maximalleben-Anteil,
+         damit ein zäher Körper auch einen größeren Schild tragen darf. */
+      if (u.schildRegen > 0) {
+        var kappe = u.maxHp * SCHILD_KAPPE;
+        var neuSchild = Math.min(kappe, (u.status.schild || 0) +
+                                 u.schildRegen * (u.schildfaktor || 1));
+        if (neuSchild > (u.status.schild || 0)) {
+          applyStatus(u, 'schild', Math.round(neuSchild - (u.status.schild || 0)), u);
+        }
+      }
 
       if (u.status.erstarrung > 0) {
         u.status.erstarrung--;
@@ -798,5 +820,6 @@
                   DONNER_SCHWELLE: DONNER_SCHWELLE, DONNER_SCHADEN: DONNER_SCHADEN,
                   SCHATTEN_PRO_STAPEL: SCHATTEN_PRO_STAPEL, SCHATTEN_MAX: SCHATTEN_MAX,
                   DUNKELHEIT_PRO_STAPEL: DUNKELHEIT_PRO_STAPEL, LICHT_HEILUNG: LICHT_HEILUNG,
-                  RESONANZ_SCHWELLE: RESONANZ_SCHWELLE, resonanz: resonanz };
+                  RESONANZ_SCHWELLE: RESONANZ_SCHWELLE, resonanz: resonanz,
+                  SCHILD_KAPPE: SCHILD_KAPPE };
 })(globalThis);
