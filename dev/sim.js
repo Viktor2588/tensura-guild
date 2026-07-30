@@ -1448,8 +1448,30 @@ function ersterTreffer(id) {
   var t = log.filter(function (l) { return l.type === 'hit' && l.side === 'enemy'; })[0];
   return t ? t.t : Infinity;
 }
-ok(ersterTreffer('gobkyu') < ersterTreffer('rigurd'),
-   'der Fernkämpfer trifft früher als der Nahkämpfer, der erst heranlaufen muss');
+ok(ersterTreffer('gobkyu') <= ersterTreffer('rigurd'),
+   'der Fernkämpfer trifft nicht später als der Nahkämpfer');
+
+/* Phase 49: Nahkampf hat SCHRITTE nach Rolle bekommen (der Sturmangriff), weil
+   Reichweite 1 sonst die ersten Züge verliert — gemessen kostete das die
+   Verstärker 24 Punkte gegenüber Fernkampf. Die Absicht ist: EIN Zug Anmarsch
+   reicht jeder Rolle. Ohne diese Zusicherung fällt eine gesenkte Schrittzahl
+   nicht auf, sie macht nur wieder eine Rolle schlechter. */
+function anmarsch(id) {
+  var m = R.member(id); m.rank = 2;
+  var log = C.simulate([R.resolve(m)],
+    [{ id: 'o', name: 'O', tags: ['bestie', 'front'], hp: 900000, atk: 1, def: 0, spd: 1,
+       actives: [], effects: [], keywords: [] }], 4).log;
+  var laeufe = 0;
+  for (var i = 0; i < log.length; i++) {
+    if (log[i].type === 'zug' && log[i].side === 'player') laeufe++;
+    if (log[i].type === 'hit' && log[i].side === 'enemy') break;
+  }
+  return laeufe;
+}
+ok(anmarsch('rigurd') <= 1,
+   'ein Nahkämpfer braucht höchstens EINEN Zug Anmarsch (' + anmarsch('rigurd') + ')');
+ok(anmarsch('gobkyu') <= 1,
+   'ein Fernkämpfer auch (' + anmarsch('gobkyu') + ')');
 
 /* Zustände reagierten aufeinander fast gar nicht — ein sauber gestapeltes
    EINZELNES Schlüsselwort war damit immer besser als zwei gemischte. Drei

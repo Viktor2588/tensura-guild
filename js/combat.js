@@ -27,8 +27,25 @@
 
      REICHWEITE je Rolle. Sie war bisher nur Zielwahl; jetzt ist sie Abstand,
      und damit bekommt die Rolle zum ersten Mal eine räumliche Bedeutung.       */
-  var REICHWEITE = { front: 1, verstaerker: 1, unterstuetzer: 2, fernkampf: 3, magier: 3 };
-  var SCHRITTE = 2;                                      // Hexfelder je eigenem Zug
+  var REICHWEITE = { front: 1, verstaerker: 2, unterstuetzer: 2, fernkampf: 3, magier: 3 };
+
+  /* SCHRITTE je Rolle, nicht pauschal — der Sturmangriff.
+
+     Phase 41 gab jedem zwei Schritte. Bei fuenf Feldern Abstand heisst das: ein
+     Fernkaempfer (Reichweite 3) schiesst nach einem Zug Anmarsch, ein Nahkaempfer
+     (Reichweite 1) braucht zwei. Gemessen wurde das nie je Rolle, und es kostete
+     genau das: Reichweite 2-3 gewinnt 63-64 %, Reichweite 1 nur 51 % (Front) und
+     39 % (Verstaerker). Ein Abstand von 24 Punkten, den niemand gewaehlt hat.
+
+     Es war auch der Grund fuer die scheinbare Schluesselwort-Rangfolge aus Phase
+     48: Brand steht mit -16 an letzter Stelle, weil 3 seiner 4 Traeger
+     Verstaerker sind, Gift mit +13 vorn, weil alle 4 Traeger Fernkaempfer sind.
+     Korrelation zwischen Abstand und mittlerer Traegerreichweite: r = 0,67.
+
+     Wer kurz reicht, laeuft dafuer weiter. Damit ist jede Rolle nach EINEM Zug
+     Anmarsch im Gefecht, und Reichweite entscheidet wieder ueber die Lage im
+     Kampf statt ueber die ersten Zuege. */
+  var SCHRITTE_JE_ROLLE = { front: 4, verstaerker: 3, unterstuetzer: 3, fernkampf: 2, magier: 2 };
 
   /* Zwei Glieder je Seite, einander gegenüber. Index 0-2 vorn, 3-5 dahinter —
      dieselbe Ordnung, die der Spieler in der Aufstellung sieht. */
@@ -174,7 +191,8 @@
       }),
       keywords: (def.keywords || []).slice(), resistenz: def.resistenz || 0,
       side: side, pos: pos, gauge: 0, status: {}, regen: 0, lifesteal: 0,
-      hex: startfeld(side, pos), reichweite: REICHWEITE[roleOf(def)] || 1, schritte: SCHRITTE,
+      hex: startfeld(side, pos), reichweite: REICHWEITE[roleOf(def)] || 1,
+      schritte: SCHRITTE_JE_ROLLE[roleOf(def)] || 4,
       heilfaktor: 0, schildfaktor: 0, fluchmeister: 1, segenmeister: 1,
       chaos: null, enrage: def.enrage || 0, wut: 1, verschlungen: def.verschlungen || 0,
       schattenPlus: 0, dunkelPlus: 0, lichtPlus: 0,
@@ -821,5 +839,8 @@
                   SCHATTEN_PRO_STAPEL: SCHATTEN_PRO_STAPEL, SCHATTEN_MAX: SCHATTEN_MAX,
                   DUNKELHEIT_PRO_STAPEL: DUNKELHEIT_PRO_STAPEL, LICHT_HEILUNG: LICHT_HEILUNG,
                   RESONANZ_SCHWELLE: RESONANZ_SCHWELLE, resonanz: resonanz,
-                  SCHILD_KAPPE: SCHILD_KAPPE };
+                  SCHILD_KAPPE: SCHILD_KAPPE,
+                  /* Damit Werkzeuge die Reichweite nicht abschreiben muessen —
+                     eine Kopie waere genau die Sorte Zahl, die auseinanderlaeuft. */
+                  REICHWEITE: REICHWEITE, SCHRITTE_JE_ROLLE: SCHRITTE_JE_ROLLE };
 })(globalThis);

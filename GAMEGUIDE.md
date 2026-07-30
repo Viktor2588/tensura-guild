@@ -382,18 +382,21 @@ Der Kampf findet auf einem Hexfeld statt. Die Reihenfolge, die du in der
 Aufstellung wählst, wird dort zur Position: **Plätze 1–3 stehen im vorderen
 Glied, 4–6 dahinter**, und die Gegner stehen gegenüber.
 
-**Reichweite** hängt an der Rolle:
+**Reichweite und Schritte** hängen an der Rolle — und zwar gegenläufig: wer kurz
+reicht, läuft weiter.
 
-| Rolle | erreicht |
-|---|---|
-| Frontlinie, Verstärker | 1 Feld |
-| Unterstützer | 2 Felder |
-| Fernkampf, Magier | 3 Felder |
+| Rolle | erreicht | läuft je Zug |
+|---|---|---|
+| Frontlinie | 1 Feld | 4 Felder |
+| Verstärker, Unterstützer | 2 Felder | 3 Felder |
+| Fernkampf, Magier | 3 Felder | 2 Felder |
 
-Wer niemanden in Reichweite hat, **läuft** in seinem Zug heran statt zuzuschlagen
-— bis zu zwei Felder. Ein Nahkämpfer verliert damit die ersten Züge eines
-Kampfes, ein Fernkämpfer schießt sofort. Genau darin steckt der Preis und der
-Vorteil einer Aufstellung.
+Wer niemanden in Reichweite hat, **läuft** heran — und darf im selben Zug noch
+zuschlagen, wenn es dann reicht. Weil kurze Reichweite mit mehr Schritten
+zusammengeht, ist **jede Rolle nach einem Zug Anmarsch im Gefecht**. Vorher hatte
+jeder zwei Schritte, und der Nahkampf verlor damit die ersten Züge: gemessen
+gewannen Fernkampf und Magier 63 %, Verstärker nur 39 %. Reichweite entscheidet
+jetzt über die Lage im Kampf, nicht über die Eröffnung.
 
 **Deckung** hängt jetzt an der Lage: Steht ein Verbündeter näher am Angreifer
 als dessen Ziel, übernimmt er ein Drittel des Treffers. Ein zäher Körper vorn

@@ -513,25 +513,23 @@ beantwortet, ob dieses Spiel überhaupt ein Raumspiel sein will.
 
 Balance und Werkzeug:
 
-- **Die Build-Eimer zeigen die falsche Rangfolge.** Phase 48 misst die Siegquote
-  auf EINHEITEN-Ebene (Träger eines Schlüsselworts gegen Nicht-Träger), und die
-  ist fast umgekehrt zu den Eimern. Stark: **Donner +20, Licht +17, Chaos +13,
-  Gift +13, Schatten +12, Fläche +11**. Heilung nur **+8**. Schwach: **Brand
-  −16, Frost −12, Konter −7**. Vier Verdachte hinter dem Heilungs-Eimer sind
-  durch und erklären zusammen 5 von 25 Punkten (Resonanz 1, `regen`+`lifesteal`
-  0, Wiederbelebung 4, Unterstützer-Auto-Heilung 0) — der Eimer-Vorsprung kommt
-  aus der FESTLEGUNG, nicht aus der Stärke der Heilungs-Einheiten. Daraus zwei
-  getrennte Aufgaben:
-  - **Die starken Schlüsselwörter sind nicht baubar.** Donner hat 2 Träger,
-    Licht 3, Frost 2. Ihr Eimer bildet sich nie, obwohl ihre Träger 17-20 Punkte
-    über dem Rest liegen. Mehr Träger geben — das ist eine Content-Aufgabe, und
-    Phase 30 und 38 haben genau das schon zweimal angefangen.
-  - **Brand und Frost sind die schwächsten Schlüsselwörter des Spiels.** Brand
-    hat 54 Quellen auf 4 Trägern, ist also tief gebaut, und seine Träger
-    verlieren 16 Punkte gegen den Rest. Tiefe ist nicht das Problem, die Wirkung
-    ist es. Gezielt nachmessen, was Brand eigentlich leistet — er halbiert
-    Heilung, und wenn Heilung nichts entscheidet (siehe unten), leistet die
-    Halbierung auch nichts.
+- **Verstärker ist die schwächste Rolle, und es sind die Kits.** Phase 49 hat ihm
+  Reichweite 2 und 3 Schritte gegeben — genau das, was Unterstützer hat. Der
+  steht bei 60 %, Verstärker bei **46 %** (n=756). Damit ist die Lage als Ursache
+  ausgeschlossen; es liegt an dem, was die acht Verstärker-Einheiten tun. Das ist
+  eine Content-Aufgabe, und `dev/linien.js` ist das Werkzeug dafür.
+- **Donner +20 und Verderbnis −15** sind die verbliebenen echten
+  Schlüsselwort-Ausreißer, jetzt ohne Reichweiten-Beimischung (Phase 49 hat die
+  herausgerechnet: die alte Rangfolge korrelierte mit r = 0,67 zur mittleren
+  Reichweite der Träger). Donner hat nur 2 Träger — der Ausreißer ist also auch
+  einer, an den kaum jemand herankommt.
+- **Der Heilungs-BUILD bleibt bei 69 %**, obwohl der Vorsprung auf
+  Einheitenebene von +8 auf +3 gefallen ist. Die Festlegung (zwei Quellen plus
+  ein Verstärker) zahlt sich also weiter aus, ohne dass eine einzelne Mechanik
+  dahintersteckt — fünf Phasen haben zusammen 5 von 25 Punkten erklärt. Vor
+  weiteren Eingriffen die Eimer-Zuordnung selbst prüfen: was unterscheidet einen
+  festgelegten Heilungstrupp von einem festgelegten Schildtrupp AUSSER dem
+  Schlüsselwort?
 - **Ein Rollenzweig feuert 33.735 Mal und entscheidet nichts.** Die Regel
   „Unterstützer heilen, wenn gerade keine Fähigkeit bereit ist" nimmt 81 % aller
   Unterstützer-Züge (41.432 in 150 Runs) — sie ist also kein Sonderfall, sondern

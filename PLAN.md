@@ -2171,6 +2171,80 @@ Am Spiel aendert diese Phase nichts. `dev/sim.js` 409/409, `dev/uitest.js`
 Worktree `/home/viktor/tensura/worktree/phase-48-heilung`, Branch
 `phase-48-heilung`.
 
+### Phase 49 (2026-07-30): Die Schluesselwort-Rangfolge war eine Reichweiten-Rangfolge
+
+Brand sollte repariert werden — Letzter mit -16 aus Phase 48. Der Blick auf die
+Traeger beantwortete die Frage sofort anders als gedacht:
+
+| Schluesselwort | Traeger | Rollen |
+|---|---|---|
+| brand (-16) | 4 | 3 × Verstaerker (Reichweite 1), 1 × Front |
+| gift (+13) | 4 | 4 × Fernkampf (Reichweite 3) |
+| donner (+20) | 2 | 2 × Fernkampf |
+| frost (-12) | 2 | Magier + Verstaerker |
+
+Ueber alle 15 Schluesselwoerter gerechnet: **Korrelation zwischen dem gemessenen
+Abstand und der mittleren Reichweite der Traeger r = 0,67.** Die Tabelle aus
+Phase 48 misst also zu einem guten Teil nicht das Schluesselwort, sondern die
+Rolle seiner Traeger.
+
+**Die fehlende Zahl war die Siegquote je Rolle.** `dev/balance.js` hat sie jetzt,
+und sie war eindeutig:
+
+| Rolle | vorher | nachher |
+|---|---|---|
+| fernkampf (rw 3) | 63 % | 61 % |
+| magier (rw 3) | 63 % | 60 % |
+| unterstuetzer (rw 2) | 64 % | 60 % |
+| front (rw 1) | 51 % | 54 % |
+| **verstaerker** | **39 %** | **46 %** |
+
+Phase 41 hatte jedem zwei Schritte gegeben. Bei fuenf Feldern Abstand schiesst
+ein Fernkaempfer damit nach einem Zug Anmarsch, ein Nahkaempfer braucht zwei —
+gemessen wurde das nie je Rolle, und es kostete 24 Punkte Spreizung. Zwei
+Eingriffe:
+
+1. **Der Sturmangriff:** `SCHRITTE` haengt jetzt an der Rolle (Front 4,
+   Verstaerker und Unterstuetzer 3, Fernkampf und Magier 2). Wer kurz reicht,
+   laeuft weiter — damit ist jede Rolle nach EINEM Zug im Gefecht.
+2. **Verstaerker auf Reichweite 2.** Mit Reichweite 1 stand er vorn und fing
+   Deckung ab, ohne Panzerung zu haben. Ein Verstaerker gehoert hinter die Front.
+
+Ergebnis: Spreizung **24 → 15 Punkte**, Gesamtsiegquote 50 → 52 % (die Streuung
+liegt bei zwei Punkten, Grundhaerte bleibt 1.35). Und die
+Schluesselwort-Rangfolge sackt zusammen, wie es die Diagnose vorhersagt:
+
+| | Phase 48 | jetzt |
+|---|---|---|
+| heilung | +8 | **+3** |
+| gift | +13 | +4 |
+| konter | -7 | -1 |
+| brand | -16 | -11 |
+| frost | -12 | -8 |
+
+Der Heilungs-Vorsprung auf Einheitenebene, dem vier Phasen nachgejagt sind, war
+also zum groessten Teil ein Rollenartefakt. Der BUILD-Eimer bleibt allerdings bei
+69 % — die Festlegung zahlt sich weiter aus, und das ist eine andere Frage.
+
+**Zwei saubere Restbefunde, beide in TODO.md:**
+
+- **Verstaerker hat jetzt dieselbe Reichweite und Schrittzahl wie Unterstuetzer
+  (rw 2, 3 Schritte) und liegt 14 Punkte darunter** (46 gegen 60 %). Damit ist
+  ausgeschlossen, dass es an der Lage haengt — es sind die Kits.
+- **Donner +20 und Verderbnis -15** bleiben als echte Inhaltsausreisser stehen,
+  jetzt ohne Reichweiten-Beimischung.
+
+`dev/sim.js` 411/411 — zwei neue Zusicherungen: jede Rolle braucht hoechstens
+EINEN Zug Anmarsch. Ohne die faellt eine gesenkte Schrittzahl nicht auf, sie
+macht nur wieder eine Rolle schlechter. `dev/uitest.js` 107/107.
+
+Nebenbei: `js/combat.js` exportiert `REICHWEITE` und `SCHRITTE_JE_ROLLE`, damit
+die Werkzeuge sie nicht abschreiben — die Kopie in `dev/balance.js` zeigte im
+ersten Anlauf noch die alte Verstaerker-Reichweite an.
+
+Worktree `/home/viktor/tensura/worktree/phase-49-brand`, Branch
+`phase-49-brand`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

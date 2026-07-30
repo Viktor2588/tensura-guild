@@ -428,6 +428,30 @@ relRows.forEach(function (r) {
   });
 })();
 
+/* Der direkte Test hinter der Schluesselwort-Tabelle: seit Phase 41 hat jede
+   Rolle eine REICHWEITE, und die Armeen starten fuenf Felder auseinander. Wer
+   kurz reicht, laeuft die ersten Zuege statt zu kaempfen — gemessen wurde das
+   nie je Rolle. Genau diese Zahl fehlte. */
+(function () {
+  var proRolle = {};
+  Object.keys(proEinheit).forEach(function (uid) {
+    var u = GD.unit(uid);
+    if (!u) return;
+    var r = u.tags[1] || 'front';
+    var e = proRolle[r] = proRolle[r] || { n: 0, w: 0 };
+    e.n += proEinheit[uid].n; e.w += proEinheit[uid].w;
+  });
+  var RW = globalThis.Combat.REICHWEITE, SCH = globalThis.Combat.SCHRITTE_JE_ROLLE;
+  console.log('\nSiegquote der EINHEITEN je Rolle (Reichweite in Klammern):');
+  Object.keys(proRolle).sort(function (a, b) {
+    return proRolle[b].w / proRolle[b].n - proRolle[a].w / proRolle[a].n;
+  }).forEach(function (r) {
+    var e = proRolle[r];
+    console.log('  ' + (r + ' (rw ' + (RW[r] || 1) + ', ' + (SCH[r] || 4) + ' Schritte)').padEnd(34) +
+      Math.round(e.w / e.n * 100) + '%   (n=' + e.n + ')');
+  });
+})();
+
 var nie = GD.units.filter(function (u) { return !proEinheit[u.id]; });
 if (nie.length) console.log('  ! nie gespielt: ' + nie.map(function (u) { return u.name; }).join(', '));
 if (!flags && !nie.length) console.log('  keine — Kurve sieht gesund aus');
