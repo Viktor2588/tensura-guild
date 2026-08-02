@@ -2860,6 +2860,49 @@ Lebensbalken und Zustandsmarken stehen wieder vollstaendig im Rahmen.
 Worktree `/home/viktor/tensura/worktree/phase-60-buehne`, Branch
 `phase-60-buehne`.
 
+### Phase 61 (2026-08-02): Echte Figuren — die Vorgabe (Bilder offen)
+
+Die einzige Phase des Kampfkino-Plans, die keine Codearbeit ist. Umgesetzt ist
+davon der **erste** Schritt: die Vorgabe in `ASSETS.md` schärfen, bevor das
+erste Bild entsteht. Die Bilder selbst stehen aus — der Nutzer entscheidet über
+Werkzeug und Lizenzlage.
+
+Dass die Vorgabe erst jetzt geschrieben wird und nicht am Anfang, ist der
+Punkt: **nach den Phasen 55–60 ist bekannt, was ein Bild auf dieser Bühne
+können muss.** Die vier Geometriepunkte standen schon da. Die vier neuen
+kommen aus dem, was das Brett inzwischen mit dem Bild macht, und sie sind es,
+die man ohne Vorwarnung falsch macht:
+
+- **Kein eingemalter Schatten** — das Brett legt seit Phase 58 selbst einen
+  darunter, ein zweiter sieht aus wie ein Fehler.
+- **Eigene Kantentrennung.** Der farbige Umriss aus Phase 58 steckt in
+  `platzhalter()`; ein echtes Bild bekommt ihn **nicht** und versinkt ohne
+  eigenen Rand im dunklen Brett — deutlicher als der Platzhalter es je tat.
+  Das ist der Punkt, an dem sonst der ganze Stapel nachgearbeitet werden
+  müsste.
+- **Spiegelbar** — Gegner werden seit Phase 58 gespiegelt, Schrift und Wappen
+  fallen damit aus.
+- **Keine grossen sehr hellen Flaechen** — die Nachbearbeitung laesst alles
+  ueber 0,85 gluehen (Phase 56). Fuer eine Klinge gewollt, fuer eine weisse
+  Ruestung nicht.
+
+Dazu praezisiert: Format 512 × 1024 statt „etwa 1:2", und die Hoehen, auf
+denen Lebensbalken (0,82) und Zustandsmarken (0,70) liegen — was dort im Bild
+steht, wird verdeckt.
+
+Die Herkunftstabelle hat jetzt eine eigene **Prompt**-Spalte, statt ihn in
+„Herkunft" zu quetschen. Die Regel bleibt unveraendert scharf: ohne Eintrag
+gilt ein Bild als nicht verwendbar.
+
+**Offen und ausdruecklich als Entscheidung vermerkt, nicht als Nebenwirkung:**
+`.gitignore` enthaelt nur `node_modules`, die rund fuenfzig Bilder gehen also
+mit ins Repo.
+
+`dev/sim.js` 443/443, `dev/uitest.js` 104/104 — es wurde kein Code angefasst.
+
+Worktree `/home/viktor/tensura/worktree/phase-61-figuren`, Branch
+`phase-61-figuren`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
