@@ -351,14 +351,11 @@
 
   function schritt() {
     var log = replay.res.log;
-    var l = null, p = null;
-    while (replay.i < log.length) {
-      p = replay.plan[replay.i];
-      l = log[replay.i++];
-      if (l.type !== 'setup') break;
-      l = null;
-    }
-    if (!l) { endeReplay(); return; }
+    /* `setup` wird seit Phase 59 nicht mehr uebersprungen: es traegt die Zeit
+       fuer den Eroeffnungsschwenk. Zustand und Log ignorieren es weiterhin. */
+    if (replay.i >= log.length) { endeReplay(); return; }
+    var p = replay.plan[replay.i];
+    var l = log[replay.i++];
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
@@ -394,8 +391,22 @@
      sagt, ob dieser Eintrag ein Hoehepunkt ist. */
   function zeige(l, beat) {
     if (!Brett3D.verfuegbar()) return;
+    /* Auftakt: ein Schwenk ueber die Gegnerreihe, bevor der erste Zug faellt.
+       Er kostet keine Extrazeit — der setup-Eintrag traegt sie. */
+    if (l.type === 'setup') {
+      var feinde = Object.keys(replay.u).filter(function (k) { return replay.u[k].side === 'enemy'; });
+      if (feinde.length) Brett3D.blick(feinde, 0.8, 620);
+      return;
+    }
     var u = l.key && replay.u[l.key];
     if (!u) return;
+    /* Heranfahren beim Einsatz, Zeitlupe beim Todesstoss — die beiden
+       Momente, die die Regie ohnehin schon als Hoehepunkt kennt. */
+    if (l.type === 'aktiv') Brett3D.blick([l.key, l.ziel].filter(Boolean), 0.4, 620);
+    if (beat === 'toedlich' || beat === 'finale') {
+      Brett3D.zeitlupe(beat === 'finale' ? 0.25 : 0.4, beat === 'finale' ? 900 : 420);
+      if (l.key) Brett3D.blick([l.key], 0.55, 800);
+    }
     /* Eine Signatur ist der Höhepunkt eines Zuges — sie soll auch so aussehen.
        Welcher Effekt, entscheidet das Schlüsselwort der Fähigkeit; die Ansicht
        braucht nur zu wissen, von wem nach wem. */

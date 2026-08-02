@@ -1995,8 +1995,13 @@ head('Regie');
   ok(plan.length === rLog.length, 'zu jeder Logzeile gehört genau ein Planeintrag');
   ok(Math.abs(gesamt - alt) / alt < 0.02,
      'die Gesamtdauer bleibt innerhalb von 2 % der alten (' + gesamt + ' statt ' + alt + ' ms)');
-  ok(plan.every(function (p) { return rLog[p.i].type === 'setup' ? p.ms === 0 : p.ms >= RG.MIN; }),
-     'kein Eintrag außer setup fällt unter die Untergrenze');
+  ok(plan.every(function (p) { return p.ms >= RG.MIN; }),
+     'kein Eintrag fällt unter die Untergrenze');
+  /* Seit Phase 59 bezahlt der setup-Eintrag den Eröffnungsschwenk — aus
+     demselben Budget, deshalb steht die Gesamtdauer oben unverändert. */
+  var auftakt = plan.filter(function (p) { return rLog[p.i].type === 'setup'; });
+  ok(auftakt.length === 1 && auftakt[0].ms > 400 && auftakt[0].beat === 'eroeffnung',
+     'der Auftakt bekommt eigene Zeit (' + (auftakt[0] && auftakt[0].ms) + ' ms)');
   ok(plan.every(function (p) { return p.ms <= RG.MAX; }), 'kein Eintrag reißt die Obergrenze');
 
   var msVon = function (typ) {

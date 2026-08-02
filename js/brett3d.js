@@ -6,14 +6,19 @@
    Disgaea, und sie ist hier auch der einzige gangbare — für gerigte 3D-Modelle
    von vierzig Charakteren gibt es keine Quelle, für Bilder schon.
 
-   Die Ansicht ist eine LAGEKARTE, kein Spielbrett: keine Steuerung, keine
-   Auswahl. Eingreifen kann man im Kampf ohnehin nicht, und was man nicht
-   bedienen kann, soll auch nicht so aussehen.
+   Keine Steuerung, keine Auswahl: eingreifen kann man im Kampf ohnehin nicht,
+   und was man nicht bedienen kann, soll auch nicht so aussehen.
 
-   Die Kamera steht dabei fest — bis auf die Erschuetterung beim Treffer. Das
-   ist keine Ausnahme von der Regel, sondern ihre Bestaetigung: sie ist nicht
-   bedienbar, sie ist Rueckmeldung. (Phase 59 nimmt sich die Kamera als Ganzes
-   vor und schreibt diesen Absatz dann neu.)
+   Bis Phase 58 stand hier zusaetzlich „keine Kamerabewegung", mit derselben
+   Begruendung. Die traegt nicht: eine Aufloesung, der man ZUSIEHT, ist ein
+   Film — und ein Film hat eine Kamera. Nicht bedienbar zu sein heisst, dass
+   der Blick GEFUEHRT werden muss, nicht dass er stehen soll. Sie faehrt
+   deshalb: heran beim Einsatz, in Zeitlupe beim Todesstoss, und sie zittert
+   beim Treffer.
+
+   Was bleibt, ist die Leitplanke: lebende Einheiten bleiben im Bild. Eine
+   Fahrt, die eine Seite hinausschiebt, kostet mehr Verstaendnis als sie
+   Wirkung bringt — an DER Stelle ist die Lagekarte weiterhin im Recht.
 
    Ohne WebGL passiert hier gar nichts — `verfuegbar()` sagt nein, und die
    Oberfläche bleibt bei der SVG-Lagekarte. Das ist keine Höflichkeit gegenüber
@@ -466,15 +471,14 @@
      Phase 59 faehrt, muss die Position je Bild mitlaufen. */
   function zahl(f, wert, seite, gross) {
     if (!zustand || !zustand.zahlen) return;
-    var v = new root.THREE.Vector3(f.gruppe.position.x, SPRITE_H * 0.75, f.gruppe.position.z);
-    v.project(zustand.camera);
     var el = root.document.createElement('span');
     el.className = (seite === 'player' ? 'spieler' : 'feind') +
       (gross ? ' gross' : '') + (wert < 0 ? ' heilung' : '');
     el.textContent = (wert < 0 ? '+' : '') + Math.abs(Math.round(wert));
-    el.style.left = ((v.x * 0.5 + 0.5) * 100) + '%';
-    el.style.top = ((-v.y * 0.5 + 0.5) * 100) + '%';
     zustand.zahlen.appendChild(el);
+    zustand.zahlenListe.push({ el: el, x: f.gruppe.position.x,
+                               y: SPRITE_H * 0.75, z: f.gruppe.position.z });
+    zeigeZahlen();                                   // sonst blitzt sie erst oben links auf
     root.setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1000);
   }
 
@@ -638,6 +642,7 @@
     if (!verfuegbar() || !einheiten.length) return false;
     var T = root.THREE;
     if (!blitzC) blitzC = new T.Color();
+    if (!hilfsV) hilfsV = new T.Vector3();
 
     /* ponytail: Breite wird nur beim Aufbau gelesen — wer das Fenster MITTEN im
        Kampf umzieht, sieht das Brett erst beim nächsten neu gefasst. Ein
@@ -686,7 +691,8 @@
     /* Gezielt wird etwas ÜBER die Brettebene: die Figuren ragen nach oben, also
        sitzt der Inhalt sonst am oberen Rand und lässt unten Luft. Gemessen 0
        Pixel oben gegen 49 unten — das hebt der Versatz auf. */
-    camera.lookAt(mass.mitteX, SPRITE_H * 0.2, mass.mitteZ);
+    var zielPunkt = new T.Vector3(mass.mitteX, SPRITE_H * 0.2, mass.mitteZ);
+    camera.lookAt(zielPunkt);
 
     var renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(root.devicePixelRatio || 1, 2));
@@ -710,7 +716,12 @@
 
     zustand = { renderer: renderer, scene: scene, camera: camera,
                 figuren: figuren, el: el, raf: 0, effekte: [], zahlen: zahlen,
-                kam: camera.position.clone(), ruettel: 0, zeit: 0, halt: 0,
+                basis: { ziel: zielPunkt.clone(),
+                         versatz: camera.position.clone().sub(zielPunkt) },
+                blickPunkt: zielPunkt.clone(), blickZiel: zielPunkt.clone(),
+                blickRest: 0, zoom: 1, zoomZiel: 1, lupe: 1, lupeRest: 0,
+                zahlenListe: [],
+                ruettel: 0, zeit: 0, halt: 0,
                 fx: (stufe === 'voll' && root.FX)
                   ? root.FX.komposition(renderer, breite * renderer.getPixelRatio(),
                                                   hoehe * renderer.getPixelRatio())
@@ -718,6 +729,108 @@
     aktualisiere(einheiten);
     schleife();
     return true;
+  }
+
+  /* ---- Die Kamera ----------------------------------------------------------
+     Vier Teile, die sich addieren, damit keiner den anderen ueberschreibt:
+
+       basis    die berechnete Rahmung aus `montiere` — der Ruhezustand
+       blick    ein weich nachgezogener Zielpunkt (worauf geschaut wird)
+       zoom     ein Faktor auf den Abstand (heranfahren)
+       versatz  die Erschuetterung aus Phase 55
+
+     Und eine Leitplanke: bleibt eine lebende Einheit nicht im Bild, wandert
+     der Blick zurueck zur Basis. Eine Kamerafahrt, die eine Seite aus dem
+     Bild schiebt, kostet mehr Verstaendnis als sie Wirkung bringt.          */
+
+  var hilfsV = null;                 // ein Vektor, wiederverwendet statt je Bild neu
+
+  function blick(keys, staerke, dauer) {
+    if (!zustand) return;
+    var z = zustand;
+    if (!keys || !keys.length || !staerke) {
+      z.blickZiel.copy(z.basis.ziel);
+      z.zoomZiel = 1;
+      z.blickRest = 0;
+      return;
+    }
+    var n = 0, sx = 0, sz = 0;
+    keys.forEach(function (k) {
+      var f = z.figuren[k];
+      if (!f) return;
+      sx += f.gruppe.position.x; sz += f.gruppe.position.z; n++;
+    });
+    if (!n) return;
+    z.blickZiel.set(sx / n, z.basis.ziel.y, sz / n).lerp(z.basis.ziel, 1 - staerke);
+    z.zoomZiel = 1 - 0.14 * staerke;
+    z.blickRest = dauer || 700;
+    if (!z.raf) z.raf = root.requestAnimationFrame(schleife);
+  }
+
+  /* Zeitlupe: das Brett verlangsamt seine EIGENE Uhr. Die Regie dehnt den Beat
+     ohnehin schon — beides zusammen ist feierlich, die Dehnung allein ist nur
+     langsam. */
+  function zeitlupe(faktor, ms) {
+    if (!zustand) return;
+    zustand.lupe = faktor;
+    zustand.lupeRest = ms;
+    if (!zustand.raf) zustand.raf = root.requestAnimationFrame(schleife);
+  }
+
+  function fuehreKamera(dt) {
+    var z = zustand, T = root.THREE;
+    if (z.blickRest > 0) {
+      z.blickRest -= dt;
+      if (z.blickRest <= 0) { z.blickZiel.copy(z.basis.ziel); z.zoomZiel = 1; }
+    }
+    var eil = Math.min(1, dt / 150);
+    z.blickPunkt.lerp(z.blickZiel, eil);
+    z.zoom += (z.zoomZiel - z.zoom) * eil;
+
+    hilfsV.copy(z.basis.versatz).multiplyScalar(z.zoom).add(z.blickPunkt);
+    if (z.ruettel > 0) {
+      /* Ohne Abklingen waere es ein Wackeln, mit Abklingen ist es ein Schlag. */
+      var a = z.ruettel * z.ruettel * 0.4;
+      hilfsV.x += (Math.random() - 0.5) * a;
+      hilfsV.y += (Math.random() - 0.5) * a;
+      hilfsV.z += (Math.random() - 0.5) * a * 0.5;
+      z.ruettel = Math.max(0, z.ruettel - dt / 250);
+    }
+    z.camera.position.copy(hilfsV);
+    z.camera.lookAt(z.blickPunkt);
+    z.camera.updateMatrixWorld();
+
+    /* Leitplanke. Sie zieht jedes Bild ein Stueck zurueck, statt einmal hart
+       zu klemmen — damit korrigiert sie sich selbst, auch wenn sich die
+       Einheiten waehrend der Fahrt bewegen. */
+    var raus = false;
+    Object.keys(z.figuren).forEach(function (k) {
+      var f = z.figuren[k];
+      if (f.tot) return;
+      hilfsV.set(f.gruppe.position.x, SPRITE_H * 0.5, f.gruppe.position.z).project(z.camera);
+      if (Math.abs(hilfsV.x) > 0.97 || Math.abs(hilfsV.y) > 0.97) raus = true;
+    });
+    if (raus) {
+      z.blickZiel.lerp(z.basis.ziel, 0.3);
+      z.zoomZiel = Math.min(1, z.zoomZiel + 0.06);
+    }
+
+    return z.ruettel > 0 || z.blickRest > 0 ||
+           z.blickPunkt.distanceToSquared(z.blickZiel) > 0.0001 ||
+           Math.abs(z.zoom - z.zoomZiel) > 0.002;
+  }
+
+  /* Seit die Kamera faehrt, muessen die Schadenszahlen mitlaufen — in Phase 55
+     stand die Position fest, weil die Kamera es auch tat. */
+  function zeigeZahlen() {
+    var z = zustand;
+    for (var i = z.zahlenListe.length - 1; i >= 0; i--) {
+      var n = z.zahlenListe[i];
+      if (!n.el.parentNode) { z.zahlenListe.splice(i, 1); continue; }
+      hilfsV.set(n.x, n.y, n.z).project(z.camera);
+      n.el.style.left = ((hilfsV.x * 0.5 + 0.5) * 100) + '%';
+      n.el.style.top = ((-hilfsV.y * 0.5 + 0.5) * 100) + '%';
+    }
   }
 
   var blitzC = null;                 // eine Farbe, wiederverwendet statt je Bild neu
@@ -736,6 +849,11 @@
     zeit = zeit || (root.performance ? root.performance.now() : Date.now());
     var dt = zustand.zeit ? Math.min(100, zeit - zustand.zeit) : 16;
     zustand.zeit = zeit;
+    if (zustand.lupeRest > 0) {
+      zustand.lupeRest -= dt;
+      dt *= zustand.lupe;
+      if (zustand.lupeRest <= 0) zustand.lupe = 1;
+    }
     var f = zustand.figuren, weiter = false;
     /* Hitstop: das Bild steht, die Uhr der Wiedergabe laeuft weiter. Genau
        diese Sekundenbruchteile Stillstand machen aus einem Treffer einen
@@ -800,18 +918,8 @@
       d.schatten.material.opacity = d.tot ? 0.12 * (1 - d.loesch) : 0.5;
     });
 
-    /* Erschuetterung: die Kamera zittert, nicht das Brett. Ohne Abklingen
-       waere es ein Wackeln, mit Abklingen ist es ein Schlag. */
-    if (zustand.ruettel > 0) {
-      var a = zustand.ruettel * zustand.ruettel * 0.4;
-      zustand.camera.position.set(
-        zustand.kam.x + (Math.random() - 0.5) * a,
-        zustand.kam.y + (Math.random() - 0.5) * a,
-        zustand.kam.z + (Math.random() - 0.5) * a * 0.5);
-      zustand.ruettel = Math.max(0, zustand.ruettel - dt / 250);
-      if (!zustand.ruettel) zustand.camera.position.copy(zustand.kam);
-      weiter = true;
-    }
+    if (fuehreKamera(dt)) weiter = true;
+    zeigeZahlen();
     /* Rueckwaerts, weil abgelaufene Effekte hier herausfallen. */
     for (var i = zustand.effekte.length - 1; i >= 0; i--) {
       var e = zustand.effekte[i];
@@ -871,5 +979,6 @@
 
   root.Brett3D = { verfuegbar: verfuegbar, montiere: montiere, montiert: montiert,
                    aktualisiere: aktualisiere, effekt: effekt, treffer: treffer,
-                   halt: halt, stufe: setzeStufe, loese: loese };
+                   halt: halt, stufe: setzeStufe, blick: blick,
+                   zeitlupe: zeitlupe, loese: loese };
 })(globalThis);

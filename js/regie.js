@@ -17,7 +17,11 @@
   /* Wie lange ein Ereignis wiegt, relativ zueinander. `setup` bekommt 0: es
      steht vor dem Kampf und kostete auch bisher keine Zeit. */
   var GEWICHT = {
-    setup: 0,
+    /* `setup` bekam bis Phase 58 das Gewicht 0 und verschenkte seine Zeit.
+       Seit die Kamera zu Kampfbeginn ueber die Reihen schwenkt, ist das die
+       Stelle, an der der Schwenk bezahlt wird — aus demselben Budget, nicht
+       obendrauf. */
+    setup: 26,
     chaos: 0.4, status: 0.4, schild: 0.4, skip: 0.4, widersteht: 0.4,
     heal: 0.8,
     hit: 1.0,
@@ -147,6 +151,7 @@
     opts = opts || {};
     var basis = opts.basis || BASIS;
     var b = beats(log);
+    for (var s0 = 0; s0 < log.length; s0++) if (log[s0].type === 'setup') b[s0] = 'eroeffnung';
     var gew = new Array(log.length);
     var n = 0, i;
     for (i = 0; i < log.length; i++) {

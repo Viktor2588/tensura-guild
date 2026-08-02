@@ -2747,6 +2747,66 @@ schneidet die Rahmung die Figuren oben ab. Die Formel rechnet
 Worktree `/home/viktor/tensura/worktree/phase-58-figuren`, Branch
 `phase-58-figuren`.
 
+### Phase 59 (2026-08-02): Die Kamera lebt
+
+**Hier wird eine Regel aus dem Dateikopf ausdruecklich umgedreht.** Dort stand
+seit Phase 41: „keine Steuerung, keine Auswahl, keine Kamerabewegung — was man
+nicht bedienen kann, soll auch nicht so aussehen." Die ersten beiden Haelften
+tragen weiter. Die dritte nicht: **eine Aufloesung, der man ZUSIEHT, ist ein
+Film — und ein Film hat eine Kamera.** Nicht bedienbar zu sein heisst, dass der
+Blick GEFUEHRT werden muss, nicht dass er stehen soll. Der Absatz ist neu
+geschrieben statt uebergangen; sonst stuende im Code eine Regel, die der Code
+bricht.
+
+**Das Gestell hat vier Teile, die sich addieren**, damit keiner den anderen
+ueberschreibt: `basis` (die berechnete Rahmung aus `montiere`, unangetastet),
+`blick` (ein weich nachgezogener Zielpunkt), `zoom` (ein Faktor auf den
+Abstand) und der Erschuetterungsversatz aus Phase 55. Vorher schrieb die
+Erschuetterung direkt auf `camera.position` — mit einer zweiten Bewegung
+daneben haette sie sie schlicht ueberschrieben.
+
+`Brett3D.blick(keys, staerke, dauer)` ist die ganze Schnittstelle: die Regie
+fordert eine Rahmung an, das Brett fuehrt sie aus und faellt nach `dauer` von
+selbst zurueck. Heranfahren beim `aktiv`, staerker beim toedlichen Treffer,
+Schwenk ueber die Gegnerreihe zum Auftakt.
+
+**Die Leitplanke zieht jedes Bild ein Stueck zurueck, statt einmal hart zu
+klemmen.** Faellt eine lebende Einheit aus dem Bild (|NDC| > 0,97), wandert
+`blickZiel` um 30 % Richtung Basis und der Zoom oeffnet sich. Damit korrigiert
+sie sich selbst, auch waehrend die Einheiten sich bewegen — eine einmalige
+Pruefung beim Anfordern waere eine Sekunde spaeter falsch.
+
+**Die Zeitlupe braucht beide Uhren.** Die Regie dehnt den Beat ohnehin (Phase
+54); das Brett verlangsamt zusaetzlich seine eigene Animationsuhr auf 0,25 beim
+Finale und 0,4 beim toedlichen Treffer. Nur die Dehnung waere langsam, beides
+zusammen ist feierlich.
+
+**Der Auftakt wird tatsaechlich bezahlt, nicht dazugerechnet.** Der
+`setup`-Eintrag hatte in Phase 54 das Gewicht 0 und verschenkte seine Zeit; er
+hat jetzt Gewicht 26 und bekommt damit **780 ms aus demselben Budget** — die
+Gesamtdauer bleibt bei 4761 gegen 4760 ms. Dafuer ueberspringt `js/ui.js` den
+setup-Eintrag nicht mehr; Zustand und Log ignorieren ihn weiterhin, nur die
+Anzeige sieht ihn.
+
+**Und ein offener Punkt aus Phase 55 ist damit geschlossen:** die
+Schadenszahlen wurden dort einmal projiziert und dann per CSS bewegt — mit dem
+`ponytail:`-Vermerk, dass das ab dieser Phase nicht mehr reicht. Sie laufen
+jetzt je Bild mit der Kamera mit.
+
+Geprueft im Browser ueber den Umweg der Schadenszahl als Messpunkt: dieselbe
+Weltposition projiziert waehrend der Fahrt auf **64,8 %** der Breite und nach
+der Rueckkehr auf **75,3 %**. Die Kamera faehrt also, kommt zurueck, und die
+Zahlen haengen daran. Im Bild belegt: beim Heranfahren auf einen einzelnen
+Gegner bleibt die eigene Einheit im Rahmen — die Leitplanke greift.
+
+`dev/sim.js` 443/443 — eine neue Zusicherung („der Auftakt bekommt eigene
+Zeit"), und die alte „kein Eintrag ausser setup faellt unter die Untergrenze"
+ist zu „kein Eintrag" geworden, weil setup jetzt Zeit hat. `dev/uitest.js`
+104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-59-kamera`, Branch
+`phase-59-kamera`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
