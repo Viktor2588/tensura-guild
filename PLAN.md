@@ -2450,6 +2450,467 @@ Waechter fuer genau das Leck, das diese Phase gefunden hat. `dev/uitest.js`
 Worktree `/home/viktor/tensura/worktree/phase-53-s-selten`, Branch
 `phase-53-s-selten`.
 
+### Phase 54 (2026-08-02): Der Takt — aus Wiedergabe wird Regie
+
+Erste Phase des Kampfkino-Plans (54–61). Der Kampf war korrekt, aber tonlos,
+und das lag nicht am Rendering: `setInterval(schritt, 70)` gab einem
+Giftstapel und einem Todesstoss exakt dieselben 70 Millisekunden. Eine
+Ereignisliste gleichmaessig abzuspulen ist keine Regie, sondern ein Ticker.
+
+Neu ist `js/regie.js` — eine reine Funktion, kein DOM, kein three.js:
+
+```
+Regie.zeitplan(log) -> [ { i, ms, beat, stopp } ]
+```
+
+Sie tut zwei Dinge. **Erstens Gewichte je Ereignistyp** statt einer festen
+Zahl: `status` 0,4 · `hit` 1,0 · `aktiv` 3,5 · `death` 5,0 ·
+`verwandlung` 6,0. Das Budget bleibt dabei erhalten (70 ms mal Anzahl der
+Eintraege), die Zeit wandert nur — was ein Hoehepunkt bekommt, fehlt dem
+Belanglosen. Gemessen ueber drei Seeds: **4757 statt 4760 ms, −0,06 %**.
+Ein Tod steht jetzt **326 ms**, ein Statusstapel **25 ms** — Faktor 13 statt
+Faktor 1.
+
+**Zweitens Vorausschau.** Die Wiedergabe kennt nur „naechster Eintrag"; der
+Zeitplan sieht das ganze Log und weiss deshalb schon beim Treffer, dass gleich
+jemand faellt. Fuenf Beats: `gross` (≥ 12 % der Lebenspunkte), `toedlich` (auf
+diesen Treffer folgt der Tod des Ziels), `flaeche` (einem Einsatz folgen ≥ 2
+Treffer), `wende` (eine Seite faellt unter die Haelfte), `finale` (der letzte
+Tod). In einem Beispielkampf: 11 · 5 · 5 · 2 · 1.
+
+Das ist der Punkt der Phase. **Ein Hitstop, den man erst beim Tod bemerkt,
+kommt zu spaet** — er muss auf dem Treffer davor liegen. Genau deshalb ist die
+Vorausschau hier zentral und einmal gebaut, statt in jeder folgenden Phase
+neu. `stopp` liegt mit 0/90/140/260 ms **innerhalb** des `ms` seines Beats und
+kostet damit keine Extrazeit; ein Beat-Faktor (Finale 2,0 · Wende und toedlich
+1,5) sorgt dafuer, dass er auch hineinpasst.
+
+In `js/ui.js` ersetzt ein Zeitkonto auf `requestAnimationFrame` das feste
+Intervall. Mehrere billige Eintraege duerfen sich ein Bild teilen — diese
+Buendelung ist es, die die Dehnung bezahlt. Dazu **Tempo 1× / 2× / 4×** neben
+`Ueberspringen`, gemerkt in `localStorage` wie der Debug-Schalter.
+`Ueberspringen` bleibt synchron und unveraendert; `dev/uitest.js` klickt es
+sofort und merkt vom Uhrwechsel nichts.
+
+`dev/sim.js` 439/439 — neun neue Zusicherungen, darunter die drei, die den
+Kern schuetzen: die Gesamtdauer bleibt innerhalb von 2 % der alten, ein Tod
+bekommt mindestens die fuenffache Zeit eines Statusstapels, und jeder als
+`toedlich` markierte Treffer hat tatsaechlich einen Tod desselben Ziels vor
+sich. `dev/uitest.js` 104/104. `js/combat.js` unangetastet — die Balance kann
+sich nicht verschoben haben.
+
+Worktree `/home/viktor/tensura/worktree/phase-54-takt`, Branch
+`phase-54-takt`.
+
+### Phase 55 (2026-08-02): Der Einschlag — Treffer bekommen Gewicht
+
+Phase 54 hat die Zeit verteilt, aber im Bild passierte beim Treffer weiterhin
+nichts: der Lebensbalken sank, und das war alles. Ein Treffer braucht vier
+Dinge, und keins davon ist ein Partikel — **Aufblitzen** (wen hat es
+erwischt), **Rueckstoss** (aus welcher Richtung), **Erschuetterung** (wie
+hart) und eine **Schadenszahl** (wie viel).
+
+**Die Richtung ist der Grund, warum `js/combat.js` angefasst werden musste.**
+Ein `hit`-Eintrag trug `key` (das Ziel) und `source` (einen Namen) — den
+Angreifer kannte er nicht. Ohne ihn bleibt vom Rueckstoss ein Zucken auf der
+Stelle.
+
+Dabei kam heraus, dass zwei Felder noetig sind, nicht eines. `opt.von` steuert
+naemlich bereits die **Deckung** (`js/combat.js:251`): wer zwischen dir und dem
+Angreifer steht, faengt ein Drittel ab. Haette man `von` einfach ueberall
+nachgetragen, wo bisher keiner stand — etwa in den Passiven, die ueber
+`c.deal` Schaden austeilen —, waere aus einer reinen Anzeigeaenderung eine
+Regeländerung geworden. Deshalb `anzeigeVon`: dasselbe Wissen, aber es wird
+ausschliesslich ins Log geschrieben und nirgends gelesen. Gesetzt wird es an
+genau einer Stelle, im `deal` des Faehigkeits-Kontexts, statt in vierzig
+Faehigkeiten einzeln.
+
+**Der Beweis, dass nichts verrutscht ist:** `npm run balance 600` liefert
+Zeile fuer Zeile dieselben Zahlen wie vorher — Siege **304 (51 %)**,
+Kampfherausforderungen 2402 / 63 % gehalten, Ø 13.2 Knoten, gescheitert je Akt
+155 / 445, alle acht Boss-Quoten unveraendert.
+
+Im Brett schreibt jetzt **nur noch `schleife()`** das Material. Vorher tat es
+`aktualisiere()` — und damit haette der naechste Logeintrag genau das
+ueberschrieben, was man gerade sehen soll. Aus demselben Grund gibt es `pos`
+(nachgezogener Standpunkt) getrennt von `gruppe.position` (Standpunkt plus
+Rueckstoss): ohne die Trennung frisst die naechste Bewegung den Stoss auf.
+
+Der Tod ist kein `opacity = 0.22` mehr, sondern ein Zerfall: Funkenstoss in
+der Seitenfarbe, das Bild hebt sich und verlischt. Es bleibt ein sehr blasser
+Rest — wer gefallen ist, gehoert weiter auf die Lagekarte. Gemessen: bei 0,55
+Hoehe schwebt der Rest sichtbar ueber der Kachel und liest sich als Fehler,
+bei 0,3 als Gefallener.
+
+**Und der Hitstop aus Phase 54 hat endlich etwas zum Anhalten.** `Brett3D.halt(ms)`
+friert das Bild ein, waehrend die Standzeit weiterlaeuft. Das kostet keine
+Zeit, weil `stopp` innerhalb von `ms` liegt.
+
+**Nebenbefund, und kein kleiner:** `verfuegbar()` legte bei JEDEM Aufruf eine
+Leinwand mit eigenem WebGL-Kontext an und gab sie nie frei. Solange nur
+`aktualisiereFeld()` fragte, fiel das nicht auf; seit die Wiedergabe je
+Logeintrag fragt, lief der Browser nach wenigen Sekunden in *„Too many active
+WebGL contexts. Oldest context will be lost."* und warf dem Brett den Kontext
+unter den Fuessen weg. Die Antwort wird jetzt gemerkt — sie aendert sich
+ohnehin nicht. Gefunden mit Playwright im echten Browser; im Test waere es nie
+aufgefallen, weil jsdom gar kein WebGL hat.
+
+`js/ui.js`: die 48-Zeilen-Funktion `anwenden()` ist in drei zerlegt —
+`anwenden` (Zustand), `zeile` (Log), `zeige` (Brett). Sie war die einzige
+Stelle im Projekt, an der Logik und Darstellung sich mischten. `Ueberspringen`
+braucht nur die ersten beiden.
+
+`dev/sim.js` 442/442 — drei neue Zusicherungen, darunter die entscheidende:
+**ohne Angreifer bleibt nur Zustandsschaden.** Brand kommt aus dem Zustand,
+nicht aus einer Richtung, und ein erfundener Rueckstoss waere schlimmer als
+keiner. `dev/uitest.js` 104/104. Bildbeweis: Boss-Kampf gegen Charybdis im
+Browser, Schadenszahl „18" ueber dem Ziel, passend zur Logzeile.
+
+Worktree `/home/viktor/tensura/worktree/phase-55-einschlag`, Branch
+`phase-55-einschlag`.
+
+### Phase 56 (2026-08-02): Licht — Bloom und Farbraum
+
+Die Schicht, die Magie nach Magie aussehen laesst — und die erste, die nicht
+mehr aus Timing besteht.
+
+**Warum von Hand und nicht `UnrealBloomPass`.** three.js hat `examples/js` in
+r148 entfernt; alle Addons ab da sind ES-Module. Dieses Projekt sitzt auf r149
+UMD, weil `ASSETS.md` das ausdruecklich so festgelegt hat, und es hat keinen
+Bauschritt. Der Addon-Weg hiesse rund 900 Zeilen Fremdcode von Hand nach
+klassischem Skript umschreiben, samt Herkunftsnachweis in `ASSETS.md`. Neu ist
+stattdessen `js/fx.js` mit 180 eigenen Zeilen: Szene in ein Rendertarget →
+Helligkeitsschwelle mit weichem Knie auf halbe Aufloesung → zwei getrennte
+Gauss-Durchgaenge → additiv zurueck ueber die Szene, Vignette im selben
+Durchgang. Vollbildquad ist `PlaneGeometry(2,2)` plus `OrthographicCamera`,
+mehr braucht es nicht.
+
+**Zwei Sachen, die man leicht falsch macht**, und beide stehen als Kommentar in
+der Datei. Erstens: in r149 richtet sich Tonemapping und sRGB beim Rendern in
+ein Ziel nach der **Kodierung der Zieltextur**, nicht nach
+`renderer.outputEncoding` — ohne `rtSzene.texture.encoding = sRGBEncoding`
+bliebe das Bild linear und damit flau. Zweitens: die Leinwand ist
+durchsichtig, der Verlauf dahinter kommt aus CSS. Der Zusammenbau muss den
+Alphakanal durchtragen und dort anheben, wo das Leuchten ueber leeren Grund
+faellt — sonst ist ein Funke am Bildrand unsichtbar, obwohl er strahlt.
+
+Am Renderer stehen jetzt `sRGBEncoding` und `ACESFilmicToneMapping` (die
+r149-Schreibweise; `outputColorSpace` gibt es erst ab r152).
+
+**Und dabei kam heraus, dass die erste Einstellung zu viel war.** Mit Schwelle
+0,62 riss schon der Koerper des Platzhalters (0x7fb0e8, Spitzenwert 0,91) die
+Schwelle — das ganze Brett leuchtete und sah ausgewaschen aus statt magisch.
+Jetzt Schwelle 0,85, Staerke 0,6, Belichtung 0,95 statt 1,15: es glimmen die
+Funken und die Lebensbalken, nicht die Kacheln.
+
+**Der Vergleichsschalter ist kein Zugestaendnis, sondern das Messinstrument.**
+Effekte **voll / sparsam / aus** im Menue, wie der Debug-Schalter im
+`localStorage` gemerkt, und er greift sofort — auch mitten im Kampf. Genau
+darum geht es: zwei Stufen nebeneinander sehen zu koennen, ohne den Kampf zu
+verlieren. Im direkten Vergleich derselben Szene ist `sparsam` flach und hell,
+`voll` hat Tiefe — und den groesseren Anteil daran hat die Vignette, nicht das
+Bloom. `aus` faellt auf die SVG-Lagekarte zurueck; geprueft, dass dann ein
+`<svg>` im Brett steht und kein `<canvas>`.
+
+~~Gemessen im Browser waehrend eines Kampfes mit voller Stufe: 16,7 ms je Bild
+im Median — also durchgehend 60 Bilder je Sekunde.~~ **Diese Messung war
+falsch und ist in Phase 58 aufgeflogen** — siehe dort. Sie entstand, waehrend
+die Schleife des Bretts ruhte; gezaehlt wurde ein leerer `requestAnimationFrame`
+und nicht das Zeichnen.
+
+`js/fx.js` ist reiner GPU-Code und laesst sich headless nicht pruefen — in
+jsdom gibt es kein WebGL. Es kommt deshalb **keine** Zusicherung in
+`dev/sim.js` dazu; der Beleg ist der Bildvergleich. `dev/sim.js` 442/442,
+`dev/uitest.js` 104/104 — dass beide unveraendert bleiben, ist hier die
+Aussage: die Schicht haengt sauber daneben.
+
+Worktree `/home/viktor/tensura/worktree/phase-56-licht`, Branch
+`phase-56-licht`.
+
+### Phase 57 (2026-08-02): Die Formen — jedes Schlüsselwort bewegt sich anders
+
+Bis hierher unterschied nur die **Farbe**. Zwei Faehigkeiten mit demselben
+Funkenschwarm in Orange und Gruen sehen aber gleich aus: Farbe erkennt man
+erst, wenn man schon hinschaut, Bewegung erkennt man vorher. Neu ist deshalb
+eine vierte Tabelle `FORM` neben `FARBE`/`AN_SICH`/`SOFORT`.
+
+**Sechs Grundformen, nicht siebzehn** — mehr waere nicht mehr Information,
+sondern weniger, weil sich keine mehr einpraegt:
+
+| Form | Schlüsselwörter | Bewegung |
+|---|---|---|
+| `geschoss` | brand, gift, frost | Bogenflug, dann Einschlag |
+| `strahl` | donner, licht, dunkelheit | gestrecktes Quad A→B, drei Bilder Licht |
+| `klinge` | exekution, blutung, konter, verwundbar | Schnittbogen am Ziel, in Angriffsrichtung gedreht |
+| `welle` | flaeche | Bodenring auf dem echten Umkreis |
+| `saeule` | heilung, schild, tempo | aufsteigender Ring an der eigenen Figur |
+| `schleier` | schatten, verderbnis, chaos | kreisende Funken um das Ziel |
+
+Dazu bekommt **jeder** Effekt auf ein fremdes Ziel einen **Einschlagring** auf
+dem Boden. Er kostet vierzig Dreiecke und traegt mehr als zehn Funken — er ist
+der Unterschied zwischen „trifft" und „schlaegt ein".
+
+**Der Radius der Welle ist nicht geraten.** `FASSUNG_FLAECHE` lag bisher
+innerhalb von `simulate()`; es steht jetzt modulweit und wird exportiert —
+verschoben, nicht veraendert (`dev/sim.js` 442/442 unmittelbar danach). Das
+Brett rechnet den Weltradius aus `Hex.pixel`: bei „pointy top" ist der Abstand
+zweier Kachelmitten `sqrt(3)` mal Groesse. Im Bild geht die Welle damit genau
+ueber zwei Kachelringe auf.
+
+**Dass eine Flaeche ueberhaupt eine ist, weiss das Brett aus der Regie.**
+`combat.js` meldet keine Flaechenwirkung; der `flaeche`-Beat aus Phase 54 sagt,
+dass einem Einsatz mehrere Treffer folgen. Die Welle legt sich dann ueber die
+Grundform, statt sie zu ersetzen — deshalb `form === 'welle' || beat ===
+'flaeche'`.
+
+**Beim Nachsehen im Browser kam ein Fehler heraus, den nur das Bild zeigt:**
+die Funken der Welle liefen ueber `streuX * radius` nach aussen — also auf
+einem RECHTECK. Ein Funke in der Ecke landete damit weit neben dem Brett, als
+faustgrosser weisser Klecks vor der Kamera. Jeder Funke hat jetzt einen festen
+Winkel und laeuft auf einem Kreis. Schleier hat denselben Winkel bekommen.
+
+Geprueft mit Playwright und einem Kniff, der sich lohnt: `Brett3D.halt()` aus
+Phase 55 friert das Bild ein — Effekt ausloesen, 200 bzw. 420 ms warten,
+einfrieren, Bild machen. Ohne das ist ein 520-ms-Effekt vom Werkzeug aus nicht
+zu erwischen. Belegt: die Welle als grosse Bodenellipse ueber zwei Kacheln, der
+Strahl als gestrecktes Quad zwischen Angreifer und Ziel, der Bodenring an den
+Fuessen.
+
+`dev/sim.js` 442/442, `dev/uitest.js` 104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-57-formen`, Branch
+`phase-57-formen`.
+
+### Phase 58 (2026-08-02): Die Figuren leben
+
+Vier kleine Bewegungen und zwei Zutaten, die aus Pappaufstellern Kaempfer
+machen — und ein Messfehler aus Phase 56, der dabei aufflog.
+
+**Schattenwurf.** Der groesste einzelne Gewinn dieser Phase, und der
+billigste: ein weicher dunkler Fleck flach unter jeder Figur. Ohne ihn
+schweben die Figuren VOR dem Brett, mit ihm stehen sie DARAUF. Er schrumpft
+mit dem Wippen mit, sonst klebt er als Scheibe.
+
+**Atmen.** Sinus-Wippen, Amplitude 0,055 — klein genug, dass es auffaellt,
+wenn es FEHLT, und nicht, wenn es da ist. Die Phase wird aus dem Schluessel
+gehasht, sonst wippt der ganze Trupp im Gleichtakt und sieht aus wie eine
+Animation statt wie Leben. Wer gefallen ist, atmet nicht.
+
+**Stauchen und Strecken**, gekoppelt an `Brett3D.treffer` aus Phase 55:
+stauchen beim Einstecken, strecken beim Austeilen. Dieselbe Sprache wie der
+Rueckstoss, nur an der Figur statt am Standpunkt.
+
+**Randkontur** im Platzhalter, eine breite Linie in der Seitenfarbe unter der
+Silhouette. Seit Kachel und Vignette dunkel sind, versank die Silhouette sonst
+im Brett. Sie bleibt eine Silhouette — die Begruendung im Dateikopf gilt
+weiter.
+
+**Blickrichtung — und da lag ein Irrtum.** Der Plan sagte: Gegner ueber ein
+negatives `scale.x` spiegeln. Im Bild blieb die Waffe rechts: in three.js
+dreht ein negatives `scale.x` am Sprite das Quad, ohne das Bild zu wenden.
+Gespiegelt wird jetzt die TEXTUR ueber `repeat.x = -1` / `offset.x = 1`. Im
+Bild belegt: der eigene Trupp traegt die Waffe rechts, die Gegner links, beide
+Seiten schauen zur Mitte.
+
+**Zustandsmarken**, aber nur drei: Brand, Gift, Erstarrung. Wer alle dreizehn
+ans Modell haengt, baut ein zweites Log auf das Brett. Sie sassen zuerst ueber
+dem Lebensbalken und wurden dort von der Rahmung abgeschnitten — jetzt sitzen
+sie darunter. Eine Marke, die man nicht sieht, ist keine.
+
+**Und jetzt der Messfehler.** Seit die Figuren atmen, steht nie mehr alles
+still, und die selbstabschaltende Schleife laeuft durchgehend. Damit wurde
+erstmals das echte Zeichnen gemessen — und statt der 16,7 ms aus Phase 56
+kamen **480 ms** heraus. Der Grund ist nicht der Code: der Browser hinter dem
+Playwright-Werkzeug hat **keine GPU**, er rendert mit SwiftShader in Software
+(`ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device))`, Leinwand 2093 × 749).
+Vier Vollbild-Durchgaenge kosten dort genau so viel.
+
+Damit ist auch klar, was die 16,7 ms in Phase 56 wirklich waren: **ein leerer
+`requestAnimationFrame`.** Die Schleife des Bretts ruhte zu dem Zeitpunkt, und
+gezaehlt wurde eine Uhr, die nichts zeichnete. Der Eintrag zu Phase 56 ist
+entsprechend korrigiert.
+
+Was sich hier ehrlich messen laesst, ist nur das Verhaeltnis: **voll 500 ms
+gegen sparsam 300 ms** — das Bloom kostet also rund zwei Drittel obendrauf.
+Auf einer echten GPU ist das Fuellrate und faellt um Groessenordnungen kleiner
+aus, aber eine Bildrate ist aus dieser Umgebung nicht zu bekommen. Die
+Prüfungstabelle dieses Plans verlangt „60 fps bei 12 Figuren mit Bloom" —
+**diese Zusicherung steht weiter offen** und braucht einen Browser mit GPU.
+
+Nebenbefund fuer Phase 60: bei flachen Brettern mit wenigen Einheiten
+schneidet die Rahmung die Figuren oben ab. Die Formel rechnet
+`tiefe·sin + (SPRITE_H+0,9)·cos` und unterschaetzt das bei zwei Reihen. Phase
+60 misst den Hoehendeckel ohnehin neu.
+
+`dev/sim.js` 442/442, `dev/uitest.js` 104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-58-figuren`, Branch
+`phase-58-figuren`.
+
+### Phase 59 (2026-08-02): Die Kamera lebt
+
+**Hier wird eine Regel aus dem Dateikopf ausdruecklich umgedreht.** Dort stand
+seit Phase 41: „keine Steuerung, keine Auswahl, keine Kamerabewegung — was man
+nicht bedienen kann, soll auch nicht so aussehen." Die ersten beiden Haelften
+tragen weiter. Die dritte nicht: **eine Aufloesung, der man ZUSIEHT, ist ein
+Film — und ein Film hat eine Kamera.** Nicht bedienbar zu sein heisst, dass der
+Blick GEFUEHRT werden muss, nicht dass er stehen soll. Der Absatz ist neu
+geschrieben statt uebergangen; sonst stuende im Code eine Regel, die der Code
+bricht.
+
+**Das Gestell hat vier Teile, die sich addieren**, damit keiner den anderen
+ueberschreibt: `basis` (die berechnete Rahmung aus `montiere`, unangetastet),
+`blick` (ein weich nachgezogener Zielpunkt), `zoom` (ein Faktor auf den
+Abstand) und der Erschuetterungsversatz aus Phase 55. Vorher schrieb die
+Erschuetterung direkt auf `camera.position` — mit einer zweiten Bewegung
+daneben haette sie sie schlicht ueberschrieben.
+
+`Brett3D.blick(keys, staerke, dauer)` ist die ganze Schnittstelle: die Regie
+fordert eine Rahmung an, das Brett fuehrt sie aus und faellt nach `dauer` von
+selbst zurueck. Heranfahren beim `aktiv`, staerker beim toedlichen Treffer,
+Schwenk ueber die Gegnerreihe zum Auftakt.
+
+**Die Leitplanke zieht jedes Bild ein Stueck zurueck, statt einmal hart zu
+klemmen.** Faellt eine lebende Einheit aus dem Bild (|NDC| > 0,97), wandert
+`blickZiel` um 30 % Richtung Basis und der Zoom oeffnet sich. Damit korrigiert
+sie sich selbst, auch waehrend die Einheiten sich bewegen — eine einmalige
+Pruefung beim Anfordern waere eine Sekunde spaeter falsch.
+
+**Die Zeitlupe braucht beide Uhren.** Die Regie dehnt den Beat ohnehin (Phase
+54); das Brett verlangsamt zusaetzlich seine eigene Animationsuhr auf 0,25 beim
+Finale und 0,4 beim toedlichen Treffer. Nur die Dehnung waere langsam, beides
+zusammen ist feierlich.
+
+**Der Auftakt wird tatsaechlich bezahlt, nicht dazugerechnet.** Der
+`setup`-Eintrag hatte in Phase 54 das Gewicht 0 und verschenkte seine Zeit; er
+hat jetzt Gewicht 26 und bekommt damit **780 ms aus demselben Budget** — die
+Gesamtdauer bleibt bei 4761 gegen 4760 ms. Dafuer ueberspringt `js/ui.js` den
+setup-Eintrag nicht mehr; Zustand und Log ignorieren ihn weiterhin, nur die
+Anzeige sieht ihn.
+
+**Und ein offener Punkt aus Phase 55 ist damit geschlossen:** die
+Schadenszahlen wurden dort einmal projiziert und dann per CSS bewegt — mit dem
+`ponytail:`-Vermerk, dass das ab dieser Phase nicht mehr reicht. Sie laufen
+jetzt je Bild mit der Kamera mit.
+
+Geprueft im Browser ueber den Umweg der Schadenszahl als Messpunkt: dieselbe
+Weltposition projiziert waehrend der Fahrt auf **64,8 %** der Breite und nach
+der Rueckkehr auf **75,3 %**. Die Kamera faehrt also, kommt zurueck, und die
+Zahlen haengen daran. Im Bild belegt: beim Heranfahren auf einen einzelnen
+Gegner bleibt die eigene Einheit im Rahmen — die Leitplanke greift.
+
+`dev/sim.js` 443/443 — eine neue Zusicherung („der Auftakt bekommt eigene
+Zeit"), und die alte „kein Eintrag ausser setup faellt unter die Untergrenze"
+ist zu „kein Eintrag" geworden, weil setup jetzt Zeit hat. `dev/uitest.js`
+104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-59-kamera`, Branch
+`phase-59-kamera`.
+
+### Phase 60 (2026-08-02): Die Bühne — Stimmung statt Hintergrund
+
+Vier Zutaten machen aus dem Brett einen Ort, und die letzte kauft die
+Lesbarkeit zurueck, die die fahrende Kamera aus Phase 59 gekostet hat. Genau
+deshalb kommt diese Phase NACH der Kamera und nicht davor.
+
+**Dunst** (`FogExp2`, 0,055) im Ton des Akts: die hinteren Reihen sitzen im
+Nebel, das Brett bekommt Tiefe. Exponentiell statt linear, sonst gibt es eine
+sichtbare Kante.
+
+**Hintergrund je Akt** — ein grosses Verlaufsquad hinter dem Brett, Akt 1 kuehl
+blau, Akt 2 violett. Kein Bild, kein Asset: der Verlauf entsteht zur Laufzeit
+auf einer 8 × 256 grossen Leinwand. `montiere` nimmt dafuer einen dritten
+Parameter, `js/ui.js` reicht `run.act` durch.
+
+**Schwebeteilchen**, dreissig Stueck, sehr langsam. Sie sagen „hier ist Luft",
+nicht „hier passiert etwas" — deshalb duerfen sie nichts tun.
+
+**Kachel-Rueckmeldung:** die Kachel der handelnden Einheit und die des Ziels
+pulsen in der Farbe des Schluesselworts. Das ist der Ersatz fuer den
+Ueberblick, den die bewegte Kamera kostet: wenn der Blick wandert, braucht man
+am Boden eine Marke.
+
+**Die Teilchen waren beim ersten Anlauf ein Fehler.** Sie streuten ueber die
+anderthalbfache Bretttiefe — und eins davon stand dicht vor dem Objektiv, wurde
+gross und wurde vom Bloom zur weissen Scheibe aufgeblasen. Im Bild sah das aus
+wie ein Defekt. Die Tiefe bleibt jetzt innerhalb des Bretts (0,7 statt 1,4),
+Groesse und Deckkraft sind halbiert.
+
+**Die volle Buehne.** `#kampfbuehne` ist ein Raster: das Brett bekommt den
+Hauptplatz, Aufstellung und Log ruecken auf breiten Fenstern DANEBEN statt
+darunter. Keine `@media`-Abfrage — die Datei sagt im Kopf, dass dies ein
+Desktop-Spiel im Vollbild ist, und `minmax(0, 3fr) / minmax(22rem, 1fr)` tut
+dasselbe ohne Umschaltpunkt.
+
+Damit faellt auch der Grund fuer den niedrigen Hoehendeckel weg: er begrenzte,
+wie viel Bildschirm das Brett dem Log wegnimmt, und das Log steht jetzt
+nebenan. **760 → 900.** Gemessen an einem Vollbild-Desktop: Leinwand
+1560 × 650 — der Deckel bindet also gar nicht mehr, die Geometrie braucht
+weniger.
+
+**Und der Nebenbefund aus Phase 58 ist erledigt.** Die Rahmung schnitt bei
+flachen Brettern Kopf und Lebensbalken ab. Der Grund stand in der Formel: der
+Blick zielt um `SPRITE_H · 0,2` UEBER die Brettebene, und wer hoeher zielt,
+schiebt den Inhalt nach unten und braucht oben genau so viel mehr Platz. Der
+Versatz geht jetzt doppelt in `senkrecht` ein. Im Bild belegt: Kopf,
+Lebensbalken und Zustandsmarken stehen wieder vollstaendig im Rahmen.
+
+`dev/sim.js` 443/443, `dev/uitest.js` 104/104.
+
+**Nachtrag (Rueckmeldung des Nutzers, korrigiert auf `phase-61-figuren`):** das
+Log in der Seitenspalte bekam `height: auto; flex: 1`. In einer Spalte, deren
+Hoehe vom Inhalt kommt, waechst das einfach mit, statt zu scrollen — und schob
+„Ueberspringen" mit jeder Logzeile weiter nach unten. Jetzt ein fester Deckel,
+`min(28rem, 46vh)`. Gemessen: 140 zusaetzliche Zeilen machen aus 446 px Inhalt
+2832 px, die Box bleibt bei **446 px**, sie scrollt, und die Unterkante der
+Buehne bewegt sich um **0 px**.
+
+Worktree `/home/viktor/tensura/worktree/phase-60-buehne`, Branch
+`phase-60-buehne`.
+
+### Phase 61 (2026-08-02): Echte Figuren — die Vorgabe (Bilder offen)
+
+Die einzige Phase des Kampfkino-Plans, die keine Codearbeit ist. Umgesetzt ist
+davon der **erste** Schritt: die Vorgabe in `ASSETS.md` schärfen, bevor das
+erste Bild entsteht. Die Bilder selbst stehen aus — der Nutzer entscheidet über
+Werkzeug und Lizenzlage.
+
+Dass die Vorgabe erst jetzt geschrieben wird und nicht am Anfang, ist der
+Punkt: **nach den Phasen 55–60 ist bekannt, was ein Bild auf dieser Bühne
+können muss.** Die vier Geometriepunkte standen schon da. Die vier neuen
+kommen aus dem, was das Brett inzwischen mit dem Bild macht, und sie sind es,
+die man ohne Vorwarnung falsch macht:
+
+- **Kein eingemalter Schatten** — das Brett legt seit Phase 58 selbst einen
+  darunter, ein zweiter sieht aus wie ein Fehler.
+- **Eigene Kantentrennung.** Der farbige Umriss aus Phase 58 steckt in
+  `platzhalter()`; ein echtes Bild bekommt ihn **nicht** und versinkt ohne
+  eigenen Rand im dunklen Brett — deutlicher als der Platzhalter es je tat.
+  Das ist der Punkt, an dem sonst der ganze Stapel nachgearbeitet werden
+  müsste.
+- **Spiegelbar** — Gegner werden seit Phase 58 gespiegelt, Schrift und Wappen
+  fallen damit aus.
+- **Keine grossen sehr hellen Flaechen** — die Nachbearbeitung laesst alles
+  ueber 0,85 gluehen (Phase 56). Fuer eine Klinge gewollt, fuer eine weisse
+  Ruestung nicht.
+
+Dazu praezisiert: Format 512 × 1024 statt „etwa 1:2", und die Hoehen, auf
+denen Lebensbalken (0,82) und Zustandsmarken (0,70) liegen — was dort im Bild
+steht, wird verdeckt.
+
+Die Herkunftstabelle hat jetzt eine eigene **Prompt**-Spalte, statt ihn in
+„Herkunft" zu quetschen. Die Regel bleibt unveraendert scharf: ohne Eintrag
+gilt ein Bild als nicht verwendbar.
+
+**Offen und ausdruecklich als Entscheidung vermerkt, nicht als Nebenwirkung:**
+`.gitignore` enthaelt nur `node_modules`, die rund fuenfzig Bilder gehen also
+mit ins Repo.
+
+`dev/sim.js` 443/443, `dev/uitest.js` 104/104 — es wurde kein Code angefasst.
+
+Worktree `/home/viktor/tensura/worktree/phase-61-figuren`, Branch
+`phase-61-figuren`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

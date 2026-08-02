@@ -35,8 +35,8 @@ win.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open
 /* three.js fehlt hier bewusst: jsdom hat kein WebGL, `Brett3D.verfuegbar()`
    sagt deshalb nein, und geprüft wird die SVG-Lagekarte — die Rückfallebene,
    die es genau für diesen Fall gibt. */
-['js/rng.js', 'js/hex.js', 'js/brett3d.js', 'js/audio.js', 'js/abilities.js', 'js/data.js', 'js/combat.js',
- 'js/enemies.js', 'js/run.js', 'js/ui.js'].forEach(function (f) {
+['js/rng.js', 'js/hex.js', 'js/fx.js', 'js/brett3d.js', 'js/audio.js', 'js/abilities.js', 'js/data.js',
+ 'js/combat.js', 'js/enemies.js', 'js/regie.js', 'js/run.js', 'js/ui.js'].forEach(function (f) {
   win.eval(fs.readFileSync(path.join(wurzel, f), 'utf8'));
 });
 

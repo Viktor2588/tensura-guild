@@ -27,6 +27,11 @@
 
      REICHWEITE je Rolle. Sie war bisher nur Zielwahl; jetzt ist sie Abstand,
      und damit bekommt die Rolle zum ersten Mal eine räumliche Bedeutung.       */
+  /* Modulweit statt in `simulate`, seit die 2.5D-Ansicht den Radius braucht:
+     die Welle einer Flaeche soll auf dem ECHTEN Umkreis aufgehen, nicht auf
+     einem geratenen. Nur verschoben, nicht veraendert. */
+  var FASSUNG = 1, FASSUNG_FLAECHE = 2;
+
   var REICHWEITE = { front: 1, verstaerker: 2, unterstuetzer: 2, fernkampf: 3, magier: 3 };
 
   /* SCHRITTE je Rolle, nicht pauschal — der Sturmangriff.
@@ -259,7 +264,7 @@
         if (schild) {
           var abgabe = amount / 3;
           amount -= abgabe;
-          deal(schild, abgabe, 'Deckung', { umgeleitet: true });
+          deal(schild, abgabe, 'Deckung', { umgeleitet: true, von: opt.von });
         }
       }
       if (!opt.pure && target.status.schild > 0) {
@@ -276,8 +281,13 @@
       amount = Math.max(1, Math.round(amount));
       target.hp = Math.max(0, target.hp - amount);
       target.dmgTaken += amount;
+      /* `von` traegt nur die Anzeige, wie `kw` und `ziel` beim aktiv-Eintrag:
+         `key` ist das Ziel, `source` nur ein Name. Ohne den Schluessel des
+         Angreifers weiss das Brett nicht, aus welcher Richtung der Schlag
+         kommt — und ein Rueckstoss ohne Richtung ist ein Zucken. */
       log.push({ t: t, type: 'hit', key: target.key, target: target.name, side: target.side,
-                 dmg: amount, source: source, hp: target.hp, maxHp: target.maxHp });
+                 dmg: amount, source: source, hp: target.hp, maxHp: target.maxHp,
+                 von: (opt.von || opt.anzeigeVon || {}).key || null });
       if (alive(target)) fire(target, 'onDamaged', ctx(target, { amount: amount }));
       else die(target);
       return amount;
@@ -428,7 +438,6 @@
        einen Schadensbonus. Und es folgt die Entscheidung, um die es geht: eng
        stehen macht den Trupp für Flächen angreifbar, weit stehen kostet die
        eigenen Truppbuffs. */
-    var FASSUNG = 1, FASSUNG_FLAECHE = 2;
 
     function fassung(self, extra) {
       /* Die Fähigkeit selbst zählt, nicht die Einheit — sonst würde ein
@@ -444,7 +453,17 @@
 
     function ctx(self, extra) {
       var c = {
-        rng: rng, log: log, self: self, deal: deal, heal: heal,
+        rng: rng, log: log, self: self, heal: heal,
+        /* Wer eine Fähigkeit auslöst, ist ihr Urheber — auch wenn sie den
+           Schaden nicht als Angriff austeilt. `anzeigeVon` sagt der Ansicht,
+           woher der Schlag kommt, und NUR ihr: `von` steuert die Deckung, und
+           die darf sich nicht verschieben, bloß weil das Brett eine Richtung
+           will. Deshalb zwei Felder statt einem. */
+        deal: function (ziel, menge, quelle, opt) {
+          opt = opt || {};
+          if (!opt.von && !opt.anzeigeVon) opt.anzeigeVon = self;
+          return deal(ziel, menge, quelle, opt);
+        },
         applyStatus: function (ziel, key, stapel) { return applyStatus(ziel, key, stapel, self); },
         allies: function () {
           return umkreis(self, living(self.side), fassung(self, extra));
@@ -842,5 +861,6 @@
                   SCHILD_KAPPE: SCHILD_KAPPE,
                   /* Damit Werkzeuge die Reichweite nicht abschreiben muessen —
                      eine Kopie waere genau die Sorte Zahl, die auseinanderlaeuft. */
-                  REICHWEITE: REICHWEITE, SCHRITTE_JE_ROLLE: SCHRITTE_JE_ROLLE };
+                  REICHWEITE: REICHWEITE, SCHRITTE_JE_ROLLE: SCHRITTE_JE_ROLLE,
+                  FASSUNG: FASSUNG, FASSUNG_FLAECHE: FASSUNG_FLAECHE };
 })(globalThis);

@@ -299,8 +299,45 @@
 
   /* -------------------------------------------------------------- Kampf */
 
+  /* Die Uhr der Wiedergabe. Frueher ein festes Intervall von 70 ms je
+     Eintrag; jetzt ein Zeitkonto, das `Regie.zeitplan` fuellt. Mehrere billige
+     Eintraege duerfen sich ein Bild teilen — genau diese Buendelung bezahlt
+     die Dehnung der Hoehepunkte, ohne den Kampf zu verlaengern. */
+  var TEMPI = [1, 2, 4];
+  var tempo = 1;
+  try { tempo = +localStorage.getItem('tensura-tempo') || 1; } catch (e) {}
+  if (TEMPI.indexOf(tempo) < 0) tempo = 1;
+
+  /* Effektstufe wie der Debug-Schalter: im Browser gemerkt, nicht im Run —
+     sie gehoert zum Geraet, nicht zum Spielstand. */
+  var effekte = 'voll';
+  try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
+  Brett3D.stufe(effekte);
+
+  function zeigeEffektwahl() {
+    var reihe = $('menu-effekte');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=effekte]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === effekte);
+    });
+  }
+
+  function pumpe(nun) {
+    if (!replay || replay.fertig) return;
+    replay.raf = requestAnimationFrame(pumpe);
+    var dt = replay.zeit ? nun - replay.zeit : 0;
+    replay.zeit = nun;
+    /* Ein Tabwechsel haelt rAF an; ohne Deckel spult der Kampf danach durch. */
+    if (dt > 250) dt = 250;
+    replay.konto -= dt * tempo;
+    var schutz = 0;
+    while (replay.konto <= 0 && !replay.fertig && schutz++ < 500) schritt();
+    if (!replay.fertig) aktualisiereFeld();
+  }
+
   function starteReplay(res) {
-    replay = { res: res, i: 0, u: {}, zeilen: [], fertig: false, timer: null };
+    replay = { res: res, i: 0, u: {}, zeilen: [], fertig: false, raf: null,
+               plan: Regie.zeitplan(res.log), konto: 0, zeit: 0, beat: null, stopp: 0 };
     res.roster.forEach(function (r) {
       replay.u[r.key] = { key: r.key, id: r.id, name: r.name, side: r.side,
                           hp: r.maxHp, maxHp: r.maxHp,
@@ -309,49 +346,95 @@
                           aktive: (r.actives || [])[0] || null, status: {}, tot: false };
     });
     zeichneKampf();
-    replay.timer = setInterval(schritt, 70);
+    replay.raf = requestAnimationFrame(pumpe);
   }
 
   function schritt() {
     var log = replay.res.log;
-    var l = null;
-    while (replay.i < log.length) {
-      l = log[replay.i++];
-      if (l.type !== 'setup') break;
-      l = null;
-    }
-    if (!l) { endeReplay(); return; }
+    /* `setup` wird seit Phase 59 nicht mehr uebersprungen: es traegt die Zeit
+       fuer den Eroeffnungsschwenk. Zustand und Log ignorieren es weiterhin. */
+    if (replay.i >= log.length) { endeReplay(); return; }
+    var p = replay.plan[replay.i];
+    var l = log[replay.i++];
     anwenden(l);
-    aktualisiereFeld();
+    zeile(l);
+    zeige(l, p.beat);
+    klang(l);
+    /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
+       fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
+       INNERHALB von `ms` und kostet deshalb keine Zeit. */
+    if (p.stopp && Brett3D.verfuegbar()) Brett3D.halt(p.stopp);
+    replay.konto += Math.max(1, p.ms);
     if (replay.i >= log.length) endeReplay();
   }
 
-  /* `leise` unterdrückt Ton — nötig beim Überspringen, wo hundert Zeilen in
-     einem Bild abgearbeitet werden: ohne die Bremse würden alle Klänge
-     gleichzeitig losgehen, ein Rauschen statt eines Kampfgeräuschs. */
-  function anwenden(l, leise) {
+  /* Drei Schritte statt einer Funktion: `anwenden` aendert den Zustand,
+     `zeile` schreibt ins Log, `zeige` bewegt das Brett. Vorher machte eine
+     48-Zeilen-Funktion alles drei — die einzige Stelle im Projekt, an der
+     Logik und Darstellung sich mischten. `Ueberspringen` braucht nur die
+     ersten beiden und ueberspringt so nicht nur die Zeit, sondern auch die
+     Arbeit. `klang` ist ein vierter, ebenso ausgesparter Schritt — Ton ist
+     dieselbe Art Darstellung wie das Brett, nur ohne WebGL-Voraussetzung. */
+  function anwenden(l) {
     var u = l.key && replay.u[l.key];
-    if (l.type === 'hit' && u) { u.hp = l.hp; if (!leise) AU.treffer(); }
-    if (l.type === 'heal' && u) { u.hp = l.hp; if (!leise) AU.effekt('heilung'); }
-    if (l.type === 'death' && u) { u.tot = true; u.hp = 0; if (!leise) AU.tod(); }
+    if (l.type === 'hit' && u) { u.hp = l.hp; }
+    if (l.type === 'heal' && u) { u.hp = l.hp; }
+    if (l.type === 'death' && u) { u.tot = true; u.hp = 0; }
     if (l.type === 'zug' && u) { u.hex = { q: l.q, r: l.r }; }
-    /* Eine Signatur ist der Höhepunkt eines Zuges — sie soll auch so aussehen
-       UND so klingen. Welcher Effekt, entscheidet das Schlüsselwort der
-       Fähigkeit; Ansicht und Ton brauchen nur zu wissen, von wem nach wem. */
-    if (l.type === 'aktiv' && u) {
-      if (Brett3D.verfuegbar()) Brett3D.effekt(l.key, l.ziel, l.kw);
-      if (!leise) AU.effekt(l.kw);
-    }
-    if (l.type === 'revive' && u) { u.tot = false; u.hp = l.hp; if (!leise) AU.wiederbelebung(); }
+    if (l.type === 'revive' && u) { u.tot = false; u.hp = l.hp; }
     if (l.type === 'status' && u) { u.status[l.status] = l.stacks; }
     /* Der Würfelwurf der Runde gehört an die Einheit, nicht nur ins Log —
        sonst schwanken die Zahlen und niemand sieht, woher. */
     if (l.type === 'chaos' && u) { u.wurf = l; }
-    if (l.type === 'schild' && u) {
-      u.status.schild = Math.max(0, (u.status.schild || 0) - l.amount);
-      if (!leise) AU.effekt('schild');
-    }
+    if (l.type === 'schild' && u) { u.status.schild = Math.max(0, (u.status.schild || 0) - l.amount); }
+  }
 
+  /* Was das Brett aus einem Logeintrag macht. `beat` kommt aus der Regie und
+     sagt, ob dieser Eintrag ein Hoehepunkt ist. */
+  function zeige(l, beat) {
+    if (!Brett3D.verfuegbar()) return;
+    /* Auftakt: ein Schwenk ueber die Gegnerreihe, bevor der erste Zug faellt.
+       Er kostet keine Extrazeit — der setup-Eintrag traegt sie. */
+    if (l.type === 'setup') {
+      var feinde = Object.keys(replay.u).filter(function (k) { return replay.u[k].side === 'enemy'; });
+      if (feinde.length) Brett3D.blick(feinde, 0.8, 620);
+      return;
+    }
+    var u = l.key && replay.u[l.key];
+    if (!u) return;
+    /* Heranfahren beim Einsatz, Zeitlupe beim Todesstoss — die beiden
+       Momente, die die Regie ohnehin schon als Hoehepunkt kennt. */
+    if (l.type === 'aktiv') Brett3D.blick([l.key, l.ziel].filter(Boolean), 0.4, 620);
+    if (beat === 'toedlich' || beat === 'finale') {
+      Brett3D.zeitlupe(beat === 'finale' ? 0.25 : 0.4, beat === 'finale' ? 900 : 420);
+      if (l.key) Brett3D.blick([l.key], 0.55, 800);
+    }
+    /* Eine Signatur ist der Höhepunkt eines Zuges — sie soll auch so aussehen.
+       Welcher Effekt, entscheidet das Schlüsselwort der Fähigkeit; die Ansicht
+       braucht nur zu wissen, von wem nach wem. */
+    if (l.type === 'aktiv') Brett3D.effekt(l.key, l.ziel, l.kw, null, beat);
+    /* `von` steht erst seit dieser Phase im Log — ohne den Angreifer waere der
+       Rueckstoss richtungslos. Fehlt er (Gift, Brand, Entladung), zuckt die
+       Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
+    else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
+    else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
+  }
+
+  /* Ton, unabhaengig von Brett3D.verfuegbar() — anders als `zeige` braucht er
+     kein WebGL. Eine Signatur soll auch dann klingen, wenn sie nicht zu sehen
+     ist. Die Zuordnung folgt demselben Schluesselwort wie `Brett3D.effekt`. */
+  function klang(l) {
+    var u = l.key && replay.u[l.key];
+    if (!u) return;
+    if (l.type === 'hit') AU.treffer();
+    else if (l.type === 'heal') AU.effekt('heilung');
+    else if (l.type === 'death') AU.tod();
+    else if (l.type === 'revive') AU.wiederbelebung();
+    else if (l.type === 'schild') AU.effekt('schild');
+    else if (l.type === 'aktiv') AU.effekt(l.kw);
+  }
+
+  function zeile(l) {
     var text = null, klasse = l.side === 'player' ? 'feind' : 'spieler';
     if (l.type === 'hit') text = esc(l.source) + ' → ' + esc(l.target) + ': ' + l.dmg;
     else if (l.type === 'heal') text = esc(l.source) + ' heilt ' + esc(l.target) + ' um ' + l.amount;
@@ -454,7 +537,7 @@
       var aufDemFeld = Object.keys(replay.u).map(function (k) { return replay.u[k]; })
         .filter(function (u) { return u.hex; });
       if (aufDemFeld.length && Brett3D.verfuegbar()) {
-        if (!Brett3D.montiert(brett)) Brett3D.montiere(brett, aufDemFeld);
+        if (!Brett3D.montiert(brett)) Brett3D.montiere(brett, aufDemFeld, { akt: run.act });
         Brett3D.aktualisiere(aufDemFeld);
       } else {
         brett.innerHTML = brettHtml();
@@ -469,10 +552,19 @@
   function zeichneKampf() {
     var p = run.pending;
     var html = '<h2>' + esc(p.node.name) + '</h2>';
-    if (replay) html += '<div id="kampfbrett"></div>' +
-      '<div class="feld" id="kampffeld"></div><div id="kampflog"></div>';
+    /* Die Buehne bekommt den Hauptplatz, Aufstellung und Log ruecken daneben.
+       Vorher lagen sie darunter und das Brett war ein Streifen. */
+    if (replay) html += '<div id="kampfbuehne">' +
+      '<div id="kampfbrett"></div>' +
+      '<div id="kampfseite"><div class="feld" id="kampffeld"></div>' +
+      '<div id="kampflog"></div></div></div>';
     if (replay && !replay.fertig) {
-      html += '<div class="reihe"><button type="button" data-a="ueberspringen">Überspringen</button></div>';
+      html += '<div class="reihe" id="kampf-takt">' +
+        TEMPI.map(function (v) {
+          return '<button type="button" data-a="tempo" data-v="' + v + '"' +
+            (v === tempo ? ' class="an"' : '') + '>' + v + '×</button>';
+        }).join('') +
+        '<button type="button" data-a="ueberspringen">Überspringen</button></div>';
     } else {
       html += ergebnisHtml(p);
     }
@@ -500,6 +592,20 @@
     return '<span class="kw-tag ' + klasse + '"' + tip(titel, hilfe) + '>' + esc(text) + '</span>';
   }
 
+  /* Der Rang ist die wichtigste Angabe an einem Gefolge-Posten: er bestimmt
+     Werte UND wie viele Passive dabei sind, und seit Phase 52/53 ist er
+     obendrein selten. Als Chip zwischen Rolle, Signatur und Schlüsselwörtern
+     musste man ihn suchen. Jetzt steht er als Buchstabe in der Ecke der Karte,
+     in einer Farbe je Stufe — S soll man von der anderen Seite des Bildschirms
+     sehen. */
+  function rangMarke(o) {
+    if (!o || !o.rangName) return '';
+    return '<span class="rang-marke rang-' + o.rangName + '"' +
+      tip('Rang ' + o.rangName, G.begriffe.rang + '\n\n' +
+          ((o.rang || 0) + 1) + ' Passive gehören zu diesem Rang.') +
+      '>' + o.rangName + '</span>';
+  }
+
   function belohnungTags(r) {
     var tags = [];
     if (r.kind === 'unit') {
@@ -513,12 +619,9 @@
         tags.push(tag('kw-' + k, kwName(k), kwName(k),
           (G.keywords[k] || '') + (G.zustaende[k] ? '\n\n' + G.zustaende[k] : '')));
       });
-      /* Der Rang ist die wichtigste Zahl am Posten — er sagt Werte UND wie viele
-         Passive dabei sind. Deshalb steht er als eigener Chip da. */
-      if (r.rangName) {
-        tags.push(tag('tag-rang', 'Rang ' + r.rangName, 'Rang ' + r.rangName,
-          G.begriffe.rang + '\n\n' + ((r.rang || 0) + 1) + ' Passive gehören zu diesem Rang.'));
-      }
+      /* Der Rang steht seit `rangMarke()` als große Marke am Posten und nicht
+         mehr als Chip: als einer von zwölf ging genau die Angabe unter, die
+         über den Kauf entscheidet. */
       if (AB.linien[u.id]) {
         tags.push(tag('tag-linien', 'Vier Linien', 'Eigene Entwicklungslinien',
           'Diese Einheit hat sechzehn eigene Passive in vier Linien. Welche davon ' +
@@ -618,8 +721,8 @@
   }
 
   function endeReplay() {
-    if (replay.timer) clearInterval(replay.timer);
-    replay.timer = null;
+    if (replay.raf) cancelAnimationFrame(replay.raf);
+    replay.raf = null;
     replay.fertig = true;
     if (replay.res.winner === 'player') AU.sieg(); else if (replay.res.winner === 'enemy') AU.niederlage();
     zeichneKampf();
@@ -632,7 +735,7 @@
     var log = replay.res.log;
     while (replay.i < log.length) {
       var l = log[replay.i++];
-      if (l.type !== 'setup') anwenden(l, true);
+      if (l.type !== 'setup') { anwenden(l); zeile(l); }
     }
     endeReplay();
   }
@@ -706,7 +809,7 @@
       }
       var geht = !o.sold && run.magicules >= o.price && frei;
       html += '<button class="karte' + (o.sold ? ' gewaehlt' : '') + '" data-a="kaufen" data-i="' + i + '"' +
-        (geht ? '' : ' disabled') + '>' + artHtml(o.kind) +
+        (geht ? '' : ' disabled') + '>' + rangMarke(o) + artHtml(o.kind) +
         '<span class="titel">' + esc(o.name) + ' — ' + o.price + ' ✦' + (o.sold ? ' (gekauft)' : '') + '</span>' +
         '<div class="kw-leiste">' + belohnungTags(o) + '</div>' +
         '<span class="beschreibung">' + marktText(o) + '</span>' +
@@ -1212,6 +1315,25 @@
       else { render(); speichern(); }
     },
     ueberspringen: function () { ueberspringen(); },
+    /* Die Stufe greift sofort, auch mitten im Kampf: das Brett wird abgehaengt
+       und beim naechsten Bild neu aufgebaut. Genau darum geht es — zwei
+       Stufen nebeneinander zu sehen, ohne den Kampf zu verlieren. */
+    effekte: function (d) {
+      effekte = Brett3D.stufe(d.v);
+      try { localStorage.setItem('tensura-effekte', effekte); } catch (e) {}
+      zeigeEffektwahl();
+      Brett3D.loese();
+      aktualisiereFeld();
+    },
+    /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
+    tempo: function (d) {
+      tempo = +d.v || 1;
+      try { localStorage.setItem('tensura-tempo', tempo); } catch (e) {}
+      var reihe = $('kampf-takt');
+      if (reihe) Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=tempo]'), function (b) {
+        b.classList.toggle('an', +b.dataset.v === tempo);
+      });
+    },
     devour: function (d) {
       var ziel = $('devour-ziel');
       R.devour(run, d.id, ziel ? ziel.value : run.team[0].uid);
@@ -1563,6 +1685,7 @@
         ' · freigeschaltet: ' + run.meta.unlockedUnits.length + ' Einheiten, ' +
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
+      zeigeEffektwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');

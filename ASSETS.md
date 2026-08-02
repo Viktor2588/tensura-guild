@@ -37,22 +37,66 @@ Codeänderung nötig und keine Liste zu pflegen. Fehlt sie, bleibt der
 Platzhalter stehen (der 404 im Konsolenlog ist erwartet, einer je Einheit und
 Sitzung).
 
-Anforderungen an ein Bild:
+### Anforderungen an ein Bild
 
-- **Hochformat**, etwa 1:2 (der Platzhalter ist 128 × 256). Andere
-  Seitenverhältnisse werden auf 1:2 gestaucht.
+Diese Liste ist nach den Phasen 55–60 geschrieben, nicht davor: die Bühne
+steht, und damit ist bekannt, was ein Bild darauf können muss. Die vier
+oberen Punkte sind Geometrie, die vier unteren kommen aus dem, was das Brett
+mit dem Bild macht — und die sind es, die man ohne Vorwarnung falsch macht.
+
+- **Format 512 × 1024**, Hochformat 1:2. Andere Seitenverhältnisse werden auf
+  1:2 gestaucht.
 - **Freigestellt**, mit Alphakanal. Der Hintergrund ist das Brett.
-- **Von vorn**, aufrecht stehend, Füße am unteren Bildrand: die Figur wird an
-  ihrer Unterkante auf das Feld gestellt.
-- Kopf bei rund vier Fünfteln der Höhe — dort sitzt der Lebensbalken.
+- **Von vorn**, aufrecht stehend, **Füße am unteren Bildrand**: die Figur wird
+  an ihrer Unterkante auf das Feld gestellt (`sprite.center = (0.5, 0)`).
+- **Kopf bei rund vier Fünfteln der Höhe.** Darüber liegen Lebensbalken (bei
+  0,82 der Figurenhöhe) und Zustandsmarken (bei 0,70) — was dort im Bild
+  steht, wird verdeckt.
 
-Wenn Bilder dazukommen, hier je Bild eintragen: Quelle beziehungsweise
-Werkzeug und Prompt, Datum, Lizenz. Ohne diesen Eintrag gilt ein Bild als
-nicht verwendbar.
+- **Kein eingemalter Schatten.** Seit Phase 58 legt das Brett selbst einen
+  weichen Fleck unter jede Figur. Ein zweiter im Bild sieht aus wie ein
+  Fehler.
+- **Eigene Kantentrennung mitbringen.** Der farbige Umriss, der die Figur vom
+  dunklen Brett abhebt, steckt in `platzhalter()` — ein echtes Bild bekommt
+  ihn **nicht**. Ohne einen eigenen hellen Rand oder Gegenlicht versinkt es im
+  Brett, und zwar deutlicher als der Platzhalter es je tat.
+- **Spiegelbar.** Gegner werden gespiegelt (`repeat.x = -1`), damit beide
+  Seiten zur Mitte schauen. Schrift, Wappen und alles, was seitenverkehrt
+  falsch aussieht, gehört deshalb nicht ins Bild.
+- **Keine großen sehr hellen Flächen.** Die Nachbearbeitung lässt alles über
+  0,85 Helligkeit glühen (`js/fx.js`). Für eine Klinge oder ein Auge ist das
+  gewollt, für eine weiße Rüstung nicht.
 
-| Datei | Herkunft | Datum | Lizenz |
-|---|---|---|---|
-| — | noch keine | — | — |
+Ein Bild, das diese Punkte erfüllt, braucht **keine Codeänderung** — `textur()`
+in `js/brett3d.js` nimmt es beim nächsten Kampf.
+
+### Reihenfolge
+
+Nach jedem Stapel im Spiel ansehen, nicht erst am Ende:
+
+1. die sechs Starteinheiten
+2. die übrigen Einheiten aus `js/data.js`
+3. die Bosse
+4. die häufigen Gegner aus `js/enemies.js`
+
+Ein gemischter Bestand ist ausdrücklich in Ordnung und soll auch geprüft
+werden: wo eine Datei fehlt, springt der Platzhalter ein.
+
+### Herkunft
+
+Je Bild eine Zeile: Werkzeug beziehungsweise Quelle, der **vollständige
+Prompt**, Datum, Lizenz. **Ohne diesen Eintrag gilt ein Bild als nicht
+verwendbar** — das ist keine Formalie, sondern der einzige Weg, später noch
+feststellen zu können, was benutzt werden darf.
+
+Offen und vor dem ersten Bild zu entscheiden: `.gitignore` enthält heute nur
+`node_modules`. Die Bilder gehen also mit ins Repo, rund fünfzig Stück. Das ist
+vertretbar (das Spiel läuft offline und soll das bleiben), aber es ist eine
+Entscheidung und keine Nebenwirkung.
+
+| Datei | Werkzeug / Quelle | Prompt | Datum | Lizenz |
+|---|---|---|---|---|
+| — | noch keine | — | — | — |
 
 ## Ton
 

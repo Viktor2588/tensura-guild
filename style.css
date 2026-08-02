@@ -100,7 +100,31 @@ main, #unten { padding: .8rem 1.4rem; }
   text-align: left;
   display: block;
   width: 100%;
+  position: relative;                 /* Anker für die Rangmarke */
 }
+
+/* Der Rang eines Gefolges: keine Zeile im Fließtext, sondern eine Marke.
+   Er entscheidet Werte und Zahl der Passiven, und seit Phase 53 ist S ein
+   Glückstreffer — das darf man sehen, ohne zu lesen. */
+.rang-marke {
+  position: absolute; top: .45rem; right: .55rem;
+  min-width: 2.1rem; padding: .05rem .35rem;
+  font-size: 1.6rem; font-weight: 800; line-height: 1.15;
+  text-align: center; letter-spacing: -.02em;
+  border: 2px solid currentColor; border-radius: 8px;
+  background: #0d0e14;
+}
+/* Vier Stufen, vier Farben — der Sprung nach S ist der größte, weil der
+   Unterschied es auch ist. */
+.rang-marke.rang-C { color: var(--grau); }
+.rang-marke.rang-B { color: #7fb2f0; }
+.rang-marke.rang-A { color: var(--gold); }
+.rang-marke.rang-S {
+  color: #ffd76a; border-color: #ffd76a; background: #2a1e08;
+  box-shadow: 0 0 0 1px #7a5a12, 0 0 14px rgba(255, 215, 106, .45);
+}
+/* Der Titel darf nicht unter die Marke laufen. */
+.karte .titel { padding-right: 3rem; }
 .karte:hover:not(:disabled) { border-color: var(--lila); background: var(--bg3); }
 .karte .titel { font-weight: 700; display: block; }
 .karte .unter { color: var(--grau); font-size: .85rem; }
@@ -217,6 +241,9 @@ dialog {
   border-radius: 6px 6px 0 0; color: var(--grau); font-size: .85rem; padding: .3rem .7rem;
 }
 .reiter button.an { color: var(--text); background: var(--bg3); border-color: var(--rand); }
+#kampf-takt button.an,
+#menu-effekte button.an { color: var(--text); background: #2e3247; border-color: var(--lila); }
+#menu-effekte { align-items: center; font-size: .85rem; color: var(--grau); }
 dialog::backdrop { background: rgba(0,0,0,.65); }
 #menu-chronik { font-size: .82rem; color: var(--grau); padding-left: 1.1rem; }
 
@@ -479,7 +506,44 @@ table.dbg i.ab { color: #e77; }
 /* Der Ausbruch aus der 860px-Spalte ist weg, weil die Spalte weg ist: das Brett
    nimmt schlicht die Breite, die da ist. Die Breite ist der Deckel für die
    Hexgröße, alles andere verschiebt nur Leerraum. */
-#kampfbrett { margin-bottom: .5rem; }
+/* Die volle Bühne: das Brett nimmt den Hauptplatz, Aufstellung und Log stehen
+   daneben. Vorher lagen beide darunter, und das Brett war ein Streifen — genau
+   der Grund, warum der Höhendeckel in js/brett3d.js so niedrig sein musste.
+   Keine @media-Abfrage: das ist ein Desktop-Spiel im Vollbild. */
+#kampfbuehne {
+  display: grid; gap: .7rem; align-items: start;
+  grid-template-columns: minmax(0, 3fr) minmax(22rem, 1fr);
+  margin-bottom: .5rem;
+}
+#kampfseite { display: flex; flex-direction: column; gap: .5rem; }
+/* In der schmalen Spalte stehen die Seiten untereinander, nicht nebeneinander. */
+#kampfseite .feld { grid-template-columns: 1fr; margin-bottom: 0; }
+/* Feste Höhe, nicht `auto`: in einer Spalte, deren Höhe vom Inhalt kommt,
+   wächst `flex: 1` einfach mit und schiebt „Überspringen" aus dem Bild,
+   statt zu scrollen. Der Deckel ist der Punkt, nicht die Zahl. */
+#kampfseite #kampflog { height: min(28rem, 46vh); overflow-y: auto; }
+
+#kampfbrett { position: relative; }
+
+/* Schadenszahlen liegen ÜBER der Leinwand, nicht darin: Text im WebGL-Bild
+   hieße Schriftatlas, und CSS2DRenderer ist ein Addon — die gibt es auf
+   three.js r149 UMD nicht. */
+.brett3d-zahlen { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.brett3d-zahlen span {
+  position: absolute; font-weight: 700; font-size: .95rem; line-height: 1;
+  text-shadow: 0 0 3px #000, 0 2px 4px #000;
+  animation: zahl-steigt 950ms ease-out forwards;
+}
+.brett3d-zahlen .feind { color: #ffd7a0; }
+.brett3d-zahlen .spieler { color: #ffb0a8; }
+.brett3d-zahlen .heilung { color: #6ee7a8; }
+.brett3d-zahlen .gross { font-size: 1.5rem; color: #fff2c0; }
+@keyframes zahl-steigt {
+  0%   { opacity: 0; transform: translate(-50%, -30%) scale(.7); }
+  18%  { opacity: 1; transform: translate(-50%, -60%) scale(1.1); }
+  35%  { transform: translate(-50%, -70%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -160%) scale(1); }
+}
 .brett3d {
   width: 100%; height: auto; display: block;
   border: 1px solid var(--rand); border-radius: 8px;
