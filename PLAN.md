@@ -2612,9 +2612,11 @@ verlieren. Im direkten Vergleich derselben Szene ist `sparsam` flach und hell,
 Bloom. `aus` faellt auf die SVG-Lagekarte zurueck; geprueft, dass dann ein
 `<svg>` im Brett steht und kein `<canvas>`.
 
-Gemessen im Browser waehrend eines Kampfes mit voller Stufe: **16,7 ms je Bild
-im Median, 16,8 ms im schlechtesten Fall** — also durchgehend 60 Bilder je
-Sekunde, mit vier Rendertargets und vier Durchgaengen.
+~~Gemessen im Browser waehrend eines Kampfes mit voller Stufe: 16,7 ms je Bild
+im Median — also durchgehend 60 Bilder je Sekunde.~~ **Diese Messung war
+falsch und ist in Phase 58 aufgeflogen** — siehe dort. Sie entstand, waehrend
+die Schleife des Bretts ruhte; gezaehlt wurde ein leerer `requestAnimationFrame`
+und nicht das Zeichnen.
 
 `js/fx.js` ist reiner GPU-Code und laesst sich headless nicht pruefen — in
 jsdom gibt es kein WebGL. Es kommt deshalb **keine** Zusicherung in
@@ -2678,6 +2680,72 @@ Fuessen.
 
 Worktree `/home/viktor/tensura/worktree/phase-57-formen`, Branch
 `phase-57-formen`.
+
+### Phase 58 (2026-08-02): Die Figuren leben
+
+Vier kleine Bewegungen und zwei Zutaten, die aus Pappaufstellern Kaempfer
+machen — und ein Messfehler aus Phase 56, der dabei aufflog.
+
+**Schattenwurf.** Der groesste einzelne Gewinn dieser Phase, und der
+billigste: ein weicher dunkler Fleck flach unter jeder Figur. Ohne ihn
+schweben die Figuren VOR dem Brett, mit ihm stehen sie DARAUF. Er schrumpft
+mit dem Wippen mit, sonst klebt er als Scheibe.
+
+**Atmen.** Sinus-Wippen, Amplitude 0,055 — klein genug, dass es auffaellt,
+wenn es FEHLT, und nicht, wenn es da ist. Die Phase wird aus dem Schluessel
+gehasht, sonst wippt der ganze Trupp im Gleichtakt und sieht aus wie eine
+Animation statt wie Leben. Wer gefallen ist, atmet nicht.
+
+**Stauchen und Strecken**, gekoppelt an `Brett3D.treffer` aus Phase 55:
+stauchen beim Einstecken, strecken beim Austeilen. Dieselbe Sprache wie der
+Rueckstoss, nur an der Figur statt am Standpunkt.
+
+**Randkontur** im Platzhalter, eine breite Linie in der Seitenfarbe unter der
+Silhouette. Seit Kachel und Vignette dunkel sind, versank die Silhouette sonst
+im Brett. Sie bleibt eine Silhouette — die Begruendung im Dateikopf gilt
+weiter.
+
+**Blickrichtung — und da lag ein Irrtum.** Der Plan sagte: Gegner ueber ein
+negatives `scale.x` spiegeln. Im Bild blieb die Waffe rechts: in three.js
+dreht ein negatives `scale.x` am Sprite das Quad, ohne das Bild zu wenden.
+Gespiegelt wird jetzt die TEXTUR ueber `repeat.x = -1` / `offset.x = 1`. Im
+Bild belegt: der eigene Trupp traegt die Waffe rechts, die Gegner links, beide
+Seiten schauen zur Mitte.
+
+**Zustandsmarken**, aber nur drei: Brand, Gift, Erstarrung. Wer alle dreizehn
+ans Modell haengt, baut ein zweites Log auf das Brett. Sie sassen zuerst ueber
+dem Lebensbalken und wurden dort von der Rahmung abgeschnitten — jetzt sitzen
+sie darunter. Eine Marke, die man nicht sieht, ist keine.
+
+**Und jetzt der Messfehler.** Seit die Figuren atmen, steht nie mehr alles
+still, und die selbstabschaltende Schleife laeuft durchgehend. Damit wurde
+erstmals das echte Zeichnen gemessen — und statt der 16,7 ms aus Phase 56
+kamen **480 ms** heraus. Der Grund ist nicht der Code: der Browser hinter dem
+Playwright-Werkzeug hat **keine GPU**, er rendert mit SwiftShader in Software
+(`ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device))`, Leinwand 2093 × 749).
+Vier Vollbild-Durchgaenge kosten dort genau so viel.
+
+Damit ist auch klar, was die 16,7 ms in Phase 56 wirklich waren: **ein leerer
+`requestAnimationFrame`.** Die Schleife des Bretts ruhte zu dem Zeitpunkt, und
+gezaehlt wurde eine Uhr, die nichts zeichnete. Der Eintrag zu Phase 56 ist
+entsprechend korrigiert.
+
+Was sich hier ehrlich messen laesst, ist nur das Verhaeltnis: **voll 500 ms
+gegen sparsam 300 ms** — das Bloom kostet also rund zwei Drittel obendrauf.
+Auf einer echten GPU ist das Fuellrate und faellt um Groessenordnungen kleiner
+aus, aber eine Bildrate ist aus dieser Umgebung nicht zu bekommen. Die
+Prüfungstabelle dieses Plans verlangt „60 fps bei 12 Figuren mit Bloom" —
+**diese Zusicherung steht weiter offen** und braucht einen Browser mit GPU.
+
+Nebenbefund fuer Phase 60: bei flachen Brettern mit wenigen Einheiten
+schneidet die Rahmung die Figuren oben ab. Die Formel rechnet
+`tiefe·sin + (SPRITE_H+0,9)·cos` und unterschaetzt das bei zwei Reihen. Phase
+60 misst den Hoehendeckel ohnehin neu.
+
+`dev/sim.js` 442/442, `dev/uitest.js` 104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-58-figuren`, Branch
+`phase-58-figuren`.
 
 ## 5. Risiken
 

@@ -74,23 +74,34 @@
     var haut = u.side === 'player' ? '#7fb0e8' : '#e08078';
     var stoff = u.side === 'player' ? '#2c4a72' : '#6b2a26';
 
-    x.lineWidth = 5;
-    x.strokeStyle = 'rgba(0,0,0,.55)';
     x.lineJoin = 'round';
 
     /* Umhang/Körper: unten breit, oben schmal. Die Breite trägt die Rolle. */
     var breit = u.role === 'front' ? 40 : u.role === 'fernkampf' ? 26 : 32;
-    x.beginPath();
-    x.moveTo(mitte - breit, 232);
-    x.lineTo(mitte - breit * 0.55, 120);
-    x.lineTo(mitte + breit * 0.55, 120);
-    x.lineTo(mitte + breit, 232);
-    x.closePath();
-    x.fillStyle = stoff; x.fill(); x.stroke();
+    function koerper() {
+      x.beginPath();
+      x.moveTo(mitte - breit, 232);
+      x.lineTo(mitte - breit * 0.55, 120);
+      x.lineTo(mitte + breit * 0.55, 120);
+      x.lineTo(mitte + breit, 232);
+      x.closePath();
+    }
+    function kopf() { x.beginPath(); x.arc(mitte, 92, 26, 0, Math.PI * 2); }
 
-    /* Kopf */
-    x.beginPath();
-    x.arc(mitte, 92, 26, 0, Math.PI * 2);
+    /* Zuerst eine breite Kontur in der Seitenfarbe UNTER der Figur: seit die
+       Kachel dunkel und die Vignette da ist, versinkt eine Silhouette sonst im
+       Brett. Der Umriss stellt sie davor, ohne sie zu einer Zeichnung zu
+       machen. */
+    x.lineWidth = 13;
+    x.strokeStyle = u.side === 'player' ? 'rgba(122,180,255,.85)' : 'rgba(255,138,120,.85)';
+    koerper(); x.stroke();
+    kopf(); x.stroke();
+
+    x.lineWidth = 5;
+    x.strokeStyle = 'rgba(0,0,0,.55)';
+    koerper();
+    x.fillStyle = stoff; x.fill(); x.stroke();
+    kopf();
     x.fillStyle = haut; x.fill(); x.stroke();
 
     /* Die Waffe macht den Unterschied auf einen Blick sichtbar. */
@@ -122,14 +133,26 @@
 
   /* Erst der Platzhalter, dann — falls die Datei existiert — das echte Bild.
      Andersherum bliebe die Figur bis zum Ladefehler unsichtbar. */
+  /* Beide Seiten schauen zur Mitte. Gespiegelt wird die TEXTUR, nicht die
+     Figur: ein negatives `scale.x` am Sprite dreht in three.js das Quad, ohne
+     das Bild zu wenden — gemessen, die Waffe blieb rechts. Ueber `repeat`/
+     `offset` kippt sie zuverlaessig. Der Zwischenspeicher haengt an der
+     Einheiten-ID, und eine ID gehoert immer nur einer Seite. */
+  function spiegle(tex, u) {
+    if (u.side !== 'enemy' || !tex) return tex;
+    tex.repeat.x = -1;
+    tex.offset.x = 1;
+    return tex;
+  }
+
   function textur(u, material) {
     var id = u.id || u.key;
     if (texturen[id]) return texturen[id];
-    var tex = platzhalter(u);
+    var tex = spiegle(platzhalter(u), u);
     texturen[id] = tex;
     var bild = new root.Image();
     bild.onload = function () {
-      var echt = new root.THREE.CanvasTexture(bild);
+      var echt = spiegle(new root.THREE.CanvasTexture(bild), u);
       texturen[id] = echt;
       if (material) material.map = echt;
     };
@@ -188,6 +211,11 @@
     heilung: 'saeule', schild: 'saeule', tempo: 'saeule',
     schatten: 'schleier', verderbnis: 'schleier', chaos: 'schleier'
   };
+
+  /* Die drei sichtbarsten Zustaende — der Rest bleibt in der Kartenansicht.
+     Links der Name im Zustand, rechts die Farbe: `erstarrung` heisst als
+     Schluesselwort `frost`, und die Farbtabelle kennt nur das Schluesselwort. */
+  var MARKEN = [['brand', 'brand'], ['gift', 'gift'], ['erstarrung', 'frost']];
 
   /* Abstand zweier benachbarter Kachelmitten in Weltmassen — aus `Hex.pixel`
      (pointy top): waagerecht sqrt(3) mal Groesse. Damit geht die Welle auf dem
@@ -462,6 +490,7 @@
 
     ziel.blitz = 1;
     ziel.blitzFarbe = heil ? 0x6ee7a8 : 0xffffff;
+    if (!heil) ziel.stauch = 1;
     if (wert !== undefined && wert !== null) {
       zahl(ziel, wert, ziel.seite, !heil && (beat === 'gross' || beat === 'toedlich' || beat === 'finale'));
     }
@@ -477,6 +506,7 @@
          Beides sagt dasselbe: der Schlag hat eine Herkunft. */
       var nah = weit < G * 1.7;
       von.stoss = { x: rx * (nah ? AUSFALL : -0.1), z: rz * (nah ? AUSFALL : -0.1), t: 1 };
+      von.streck = 1;
     }
     var wucht = 0.5 + anteil;
     ziel.stoss = { x: rx * STOSS * wucht, z: rz * STOSS * wucht, t: 1 };
@@ -545,6 +575,18 @@
     var gruppe = new T.Group();
     gruppe.add(sprite);
 
+    /* Der Schattenwurf ist der groesste einzelne Gewinn dieser Phase: ohne ihn
+       schweben die Figuren VOR dem Brett, mit ihm stehen sie DARAUF. Ein
+       weicher dunkler Fleck genuegt — echte Schatten kosten eine Lichtkarte
+       und loesen ein Problem, das hier keiner hat. */
+    var schatten = new T.Mesh(new T.PlaneGeometry(1, 1),
+      new T.MeshBasicMaterial({ map: funke(), color: 0x000000, transparent: true,
+                                opacity: 0.5, depthWrite: false }));
+    schatten.rotation.x = -Math.PI / 2;
+    schatten.position.y = 0.012;
+    schatten.scale.set(SPRITE_H * 0.42, SPRITE_H * 0.30, 1);
+    gruppe.add(schatten);
+
     var hintergrund = balken(1, 0x14181f);
     var leben = balken(1, u.side === 'player' ? 0x4a9fef : 0xd05248);
     /* Der Kopf sitzt nicht am oberen Rand der Textur, sondern bei rund vier
@@ -555,15 +597,40 @@
     hintergrund.renderOrder = 1; leben.renderOrder = 2;
     gruppe.add(hintergrund); gruppe.add(leben);
 
+    /* Drei Marken, mehr nicht. Wer alle dreizehn Zustaende ans Modell haengt,
+       baut ein zweites Log auf das Brett; die vollstaendige Liste steht in der
+       Kartenansicht. ponytail: Auswahl fest verdrahtet — falls je mehr noetig
+       ist, nach Stapelzahl sortieren statt die Liste zu verlaengern. */
+    var marken = [];
+    for (var m = 0; m < 3; m++) {
+      var mk = teilchen(0xffffff, 0.26);
+      /* Unter den Lebensbalken, nicht darueber: oben schneidet die Rahmung
+         bei flachen Brettern ab, und eine Marke, die man nicht sieht, ist
+         keine. */
+      mk.position.set((m - 1) * 0.3, SPRITE_H * 0.70, 0);
+      mk.renderOrder = 3;
+      mk.visible = false;
+      gruppe.add(mk);
+      marken.push(mk);
+    }
+
     var p = weltpos(u.hex);
     gruppe.position.set(p.x, KACHEL_H / 2, p.z);
     scene.add(gruppe);
     /* `pos` ist der nachgezogene Standpunkt, `gruppe.position` derselbe Punkt
        PLUS Rueckstoss. Ohne die Trennung frisst die naechste Bewegung den Stoss
        auf, und der Treffer bleibt unsichtbar. */
+    /* Die Phase des Atmens haengt am Schluessel, nicht an der Zeit — sonst
+       wippt der ganze Trupp im Gleichtakt und sieht aus wie eine Animation
+       statt wie Leben. */
+    var phase = 0;
+    for (var i = 0; i < String(u.key).length; i++) phase = (phase * 31 + String(u.key).charCodeAt(i)) % 628;
+
     return { gruppe: gruppe, sprite: sprite, mat: mat, leben: leben,
+             schatten: schatten, marken: marken, phase: phase / 100,
              seite: u.side, ziel: { x: p.x, z: p.z }, pos: { x: p.x, z: p.z },
-             stoss: null, blitz: 0, blitzFarbe: 0xffffff, tot: false, loesch: 0 };
+             stoss: null, blitz: 0, blitzFarbe: 0xffffff, tot: false, loesch: 0,
+             stauch: 0, streck: 0 };
   }
 
   function montiere(el, einheiten) {
@@ -714,6 +781,23 @@
       d.mat.opacity = Math.min(1, deck + d.blitz * 0.4);
       d.mat.color.setHex(d.tot ? 0x555555 : 0xffffff);
       if (d.blitz > 0) d.mat.color.lerp(blitzC.setHex(d.blitzFarbe), d.blitz);
+
+      /* Atmen: klein genug, dass es auffaellt, wenn es FEHLT, und nicht, wenn
+         es da ist. Wer gefallen ist, atmet nicht. */
+      var wippe = d.tot ? 0 : Math.sin(zeit / 620 + d.phase) * 0.055;
+      d.sprite.position.y = wippe;
+      if (d.stauch > 0) d.stauch = Math.max(0, d.stauch - dt / 220);
+      if (d.streck > 0) d.streck = Math.max(0, d.streck - dt / 220);
+      /* Stauchen beim Einstecken, Strecken beim Austeilen — dieselbe Sprache
+         wie der Rueckstoss, nur an der Figur statt am Standpunkt. */
+      var sx = 1 + d.stauch * 0.22 - d.streck * 0.10;
+      var sy = 1 - d.stauch * 0.20 + d.streck * 0.14;
+      d.sprite.scale.set(SPRITE_H * 0.5 * sx, SPRITE_H * sy, 1);
+      if (!d.tot) weiter = true;                      // wer atmet, braucht Bilder
+      /* Der Schatten schrumpft mit dem Wippen — sonst klebt er als Scheibe. */
+      var sch = 1 - wippe * 0.6;
+      d.schatten.scale.set(SPRITE_H * 0.42 * sch, SPRITE_H * 0.30 * sch, 1);
+      d.schatten.material.opacity = d.tot ? 0.12 * (1 - d.loesch) : 0.5;
     });
 
     /* Erschuetterung: die Kamera zittert, nicht das Brett. Ohne Abklingen
@@ -738,8 +822,11 @@
       weiter = true;                                  // ein Bild noch, sonst bleibt der Rest stehen
     }
     zeichne();
-    /* Steht alles still, ruht auch die Schleife — eine Lagekarte muss nicht
-       sechzig Mal je Sekunde dasselbe Bild zeichnen. */
+    /* Frueher ruhte die Schleife, sobald alles stillstand — eine Lagekarte
+       musste nicht sechzig Mal je Sekunde dasselbe Bild zeichnen. Seit die
+       Figuren atmen, steht nie mehr alles still, solange eine lebt. Die
+       Abschaltung bleibt trotzdem stehen: nach dem letzten Tod, und wenn das
+       Brett zwischen zwei Kaempfen haengt, greift sie weiterhin. */
     if (weiter) zustand.raf = root.requestAnimationFrame(schleife);
     else zustand.raf = 0;
   }
@@ -758,6 +845,12 @@
       f.leben.visible = !u.tot;
       /* Material und Hoehe schreibt nur noch `schleife()` — hier steht bloss,
          WAS gilt, nicht wie es gerade aussieht. */
+      /* Nur die drei, die man auf dem Brett auch verstehen kann. */
+      var sichtbar = MARKEN.filter(function (m) { return !u.tot && (u.status || {})[m[0]] > 0; });
+      f.marken.forEach(function (mk, i) {
+        mk.visible = i < sichtbar.length;
+        if (mk.visible) mk.material.color.setHex(FARBE[sichtbar[i][1]]);
+      });
       if (u.tot && !f.tot) zerfall(f, u.key, u.side);
       if (!u.tot && f.tot) f.loesch = 0;               // Wiederbelebung
       f.tot = !!u.tot;
