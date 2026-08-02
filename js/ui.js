@@ -1551,10 +1551,12 @@
     });
     var btnStumm = $('btn-stumm');
     if (btnStumm) {
-      btnStumm.textContent = SFX.istStumm() ? '🔇' : '🔊';
-      btnStumm.addEventListener('click', function () {
-        btnStumm.textContent = SFX.stummSchalten() ? '🔇' : '🔊';
-      });
+      var setzeStummAnzeige = function (an) {
+        btnStumm.textContent = an ? '🔇' : '🔊';
+        btnStumm.setAttribute('aria-pressed', String(an));
+      };
+      setzeStummAnzeige(SFX.istStumm());
+      btnStumm.addEventListener('click', function () { setzeStummAnzeige(SFX.stummSchalten()); });
     }
     $('btn-menu').addEventListener('click', function () {
       $('menu-info').textContent = 'Runs: ' + run.meta.runs + ' · Siege: ' + run.meta.wins +
