@@ -53,3 +53,16 @@ nicht verwendbar.
 | Datei | Herkunft | Datum | Lizenz |
 |---|---|---|---|
 | — | noch keine | — | — |
+
+## Klang
+
+**Keine einzige Audiodatei.** `js/audio.js` (Modul `SFX`) erzeugt jeden Ton zur
+Laufzeit aus Oszillatoren und gefiltertem Rauschen über die Web Audio API —
+dieselbe Haltung wie bei den Figuren: Platzhalter aus Code statt eine fremde
+Datei mit ungeklärter Lizenz. Es gibt daher nichts einzutragen und nichts zu
+lizenzieren; die „Herkunft" ist der Quellcode selbst, eigen geschrieben am
+2026-08-02.
+
+Sollten doch einmal echte Audiodateien dazukommen (Musik, Sprachausgabe,
+aufgenommene SFX), gehören sie unter `assets/audio/` und hier mit Quelle,
+Datum und Lizenz eingetragen — genau wie bei den Figuren oben.
