@@ -2,7 +2,7 @@
    alles, was den Zustand ändert, geht durch Run.*                            */
 'use strict';
 (function (root) {
-  var R = root.Run, GD = root.GameData, EN = root.Enemies, C = root.Combat, AB = root.Abilities;
+  var R = root.Run, GD = root.GameData, EN = root.Enemies, C = root.Combat, AB = root.Abilities, AU = root.Sound;
 
   var run = null;
   var replay = null;             // { res, i, u:{key->Anzeige}, zeilen, timer, fertig }
@@ -326,24 +326,31 @@
     if (replay.i >= log.length) endeReplay();
   }
 
-  function anwenden(l) {
+  /* `leise` unterdrückt Ton — nötig beim Überspringen, wo hundert Zeilen in
+     einem Bild abgearbeitet werden: ohne die Bremse würden alle Klänge
+     gleichzeitig losgehen, ein Rauschen statt eines Kampfgeräuschs. */
+  function anwenden(l, leise) {
     var u = l.key && replay.u[l.key];
-    if (l.type === 'hit' && u) { u.hp = l.hp; }
-    if (l.type === 'heal' && u) { u.hp = l.hp; }
-    if (l.type === 'death' && u) { u.tot = true; u.hp = 0; }
+    if (l.type === 'hit' && u) { u.hp = l.hp; if (!leise) AU.treffer(); }
+    if (l.type === 'heal' && u) { u.hp = l.hp; if (!leise) AU.effekt('heilung'); }
+    if (l.type === 'death' && u) { u.tot = true; u.hp = 0; if (!leise) AU.tod(); }
     if (l.type === 'zug' && u) { u.hex = { q: l.q, r: l.r }; }
-    /* Eine Signatur ist der Höhepunkt eines Zuges — sie soll auch so aussehen.
-       Welcher Effekt, entscheidet das Schlüsselwort der Fähigkeit; die Ansicht
-       braucht nur zu wissen, von wem nach wem. */
-    if (l.type === 'aktiv' && u && Brett3D.verfuegbar()) {
-      Brett3D.effekt(l.key, l.ziel, l.kw);
+    /* Eine Signatur ist der Höhepunkt eines Zuges — sie soll auch so aussehen
+       UND so klingen. Welcher Effekt, entscheidet das Schlüsselwort der
+       Fähigkeit; Ansicht und Ton brauchen nur zu wissen, von wem nach wem. */
+    if (l.type === 'aktiv' && u) {
+      if (Brett3D.verfuegbar()) Brett3D.effekt(l.key, l.ziel, l.kw);
+      if (!leise) AU.effekt(l.kw);
     }
-    if (l.type === 'revive' && u) { u.tot = false; u.hp = l.hp; }
+    if (l.type === 'revive' && u) { u.tot = false; u.hp = l.hp; if (!leise) AU.wiederbelebung(); }
     if (l.type === 'status' && u) { u.status[l.status] = l.stacks; }
     /* Der Würfelwurf der Runde gehört an die Einheit, nicht nur ins Log —
        sonst schwanken die Zahlen und niemand sieht, woher. */
     if (l.type === 'chaos' && u) { u.wurf = l; }
-    if (l.type === 'schild' && u) { u.status.schild = Math.max(0, (u.status.schild || 0) - l.amount); }
+    if (l.type === 'schild' && u) {
+      u.status.schild = Math.max(0, (u.status.schild || 0) - l.amount);
+      if (!leise) AU.effekt('schild');
+    }
 
     var text = null, klasse = l.side === 'player' ? 'feind' : 'spieler';
     if (l.type === 'hit') text = esc(l.source) + ' → ' + esc(l.target) + ': ' + l.dmg;
@@ -614,6 +621,7 @@
     if (replay.timer) clearInterval(replay.timer);
     replay.timer = null;
     replay.fertig = true;
+    if (replay.res.winner === 'player') AU.sieg(); else if (replay.res.winner === 'enemy') AU.niederlage();
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -624,7 +632,7 @@
     var log = replay.res.log;
     while (replay.i < log.length) {
       var l = log[replay.i++];
-      if (l.type !== 'setup') anwenden(l);
+      if (l.type !== 'setup') anwenden(l, true);
     }
     endeReplay();
   }
@@ -1223,7 +1231,16 @@
       render(); speichern();
     },
     start: function (d) { R.chooseStart(run, +d.i); render(); speichern(); },
-    kaufen: function (d) { R.buy(run, +d.i); render(); speichern(); },
+    kaufen: function (d) {
+      var liste = run.pending && (run.pending.markt || run.pending.offers);
+      var o = liste && liste[+d.i];
+      if (R.buy(run, +d.i)) {
+        /* Ein A- oder S-Paket ist der seltene Glücksfall aus Phase 53 — das
+           soll auch beim Kauf mehr sein als der übliche Münzklang. */
+        if (o && o.kind === 'unit' && (o.rang === 'A' || o.rang === 'S')) AU.rang(); else AU.kauf();
+      } else AU.fehler();
+      render(); speichern();
+    },
     event: function (d) { R.eventChoose(run, +d.i); render(); speichern(); },
     lager: function (d) { R.camp(run, +d.i); render(); speichern(); },
     pwahl: function (d) { R.choosePassive(run, +d.i); render(); speichern(); },
@@ -1507,6 +1524,7 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    AU.klick();
     a(el.dataset);
   }
 
@@ -1550,6 +1568,19 @@
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
       $('menu').showModal();
     });
+    /* Ton ist an, sobald die Seite läuft — kein eigener „aktivieren"-Schritt,
+       nur ein Schalter zum Abstellen. localStorage merkt sich die Wahl über
+       Kämpfe und Neuladen hinweg, wie beim Debug-Schalter oben. */
+    var btnSound = $('btn-sound');
+    if (btnSound) {
+      var zeichneSound = function () {
+        var an = !AU.stummgeschaltet();
+        btnSound.textContent = an ? '🔊' : '🔇';
+        btnSound.setAttribute('aria-pressed', an ? 'true' : 'false');
+      };
+      zeichneSound();
+      btnSound.addEventListener('click', function () { AU.schalteStumm(); zeichneSound(); });
+    }
     render();
   }
 

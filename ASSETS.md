@@ -53,3 +53,21 @@ nicht verwendbar.
 | Datei | Herkunft | Datum | Lizenz |
 |---|---|---|---|
 | — | noch keine | — | — |
+
+## Ton
+
+**Keine Audiodatei, genau wie bei den Figuren vor Phase 41 keine Bilddatei.**
+`js/audio.js` synthetisiert jeden Klang zur Laufzeit aus Oszillatoren und
+gefiltertem Rauschen (Web Audio API) — kein `<audio>`-Tag, kein Download, keine
+Lizenzfrage. Die Zuordnung folgt demselben Schlüsselwort-Prinzip wie `FARBE`
+in `js/brett3d.js`.
+
+Eigenschaften: Quellcode, komplett selbst geschrieben in dieser Sitzung
+(2026-08-02, Routine `routine/2026-08-02-sound-fx`), keine externe Quelle,
+keine Lizenzangabe nötig. Ohne Web Audio API (z. B. in `dev/uitest.js`, das in
+jsdom läuft) bleibt das Spiel stumm — `Sound.verfuegbar()` sagt dann nein,
+genau wie `Brett3D.verfuegbar()` bei fehlendem WebGL.
+
+Sollte das Projekt später doch aufgenommene oder komponierte Musik/SFX
+bekommen, gehören sie nach `assets/audio/` und hier mit Quelle, Datum und
+Lizenz eingetragen — dieselbe Regel wie bei den Figuren oben.
