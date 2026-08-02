@@ -482,7 +482,21 @@ table.dbg i.ab { color: #e77; }
 /* Der Ausbruch aus der 860px-Spalte ist weg, weil die Spalte weg ist: das Brett
    nimmt schlicht die Breite, die da ist. Die Breite ist der Deckel für die
    Hexgröße, alles andere verschiebt nur Leerraum. */
-#kampfbrett { margin-bottom: .5rem; position: relative; }
+/* Die volle Bühne: das Brett nimmt den Hauptplatz, Aufstellung und Log stehen
+   daneben. Vorher lagen beide darunter, und das Brett war ein Streifen — genau
+   der Grund, warum der Höhendeckel in js/brett3d.js so niedrig sein musste.
+   Keine @media-Abfrage: das ist ein Desktop-Spiel im Vollbild. */
+#kampfbuehne {
+  display: grid; gap: .7rem; align-items: start;
+  grid-template-columns: minmax(0, 3fr) minmax(22rem, 1fr);
+  margin-bottom: .5rem;
+}
+#kampfseite { display: flex; flex-direction: column; gap: .5rem; }
+/* In der schmalen Spalte stehen die Seiten untereinander, nicht nebeneinander. */
+#kampfseite .feld { grid-template-columns: 1fr; margin-bottom: 0; }
+#kampfseite #kampflog { height: auto; min-height: 14rem; flex: 1; }
+
+#kampfbrett { position: relative; }
 
 /* Schadenszahlen liegen ÜBER der Leinwand, nicht darin: Text im WebGL-Bild
    hieße Schriftatlas, und CSS2DRenderer ist ein Addon — die gibt es auf

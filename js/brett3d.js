@@ -29,6 +29,10 @@
   var G = 1;                       // Hexradius in Weltmaßen; alles andere relativ
   var KACHEL_H = 0.22;             // Kachelhöhe — genug für eine sichtbare Kante
   var SPRITE_H = 3.2;              // Figurenhöhe, gemessen in Hexradien
+  /* Der obere Deckel begrenzt, wie viel Bildschirm das Brett dem Kampflog
+     wegnimmt. Seit Phase 60 steht das Log auf breiten Fenstern DANEBEN statt
+     darunter — es nimmt ihm also nichts mehr weg, und der Deckel darf hoch. */
+  var HOEHE_DECKEL = 900;
 
   /* Wohin echte Bilder gehören, sobald es welche gibt. Fehlt die Datei, zeichnet
      `platzhalter()` eine Figur — die Ansicht funktioniert also von Anfang an,
@@ -297,7 +301,9 @@
 
     /* Der Einschlagring ist der Unterschied zwischen „trifft" und „schlaegt
        ein" — er kostet vierzig Dreiecke und traegt mehr als zehn Funken. */
+    if (vonF.hex) pulsiere(vonF.hex, farbe);
     if (!anSich) {
+      if (nachF && nachF.hex) pulsiere(nachF.hex, farbe);
       var e1 = ringMesh(farbe);
       e1.position.set(b.x, KACHEL_H / 2 + 0.02, b.z);
       extra(e1, 'aufgehen', G * 1.1, flug);
@@ -494,6 +500,7 @@
 
     ziel.blitz = 1;
     ziel.blitzFarbe = heil ? 0x6ee7a8 : 0xffffff;
+    if (ziel.hex) pulsiere(ziel.hex, heil ? 0x6ee7a8 : 0xff6a5a);
     if (!heil) ziel.stauch = 1;
     if (wert !== undefined && wert !== null) {
       zahl(ziel, wert, ziel.seite, !heil && (beat === 'gross' || beat === 'toedlich' || beat === 'finale'));
@@ -544,6 +551,7 @@
     var geo = new T.CylinderGeometry(G * 0.94, G * 0.94, KACHEL_H, 6);
     var mitteQ = (minQ + maxQ) / 2;
     var kacheln = new T.Group();
+    var karte = {};                                 // "q,r" -> Kachel, fuer den Puls
     for (var q = minQ; q <= maxQ; q++) {
       for (var r = minR; r <= maxR; r++) {
         /* Die eigene Hälfte ist kühl, die gegnerische warm — die Seiten sind
@@ -553,6 +561,8 @@
         var k = new T.Mesh(geo, m);
         var p = weltpos({ q: q, r: r });
         k.position.set(p.x, 0, p.z);
+        k.userData.grund = m.color.getHex();
+        karte[q + ',' + r] = k;
         kacheln.add(k);
       }
     }
@@ -564,7 +574,8 @@
     return {
       mitteX: (p1.x + p2.x) / 2, mitteZ: (p1.z + p2.z) / 2,
       breite: Math.abs(p2.x - p1.x) + 2 * G,
-      tiefe: Math.abs(p2.z - p1.z) + 2 * G
+      tiefe: Math.abs(p2.z - p1.z) + 2 * G,
+      karte: karte
     };
   }
 
@@ -632,16 +643,18 @@
 
     return { gruppe: gruppe, sprite: sprite, mat: mat, leben: leben,
              schatten: schatten, marken: marken, phase: phase / 100,
-             seite: u.side, ziel: { x: p.x, z: p.z }, pos: { x: p.x, z: p.z },
+             seite: u.side, hex: u.hex, ziel: { x: p.x, z: p.z }, pos: { x: p.x, z: p.z },
              stoss: null, blitz: 0, blitzFarbe: 0xffffff, tot: false, loesch: 0,
              stauch: 0, streck: 0 };
   }
 
-  function montiere(el, einheiten) {
+  function montiere(el, einheiten, opt) {
     loese();
+    opt = opt || {};
     if (!verfuegbar() || !einheiten.length) return false;
     var T = root.THREE;
     if (!blitzC) blitzC = new T.Color();
+    if (!pulsC) pulsC = new T.Color();
     if (!hilfsV) hilfsV = new T.Vector3();
 
     /* ponytail: Breite wird nur beim Aufbau gelesen — wer das Fenster MITTEN im
@@ -655,6 +668,15 @@
     scene.add(sonne);
 
     var mass = baueKacheln(scene, einheiten);
+
+    /* Dunst: die hinteren Reihen sitzen im Nebel, das Brett bekommt Tiefe.
+       Exponentiell statt linear — sonst gibt es eine sichtbare Kante. */
+    var hg = hintergrund(opt.akt);
+    scene.fog = new T.FogExp2(hg.ton.dunst, 0.055);
+    hg.mesh.scale.set(mass.breite * 4, (mass.tiefe + SPRITE_H) * 4, 1);
+    hg.mesh.position.set(mass.mitteX, SPRITE_H * 0.6, mass.mitteZ - mass.tiefe * 2.2);
+    hg.mesh.renderOrder = -1;
+    scene.add(hg.mesh);
 
     /* Kamera fest, 46° gekippt, von der eigenen Seite her. Der Blick auf das
        Feld ist damit derselbe wie der auf die Aufstellungsliste: eigener Trupp
@@ -673,13 +695,19 @@
     var kippung = 46 * Math.PI / 180;
     /* Senkrecht zählt nicht nur das Brett: die Figuren stehen darauf und
        ragen darüber hinaus, und der Lebensbalken noch einmal darüber. */
-    var senkrecht = mass.tiefe * Math.sin(kippung) + (SPRITE_H + 0.9) * Math.cos(kippung);
+    /* Der Blick zielt um `zielHoch` ueber die Brettebene (siehe unten). Wer
+       hoeher zielt, schiebt den Inhalt nach unten — und braucht oben genau so
+       viel mehr Platz, sonst schneidet die Rahmung Kopf und Lebensbalken ab.
+       Gemessen in Phase 58 an einem Brett mit zwei Reihen: genau das passierte. */
+    var zielHoch = SPRITE_H * 0.2;
+    var senkrecht = mass.tiefe * Math.sin(kippung) +
+                    (SPRITE_H + 0.9 + 2 * zielHoch) * Math.cos(kippung);
     /* Der obere Deckel begrenzt, wie viel Bildschirm das Brett dem Kampflog
        wegnimmt. Bei 560 kostete er auf einem Vollbild-Desktop (Leinwand 2093
        breit) Fuellung: gemessen 81 statt 96 % der Breite, weil die Kamera
        zurueckweichen muss, um in die gedeckelte Hoehe zu passen. 760 laesst das
        Brett auch dort noch vollstaendig aufgehen. */
-    var hoehe = Math.round(Math.max(220, Math.min(760,
+    var hoehe = Math.round(Math.max(220, Math.min(HOEHE_DECKEL,
                   breite * senkrecht / mass.breite)));
     var seiten = breite / hoehe;
     var camera = new T.PerspectiveCamera(38, seiten, 0.1, 200);
@@ -691,7 +719,7 @@
     /* Gezielt wird etwas ÜBER die Brettebene: die Figuren ragen nach oben, also
        sitzt der Inhalt sonst am oberen Rand und lässt unten Luft. Gemessen 0
        Pixel oben gegen 49 unten — das hebt der Versatz auf. */
-    var zielPunkt = new T.Vector3(mass.mitteX, SPRITE_H * 0.2, mass.mitteZ);
+    var zielPunkt = new T.Vector3(mass.mitteX, zielHoch, mass.mitteZ);
     camera.lookAt(zielPunkt);
 
     var renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
@@ -720,7 +748,8 @@
                          versatz: camera.position.clone().sub(zielPunkt) },
                 blickPunkt: zielPunkt.clone(), blickZiel: zielPunkt.clone(),
                 blickRest: 0, zoom: 1, zoomZiel: 1, lupe: 1, lupeRest: 0,
-                zahlenListe: [],
+                zahlenListe: [], kacheln: mass.karte, pulse: [],
+                motten: motten(scene, mass),
                 ruettel: 0, zeit: 0, halt: 0,
                 fx: (stufe === 'voll' && root.FX)
                   ? root.FX.komposition(renderer, breite * renderer.getPixelRatio(),
@@ -833,7 +862,67 @@
     }
   }
 
+  /* ---- Die Buehne ----------------------------------------------------------
+     Bis hierher war der Hintergrund ein CSS-Verlauf und sonst nichts. Vier
+     Zutaten machen daraus einen Ort — und die letzte kauft die Lesbarkeit
+     zurueck, die die fahrende Kamera aus Phase 59 gekostet hat.            */
+
+  /* Zwei Akte, zwei Stimmungen. Kein Bild, kein Asset: der Verlauf entsteht
+     zur Laufzeit auf einer Leinwand. */
+  var AKT_TON = [
+    { oben: '#16233a', unten: '#0a0d14', dunst: 0x111a2b },   // Akt 1
+    { oben: '#2a1730', unten: '#0d0810', dunst: 0x1d1226 }    // Akt 2
+  ];
+
+  function hintergrund(akt) {
+    var T = root.THREE;
+    var ton = AKT_TON[Math.max(0, Math.min(AKT_TON.length - 1, (akt || 1) - 1))];
+    var c = root.document.createElement('canvas');
+    c.width = 8; c.height = 256;
+    var x = c.getContext('2d');
+    var g = x.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0, ton.oben);
+    g.addColorStop(1, ton.unten);
+    x.fillStyle = g; x.fillRect(0, 0, 8, 256);
+    var tex = new T.CanvasTexture(c);
+    var m = new T.MeshBasicMaterial({ map: tex, depthWrite: false, fog: false });
+    return { mesh: new T.Mesh(new T.PlaneGeometry(1, 1), m), ton: ton };
+  }
+
+  /* Schwebeteilchen: sehr langsam, sehr wenige. Sie sagen „hier ist Luft",
+     nicht „hier passiert etwas" — deshalb duerfen sie nichts tun. */
+  function motten(scene, mass) {
+    var liste = [];
+    for (var i = 0; i < 30; i++) {
+      var s = teilchen(0x9fb4d8, 0.07 + Math.random() * 0.08);
+      s.material.opacity = 0.08 + Math.random() * 0.14;
+      s.renderOrder = 0;
+      scene.add(s);
+      /* Nicht vor die Kamera: ein Teilchen dicht am Objektiv wird gross, und
+         das Bloom blaest es zur weissen Scheibe auf. Gemessen — es sah aus wie
+         ein Fehler. Die Tiefe bleibt deshalb innerhalb des Bretts. */
+      liste.push({ s: s,
+        x: mass.mitteX + (Math.random() - 0.5) * mass.breite * 1.1,
+        y: 0.4 + Math.random() * SPRITE_H * 1.4,
+        z: mass.mitteZ + (Math.random() - 0.5) * mass.tiefe * 0.7,
+        takt: Math.random() * 6.28, tempo: 0.4 + Math.random() * 0.6 });
+    }
+    return liste;
+  }
+
+  /* Kachel-Rueckmeldung. Das ist der Ersatz fuer den Ueberblick, den die
+     bewegte Kamera kostet — und der Grund, warum diese Phase NACH der Kamera
+     kommt: erst wenn der Blick wandert, braucht man am Boden eine Marke. */
+  function pulsiere(hex, farbe) {
+    if (!zustand || !hex) return;
+    var k = zustand.kacheln[hex.q + ',' + hex.r];
+    if (!k) return;
+    zustand.pulse.push({ m: k, t: 1, farbe: farbe });
+    if (!zustand.raf) zustand.raf = root.requestAnimationFrame(schleife);
+  }
+
   var blitzC = null;                 // eine Farbe, wiederverwendet statt je Bild neu
+  var pulsC = null;
 
   /* Eine Stelle, an der gezeichnet wird — mit Nachbearbeitung, wenn es eine
      gibt, sonst direkt. */
@@ -918,6 +1007,26 @@
       d.schatten.material.opacity = d.tot ? 0.12 * (1 - d.loesch) : 0.5;
     });
 
+    /* Schwebeteilchen: langsam genug, dass man sie nicht verfolgt. */
+    zustand.motten.forEach(function (m) {
+      m.takt += dt / 3400 * m.tempo;
+      m.s.position.set(m.x + Math.sin(m.takt) * 0.9,
+                       m.y + Math.sin(m.takt * 0.7) * 0.5,
+                       m.z + Math.cos(m.takt * 0.8) * 0.7);
+    });
+    /* Kachelpuls — rueckwaerts, weil abgelaufene hier herausfallen. */
+    for (var pi = zustand.pulse.length - 1; pi >= 0; pi--) {
+      var pz = zustand.pulse[pi];
+      pz.t -= dt / 520;
+      if (pz.t <= 0) {
+        pz.m.material.color.setHex(pz.m.userData.grund);
+        zustand.pulse.splice(pi, 1);
+      } else {
+        pz.m.material.color.setHex(pz.m.userData.grund)
+          .lerp(pulsC.setHex(pz.farbe), Math.sin(pz.t * Math.PI) * 0.75);
+        weiter = true;
+      }
+    }
     if (fuehreKamera(dt)) weiter = true;
     zeigeZahlen();
     /* Rueckwaerts, weil abgelaufene Effekte hier herausfallen. */
@@ -945,6 +1054,7 @@
       var f = zustand.figuren[u.key];
       if (!f) return;
       var p = weltpos(u.hex);
+      f.hex = u.hex;
       f.ziel.x = p.x; f.ziel.z = p.z;
       var anteil = Math.max(0, Math.min(1, u.hp / u.maxHp));
       f.leben.scale.x = 0.95 * Math.max(0.02, anteil);

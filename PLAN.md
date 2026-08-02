@@ -2807,6 +2807,59 @@ ist zu „kein Eintrag" geworden, weil setup jetzt Zeit hat. `dev/uitest.js`
 Worktree `/home/viktor/tensura/worktree/phase-59-kamera`, Branch
 `phase-59-kamera`.
 
+### Phase 60 (2026-08-02): Die Bühne — Stimmung statt Hintergrund
+
+Vier Zutaten machen aus dem Brett einen Ort, und die letzte kauft die
+Lesbarkeit zurueck, die die fahrende Kamera aus Phase 59 gekostet hat. Genau
+deshalb kommt diese Phase NACH der Kamera und nicht davor.
+
+**Dunst** (`FogExp2`, 0,055) im Ton des Akts: die hinteren Reihen sitzen im
+Nebel, das Brett bekommt Tiefe. Exponentiell statt linear, sonst gibt es eine
+sichtbare Kante.
+
+**Hintergrund je Akt** — ein grosses Verlaufsquad hinter dem Brett, Akt 1 kuehl
+blau, Akt 2 violett. Kein Bild, kein Asset: der Verlauf entsteht zur Laufzeit
+auf einer 8 × 256 grossen Leinwand. `montiere` nimmt dafuer einen dritten
+Parameter, `js/ui.js` reicht `run.act` durch.
+
+**Schwebeteilchen**, dreissig Stueck, sehr langsam. Sie sagen „hier ist Luft",
+nicht „hier passiert etwas" — deshalb duerfen sie nichts tun.
+
+**Kachel-Rueckmeldung:** die Kachel der handelnden Einheit und die des Ziels
+pulsen in der Farbe des Schluesselworts. Das ist der Ersatz fuer den
+Ueberblick, den die bewegte Kamera kostet: wenn der Blick wandert, braucht man
+am Boden eine Marke.
+
+**Die Teilchen waren beim ersten Anlauf ein Fehler.** Sie streuten ueber die
+anderthalbfache Bretttiefe — und eins davon stand dicht vor dem Objektiv, wurde
+gross und wurde vom Bloom zur weissen Scheibe aufgeblasen. Im Bild sah das aus
+wie ein Defekt. Die Tiefe bleibt jetzt innerhalb des Bretts (0,7 statt 1,4),
+Groesse und Deckkraft sind halbiert.
+
+**Die volle Buehne.** `#kampfbuehne` ist ein Raster: das Brett bekommt den
+Hauptplatz, Aufstellung und Log ruecken auf breiten Fenstern DANEBEN statt
+darunter. Keine `@media`-Abfrage — die Datei sagt im Kopf, dass dies ein
+Desktop-Spiel im Vollbild ist, und `minmax(0, 3fr) / minmax(22rem, 1fr)` tut
+dasselbe ohne Umschaltpunkt.
+
+Damit faellt auch der Grund fuer den niedrigen Hoehendeckel weg: er begrenzte,
+wie viel Bildschirm das Brett dem Log wegnimmt, und das Log steht jetzt
+nebenan. **760 → 900.** Gemessen an einem Vollbild-Desktop: Leinwand
+1560 × 650 — der Deckel bindet also gar nicht mehr, die Geometrie braucht
+weniger.
+
+**Und der Nebenbefund aus Phase 58 ist erledigt.** Die Rahmung schnitt bei
+flachen Brettern Kopf und Lebensbalken ab. Der Grund stand in der Formel: der
+Blick zielt um `SPRITE_H · 0,2` UEBER die Brettebene, und wer hoeher zielt,
+schiebt den Inhalt nach unten und braucht oben genau so viel mehr Platz. Der
+Versatz geht jetzt doppelt in `senkrecht` ein. Im Bild belegt: Kopf,
+Lebensbalken und Zustandsmarken stehen wieder vollstaendig im Rahmen.
+
+`dev/sim.js` 443/443, `dev/uitest.js` 104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-60-buehne`, Branch
+`phase-60-buehne`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

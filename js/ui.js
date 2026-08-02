@@ -521,7 +521,7 @@
       var aufDemFeld = Object.keys(replay.u).map(function (k) { return replay.u[k]; })
         .filter(function (u) { return u.hex; });
       if (aufDemFeld.length && Brett3D.verfuegbar()) {
-        if (!Brett3D.montiert(brett)) Brett3D.montiere(brett, aufDemFeld);
+        if (!Brett3D.montiert(brett)) Brett3D.montiere(brett, aufDemFeld, { akt: run.act });
         Brett3D.aktualisiere(aufDemFeld);
       } else {
         brett.innerHTML = brettHtml();
@@ -536,8 +536,12 @@
   function zeichneKampf() {
     var p = run.pending;
     var html = '<h2>' + esc(p.node.name) + '</h2>';
-    if (replay) html += '<div id="kampfbrett"></div>' +
-      '<div class="feld" id="kampffeld"></div><div id="kampflog"></div>';
+    /* Die Buehne bekommt den Hauptplatz, Aufstellung und Log ruecken daneben.
+       Vorher lagen sie darunter und das Brett war ein Streifen. */
+    if (replay) html += '<div id="kampfbuehne">' +
+      '<div id="kampfbrett"></div>' +
+      '<div id="kampfseite"><div class="feld" id="kampffeld"></div>' +
+      '<div id="kampflog"></div></div></div>';
     if (replay && !replay.fertig) {
       html += '<div class="reihe" id="kampf-takt">' +
         TEMPI.map(function (v) {
