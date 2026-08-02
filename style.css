@@ -100,7 +100,31 @@ main, #unten { padding: .8rem 1.4rem; }
   text-align: left;
   display: block;
   width: 100%;
+  position: relative;                 /* Anker für die Rangmarke */
 }
+
+/* Der Rang eines Gefolges: keine Zeile im Fließtext, sondern eine Marke.
+   Er entscheidet Werte und Zahl der Passiven, und seit Phase 53 ist S ein
+   Glückstreffer — das darf man sehen, ohne zu lesen. */
+.rang-marke {
+  position: absolute; top: .45rem; right: .55rem;
+  min-width: 2.1rem; padding: .05rem .35rem;
+  font-size: 1.6rem; font-weight: 800; line-height: 1.15;
+  text-align: center; letter-spacing: -.02em;
+  border: 2px solid currentColor; border-radius: 8px;
+  background: #0d0e14;
+}
+/* Vier Stufen, vier Farben — der Sprung nach S ist der größte, weil der
+   Unterschied es auch ist. */
+.rang-marke.rang-C { color: var(--grau); }
+.rang-marke.rang-B { color: #7fb2f0; }
+.rang-marke.rang-A { color: var(--gold); }
+.rang-marke.rang-S {
+  color: #ffd76a; border-color: #ffd76a; background: #2a1e08;
+  box-shadow: 0 0 0 1px #7a5a12, 0 0 14px rgba(255, 215, 106, .45);
+}
+/* Der Titel darf nicht unter die Marke laufen. */
+.karte .titel { padding-right: 3rem; }
 .karte:hover:not(:disabled) { border-color: var(--lila); background: var(--bg3); }
 .karte .titel { font-weight: 700; display: block; }
 .karte .unter { color: var(--grau); font-size: .85rem; }

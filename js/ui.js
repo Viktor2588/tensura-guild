@@ -576,6 +576,20 @@
     return '<span class="kw-tag ' + klasse + '"' + tip(titel, hilfe) + '>' + esc(text) + '</span>';
   }
 
+  /* Der Rang ist die wichtigste Angabe an einem Gefolge-Posten: er bestimmt
+     Werte UND wie viele Passive dabei sind, und seit Phase 52/53 ist er
+     obendrein selten. Als Chip zwischen Rolle, Signatur und Schlüsselwörtern
+     musste man ihn suchen. Jetzt steht er als Buchstabe in der Ecke der Karte,
+     in einer Farbe je Stufe — S soll man von der anderen Seite des Bildschirms
+     sehen. */
+  function rangMarke(o) {
+    if (!o || !o.rangName) return '';
+    return '<span class="rang-marke rang-' + o.rangName + '"' +
+      tip('Rang ' + o.rangName, G.begriffe.rang + '\n\n' +
+          ((o.rang || 0) + 1) + ' Passive gehören zu diesem Rang.') +
+      '>' + o.rangName + '</span>';
+  }
+
   function belohnungTags(r) {
     var tags = [];
     if (r.kind === 'unit') {
@@ -589,12 +603,9 @@
         tags.push(tag('kw-' + k, kwName(k), kwName(k),
           (G.keywords[k] || '') + (G.zustaende[k] ? '\n\n' + G.zustaende[k] : '')));
       });
-      /* Der Rang ist die wichtigste Zahl am Posten — er sagt Werte UND wie viele
-         Passive dabei sind. Deshalb steht er als eigener Chip da. */
-      if (r.rangName) {
-        tags.push(tag('tag-rang', 'Rang ' + r.rangName, 'Rang ' + r.rangName,
-          G.begriffe.rang + '\n\n' + ((r.rang || 0) + 1) + ' Passive gehören zu diesem Rang.'));
-      }
+      /* Der Rang steht seit `rangMarke()` als große Marke am Posten und nicht
+         mehr als Chip: als einer von zwölf ging genau die Angabe unter, die
+         über den Kauf entscheidet. */
       if (AB.linien[u.id]) {
         tags.push(tag('tag-linien', 'Vier Linien', 'Eigene Entwicklungslinien',
           'Diese Einheit hat sechzehn eigene Passive in vier Linien. Welche davon ' +
@@ -781,7 +792,7 @@
       }
       var geht = !o.sold && run.magicules >= o.price && frei;
       html += '<button class="karte' + (o.sold ? ' gewaehlt' : '') + '" data-a="kaufen" data-i="' + i + '"' +
-        (geht ? '' : ' disabled') + '>' + artHtml(o.kind) +
+        (geht ? '' : ' disabled') + '>' + rangMarke(o) + artHtml(o.kind) +
         '<span class="titel">' + esc(o.name) + ' — ' + o.price + ' ✦' + (o.sold ? ' (gekauft)' : '') + '</span>' +
         '<div class="kw-leiste">' + belohnungTags(o) + '</div>' +
         '<span class="beschreibung">' + marktText(o) + '</span>' +
