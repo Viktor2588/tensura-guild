@@ -326,24 +326,31 @@
     if (replay.i >= log.length) endeReplay();
   }
 
-  function anwenden(l) {
+  function anwenden(l, ohneKlang) {
     var u = l.key && replay.u[l.key];
-    if (l.type === 'hit' && u) { u.hp = l.hp; }
-    if (l.type === 'heal' && u) { u.hp = l.hp; }
-    if (l.type === 'death' && u) { u.tot = true; u.hp = 0; }
+    if (l.type === 'hit' && u) { u.hp = l.hp; if (!ohneKlang) SFX.treffer(); }
+    if (l.type === 'heal' && u) { u.hp = l.hp; if (!ohneKlang) SFX.heilung(); }
+    if (l.type === 'death' && u) { u.tot = true; u.hp = 0; if (!ohneKlang) SFX.tod(); }
     if (l.type === 'zug' && u) { u.hex = { q: l.q, r: l.r }; }
-    /* Eine Signatur ist der Höhepunkt eines Zuges — sie soll auch so aussehen.
-       Welcher Effekt, entscheidet das Schlüsselwort der Fähigkeit; die Ansicht
-       braucht nur zu wissen, von wem nach wem. */
-    if (l.type === 'aktiv' && u && Brett3D.verfuegbar()) {
-      Brett3D.effekt(l.key, l.ziel, l.kw);
+    /* Eine Signatur ist der Höhepunkt eines Zuges — sie soll auch so klingen
+       und aussehen. Welche Effekte, entscheidet das Schlüsselwort der
+       Fähigkeit; Ansicht und Klang brauchen nur zu wissen, von wem nach wem. */
+    if (l.type === 'aktiv' && u) {
+      if (!ohneKlang) SFX.signatur(l.kw);
+      if (Brett3D.verfuegbar()) Brett3D.effekt(l.key, l.ziel, l.kw);
     }
-    if (l.type === 'revive' && u) { u.tot = false; u.hp = l.hp; }
+    if (l.type === 'revive' && u) { u.tot = false; u.hp = l.hp; if (!ohneKlang) SFX.wiederbelebt(); }
     if (l.type === 'status' && u) { u.status[l.status] = l.stacks; }
     /* Der Würfelwurf der Runde gehört an die Einheit, nicht nur ins Log —
        sonst schwanken die Zahlen und niemand sieht, woher. */
     if (l.type === 'chaos' && u) { u.wurf = l; }
-    if (l.type === 'schild' && u) { u.status.schild = Math.max(0, (u.status.schild || 0) - l.amount); }
+    if (l.type === 'schild' && u) {
+      u.status.schild = Math.max(0, (u.status.schild || 0) - l.amount);
+      if (!ohneKlang) SFX.schildFang();
+    }
+    if (!ohneKlang && l.type === 'kombi') SFX.kombi();
+    if (!ohneKlang && l.type === 'entladung') SFX.entladung();
+    if (!ohneKlang && l.type === 'verwandlung') SFX.verwandlung();
 
     var text = null, klasse = l.side === 'player' ? 'feind' : 'spieler';
     if (l.type === 'hit') text = esc(l.source) + ' → ' + esc(l.target) + ': ' + l.dmg;
@@ -614,6 +621,7 @@
     if (replay.timer) clearInterval(replay.timer);
     replay.timer = null;
     replay.fertig = true;
+    if (replay.res.winner === 'player') SFX.sieg(); else SFX.niederlage();
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -624,7 +632,7 @@
     var log = replay.res.log;
     while (replay.i < log.length) {
       var l = log[replay.i++];
-      if (l.type !== 'setup') anwenden(l);
+      if (l.type !== 'setup') anwenden(l, true);
     }
     endeReplay();
   }
@@ -1507,6 +1515,7 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    SFX.klick();
     a(el.dataset);
   }
 
@@ -1540,6 +1549,15 @@
         s.hidden = s.dataset.blatt !== b.dataset.reiter;
       });
     });
+    var btnStumm = $('btn-stumm');
+    if (btnStumm) {
+      var setzeStummAnzeige = function (an) {
+        btnStumm.textContent = an ? '🔇' : '🔊';
+        btnStumm.setAttribute('aria-pressed', String(an));
+      };
+      setzeStummAnzeige(SFX.istStumm());
+      btnStumm.addEventListener('click', function () { setzeStummAnzeige(SFX.stummSchalten()); });
+    }
     $('btn-menu').addEventListener('click', function () {
       $('menu-info').textContent = 'Runs: ' + run.meta.runs + ' · Siege: ' + run.meta.wins +
         ' · freigeschaltet: ' + run.meta.unlockedUnits.length + ' Einheiten, ' +
