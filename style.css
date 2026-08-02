@@ -494,7 +494,10 @@ table.dbg i.ab { color: #e77; }
 #kampfseite { display: flex; flex-direction: column; gap: .5rem; }
 /* In der schmalen Spalte stehen die Seiten untereinander, nicht nebeneinander. */
 #kampfseite .feld { grid-template-columns: 1fr; margin-bottom: 0; }
-#kampfseite #kampflog { height: auto; min-height: 14rem; flex: 1; }
+/* Feste Höhe, nicht `auto`: in einer Spalte, deren Höhe vom Inhalt kommt,
+   wächst `flex: 1` einfach mit und schiebt „Überspringen" aus dem Bild,
+   statt zu scrollen. Der Deckel ist der Punkt, nicht die Zahl. */
+#kampfseite #kampflog { height: min(28rem, 46vh); overflow-y: auto; }
 
 #kampfbrett { position: relative; }
 

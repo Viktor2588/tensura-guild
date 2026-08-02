@@ -2857,6 +2857,14 @@ Lebensbalken und Zustandsmarken stehen wieder vollstaendig im Rahmen.
 
 `dev/sim.js` 443/443, `dev/uitest.js` 104/104.
 
+**Nachtrag (Rueckmeldung des Nutzers, korrigiert auf `phase-61-figuren`):** das
+Log in der Seitenspalte bekam `height: auto; flex: 1`. In einer Spalte, deren
+Hoehe vom Inhalt kommt, waechst das einfach mit, statt zu scrollen — und schob
+„Ueberspringen" mit jeder Logzeile weiter nach unten. Jetzt ein fester Deckel,
+`min(28rem, 46vh)`. Gemessen: 140 zusaetzliche Zeilen machen aus 446 px Inhalt
+2832 px, die Box bleibt bei **446 px**, sie scrollt, und die Unterkante der
+Buehne bewegt sich um **0 px**.
+
 Worktree `/home/viktor/tensura/worktree/phase-60-buehne`, Branch
 `phase-60-buehne`.
 
