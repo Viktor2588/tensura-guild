@@ -217,6 +217,7 @@ dialog {
   border-radius: 6px 6px 0 0; color: var(--grau); font-size: .85rem; padding: .3rem .7rem;
 }
 .reiter button.an { color: var(--text); background: var(--bg3); border-color: var(--rand); }
+#kampf-takt button.an { color: var(--text); background: var(--bg3); border-color: var(--rand); }
 dialog::backdrop { background: rgba(0,0,0,.65); }
 #menu-chronik { font-size: .82rem; color: var(--grau); padding-left: 1.1rem; }
 

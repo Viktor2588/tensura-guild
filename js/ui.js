@@ -299,8 +299,31 @@
 
   /* -------------------------------------------------------------- Kampf */
 
+  /* Die Uhr der Wiedergabe. Frueher ein festes Intervall von 70 ms je
+     Eintrag; jetzt ein Zeitkonto, das `Regie.zeitplan` fuellt. Mehrere billige
+     Eintraege duerfen sich ein Bild teilen — genau diese Buendelung bezahlt
+     die Dehnung der Hoehepunkte, ohne den Kampf zu verlaengern. */
+  var TEMPI = [1, 2, 4];
+  var tempo = 1;
+  try { tempo = +localStorage.getItem('tensura-tempo') || 1; } catch (e) {}
+  if (TEMPI.indexOf(tempo) < 0) tempo = 1;
+
+  function pumpe(nun) {
+    if (!replay || replay.fertig) return;
+    replay.raf = requestAnimationFrame(pumpe);
+    var dt = replay.zeit ? nun - replay.zeit : 0;
+    replay.zeit = nun;
+    /* Ein Tabwechsel haelt rAF an; ohne Deckel spult der Kampf danach durch. */
+    if (dt > 250) dt = 250;
+    replay.konto -= dt * tempo;
+    var schutz = 0;
+    while (replay.konto <= 0 && !replay.fertig && schutz++ < 500) schritt();
+    if (!replay.fertig) aktualisiereFeld();
+  }
+
   function starteReplay(res) {
-    replay = { res: res, i: 0, u: {}, zeilen: [], fertig: false, timer: null };
+    replay = { res: res, i: 0, u: {}, zeilen: [], fertig: false, raf: null,
+               plan: Regie.zeitplan(res.log), konto: 0, zeit: 0, beat: null, stopp: 0 };
     res.roster.forEach(function (r) {
       replay.u[r.key] = { key: r.key, id: r.id, name: r.name, side: r.side,
                           hp: r.maxHp, maxHp: r.maxHp,
@@ -309,20 +332,26 @@
                           aktive: (r.actives || [])[0] || null, status: {}, tot: false };
     });
     zeichneKampf();
-    replay.timer = setInterval(schritt, 70);
+    replay.raf = requestAnimationFrame(pumpe);
   }
 
   function schritt() {
     var log = replay.res.log;
-    var l = null;
+    var l = null, p = null;
     while (replay.i < log.length) {
+      p = replay.plan[replay.i];
       l = log[replay.i++];
       if (l.type !== 'setup') break;
       l = null;
     }
     if (!l) { endeReplay(); return; }
     anwenden(l);
-    aktualisiereFeld();
+    /* ponytail: `beat` und `stopp` werden hier nur gemerkt. Den Hitstop
+       einfrieren kann erst Phase 55 — vorher gibt es keine Animation, die
+       stehenbleiben koennte. */
+    replay.beat = p.beat;
+    replay.stopp = p.stopp;
+    replay.konto += Math.max(1, p.ms);
     if (replay.i >= log.length) endeReplay();
   }
 
@@ -465,7 +494,12 @@
     if (replay) html += '<div id="kampfbrett"></div>' +
       '<div class="feld" id="kampffeld"></div><div id="kampflog"></div>';
     if (replay && !replay.fertig) {
-      html += '<div class="reihe"><button type="button" data-a="ueberspringen">Überspringen</button></div>';
+      html += '<div class="reihe" id="kampf-takt">' +
+        TEMPI.map(function (v) {
+          return '<button type="button" data-a="tempo" data-v="' + v + '"' +
+            (v === tempo ? ' class="an"' : '') + '>' + v + '×</button>';
+        }).join('') +
+        '<button type="button" data-a="ueberspringen">Überspringen</button></div>';
     } else {
       html += ergebnisHtml(p);
     }
@@ -611,8 +645,8 @@
   }
 
   function endeReplay() {
-    if (replay.timer) clearInterval(replay.timer);
-    replay.timer = null;
+    if (replay.raf) cancelAnimationFrame(replay.raf);
+    replay.raf = null;
     replay.fertig = true;
     zeichneKampf();
     zeichneUnten();
@@ -1204,6 +1238,15 @@
       else { render(); speichern(); }
     },
     ueberspringen: function () { ueberspringen(); },
+    /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
+    tempo: function (d) {
+      tempo = +d.v || 1;
+      try { localStorage.setItem('tensura-tempo', tempo); } catch (e) {}
+      var reihe = $('kampf-takt');
+      if (reihe) Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=tempo]'), function (b) {
+        b.classList.toggle('an', +b.dataset.v === tempo);
+      });
+    },
     devour: function (d) {
       var ziel = $('devour-ziel');
       R.devour(run, d.id, ziel ? ziel.value : run.team[0].uid);

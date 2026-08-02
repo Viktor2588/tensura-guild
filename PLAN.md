@@ -2450,6 +2450,58 @@ Waechter fuer genau das Leck, das diese Phase gefunden hat. `dev/uitest.js`
 Worktree `/home/viktor/tensura/worktree/phase-53-s-selten`, Branch
 `phase-53-s-selten`.
 
+### Phase 54 (2026-08-02): Der Takt — aus Wiedergabe wird Regie
+
+Erste Phase des Kampfkino-Plans (54–61). Der Kampf war korrekt, aber tonlos,
+und das lag nicht am Rendering: `setInterval(schritt, 70)` gab einem
+Giftstapel und einem Todesstoss exakt dieselben 70 Millisekunden. Eine
+Ereignisliste gleichmaessig abzuspulen ist keine Regie, sondern ein Ticker.
+
+Neu ist `js/regie.js` — eine reine Funktion, kein DOM, kein three.js:
+
+```
+Regie.zeitplan(log) -> [ { i, ms, beat, stopp } ]
+```
+
+Sie tut zwei Dinge. **Erstens Gewichte je Ereignistyp** statt einer festen
+Zahl: `status` 0,4 · `hit` 1,0 · `aktiv` 3,5 · `death` 5,0 ·
+`verwandlung` 6,0. Das Budget bleibt dabei erhalten (70 ms mal Anzahl der
+Eintraege), die Zeit wandert nur — was ein Hoehepunkt bekommt, fehlt dem
+Belanglosen. Gemessen ueber drei Seeds: **4757 statt 4760 ms, −0,06 %**.
+Ein Tod steht jetzt **326 ms**, ein Statusstapel **25 ms** — Faktor 13 statt
+Faktor 1.
+
+**Zweitens Vorausschau.** Die Wiedergabe kennt nur „naechster Eintrag"; der
+Zeitplan sieht das ganze Log und weiss deshalb schon beim Treffer, dass gleich
+jemand faellt. Fuenf Beats: `gross` (≥ 12 % der Lebenspunkte), `toedlich` (auf
+diesen Treffer folgt der Tod des Ziels), `flaeche` (einem Einsatz folgen ≥ 2
+Treffer), `wende` (eine Seite faellt unter die Haelfte), `finale` (der letzte
+Tod). In einem Beispielkampf: 11 · 5 · 5 · 2 · 1.
+
+Das ist der Punkt der Phase. **Ein Hitstop, den man erst beim Tod bemerkt,
+kommt zu spaet** — er muss auf dem Treffer davor liegen. Genau deshalb ist die
+Vorausschau hier zentral und einmal gebaut, statt in jeder folgenden Phase
+neu. `stopp` liegt mit 0/90/140/260 ms **innerhalb** des `ms` seines Beats und
+kostet damit keine Extrazeit; ein Beat-Faktor (Finale 2,0 · Wende und toedlich
+1,5) sorgt dafuer, dass er auch hineinpasst.
+
+In `js/ui.js` ersetzt ein Zeitkonto auf `requestAnimationFrame` das feste
+Intervall. Mehrere billige Eintraege duerfen sich ein Bild teilen — diese
+Buendelung ist es, die die Dehnung bezahlt. Dazu **Tempo 1× / 2× / 4×** neben
+`Ueberspringen`, gemerkt in `localStorage` wie der Debug-Schalter.
+`Ueberspringen` bleibt synchron und unveraendert; `dev/uitest.js` klickt es
+sofort und merkt vom Uhrwechsel nichts.
+
+`dev/sim.js` 439/439 — neun neue Zusicherungen, darunter die drei, die den
+Kern schuetzen: die Gesamtdauer bleibt innerhalb von 2 % der alten, ein Tod
+bekommt mindestens die fuenffache Zeit eines Statusstapels, und jeder als
+`toedlich` markierte Treffer hat tatsaechlich einen Tod desselben Ziels vor
+sich. `dev/uitest.js` 104/104. `js/combat.js` unangetastet — die Balance kann
+sich nicht verschoben haben.
+
+Worktree `/home/viktor/tensura/worktree/phase-54-takt`, Branch
+`phase-54-takt`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

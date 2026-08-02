@@ -7,9 +7,10 @@ require('../js/abilities.js');
 require('../js/data.js');
 require('../js/combat.js');
 require('../js/enemies.js');
+require('../js/regie.js');
 require('../js/run.js');
 var GD = globalThis.GameData, EN = globalThis.Enemies, C = globalThis.Combat,
-    R = globalThis.Run, AB = globalThis.Abilities;
+    R = globalThis.Run, AB = globalThis.Abilities, RG = globalThis.Regie;
 
 var pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) pass++; else { fail++; console.log('  ✗ ' + msg); } }
@@ -1977,6 +1978,58 @@ var d1 = R.analyse(dRun)[0];
 ok(d1.kampf.atk > d1.aus.atk, 'ein Relikt schlägt erst in der Kampfstufe durch');
 ok(d1.kampf.status.schild > 0, 'onStart-Passive und Relikte sind in der Kampfstufe schon gewirkt');
 ok(d1.aus.atk === d0.aus.atk, 'die Ausrüstungsstufe bleibt davon unberührt');
+
+/* ----------------------------------------------------------- Regie */
+/* Die Regie verteilt dieselbe Zeit anders — sie darf sie nicht vermehren.
+   Genau das prüfen die ersten beiden Zusicherungen; der Rest prüft, dass die
+   Vorausschau die Höhepunkte an den richtigen Stellen findet. */
+head('Regie');
+{
+  var rLog = C.simulate([def('benimaru', 2), def('shion', 1), def('gobta', 1)],
+                        EN.build(EN.forAct(2)[0]), 31415).log;
+  var plan = RG.zeitplan(rLog);
+  var echte = rLog.filter(function (l) { return l.type !== 'setup'; }).length;
+  var gesamt = plan.reduce(function (s, p) { return s + p.ms; }, 0);
+  var alt = RG.BASIS * echte;
+
+  ok(plan.length === rLog.length, 'zu jeder Logzeile gehört genau ein Planeintrag');
+  ok(Math.abs(gesamt - alt) / alt < 0.02,
+     'die Gesamtdauer bleibt innerhalb von 2 % der alten (' + gesamt + ' statt ' + alt + ' ms)');
+  ok(plan.every(function (p) { return rLog[p.i].type === 'setup' ? p.ms === 0 : p.ms >= RG.MIN; }),
+     'kein Eintrag außer setup fällt unter die Untergrenze');
+  ok(plan.every(function (p) { return p.ms <= RG.MAX; }), 'kein Eintrag reißt die Obergrenze');
+
+  var msVon = function (typ) {
+    var t = plan.filter(function (p) { return rLog[p.i].type === typ; });
+    return t.length ? t[0].ms : 0;
+  };
+  ok(msVon('death') >= msVon('status') * 5,
+     'ein Tod bekommt mindestens die fünffache Zeit eines Statusstapels (' +
+     msVon('death') + ' zu ' + msVon('status') + ' ms)');
+
+  /* `toedlich` ist die Zusicherung, an der die ganze Vorausschau hängt: sie
+     muss VOR dem Tod stehen, sonst kommt der Hitstop zu spät. */
+  var toedlich = 0, falsch = 0;
+  plan.forEach(function (p) {
+    if (p.beat !== 'toedlich') return;
+    toedlich++;
+    var tod = false;
+    for (var j = p.i + 1; j < rLog.length; j++) {
+      if (rLog[j].type === 'death' && rLog[j].key === rLog[p.i].key) { tod = true; break; }
+    }
+    if (!tod) falsch++;
+  });
+  ok(toedlich > 0 && !falsch, toedlich + ' tödliche Treffer erkannt, keiner davon ohne folgenden Tod');
+
+  var toteKeys = {};
+  rLog.forEach(function (l) { if (l.type === 'death') toteKeys[l.key] = 1; });
+  ok(plan.filter(function (p) { return p.beat === 'finale'; }).length === 1,
+     'genau ein Finale je Kampf');
+  ok(plan.every(function (p) { return p.stopp <= p.ms; }),
+     'der Hitstop liegt immer innerhalb der Standzeit seines Beats');
+  ok(plan.every(function (p) { return p.beat !== 'flaeche' || rLog[p.i].type === 'aktiv'; }),
+     'eine Fläche hängt nur an einem Fähigkeitseinsatz');
+}
 
 /* ------------------------------------------------------------- Run */
 head('Run');
