@@ -2569,6 +2569,62 @@ Browser, Schadenszahl „18" ueber dem Ziel, passend zur Logzeile.
 Worktree `/home/viktor/tensura/worktree/phase-55-einschlag`, Branch
 `phase-55-einschlag`.
 
+### Phase 56 (2026-08-02): Licht — Bloom und Farbraum
+
+Die Schicht, die Magie nach Magie aussehen laesst — und die erste, die nicht
+mehr aus Timing besteht.
+
+**Warum von Hand und nicht `UnrealBloomPass`.** three.js hat `examples/js` in
+r148 entfernt; alle Addons ab da sind ES-Module. Dieses Projekt sitzt auf r149
+UMD, weil `ASSETS.md` das ausdruecklich so festgelegt hat, und es hat keinen
+Bauschritt. Der Addon-Weg hiesse rund 900 Zeilen Fremdcode von Hand nach
+klassischem Skript umschreiben, samt Herkunftsnachweis in `ASSETS.md`. Neu ist
+stattdessen `js/fx.js` mit 180 eigenen Zeilen: Szene in ein Rendertarget →
+Helligkeitsschwelle mit weichem Knie auf halbe Aufloesung → zwei getrennte
+Gauss-Durchgaenge → additiv zurueck ueber die Szene, Vignette im selben
+Durchgang. Vollbildquad ist `PlaneGeometry(2,2)` plus `OrthographicCamera`,
+mehr braucht es nicht.
+
+**Zwei Sachen, die man leicht falsch macht**, und beide stehen als Kommentar in
+der Datei. Erstens: in r149 richtet sich Tonemapping und sRGB beim Rendern in
+ein Ziel nach der **Kodierung der Zieltextur**, nicht nach
+`renderer.outputEncoding` — ohne `rtSzene.texture.encoding = sRGBEncoding`
+bliebe das Bild linear und damit flau. Zweitens: die Leinwand ist
+durchsichtig, der Verlauf dahinter kommt aus CSS. Der Zusammenbau muss den
+Alphakanal durchtragen und dort anheben, wo das Leuchten ueber leeren Grund
+faellt — sonst ist ein Funke am Bildrand unsichtbar, obwohl er strahlt.
+
+Am Renderer stehen jetzt `sRGBEncoding` und `ACESFilmicToneMapping` (die
+r149-Schreibweise; `outputColorSpace` gibt es erst ab r152).
+
+**Und dabei kam heraus, dass die erste Einstellung zu viel war.** Mit Schwelle
+0,62 riss schon der Koerper des Platzhalters (0x7fb0e8, Spitzenwert 0,91) die
+Schwelle — das ganze Brett leuchtete und sah ausgewaschen aus statt magisch.
+Jetzt Schwelle 0,85, Staerke 0,6, Belichtung 0,95 statt 1,15: es glimmen die
+Funken und die Lebensbalken, nicht die Kacheln.
+
+**Der Vergleichsschalter ist kein Zugestaendnis, sondern das Messinstrument.**
+Effekte **voll / sparsam / aus** im Menue, wie der Debug-Schalter im
+`localStorage` gemerkt, und er greift sofort — auch mitten im Kampf. Genau
+darum geht es: zwei Stufen nebeneinander sehen zu koennen, ohne den Kampf zu
+verlieren. Im direkten Vergleich derselben Szene ist `sparsam` flach und hell,
+`voll` hat Tiefe — und den groesseren Anteil daran hat die Vignette, nicht das
+Bloom. `aus` faellt auf die SVG-Lagekarte zurueck; geprueft, dass dann ein
+`<svg>` im Brett steht und kein `<canvas>`.
+
+Gemessen im Browser waehrend eines Kampfes mit voller Stufe: **16,7 ms je Bild
+im Median, 16,8 ms im schlechtesten Fall** — also durchgehend 60 Bilder je
+Sekunde, mit vier Rendertargets und vier Durchgaengen.
+
+`js/fx.js` ist reiner GPU-Code und laesst sich headless nicht pruefen — in
+jsdom gibt es kein WebGL. Es kommt deshalb **keine** Zusicherung in
+`dev/sim.js` dazu; der Beleg ist der Bildvergleich. `dev/sim.js` 442/442,
+`dev/uitest.js` 104/104 — dass beide unveraendert bleiben, ist hier die
+Aussage: die Schicht haengt sauber daneben.
+
+Worktree `/home/viktor/tensura/worktree/phase-56-licht`, Branch
+`phase-56-licht`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

@@ -308,6 +308,20 @@
   try { tempo = +localStorage.getItem('tensura-tempo') || 1; } catch (e) {}
   if (TEMPI.indexOf(tempo) < 0) tempo = 1;
 
+  /* Effektstufe wie der Debug-Schalter: im Browser gemerkt, nicht im Run —
+     sie gehoert zum Geraet, nicht zum Spielstand. */
+  var effekte = 'voll';
+  try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
+  Brett3D.stufe(effekte);
+
+  function zeigeEffektwahl() {
+    var reihe = $('menu-effekte');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=effekte]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === effekte);
+    });
+  }
+
   function pumpe(nun) {
     if (!replay || replay.fertig) return;
     replay.raf = requestAnimationFrame(pumpe);
@@ -1258,6 +1272,16 @@
       else { render(); speichern(); }
     },
     ueberspringen: function () { ueberspringen(); },
+    /* Die Stufe greift sofort, auch mitten im Kampf: das Brett wird abgehaengt
+       und beim naechsten Bild neu aufgebaut. Genau darum geht es — zwei
+       Stufen nebeneinander zu sehen, ohne den Kampf zu verlieren. */
+    effekte: function (d) {
+      effekte = Brett3D.stufe(d.v);
+      try { localStorage.setItem('tensura-effekte', effekte); } catch (e) {}
+      zeigeEffektwahl();
+      Brett3D.loese();
+      aktualisiereFeld();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1608,6 +1632,7 @@
         ' · freigeschaltet: ' + run.meta.unlockedUnits.length + ' Einheiten, ' +
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
+      zeigeEffektwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');

@@ -33,6 +33,18 @@
   var zustand = null;              // { renderer, scene, camera, figuren, el, raf }
   var texturen = {};               // id -> THREE.Texture, über Kämpfe hinweg
 
+  /* Drei Stufen, und die unterste ist keine Hoeflichkeit: `aus` faellt auf die
+     SVG-Lagekarte zurueck, `sparsam` laesst nur das Bloom weg. Damit laesst
+     sich jede Schicht dieses Plans einzeln gegen ihr Fehlen halten — bei
+     visueller Arbeit ist der Vergleichsschalter die einzige ehrliche
+     Messung. */
+  var stufe = 'voll';
+  function setzeStufe(s) {
+    if (s !== 'voll' && s !== 'sparsam' && s !== 'aus') return stufe;
+    stufe = s;
+    return stufe;
+  }
+
   /* Die Antwort wird gemerkt, und zwar zwingend: jeder Aufruf legte bisher
      eine Leinwand mit eigenem WebGL-Kontext an und gab sie nie frei. Seit die
      Wiedergabe je Logeintrag fragt, laeuft der Browser damit in „Too many
@@ -40,6 +52,7 @@
      weg. Einmal fragen genuegt — die Antwort aendert sich nicht. */
   var kannWebGL = null;
   function verfuegbar() {
+    if (stufe === 'aus') return false;
     if (kannWebGL !== null) return kannWebGL;
     if (!root.THREE || !root.document) return false;   // noch nicht geladen: nicht merken
     try {
@@ -478,6 +491,11 @@
     var renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(root.devicePixelRatio || 1, 2));
     renderer.setSize(breite, hoehe);
+    /* r149-Schreibweise. `outputColorSpace` gibt es erst ab r152, und r149
+       bleibt gesetzt, weil es die letzte Fassung mit UMD-Build ist. */
+    renderer.outputEncoding = T.sRGBEncoding;
+    renderer.toneMapping = T.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.95;
     renderer.domElement.className = 'brett3d';
     el.innerHTML = '';
     el.appendChild(renderer.domElement);
@@ -492,13 +510,24 @@
 
     zustand = { renderer: renderer, scene: scene, camera: camera,
                 figuren: figuren, el: el, raf: 0, effekte: [], zahlen: zahlen,
-                kam: camera.position.clone(), ruettel: 0, zeit: 0, halt: 0 };
+                kam: camera.position.clone(), ruettel: 0, zeit: 0, halt: 0,
+                fx: (stufe === 'voll' && root.FX)
+                  ? root.FX.komposition(renderer, breite * renderer.getPixelRatio(),
+                                                  hoehe * renderer.getPixelRatio())
+                  : null };
     aktualisiere(einheiten);
     schleife();
     return true;
   }
 
   var blitzC = null;                 // eine Farbe, wiederverwendet statt je Bild neu
+
+  /* Eine Stelle, an der gezeichnet wird — mit Nachbearbeitung, wenn es eine
+     gibt, sonst direkt. */
+  function zeichne() {
+    if (zustand.fx) zustand.fx.render(zustand.scene, zustand.camera);
+    else zustand.renderer.render(zustand.scene, zustand.camera);
+  }
 
   /* Bewegung wird weich nachgezogen statt gesetzt: das Log kennt nur „steht
      jetzt dort", und ein Sprung über zwei Felder liest sich wie ein Fehler. */
@@ -513,7 +542,7 @@
        Schlag — mehr als jeder Partikel. Nichts wird gerechnet, nur gezeigt. */
     if (zustand.halt > 0) {
       zustand.halt -= dt;
-      zustand.renderer.render(zustand.scene, zustand.camera);
+      zeichne();
       zustand.raf = root.requestAnimationFrame(schleife);
       return;
     }
@@ -575,7 +604,7 @@
       zustand.effekte.splice(i, 1);
       weiter = true;                                  // ein Bild noch, sonst bleibt der Rest stehen
     }
-    zustand.renderer.render(zustand.scene, zustand.camera);
+    zeichne();
     /* Steht alles still, ruht auch die Schleife — eine Lagekarte muss nicht
        sechzig Mal je Sekunde dasselbe Bild zeichnen. */
     if (weiter) zustand.raf = root.requestAnimationFrame(schleife);
@@ -606,6 +635,7 @@
   function loese() {
     if (!zustand) return;
     if (zustand.raf) root.cancelAnimationFrame(zustand.raf);
+    if (zustand.fx) zustand.fx.loese();
     zustand.renderer.dispose();
     if (zustand.el) zustand.el.innerHTML = '';
     zustand = null;
@@ -615,5 +645,5 @@
 
   root.Brett3D = { verfuegbar: verfuegbar, montiere: montiere, montiert: montiert,
                    aktualisiere: aktualisiere, effekt: effekt, treffer: treffer,
-                   halt: halt, loese: loese };
+                   halt: halt, stufe: setzeStufe, loese: loese };
 })(globalThis);
