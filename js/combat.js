@@ -27,6 +27,11 @@
 
      REICHWEITE je Rolle. Sie war bisher nur Zielwahl; jetzt ist sie Abstand,
      und damit bekommt die Rolle zum ersten Mal eine räumliche Bedeutung.       */
+  /* Modulweit statt in `simulate`, seit die 2.5D-Ansicht den Radius braucht:
+     die Welle einer Flaeche soll auf dem ECHTEN Umkreis aufgehen, nicht auf
+     einem geratenen. Nur verschoben, nicht veraendert. */
+  var FASSUNG = 1, FASSUNG_FLAECHE = 2;
+
   var REICHWEITE = { front: 1, verstaerker: 2, unterstuetzer: 2, fernkampf: 3, magier: 3 };
 
   /* SCHRITTE je Rolle, nicht pauschal — der Sturmangriff.
@@ -433,7 +438,6 @@
        einen Schadensbonus. Und es folgt die Entscheidung, um die es geht: eng
        stehen macht den Trupp für Flächen angreifbar, weit stehen kostet die
        eigenen Truppbuffs. */
-    var FASSUNG = 1, FASSUNG_FLAECHE = 2;
 
     function fassung(self, extra) {
       /* Die Fähigkeit selbst zählt, nicht die Einheit — sonst würde ein
@@ -857,5 +861,6 @@
                   SCHILD_KAPPE: SCHILD_KAPPE,
                   /* Damit Werkzeuge die Reichweite nicht abschreiben muessen —
                      eine Kopie waere genau die Sorte Zahl, die auseinanderlaeuft. */
-                  REICHWEITE: REICHWEITE, SCHRITTE_JE_ROLLE: SCHRITTE_JE_ROLLE };
+                  REICHWEITE: REICHWEITE, SCHRITTE_JE_ROLLE: SCHRITTE_JE_ROLLE,
+                  FASSUNG: FASSUNG, FASSUNG_FLAECHE: FASSUNG_FLAECHE };
 })(globalThis);

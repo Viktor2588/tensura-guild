@@ -399,7 +399,7 @@
     /* Eine Signatur ist der Höhepunkt eines Zuges — sie soll auch so aussehen.
        Welcher Effekt, entscheidet das Schlüsselwort der Fähigkeit; die Ansicht
        braucht nur zu wissen, von wem nach wem. */
-    if (l.type === 'aktiv') Brett3D.effekt(l.key, l.ziel, l.kw);
+    if (l.type === 'aktiv') Brett3D.effekt(l.key, l.ziel, l.kw, null, beat);
     /* `von` steht erst seit dieser Phase im Log — ohne den Angreifer waere der
        Rueckstoss richtungslos. Fehlt er (Gift, Brand, Entladung), zuckt die
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */

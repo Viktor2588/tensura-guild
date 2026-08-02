@@ -174,6 +174,42 @@
   /* Wer schlägt statt zu werfen: kein Flug, nur der Einschlag. */
   var SOFORT = { donner: 1, licht: 1, dunkelheit: 1, exekution: 1 };
 
+  /* Bis hierher unterschied nur die FARBE. Zwei Fähigkeiten mit demselben
+     Funkenschwarm in Orange und Grün sehen aber gleich aus — Farbe erkennt
+     man erst, wenn man schon hinschaut. Die BEWEGUNG erkennt man vorher.
+
+     Sechs Grundformen, nicht siebzehn: mehr wäre nicht mehr Information,
+     sondern weniger, weil sich keine mehr einprägt. */
+  var FORM = {
+    brand: 'geschoss', gift: 'geschoss', frost: 'geschoss',
+    donner: 'strahl', licht: 'strahl', dunkelheit: 'strahl',
+    exekution: 'klinge', blutung: 'klinge', konter: 'klinge', verwundbar: 'klinge',
+    flaeche: 'welle',
+    heilung: 'saeule', schild: 'saeule', tempo: 'saeule',
+    schatten: 'schleier', verderbnis: 'schleier', chaos: 'schleier'
+  };
+
+  /* Abstand zweier benachbarter Kachelmitten in Weltmassen — aus `Hex.pixel`
+     (pointy top): waagerecht sqrt(3) mal Groesse. Damit geht die Welle auf dem
+     ECHTEN Umkreis auf und nicht auf einem geratenen. */
+  var HEXSCHRITT = Math.sqrt(3) * G;
+
+  function ringMesh(farbe, dicke) {
+    var T = root.THREE;
+    var m = new T.MeshBasicMaterial({ color: farbe, transparent: true, side: T.DoubleSide,
+                                      depthWrite: false, blending: T.AdditiveBlending });
+    var mesh = new T.Mesh(new T.RingGeometry(1 - (dicke || 0.16), 1, 40), m);
+    mesh.rotation.x = -Math.PI / 2;                 // flach auf den Boden
+    return mesh;
+  }
+
+  function strahlMesh(farbe) {
+    var T = root.THREE;
+    var m = new T.MeshBasicMaterial({ color: farbe, transparent: true, side: T.DoubleSide,
+                                      depthWrite: false, blending: T.AdditiveBlending });
+    return new T.Mesh(new T.PlaneGeometry(1, 1), m);
+  }
+
   var funkeTex = null;
   function funke() {
     if (funkeTex) return funkeTex;
@@ -201,17 +237,64 @@
   /* Ein Effekt ist eine Handvoll Funken mit Startpunkt, Richtung und Laufzeit.
      Gerechnet wird beim Zeichnen, nicht gespeichert — kein Zustand, der
      zwischen zwei Kämpfen hängenbleiben kann. */
-  function effekt(vonKey, nachKey, kw, farbeOpt) {
+  function effekt(vonKey, nachKey, kw, farbeOpt, beat) {
     if (!zustand) return;
+    var T = root.THREE;
     var vonF = zustand.figuren[vonKey], nachF = zustand.figuren[nachKey || vonKey];
     if (!vonF) return;
     var farbe = farbeOpt || FARBE[kw] || 0xdfe6f0;
     var anSich = AN_SICH[kw] || !nachF || nachF === vonF;
+    var form = FORM[kw] || (anSich ? 'saeule' : 'geschoss');
     var a = vonF.gruppe.position, b = (nachF || vonF).gruppe.position;
     var zahl = anSich ? 12 : 16;
     var dauer = anSich ? 620 : 520;
     var flug = SOFORT[kw] ? 0.12 : 0.5;               // Anteil der Zeit bis zum Ziel
+    if (form === 'strahl') flug = 0.12;
+    if (form === 'klinge' || form === 'welle' || form === 'schleier') flug = 0;
     var funken = [];
+
+    /* Was neben den Funken laeuft: Ringe auf dem Boden und der Strahl. Alles
+       mit `art` (wie es sich bewegt) und `bis` (wie gross es wird). */
+    var extras = [];
+    function extra(mesh, art, bis, ab) {
+      mesh.renderOrder = 2;
+      zustand.scene.add(mesh);
+      extras.push({ m: mesh, art: art, bis: bis, ab: ab || 0 });
+    }
+
+    /* Der Einschlagring ist der Unterschied zwischen „trifft" und „schlaegt
+       ein" — er kostet vierzig Dreiecke und traegt mehr als zehn Funken. */
+    if (!anSich) {
+      var e1 = ringMesh(farbe);
+      e1.position.set(b.x, KACHEL_H / 2 + 0.02, b.z);
+      extra(e1, 'aufgehen', G * 1.1, flug);
+    }
+    if (form === 'saeule') {
+      var e2 = ringMesh(farbe, 0.3);
+      e2.position.set(a.x, KACHEL_H / 2 + 0.02, a.z);
+      extra(e2, 'aufsteigen', G * 0.85, 0);
+    }
+    /* Eine Flaeche kommt nicht aus `combat.js` — sie steht in der Vorausschau
+       der Regie (Phase 54): einem Einsatz folgen mehrere Treffer. Der Radius
+       aber ist nicht geraten, er kommt aus `Combat.FASSUNG_FLAECHE`. */
+    if (form === 'welle' || beat === 'flaeche') {
+      var r = (root.Combat && root.Combat.FASSUNG_FLAECHE || 2) * HEXSCHRITT;
+      var e3 = ringMesh(farbe, 0.08);
+      e3.position.set(b.x, KACHEL_H / 2 + 0.03, b.z);
+      extra(e3, 'aufgehen', r, flug);
+    }
+    if (form === 'strahl') {
+      var dx = b.x - a.x, dz = b.z - a.z;
+      var laenge = Math.sqrt(dx * dx + dz * dz);
+      if (laenge > 0.01) {
+        var s = strahlMesh(farbe);
+        s.position.set((a.x + b.x) / 2, SPRITE_H * 0.5, (a.z + b.z) / 2);
+        s.scale.set(laenge, SPRITE_H * 0.28, 1);
+        /* Das Quad schaut zur Kamera und liegt dabei auf der Achse A→B. */
+        s.rotation.y = Math.atan2(dx, dz) - Math.PI / 2;
+        extra(s, 'blitz', 1, 0);
+      }
+    }
 
     for (var i = 0; i < zahl; i++) {
       var s = teilchen(farbe, 0.5 + Math.random() * 0.5);
@@ -226,12 +309,17 @@
         /* Versatz am Start: der Schwarm bricht auf, statt aus einem Loch zu kommen. */
         abX: (Math.random() - 0.5) * 0.7,
         abZ: (Math.random() - 0.5) * 0.7,
+        /* Fester Winkel je Funke: Welle und Schleier laufen auf einem KREIS
+           nach aussen. Streuung mal Radius waere ein Rechteck, und ein Funke
+           in der Ecke landet dann neben dem Brett. */
+        winkel: Math.random() * Math.PI * 2,
         verzug: Math.random() * 0.22
       });
     }
 
     zustand.effekte.push({
       funken: funken, start: 0, dauer: dauer, flug: flug, anSich: anSich,
+      form: form, extras: extras,
       ax: a.x, ay: SPRITE_H * 0.5, az: a.z, bx: b.x, by: SPRITE_H * 0.45, bz: b.z
     });
     if (!zustand.raf) zustand.raf = root.requestAnimationFrame(schleife);
@@ -240,10 +328,50 @@
   /* Einen Effekt auf den Stand `p` (0..1) bringen. Gibt false zurück, wenn er
      abgelaufen ist. */
   function zeichneEffekt(e, p) {
+    e.extras.forEach(function (x) {
+      var q = Math.max(0, Math.min(1, (p - x.ab) / Math.max(0.05, 1 - x.ab)));
+      var m = x.m;
+      if (x.art === 'blitz') {
+        /* Drei Bilder Licht, dann weg — ein Strahl, der steht, ist ein Balken. */
+        m.material.opacity = p < 0.18 ? 1 - p / 0.18 : 0;
+        m.visible = p < 0.18;
+      } else if (x.art === 'aufsteigen') {
+        m.scale.setScalar(x.bis * (0.4 + q * 0.6));
+        m.position.y = KACHEL_H / 2 + 0.02 + q * SPRITE_H * 0.7;
+        m.material.opacity = Math.sin(q * Math.PI) * 0.9;
+      } else {                                        // aufgehen
+        m.scale.setScalar(Math.max(0.001, x.bis * q));
+        m.material.opacity = (1 - q) * 0.9;
+      }
+    });
     e.funken.forEach(function (f) {
       var q = Math.max(0, Math.min(1, (p - f.verzug) / (1 - f.verzug)));
       var s = f.s;
-      if (e.anSich) {
+      if (e.form === 'klinge') {
+        /* Ein Schnittbogen am Ziel, gedreht in die Angriffsrichtung. */
+        var w = Math.atan2(e.bz - e.az, e.bx - e.ax);
+        var t = (q - 0.5) * 2.2 + f.streuX * 0.12;
+        s.position.set(e.bx + Math.cos(w + Math.PI / 2) * t * 0.9,
+                       e.by + t * 0.5 + f.streuY * 0.2,
+                       e.bz + Math.sin(w + Math.PI / 2) * t * 0.9);
+        s.material.opacity = Math.sin(q * Math.PI);
+      } else if (e.form === 'schleier') {
+        /* Kreisende Funken: der Zustand haengt an der Figur, statt sie zu
+           treffen. */
+        var winkel = q * Math.PI * 2 + f.winkel;
+        var rad = 0.55 + f.streuY * 0.12;
+        s.position.set(e.bx + Math.cos(winkel) * rad,
+                       e.by * 0.7 + f.streuY * 0.5 + q * 0.5,
+                       e.bz + Math.sin(winkel) * rad * 0.6);
+        s.material.opacity = Math.sin(q * Math.PI);
+      } else if (e.form === 'welle') {
+        /* Am Boden nach aussen, nicht in die Luft. */
+        var wq = q * (root.Combat && root.Combat.FASSUNG_FLAECHE || 2) * HEXSCHRITT
+                   * (0.75 + f.streuY * 0.13);
+        s.position.set(e.bx + Math.cos(f.winkel) * wq, KACHEL_H / 2 + 0.15 + q * 0.3,
+                       e.bz + Math.sin(f.winkel) * wq);
+        s.material.opacity = 1 - q;
+      } else if (e.anSich) {
         /* Aufsteigen und ausblenden: eine Stärkung geht nach oben. */
         s.position.set(e.ax + f.abX * (1 + q), e.ay + f.streuY * q * 1.6, e.az + f.abZ * (1 + q));
         s.material.opacity = Math.sin(q * Math.PI);
@@ -270,6 +398,11 @@
     e.funken.forEach(function (f) {
       zustand.scene.remove(f.s);
       f.s.material.dispose();
+    });
+    e.extras.forEach(function (x) {
+      zustand.scene.remove(x.m);
+      x.m.geometry.dispose();
+      x.m.material.dispose();
     });
   }
 

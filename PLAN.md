@@ -2625,6 +2625,60 @@ Aussage: die Schicht haengt sauber daneben.
 Worktree `/home/viktor/tensura/worktree/phase-56-licht`, Branch
 `phase-56-licht`.
 
+### Phase 57 (2026-08-02): Die Formen — jedes Schlüsselwort bewegt sich anders
+
+Bis hierher unterschied nur die **Farbe**. Zwei Faehigkeiten mit demselben
+Funkenschwarm in Orange und Gruen sehen aber gleich aus: Farbe erkennt man
+erst, wenn man schon hinschaut, Bewegung erkennt man vorher. Neu ist deshalb
+eine vierte Tabelle `FORM` neben `FARBE`/`AN_SICH`/`SOFORT`.
+
+**Sechs Grundformen, nicht siebzehn** — mehr waere nicht mehr Information,
+sondern weniger, weil sich keine mehr einpraegt:
+
+| Form | Schlüsselwörter | Bewegung |
+|---|---|---|
+| `geschoss` | brand, gift, frost | Bogenflug, dann Einschlag |
+| `strahl` | donner, licht, dunkelheit | gestrecktes Quad A→B, drei Bilder Licht |
+| `klinge` | exekution, blutung, konter, verwundbar | Schnittbogen am Ziel, in Angriffsrichtung gedreht |
+| `welle` | flaeche | Bodenring auf dem echten Umkreis |
+| `saeule` | heilung, schild, tempo | aufsteigender Ring an der eigenen Figur |
+| `schleier` | schatten, verderbnis, chaos | kreisende Funken um das Ziel |
+
+Dazu bekommt **jeder** Effekt auf ein fremdes Ziel einen **Einschlagring** auf
+dem Boden. Er kostet vierzig Dreiecke und traegt mehr als zehn Funken — er ist
+der Unterschied zwischen „trifft" und „schlaegt ein".
+
+**Der Radius der Welle ist nicht geraten.** `FASSUNG_FLAECHE` lag bisher
+innerhalb von `simulate()`; es steht jetzt modulweit und wird exportiert —
+verschoben, nicht veraendert (`dev/sim.js` 442/442 unmittelbar danach). Das
+Brett rechnet den Weltradius aus `Hex.pixel`: bei „pointy top" ist der Abstand
+zweier Kachelmitten `sqrt(3)` mal Groesse. Im Bild geht die Welle damit genau
+ueber zwei Kachelringe auf.
+
+**Dass eine Flaeche ueberhaupt eine ist, weiss das Brett aus der Regie.**
+`combat.js` meldet keine Flaechenwirkung; der `flaeche`-Beat aus Phase 54 sagt,
+dass einem Einsatz mehrere Treffer folgen. Die Welle legt sich dann ueber die
+Grundform, statt sie zu ersetzen — deshalb `form === 'welle' || beat ===
+'flaeche'`.
+
+**Beim Nachsehen im Browser kam ein Fehler heraus, den nur das Bild zeigt:**
+die Funken der Welle liefen ueber `streuX * radius` nach aussen — also auf
+einem RECHTECK. Ein Funke in der Ecke landete damit weit neben dem Brett, als
+faustgrosser weisser Klecks vor der Kamera. Jeder Funke hat jetzt einen festen
+Winkel und laeuft auf einem Kreis. Schleier hat denselben Winkel bekommen.
+
+Geprueft mit Playwright und einem Kniff, der sich lohnt: `Brett3D.halt()` aus
+Phase 55 friert das Bild ein — Effekt ausloesen, 200 bzw. 420 ms warten,
+einfrieren, Bild machen. Ohne das ist ein 520-ms-Effekt vom Werkzeug aus nicht
+zu erwischen. Belegt: die Welle als grosse Bodenellipse ueber zwei Kacheln, der
+Strahl als gestrecktes Quad zwischen Angreifer und Ziel, der Bodenring an den
+Fuessen.
+
+`dev/sim.js` 442/442, `dev/uitest.js` 104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-57-formen`, Branch
+`phase-57-formen`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
