@@ -2502,6 +2502,73 @@ sich nicht verschoben haben.
 Worktree `/home/viktor/tensura/worktree/phase-54-takt`, Branch
 `phase-54-takt`.
 
+### Phase 55 (2026-08-02): Der Einschlag — Treffer bekommen Gewicht
+
+Phase 54 hat die Zeit verteilt, aber im Bild passierte beim Treffer weiterhin
+nichts: der Lebensbalken sank, und das war alles. Ein Treffer braucht vier
+Dinge, und keins davon ist ein Partikel — **Aufblitzen** (wen hat es
+erwischt), **Rueckstoss** (aus welcher Richtung), **Erschuetterung** (wie
+hart) und eine **Schadenszahl** (wie viel).
+
+**Die Richtung ist der Grund, warum `js/combat.js` angefasst werden musste.**
+Ein `hit`-Eintrag trug `key` (das Ziel) und `source` (einen Namen) — den
+Angreifer kannte er nicht. Ohne ihn bleibt vom Rueckstoss ein Zucken auf der
+Stelle.
+
+Dabei kam heraus, dass zwei Felder noetig sind, nicht eines. `opt.von` steuert
+naemlich bereits die **Deckung** (`js/combat.js:251`): wer zwischen dir und dem
+Angreifer steht, faengt ein Drittel ab. Haette man `von` einfach ueberall
+nachgetragen, wo bisher keiner stand — etwa in den Passiven, die ueber
+`c.deal` Schaden austeilen —, waere aus einer reinen Anzeigeaenderung eine
+Regeländerung geworden. Deshalb `anzeigeVon`: dasselbe Wissen, aber es wird
+ausschliesslich ins Log geschrieben und nirgends gelesen. Gesetzt wird es an
+genau einer Stelle, im `deal` des Faehigkeits-Kontexts, statt in vierzig
+Faehigkeiten einzeln.
+
+**Der Beweis, dass nichts verrutscht ist:** `npm run balance 600` liefert
+Zeile fuer Zeile dieselben Zahlen wie vorher — Siege **304 (51 %)**,
+Kampfherausforderungen 2402 / 63 % gehalten, Ø 13.2 Knoten, gescheitert je Akt
+155 / 445, alle acht Boss-Quoten unveraendert.
+
+Im Brett schreibt jetzt **nur noch `schleife()`** das Material. Vorher tat es
+`aktualisiere()` — und damit haette der naechste Logeintrag genau das
+ueberschrieben, was man gerade sehen soll. Aus demselben Grund gibt es `pos`
+(nachgezogener Standpunkt) getrennt von `gruppe.position` (Standpunkt plus
+Rueckstoss): ohne die Trennung frisst die naechste Bewegung den Stoss auf.
+
+Der Tod ist kein `opacity = 0.22` mehr, sondern ein Zerfall: Funkenstoss in
+der Seitenfarbe, das Bild hebt sich und verlischt. Es bleibt ein sehr blasser
+Rest — wer gefallen ist, gehoert weiter auf die Lagekarte. Gemessen: bei 0,55
+Hoehe schwebt der Rest sichtbar ueber der Kachel und liest sich als Fehler,
+bei 0,3 als Gefallener.
+
+**Und der Hitstop aus Phase 54 hat endlich etwas zum Anhalten.** `Brett3D.halt(ms)`
+friert das Bild ein, waehrend die Standzeit weiterlaeuft. Das kostet keine
+Zeit, weil `stopp` innerhalb von `ms` liegt.
+
+**Nebenbefund, und kein kleiner:** `verfuegbar()` legte bei JEDEM Aufruf eine
+Leinwand mit eigenem WebGL-Kontext an und gab sie nie frei. Solange nur
+`aktualisiereFeld()` fragte, fiel das nicht auf; seit die Wiedergabe je
+Logeintrag fragt, lief der Browser nach wenigen Sekunden in *„Too many active
+WebGL contexts. Oldest context will be lost."* und warf dem Brett den Kontext
+unter den Fuessen weg. Die Antwort wird jetzt gemerkt — sie aendert sich
+ohnehin nicht. Gefunden mit Playwright im echten Browser; im Test waere es nie
+aufgefallen, weil jsdom gar kein WebGL hat.
+
+`js/ui.js`: die 48-Zeilen-Funktion `anwenden()` ist in drei zerlegt —
+`anwenden` (Zustand), `zeile` (Log), `zeige` (Brett). Sie war die einzige
+Stelle im Projekt, an der Logik und Darstellung sich mischten. `Ueberspringen`
+braucht nur die ersten beiden.
+
+`dev/sim.js` 442/442 — drei neue Zusicherungen, darunter die entscheidende:
+**ohne Angreifer bleibt nur Zustandsschaden.** Brand kommt aus dem Zustand,
+nicht aus einer Richtung, und ein erfundener Rueckstoss waere schlimmer als
+keiner. `dev/uitest.js` 104/104. Bildbeweis: Boss-Kampf gegen Charybdis im
+Browser, Schadenszahl „18" ueber dem Ziel, passend zur Logzeile.
+
+Worktree `/home/viktor/tensura/worktree/phase-55-einschlag`, Branch
+`phase-55-einschlag`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

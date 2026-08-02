@@ -7,8 +7,13 @@
    von vierzig Charakteren gibt es keine Quelle, für Bilder schon.
 
    Die Ansicht ist eine LAGEKARTE, kein Spielbrett: keine Steuerung, keine
-   Auswahl, keine Kamerabewegung. Eingreifen kann man im Kampf ohnehin nicht,
-   und was man nicht bedienen kann, soll auch nicht so aussehen.
+   Auswahl. Eingreifen kann man im Kampf ohnehin nicht, und was man nicht
+   bedienen kann, soll auch nicht so aussehen.
+
+   Die Kamera steht dabei fest — bis auf die Erschuetterung beim Treffer. Das
+   ist keine Ausnahme von der Regel, sondern ihre Bestaetigung: sie ist nicht
+   bedienbar, sie ist Rueckmeldung. (Phase 59 nimmt sich die Kamera als Ganzes
+   vor und schreibt diesen Absatz dann neu.)
 
    Ohne WebGL passiert hier gar nichts — `verfuegbar()` sagt nein, und die
    Oberfläche bleibt bei der SVG-Lagekarte. Das ist keine Höflichkeit gegenüber
@@ -28,12 +33,20 @@
   var zustand = null;              // { renderer, scene, camera, figuren, el, raf }
   var texturen = {};               // id -> THREE.Texture, über Kämpfe hinweg
 
+  /* Die Antwort wird gemerkt, und zwar zwingend: jeder Aufruf legte bisher
+     eine Leinwand mit eigenem WebGL-Kontext an und gab sie nie frei. Seit die
+     Wiedergabe je Logeintrag fragt, laeuft der Browser damit in „Too many
+     active WebGL contexts" und wirft dem Brett den Kontext unter den Fuessen
+     weg. Einmal fragen genuegt — die Antwort aendert sich nicht. */
+  var kannWebGL = null;
   function verfuegbar() {
-    if (!root.THREE || !root.document) return false;
+    if (kannWebGL !== null) return kannWebGL;
+    if (!root.THREE || !root.document) return false;   // noch nicht geladen: nicht merken
     try {
       var c = root.document.createElement('canvas');
-      return !!(c.getContext('webgl') || c.getContext('experimental-webgl'));
-    } catch (e) { return false; }
+      kannWebGL = !!(c.getContext('webgl') || c.getContext('experimental-webgl'));
+    } catch (e) { kannWebGL = false; }
+    return kannWebGL;
   }
 
   /* ---- Die Figur, solange es kein Bild gibt --------------------------------
@@ -175,11 +188,11 @@
   /* Ein Effekt ist eine Handvoll Funken mit Startpunkt, Richtung und Laufzeit.
      Gerechnet wird beim Zeichnen, nicht gespeichert — kein Zustand, der
      zwischen zwei Kämpfen hängenbleiben kann. */
-  function effekt(vonKey, nachKey, kw) {
+  function effekt(vonKey, nachKey, kw, farbeOpt) {
     if (!zustand) return;
     var vonF = zustand.figuren[vonKey], nachF = zustand.figuren[nachKey || vonKey];
     if (!vonF) return;
-    var farbe = FARBE[kw] || 0xdfe6f0;
+    var farbe = farbeOpt || FARBE[kw] || 0xdfe6f0;
     var anSich = AN_SICH[kw] || !nachF || nachF === vonF;
     var a = vonF.gruppe.position, b = (nachF || vonF).gruppe.position;
     var zahl = anSich ? 12 : 16;
@@ -247,6 +260,93 @@
     });
   }
 
+  /* ---- Einschlag -----------------------------------------------------------
+     Bis hierher stand im Log, dass jemand getroffen wurde, und auf dem Brett
+     sank eine Zahl. Ein Treffer braucht vier Dinge, und keins davon ist ein
+     Partikel: Aufblitzen (WEN hat es erwischt), Rueckstoss (aus WELCHER
+     Richtung), Erschuetterung (WIE HART) und eine Zahl (WIE VIEL).
+
+     Die Richtung ist der Grund, warum `js/combat.js` den Schluessel des
+     Angreifers mitloggen muss — ohne ihn bleibt nur ein Zucken auf der
+     Stelle.                                                                  */
+
+  var STOSS = 0.18;                  // Rueckstoss des Ziels, in Hexradien
+  var AUSFALL = 0.25;                // Ausfallschritt des Nahkaempfers
+
+  function halt(ms) {
+    if (!zustand) return;
+    zustand.halt = Math.max(zustand.halt || 0, ms || 0);
+    if (!zustand.raf) zustand.raf = root.requestAnimationFrame(schleife);
+  }
+
+  function ruettel(staerke) {
+    if (!zustand) return;
+    zustand.ruettel = Math.min(1.2, (zustand.ruettel || 0) + staerke);
+    if (!zustand.raf) zustand.raf = root.requestAnimationFrame(schleife);
+  }
+
+  /* Die Zahl haengt als DOM ueber der Leinwand, nicht als Sprite darin: Text
+     im WebGL-Bild waere eine Schriftatlas-Bastelei, und `CSS2DRenderer` ist
+     ein Addon — die gibt es auf r149 UMD nicht.
+     ponytail: einmal projiziert und dann per CSS bewegt. Sobald die Kamera in
+     Phase 59 faehrt, muss die Position je Bild mitlaufen. */
+  function zahl(f, wert, seite, gross) {
+    if (!zustand || !zustand.zahlen) return;
+    var v = new root.THREE.Vector3(f.gruppe.position.x, SPRITE_H * 0.75, f.gruppe.position.z);
+    v.project(zustand.camera);
+    var el = root.document.createElement('span');
+    el.className = (seite === 'player' ? 'spieler' : 'feind') +
+      (gross ? ' gross' : '') + (wert < 0 ? ' heilung' : '');
+    el.textContent = (wert < 0 ? '+' : '') + Math.abs(Math.round(wert));
+    el.style.left = ((v.x * 0.5 + 0.5) * 100) + '%';
+    el.style.top = ((-v.y * 0.5 + 0.5) * 100) + '%';
+    zustand.zahlen.appendChild(el);
+    root.setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1000);
+  }
+
+  /* `anteil` ist der Schaden gemessen an den Lebenspunkten des Ziels — daraus
+     kommt jede Staerke hier. Ein negativer Wert ist Heilung: die blitzt und
+     zaehlt, aber stoesst niemanden weg. */
+  function treffer(vonKey, nachKey, anteil, beat, wert) {
+    if (!zustand) return;
+    var ziel = zustand.figuren[nachKey];
+    if (!ziel) return;
+    anteil = Math.max(0, Math.min(1, anteil || 0));
+    var heil = wert < 0;
+
+    ziel.blitz = 1;
+    ziel.blitzFarbe = heil ? 0x6ee7a8 : 0xffffff;
+    if (wert !== undefined && wert !== null) {
+      zahl(ziel, wert, ziel.seite, !heil && (beat === 'gross' || beat === 'toedlich' || beat === 'finale'));
+    }
+    if (heil) { if (!zustand.raf) zustand.raf = root.requestAnimationFrame(schleife); return; }
+
+    var von = vonKey && zustand.figuren[vonKey];
+    var rx = 0, rz = 1;
+    if (von && von !== ziel) {
+      var dx = ziel.pos.x - von.pos.x, dz = ziel.pos.z - von.pos.z;
+      var weit = Math.sqrt(dx * dx + dz * dz) || 1;
+      rx = dx / weit; rz = dz / weit;
+      /* Wer danebensteht, faellt aus; wer aus der Ferne schiesst, tritt zurueck.
+         Beides sagt dasselbe: der Schlag hat eine Herkunft. */
+      var nah = weit < G * 1.7;
+      von.stoss = { x: rx * (nah ? AUSFALL : -0.1), z: rz * (nah ? AUSFALL : -0.1), t: 1 };
+    }
+    var wucht = 0.5 + anteil;
+    ziel.stoss = { x: rx * STOSS * wucht, z: rz * STOSS * wucht, t: 1 };
+    ruettel((0.05 + anteil * 0.5) * (beat === 'toedlich' || beat === 'finale' ? 1.8 : 1));
+  }
+
+  /* Tod war bisher `opacity = 0.22` — die Figur wurde blass, und das war
+     alles. Jetzt zerfaellt sie: ein Funkenstoss in der Seitenfarbe, das Bild
+     treibt nach oben und verlischt. Es bleibt ein sehr blasser Rest stehen,
+     denn wer gefallen ist, gehoert weiter auf die Lagekarte. */
+  function zerfall(f, key, seite) {
+    f.loesch = 0.0001;
+    effekt(key, null, null, seite === 'player' ? 0x6aa8ff : 0xff6a5a);
+    ruettel(0.18);
+  }
+
   /* ---- Aufbau -------------------------------------------------------------- */
 
   function baueKacheln(scene, einheiten) {
@@ -312,14 +412,19 @@
     var p = weltpos(u.hex);
     gruppe.position.set(p.x, KACHEL_H / 2, p.z);
     scene.add(gruppe);
+    /* `pos` ist der nachgezogene Standpunkt, `gruppe.position` derselbe Punkt
+       PLUS Rueckstoss. Ohne die Trennung frisst die naechste Bewegung den Stoss
+       auf, und der Treffer bleibt unsichtbar. */
     return { gruppe: gruppe, sprite: sprite, mat: mat, leben: leben,
-             ziel: { x: p.x, z: p.z } };
+             seite: u.side, ziel: { x: p.x, z: p.z }, pos: { x: p.x, z: p.z },
+             stoss: null, blitz: 0, blitzFarbe: 0xffffff, tot: false, loesch: 0 };
   }
 
   function montiere(el, einheiten) {
     loese();
     if (!verfuegbar() || !einheiten.length) return false;
     var T = root.THREE;
+    if (!blitzC) blitzC = new T.Color();
 
     /* ponytail: Breite wird nur beim Aufbau gelesen — wer das Fenster MITTEN im
        Kampf umzieht, sieht das Brett erst beim nächsten neu gefasst. Ein
@@ -377,30 +482,90 @@
     el.innerHTML = '';
     el.appendChild(renderer.domElement);
 
+    /* Die Ebene fuer die Schadenszahlen liegt ueber der Leinwand, nicht darin. */
+    var zahlen = root.document.createElement('div');
+    zahlen.className = 'brett3d-zahlen';
+    el.appendChild(zahlen);
+
     var figuren = {};
     einheiten.forEach(function (u) { figuren[u.key] = baueFigur(scene, u); });
 
     zustand = { renderer: renderer, scene: scene, camera: camera,
-                figuren: figuren, el: el, raf: 0, effekte: [] };
+                figuren: figuren, el: el, raf: 0, effekte: [], zahlen: zahlen,
+                kam: camera.position.clone(), ruettel: 0, zeit: 0, halt: 0 };
     aktualisiere(einheiten);
     schleife();
     return true;
   }
+
+  var blitzC = null;                 // eine Farbe, wiederverwendet statt je Bild neu
 
   /* Bewegung wird weich nachgezogen statt gesetzt: das Log kennt nur „steht
      jetzt dort", und ein Sprung über zwei Felder liest sich wie ein Fehler. */
   function schleife(zeit) {
     if (!zustand) return;
     zeit = zeit || (root.performance ? root.performance.now() : Date.now());
+    var dt = zustand.zeit ? Math.min(100, zeit - zustand.zeit) : 16;
+    zustand.zeit = zeit;
     var f = zustand.figuren, weiter = false;
+    /* Hitstop: das Bild steht, die Uhr der Wiedergabe laeuft weiter. Genau
+       diese Sekundenbruchteile Stillstand machen aus einem Treffer einen
+       Schlag — mehr als jeder Partikel. Nichts wird gerechnet, nur gezeigt. */
+    if (zustand.halt > 0) {
+      zustand.halt -= dt;
+      zustand.renderer.render(zustand.scene, zustand.camera);
+      zustand.raf = root.requestAnimationFrame(schleife);
+      return;
+    }
     Object.keys(f).forEach(function (k) {
-      var g = f[k].gruppe, z = f[k].ziel;
-      var dx = z.x - g.position.x, dz = z.z - g.position.z;
+      var d = f[k], g = d.gruppe, z = d.ziel;
+      var dx = z.x - d.pos.x, dz = z.z - d.pos.z;
       if (Math.abs(dx) + Math.abs(dz) > 0.005) {
-        g.position.x += dx * 0.18; g.position.z += dz * 0.18;
+        d.pos.x += dx * 0.18; d.pos.z += dz * 0.18;
         weiter = true;
       }
+      /* Rueckstoss: hin und federnd zurueck, in einem Sinusbogen. */
+      var vx = 0, vz = 0;
+      if (d.stoss) {
+        d.stoss.t -= dt / 260;
+        if (d.stoss.t <= 0) { d.stoss = null; }
+        else {
+          var s = Math.sin(d.stoss.t * Math.PI);
+          vx = d.stoss.x * s; vz = d.stoss.z * s;
+          weiter = true;
+        }
+      }
+      g.position.x = d.pos.x + vx;
+      g.position.z = d.pos.z + vz;
+
+      /* Aufblitzen und Zerfall schreiben das Material — deshalb tut es
+         `aktualisiere()` nicht mehr, sonst ueberschriebe der naechste Logeintrag
+         den Treffer, den man gerade sehen soll. */
+      if (d.blitz > 0) { d.blitz = Math.max(0, d.blitz - dt / 110); weiter = true; }
+      if (d.loesch > 0 && d.loesch < 1) { d.loesch = Math.min(1, d.loesch + dt / 520); weiter = true; }
+      /* Gemessen: bei 0,55 schwebt der Rest sichtbar ueber der Kachel und sieht
+         aus wie ein Fehler statt wie ein Gefallener. 0,3 liest sich als
+         „gehoben und verloschen". */
+      var hoch = d.loesch > 0 ? d.loesch * 0.3 : 0;
+      d.gruppe.position.y = KACHEL_H / 2 + hoch;
+      var deck = d.tot ? 0.22 + (1 - d.loesch) * 0.78 : 1;
+      d.mat.opacity = Math.min(1, deck + d.blitz * 0.4);
+      d.mat.color.setHex(d.tot ? 0x555555 : 0xffffff);
+      if (d.blitz > 0) d.mat.color.lerp(blitzC.setHex(d.blitzFarbe), d.blitz);
     });
+
+    /* Erschuetterung: die Kamera zittert, nicht das Brett. Ohne Abklingen
+       waere es ein Wackeln, mit Abklingen ist es ein Schlag. */
+    if (zustand.ruettel > 0) {
+      var a = zustand.ruettel * zustand.ruettel * 0.4;
+      zustand.camera.position.set(
+        zustand.kam.x + (Math.random() - 0.5) * a,
+        zustand.kam.y + (Math.random() - 0.5) * a,
+        zustand.kam.z + (Math.random() - 0.5) * a * 0.5);
+      zustand.ruettel = Math.max(0, zustand.ruettel - dt / 250);
+      if (!zustand.ruettel) zustand.camera.position.copy(zustand.kam);
+      weiter = true;
+    }
     /* Rueckwaerts, weil abgelaufene Effekte hier herausfallen. */
     for (var i = zustand.effekte.length - 1; i >= 0; i--) {
       var e = zustand.effekte[i];
@@ -429,8 +594,11 @@
       /* Der Balken schrumpft nach rechts weg, nicht aus der Mitte heraus. */
       f.leben.position.x = -0.95 * (1 - Math.max(0.02, anteil)) / 2;
       f.leben.visible = !u.tot;
-      f.mat.opacity = u.tot ? 0.22 : 1;
-      f.mat.color.setHex(u.tot ? 0x555555 : 0xffffff);
+      /* Material und Hoehe schreibt nur noch `schleife()` — hier steht bloss,
+         WAS gilt, nicht wie es gerade aussieht. */
+      if (u.tot && !f.tot) zerfall(f, u.key, u.side);
+      if (!u.tot && f.tot) f.loesch = 0;               // Wiederbelebung
+      f.tot = !!u.tot;
     });
     if (!zustand.raf) zustand.raf = root.requestAnimationFrame(schleife);
   }
@@ -446,5 +614,6 @@
   function montiert(el) { return !!zustand && zustand.el === el; }
 
   root.Brett3D = { verfuegbar: verfuegbar, montiere: montiere, montiert: montiert,
-                   aktualisiere: aktualisiere, effekt: effekt, loese: loese };
+                   aktualisiere: aktualisiere, effekt: effekt, treffer: treffer,
+                   halt: halt, loese: loese };
 })(globalThis);

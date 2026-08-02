@@ -2029,6 +2029,25 @@ head('Regie');
      'der Hitstop liegt immer innerhalb der Standzeit seines Beats');
   ok(plan.every(function (p) { return p.beat !== 'flaeche' || rLog[p.i].type === 'aktiv'; }),
      'eine Fläche hängt nur an einem Fähigkeitseinsatz');
+
+  /* Phase 55: ohne den Schlüssel des Angreifers hat der Rückstoß keine
+     Richtung. `source` ist nur ein Name, `key` ist das Ziel. */
+  var treffer = rLog.filter(function (l) { return l.type === 'hit'; });
+  var mitVon = treffer.filter(function (l) { return !!l.von; });
+  var ZUSTAND = ['Brand', 'Gift', 'Blutung', 'Verderbnis', 'Entladung'];
+  ok(treffer.length && mitVon.length / treffer.length > 0.66,
+     'die Treffer kennen ihren Angreifer (' + mitVon.length + ' von ' + treffer.length + ')');
+  /* Und die uebrigen sollen ihn NICHT kennen: Brand kommt aus dem Zustand,
+     nicht aus einer Richtung. Ein erfundener Rückstoß wäre schlimmer als
+     keiner. */
+  var fremd = treffer.filter(function (l) { return !l.von && ZUSTAND.indexOf(l.source) < 0; })
+    .map(function (l) { return l.source; });
+  ok(!fremd.length, 'ohne Angreifer bleibt nur Zustandsschaden' +
+     (fremd.length ? ': ' + fremd.join(', ') : ''));
+  var keys = {};
+  rLog.forEach(function (l) { if (l.key) keys[l.key] = 1; });
+  ok(mitVon.every(function (l) { return keys[l.von]; }),
+     'der Angreiferschlüssel gehört zu einer Einheit aus demselben Kampf');
 }
 
 /* ------------------------------------------------------------- Run */

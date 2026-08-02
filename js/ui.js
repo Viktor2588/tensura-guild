@@ -346,34 +346,54 @@
     }
     if (!l) { endeReplay(); return; }
     anwenden(l);
-    /* ponytail: `beat` und `stopp` werden hier nur gemerkt. Den Hitstop
-       einfrieren kann erst Phase 55 — vorher gibt es keine Animation, die
-       stehenbleiben koennte. */
-    replay.beat = p.beat;
-    replay.stopp = p.stopp;
+    zeile(l);
+    zeige(l, p.beat);
+    /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
+       fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
+       INNERHALB von `ms` und kostet deshalb keine Zeit. */
+    if (p.stopp && Brett3D.verfuegbar()) Brett3D.halt(p.stopp);
     replay.konto += Math.max(1, p.ms);
     if (replay.i >= log.length) endeReplay();
   }
 
+  /* Drei Schritte statt einer Funktion: `anwenden` aendert den Zustand,
+     `zeile` schreibt ins Log, `zeige` bewegt das Brett. Vorher machte eine
+     48-Zeilen-Funktion alles drei — die einzige Stelle im Projekt, an der
+     Logik und Darstellung sich mischten. `Ueberspringen` braucht nur die
+     ersten beiden und ueberspringt so nicht nur die Zeit, sondern auch die
+     Arbeit. */
   function anwenden(l) {
     var u = l.key && replay.u[l.key];
     if (l.type === 'hit' && u) { u.hp = l.hp; }
     if (l.type === 'heal' && u) { u.hp = l.hp; }
     if (l.type === 'death' && u) { u.tot = true; u.hp = 0; }
     if (l.type === 'zug' && u) { u.hex = { q: l.q, r: l.r }; }
-    /* Eine Signatur ist der Höhepunkt eines Zuges — sie soll auch so aussehen.
-       Welcher Effekt, entscheidet das Schlüsselwort der Fähigkeit; die Ansicht
-       braucht nur zu wissen, von wem nach wem. */
-    if (l.type === 'aktiv' && u && Brett3D.verfuegbar()) {
-      Brett3D.effekt(l.key, l.ziel, l.kw);
-    }
     if (l.type === 'revive' && u) { u.tot = false; u.hp = l.hp; }
     if (l.type === 'status' && u) { u.status[l.status] = l.stacks; }
     /* Der Würfelwurf der Runde gehört an die Einheit, nicht nur ins Log —
        sonst schwanken die Zahlen und niemand sieht, woher. */
     if (l.type === 'chaos' && u) { u.wurf = l; }
     if (l.type === 'schild' && u) { u.status.schild = Math.max(0, (u.status.schild || 0) - l.amount); }
+  }
 
+  /* Was das Brett aus einem Logeintrag macht. `beat` kommt aus der Regie und
+     sagt, ob dieser Eintrag ein Hoehepunkt ist. */
+  function zeige(l, beat) {
+    if (!Brett3D.verfuegbar()) return;
+    var u = l.key && replay.u[l.key];
+    if (!u) return;
+    /* Eine Signatur ist der Höhepunkt eines Zuges — sie soll auch so aussehen.
+       Welcher Effekt, entscheidet das Schlüsselwort der Fähigkeit; die Ansicht
+       braucht nur zu wissen, von wem nach wem. */
+    if (l.type === 'aktiv') Brett3D.effekt(l.key, l.ziel, l.kw);
+    /* `von` steht erst seit dieser Phase im Log — ohne den Angreifer waere der
+       Rueckstoss richtungslos. Fehlt er (Gift, Brand, Entladung), zuckt die
+       Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
+    else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
+    else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
+  }
+
+  function zeile(l) {
     var text = null, klasse = l.side === 'player' ? 'feind' : 'spieler';
     if (l.type === 'hit') text = esc(l.source) + ' → ' + esc(l.target) + ': ' + l.dmg;
     else if (l.type === 'heal') text = esc(l.source) + ' heilt ' + esc(l.target) + ' um ' + l.amount;
@@ -658,7 +678,7 @@
     var log = replay.res.log;
     while (replay.i < log.length) {
       var l = log[replay.i++];
-      if (l.type !== 'setup') anwenden(l);
+      if (l.type !== 'setup') { anwenden(l); zeile(l); }
     }
     endeReplay();
   }

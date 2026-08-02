@@ -480,7 +480,27 @@ table.dbg i.ab { color: #e77; }
 /* Der Ausbruch aus der 860px-Spalte ist weg, weil die Spalte weg ist: das Brett
    nimmt schlicht die Breite, die da ist. Die Breite ist der Deckel für die
    Hexgröße, alles andere verschiebt nur Leerraum. */
-#kampfbrett { margin-bottom: .5rem; }
+#kampfbrett { margin-bottom: .5rem; position: relative; }
+
+/* Schadenszahlen liegen ÜBER der Leinwand, nicht darin: Text im WebGL-Bild
+   hieße Schriftatlas, und CSS2DRenderer ist ein Addon — die gibt es auf
+   three.js r149 UMD nicht. */
+.brett3d-zahlen { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.brett3d-zahlen span {
+  position: absolute; font-weight: 700; font-size: .95rem; line-height: 1;
+  text-shadow: 0 0 3px #000, 0 2px 4px #000;
+  animation: zahl-steigt 950ms ease-out forwards;
+}
+.brett3d-zahlen .feind { color: #ffd7a0; }
+.brett3d-zahlen .spieler { color: #ffb0a8; }
+.brett3d-zahlen .heilung { color: #6ee7a8; }
+.brett3d-zahlen .gross { font-size: 1.5rem; color: #fff2c0; }
+@keyframes zahl-steigt {
+  0%   { opacity: 0; transform: translate(-50%, -30%) scale(.7); }
+  18%  { opacity: 1; transform: translate(-50%, -60%) scale(1.1); }
+  35%  { transform: translate(-50%, -70%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -160%) scale(1); }
+}
 .brett3d {
   width: 100%; height: auto; display: block;
   border: 1px solid var(--rand); border-radius: 8px;
