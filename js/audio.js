@@ -23,15 +23,22 @@
 
   /* Der Kontext entsteht erst beim ersten Klang — Browser verweigern Audio vor
      einer Nutzergeste, und ein leerer Kontext beim Laden würde nur eine
-     Warnung in die Konsole schreiben, ohne dass je etwas zu hören wäre. */
+     Warnung in die Konsole schreiben, ohne dass je etwas zu hören wäre.
+
+     Konstruktor und resume() können laut Spezifikation werfen (Ressourcen
+     erschöpft, Dokument nicht aktiv, ungültige Optionen) — das darf nie den
+     Aufrufer treffen, denn Ton ist ein Extra, kein Muss. Deshalb hier
+     abgefangen statt erst in spielen(), das diesen Aufruf gar nicht sieht. */
   function kontext() {
     if (!verfuegbar()) return null;
-    if (!ctx) {
-      var Ctx = root.AudioContext || root.webkitAudioContext;
-      ctx = new Ctx();
-    }
-    if (ctx.state === 'suspended') ctx.resume();
-    return ctx;
+    try {
+      if (!ctx) {
+        var Ctx = root.AudioContext || root.webkitAudioContext;
+        ctx = new Ctx();
+      }
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    } catch (e) { return null; }
   }
 
   function stummgeschaltet() { return stumm; }
