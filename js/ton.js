@@ -26,7 +26,12 @@
   function kontext() {
     if (!Ctx || !an) return null;
     if (!ctx) {
-      ctx = new Ctx();
+      try {
+        ctx = new Ctx();
+      } catch (e) {
+        Ctx = null;
+        return null;
+      }
       /* Ein Kompressor am Ausgang statt an jeder Quelle: mehrere Treffer
          gleichzeitig (Fläche, Entladung) sollen sich ducken, nicht clippen. */
       master = ctx.createDynamicsCompressor();

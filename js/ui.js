@@ -342,7 +342,11 @@
     if (dt > 250) dt = 250;
     replay.konto -= dt * tempo;
     var schutz = 0;
-    while (replay.konto <= 0 && !replay.fertig && schutz++ < 500) schritt();
+    /* Beim Aufholen nach Tabwechsel darf `schritt()` bis zu 500 Mal in einem
+       Bild laufen — dann wuerde derselbe Bruchteil einer Sekunde 500
+       ueberlappende Toene abfeuern. Nur der erste Schritt eines Bildes
+       bekommt Ton, der Rest des Aufholens bleibt stumm. */
+    while (replay.konto <= 0 && !replay.fertig && schutz++ < 500) schritt(schutz > 1);
     if (!replay.fertig) aktualisiereFeld();
   }
 
@@ -360,7 +364,7 @@
     replay.raf = requestAnimationFrame(pumpe);
   }
 
-  function schritt() {
+  function schritt(stumm) {
     var log = replay.res.log;
     /* `setup` wird seit Phase 59 nicht mehr uebersprungen: es traegt die Zeit
        fuer den Eroeffnungsschwenk. Zustand und Log ignorieren es weiterhin. */
@@ -370,7 +374,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
-    spieleTon(l, p.beat);
+    if (!stumm) spieleTon(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
