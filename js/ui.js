@@ -314,11 +314,22 @@
   try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
   Brett3D.stufe(effekte);
 
+  /* Ton wie die Effektstufe: ein Geraete-Schalter, kein Run-Zustand. */
+  var ton = Ton.stufe();
+
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
     if (!reihe) return;
     Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=effekte]'), function (b) {
       b.classList.toggle('an', b.dataset.v === effekte);
+    });
+  }
+
+  function zeigeTonwahl() {
+    var reihe = $('menu-ton');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=ton]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === ton);
     });
   }
 
@@ -331,7 +342,11 @@
     if (dt > 250) dt = 250;
     replay.konto -= dt * tempo;
     var schutz = 0;
-    while (replay.konto <= 0 && !replay.fertig && schutz++ < 500) schritt();
+    /* Beim Aufholen nach Tabwechsel darf `schritt()` bis zu 500 Mal in einem
+       Bild laufen — dann wuerde derselbe Bruchteil einer Sekunde 500
+       ueberlappende Toene abfeuern. Nur der erste Schritt eines Bildes
+       bekommt Ton, der Rest des Aufholens bleibt stumm. */
+    while (replay.konto <= 0 && !replay.fertig && schutz++ < 500) schritt(schutz > 1);
     if (!replay.fertig) aktualisiereFeld();
   }
 
@@ -349,7 +364,7 @@
     replay.raf = requestAnimationFrame(pumpe);
   }
 
-  function schritt() {
+  function schritt(stumm) {
     var log = replay.res.log;
     /* `setup` wird seit Phase 59 nicht mehr uebersprungen: es traegt die Zeit
        fuer den Eroeffnungsschwenk. Zustand und Log ignorieren es weiterhin. */
@@ -359,6 +374,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    if (!stumm) spieleTon(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -416,6 +432,23 @@
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
     else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
     else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
+  }
+
+  /* Was die Regie aus dem Log macht, hoert man auch — unabhaengig vom Brett:
+     `Ton.*` ist im Gegensatz zu `Brett3D` nie abgeschaltet und faellt selbst
+     auf No-Ops zurueck, wenn Web Audio fehlt oder der Schalter auf Aus steht. */
+  function spieleTon(l, beat) {
+    if (l.type === 'hit') Ton.treffer(l.dmg / (l.maxHp || 1), beat);
+    else if (l.type === 'heal') Ton.heilung();
+    else if (l.type === 'schild') Ton.schild();
+    else if (l.type === 'status') Ton.status();
+    else if (l.type === 'ausweichen') Ton.ausweichen();
+    else if (l.type === 'fehlschlag') Ton.fehlschlag();
+    else if (l.type === 'death') Ton.tod(beat);
+    else if (l.type === 'revive') Ton.revive();
+    else if (l.type === 'aktiv') Ton.aktiv(beat);
+    else if (l.type === 'wut' || l.type === 'kombi' || l.type === 'entladung') Ton.spezial();
+    else if (l.type === 'verwandlung') Ton.verwandlung();
   }
 
   function zeile(l) {
@@ -708,6 +741,7 @@
     if (replay.raf) cancelAnimationFrame(replay.raf);
     replay.raf = null;
     replay.fertig = true;
+    if (replay.res.winner === 'player') Ton.sieg(); else if (replay.res.winner === 'enemy') Ton.niederlage();
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -1308,6 +1342,10 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    ton: function (d) {
+      ton = Ton.stufe(d.v);
+      zeigeTonwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1620,6 +1658,7 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    Ton.klick();
     a(el.dataset);
   }
 
@@ -1659,6 +1698,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeTonwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');

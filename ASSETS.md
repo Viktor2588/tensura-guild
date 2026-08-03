@@ -97,3 +97,22 @@ Entscheidung und keine Nebenwirkung.
 | Datei | Werkzeug / Quelle | Prompt | Datum | Lizenz |
 |---|---|---|---|---|
 | — | noch keine | — | — | — |
+
+## Audio
+
+**Es gibt keine einzige Audiodatei und soll auch keine geben**, aus demselben
+Grund wie bei den Platzhalter-Silhouetten und den Himmelverläufen im Brett:
+prozedural erzeugtes Material hat keine Herkunftsfrage, eine Sample-Bibliothek
+hätte eine — Lizenz, Dateigröße, Offline-Fähigkeit.
+
+`js/ton.js` synthetisiert jeden Klang zur Laufzeit über die Web Audio API
+(Oszillatoren mit Frequenzrampen, gefiltertes weißes Rauschen für Einschläge
+und Whoosh). Ein Kompressor am Ausgang statt an jeder Quelle, damit mehrere
+gleichzeitige Treffer sich ducken statt zu übersteuern. Ohne Web Audio
+(jsdom, sehr alte Browser) ist jeder Aufruf ein No-Op — `Ton.verfuegbar()`
+sagt nein, genau das Muster, das `js/brett3d.js` für fehlendes WebGL fährt.
+
+Sollte doch einmal echtes Audiomaterial dazukommen (Musik lässt sich schwer
+synthetisieren, ein Soundtrack wäre der naheliegende erste Kandidat), gehört
+es nach `assets/audio/` und in eine Tabelle wie die der Figuren oben —
+Werkzeug/Quelle, Datum, Lizenz, ohne Eintrag nicht verwendbar.
