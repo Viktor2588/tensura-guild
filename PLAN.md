@@ -2911,6 +2911,66 @@ mit ins Repo.
 Worktree `/home/viktor/tensura/worktree/phase-61-figuren`, Branch
 `phase-61-figuren`.
 
+### Phase 62 (2026-08-03): Klang — der Kampf bekommt Ohren
+
+Bis hierher war das Spiel stumm: keine einzige Datei mit Ton, kein
+`AudioContext`-Aufruf, nirgends. Fuer ein AAA-Gamefeel fehlt damit ein ganzer
+Sinneskanal — Treffer, Heilung, Tod und Sieg hatten Bild und Zahl, aber kein
+Gehoer.
+
+**`js/audio.js` ist neu** und macht denselben Kompromiss wie die Platzhalter
+in `js/brett3d.js` und der Aktverlauf aus Phase 60: kein Sample im Repo, jeder
+Ton entsteht zur Laufzeit aus Oszillatoren (Sinus, Dreieck, Saegezahn,
+Rechteck) und einem geteilten Rauschpuffer fuer Perkussion. Keine
+Lizenzfrage, kein Bauschritt, keine Asset-Datei — passt zum bestehenden
+"kein Bild, kein Asset"-Muster aus Phase 60 und zur Regel in `CLAUDE.md`,
+keine neue Abhaengigkeit ohne Not einzufuehren: die Web Audio API steckt
+bereits im Browser.
+
+**Ein Rezept je Logeintragstyp**, an dieselbe Stelle gehaengt, an der auch
+das Brett seine Effekte bekommt: `js/ui.js` ruft in `schritt()` nach `zeige()`
+jetzt auch `klang(l, p.beat)` auf — eine eigene Funktion, keine Erweiterung
+von `zeige()`, weil Ton nicht an WebGL haengen soll. Grosse Beats (`gross`,
+`toedlich`, `finale`) aus der Regie (Phase 54) bekommen tiefere, laengere
+Toene; ein Treffer klingt anders als ein Kratzer. `end` (Sieg/Niederlage aus
+`combat.js`) bekommt eine eigene Kadenz: aufsteigender Dur-Akkord bei Sieg,
+absteigend bei Niederlage — bisher wurde dieser Logeintrag von der Anzeige
+komplett ignoriert.
+
+**Ein Stimmenzaehler begrenzt Ueberlappung.** Bei Tempo x4 laeuft `pumpe()`
+bis zu 500 `schritt()`-Aufrufe in einer einzigen Bildzeit; ohne Deckel waeren
+das ebenso viele ueberlappende Toene. `spiele()` in `js/audio.js` verwirft
+einen neuen Ton, sobald 14 Quellen gleichzeitig klingen — gezaehlt wird an
+der echten Quelle selbst (`onended` von Oszillator bzw. Puffer-Quelle), nicht
+an einem geschaetzten Timeout. Ein erster Entwurf schaetzte die Standzeit
+pauschal auf 250 ms und gab den Platz danach frei, egal wie lange der Ton
+wirklich lief — bei `verwandlung` (bis 1,25 s) und `end` (bis 1,24 s) haette
+das den Deckel zu frueh geoeffnet.
+
+**Eigener Schalter statt Wiederverwendung von `effekte`.** Ton und Bild
+haengen an unterschiedlichen Geraeten — Kopfhoerer aus, Bildschirm an, oder
+umgekehrt — und sollen deshalb getrennt abschaltbar sein. Neue Menuzeile
+„Ton: Voll / Sparsam / Aus" neben „Effekte", gemerkt unter
+`localStorage['tensura-klang']`, genau wie die Effektstufe unter
+`tensura-effekte`. Ein Klick auf irgendeinen `data-a`-Knopf spielt zusaetzlich
+ein kurzes UI-Klicken (`Klang.klick()`) — das ist zugleich der Nutzergestus,
+der `AudioContext` gemaess Autoplay-Regel der Browser aufweckt.
+
+**jsdom kennt kein `AudioContext`.** `Klang.verfuegbar()` prueft
+`root.AudioContext || root.webkitAudioContext` und liefert in `dev/uitest.js`
+deshalb `false` — jeder Aufruf von `Klang.spiele()` ist dort ein no-op, ohne
+dass die Testdatei von Audio weiss. `dev/uitest.js` laedt Skripte aus einer
+festen Liste; `js/audio.js` musste dort ergaenzt werden, sonst waere `Klang`
+in der jsdom-Umgebung nicht definiert gewesen (`ReferenceError`).
+
+Im Browser (Chromium, per Playwright) geprueft: ein echter Kampf ruft
+`Klang.spiele` mit der erwarteten Verteilung auf (`setup`, `zug`, `aktiv`,
+`hit`, `death`, `end`), die Menuzeile schaltet um und merkt sich
+`tensura-klang` in `localStorage`, keine Konsolenfehler ausser den
+erwarteten 404 der fehlenden Figurenbilder.
+
+`dev/sim.js` 443/443, `dev/uitest.js` 104/104.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

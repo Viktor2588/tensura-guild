@@ -97,3 +97,19 @@ Entscheidung und keine Nebenwirkung.
 | Datei | Werkzeug / Quelle | Prompt | Datum | Lizenz |
 |---|---|---|---|---|
 | — | noch keine | — | — | — |
+
+## Klang
+
+**Es gibt keine einzige Ton-Datei, und das ist Absicht.** `js/audio.js`
+(Phase 62) erzeugt jeden Ton zur Laufzeit aus Oszillatoren und einem
+geteilten Rauschpuffer der Web Audio API — dieselbe Entscheidung wie bei den
+Figuren-Platzhaltern und dem Aktverlauf: kein Sample, keine Lizenzfrage,
+keine neue Datei im Repo. Fällt die Web Audio API weg (etwa in `jsdom`),
+bleibt das Spiel stumm statt zu einem Fehler zu führen — `Klang.verfuegbar()`
+prüft das selbst.
+
+Sollten künftig doch aufgenommene oder generierte Audiodateien dazukommen
+(Musik, Sprachausgabe, Umgebungsgeräusche), gehören sie unter
+`assets/audio/<name>.<ext>` und bekommen hier dieselbe Herkunftszeile wie ein
+Bild: Werkzeug/Quelle, vollständiger Prompt bzw. Aufnahmehinweis, Datum,
+Lizenz.
