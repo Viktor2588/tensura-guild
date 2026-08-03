@@ -322,6 +322,21 @@
     });
   }
 
+  /* Eigener Schalter statt Wiederverwendung von `effekte`: Ton und Bild
+     brauchen unterschiedliche Geraete (Lautsprecher aus, Bildschirm an, oder
+     umgekehrt) und sollen deshalb getrennt abschaltbar sein. `js/audio.js`
+     hat die gemerkte Stufe beim Laden schon aus `localStorage` gelesen —
+     ein Aufruf ohne Argument liefert sie unveraendert zurueck. */
+  var klangStufe = Klang.stufe();
+
+  function zeigeKlangwahl() {
+    var reihe = $('menu-klang');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=klang]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === klangStufe);
+    });
+  }
+
   function pumpe(nun) {
     if (!replay || replay.fertig) return;
     replay.raf = requestAnimationFrame(pumpe);
@@ -359,6 +374,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    klang(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -416,6 +432,13 @@
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
     else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
     else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
+  }
+
+  /* Eigene Funktion statt ein Aufruf in `zeige`: die Ansicht braucht WebGL,
+     der Ton nicht — `Klang.spiele` faellt selbst auf stumm zurueck, wenn die
+     Web Audio API fehlt oder abgeschaltet ist, unabhaengig vom Brett. */
+  function klang(l, beat) {
+    Klang.spiele(l.type, { beat: beat, dmg: l.dmg, maxHp: l.maxHp, winner: l.winner });
   }
 
   function zeile(l) {
@@ -1308,6 +1331,10 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    klang: function (d) {
+      klangStufe = Klang.stufe(d.v);
+      zeigeKlangwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1620,6 +1647,7 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    Klang.klick();
     a(el.dataset);
   }
 
@@ -1659,6 +1687,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeKlangwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
