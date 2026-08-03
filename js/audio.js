@@ -54,12 +54,13 @@
     return rauschPuffer;
   }
 
-  function belegen(dauerMs) {
-    if (stimmenAktiv >= STIMMEN_MAX) return false;
-    stimmenAktiv++;
-    setTimeout(function () { stimmenAktiv = Math.max(0, stimmenAktiv - 1); }, Math.max(30, dauerMs));
-    return true;
-  }
+  /* Jede Quelle zaehlt sich selbst: `stimmeAn` beim Start, `stimmeAus` an
+     ihrem eigenen `onended` — nicht an einem geschaetzten Timeout. Ein
+     Rezept wie `heal` oder `end` startet mehrere Oszillatoren mit
+     unterschiedlicher Laufzeit; ein fester Timer haette den Schlitz
+     freigegeben, bevor die eigentliche Quelle verklungen ist. */
+  function stimmeAn() { stimmenAktiv++; }
+  function stimmeAus() { stimmenAktiv = Math.max(0, stimmenAktiv - 1); }
 
   /* Ein Ton: Sinus/Dreieck/Rechteck mit exponentieller Gleitkurve und
      Huellkurve. `bis` laesst die Frequenz waehrend des Tons wandern — das ist
@@ -76,6 +77,8 @@
     g.gain.exponentialRampToValueAtTime(Math.max(0.001, opts.lautstaerke || 0.5), t0 + (opts.anstieg || 0.012));
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dauer);
     o.connect(g); g.connect(meister);
+    stimmeAn();
+    o.onended = stimmeAus;
     o.start(t0); o.stop(t0 + dauer + 0.05);
   }
 
@@ -94,6 +97,8 @@
     g.gain.exponentialRampToValueAtTime(Math.max(0.001, opts.lautstaerke || 0.4), t0 + 0.005);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dauer);
     src.connect(filt); filt.connect(g); g.connect(meister);
+    stimmeAn();
+    src.onended = stimmeAus;
     src.start(t0); src.stop(t0 + dauer + 0.05);
   }
 
@@ -187,7 +192,7 @@
     var c = kontext();
     if (!c) return;
     if (c.state === 'suspended') c.resume();
-    if (!belegen((info && info.dauerMs) || 250)) return;
+    if (stimmenAktiv >= STIMMEN_MAX) return;
     rezept(c, info || {});
   }
 

@@ -2939,8 +2939,13 @@ komplett ignoriert.
 
 **Ein Stimmenzaehler begrenzt Ueberlappung.** Bei Tempo x4 laeuft `pumpe()`
 bis zu 500 `schritt()`-Aufrufe in einer einzigen Bildzeit; ohne Deckel waeren
-das ebenso viele ueberlappende Toene. `belegen()` in `js/audio.js` laesst
-maximal 14 Stimmen gleichzeitig klingen und verwirft den Rest stumm.
+das ebenso viele ueberlappende Toene. `spiele()` in `js/audio.js` verwirft
+einen neuen Ton, sobald 14 Quellen gleichzeitig klingen — gezaehlt wird an
+der echten Quelle selbst (`onended` von Oszillator bzw. Puffer-Quelle), nicht
+an einem geschaetzten Timeout. Ein erster Entwurf schaetzte die Standzeit
+pauschal auf 250 ms und gab den Platz danach frei, egal wie lange der Ton
+wirklich lief — bei `verwandlung` (bis 1,25 s) und `end` (bis 1,24 s) haette
+das den Deckel zu frueh geoeffnet.
 
 **Eigener Schalter statt Wiederverwendung von `effekte`.** Ton und Bild
 haengen an unterschiedlichen Geraeten — Kopfhoerer aus, Bildschirm an, oder
