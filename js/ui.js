@@ -314,11 +314,26 @@
   try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
   Brett3D.stufe(effekte);
 
+  /* Eigener Regler statt an „Effekte" gehängt: Ton und Bild kosten
+     unterschiedliche Dinge (Kopfhörer im Büro vs. eine lahme GPU), und wer
+     nur das eine stumm schalten will, soll nicht das andere mitnehmen. */
+  var ton = 'voll';
+  try { ton = localStorage.getItem('tensura-ton') || 'voll'; } catch (e) {}
+  Ton.stufe(ton);
+
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
     if (!reihe) return;
     Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=effekte]'), function (b) {
       b.classList.toggle('an', b.dataset.v === effekte);
+    });
+  }
+
+  function zeigeTonwahl() {
+    var reihe = $('menu-ton');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=ton]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === ton);
     });
   }
 
@@ -359,6 +374,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    spieleTon(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -416,6 +432,17 @@
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
     else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
     else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
+  }
+
+  /* Eigene Funktion statt in `zeige()` verdrahtet: die haengt komplett am
+     WebGL-Brett (`if (!Brett3D.verfuegbar()) return;` ganz oben) und faellt
+     ohne three.js auf die SVG-Lagekarte zurueck. Wer nur die SVG sieht, soll
+     trotzdem etwas hoeren. */
+  function spieleTon(l, beat) {
+    if (l.type === 'aktiv') Ton.aktiv(l.kw);
+    else if (l.type === 'hit') Ton.treffer(l.dmg / (l.maxHp || 1), beat === 'gross' || beat === 'toedlich' || beat === 'finale');
+    else if (l.type === 'heal') Ton.heilung();
+    else if (l.type === 'death') Ton.tod(beat === 'finale');
   }
 
   function zeile(l) {
@@ -708,6 +735,9 @@
     if (replay.raf) cancelAnimationFrame(replay.raf);
     replay.raf = null;
     replay.fertig = true;
+    /* Dieselbe Weiche wie `ergebnisHtml()`: Sieg klingt anders als alles
+       andere, auch beim Unentschieden (fünf Runden, alle tot). */
+    if (replay.res.winner === 'player') Ton.sieg(); else Ton.niederlage();
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -1308,6 +1338,11 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    ton: function (d) {
+      ton = Ton.stufe(d.v);
+      try { localStorage.setItem('tensura-ton', ton); } catch (e) {}
+      zeigeTonwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1615,6 +1650,11 @@
   }
 
   function klick(ev) {
+    /* Der `AudioContext` darf erst nach einer echten Nutzergeste starten —
+       dieser erste Klick ist so gut wie jeder andere, und ohne diese Zeile
+       bliebe der Kampf danach stumm, weil `Ton.*` sonst erst mitten im
+       rAF-Callback zum ersten Mal aufgerufen wird. */
+    Ton.entsperren();
     var el = ev.target.closest('[data-a]');
     if (!el) return;
     var a = aktionen[el.dataset.a];
@@ -1659,6 +1699,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeTonwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
