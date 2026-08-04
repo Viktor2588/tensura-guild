@@ -83,7 +83,7 @@
   function spiele(l, beat) {
     if (!an || !l) return;
     switch (l.type) {
-      case 'hit':
+      case 'hit': {
         var anteil = l.maxHp ? Math.min(1, l.dmg / l.maxHp) : 0.05;
         var schwer = beat === 'gross' || beat === 'toedlich' || beat === 'finale';
         knall({ frequenz: 2200 - anteil * 1200, lautstaerke: 0.22 + anteil * 0.35,
@@ -91,6 +91,7 @@
         if (schwer) ton({ form: 'sawtooth', von: 160, bis: 55,
                           dauer: beat === 'finale' ? 0.5 : 0.28, lautstaerke: 0.3 });
         break;
+      }
       case 'heal':
         ton({ form: 'sine', von: 440, bis: 660, dauer: 0.22, lautstaerke: 0.24 });
         break;
