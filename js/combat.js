@@ -234,6 +234,18 @@
 
     /* ---- Grundoperationen ------------------------------------------------ */
 
+    /* Ein Konter antwortet auf einen ANGRIFF, nicht auf einen Konter. Ohne
+       diese Sperre schlagen zwei Trupps, die beide `onDamaged` austeilen,
+       einander in derselben Aufrufkette endlos zurück: A trifft B, B kontert A,
+       A kontert B … Das endete bisher nur durch Sterben — und wo eine
+       `onDamaged`-Heilung (Blutgolem: 18 Leben je erlittenem Treffer) den
+       Konterschaden aufwiegt, stirbt niemand. Gefunden hat das erst die
+       Gegner-Resonanz dieser Phase: „Elite: Steinerne Wacht" (zwei Gargoyles,
+       zwei Blutgolems) erreicht Konter-Resonanz, und der Kampf lief in
+       „Maximum call stack size exceeded". Der Fehler ist älter als die
+       Resonanz, nur unerreichbar gewesen. */
+    var imKonter = false;
+
     function deal(target, amount, source, opt) {
       if (!target || !alive(target)) return 0;
       opt = opt || {};
@@ -288,8 +300,12 @@
       log.push({ t: t, type: 'hit', key: target.key, target: target.name, side: target.side,
                  dmg: amount, source: source, hp: target.hp, maxHp: target.maxHp,
                  von: (opt.von || opt.anzeigeVon || {}).key || null });
-      if (alive(target)) fire(target, 'onDamaged', ctx(target, { amount: amount }));
-      else die(target);
+      if (!alive(target)) die(target);
+      else if (!imKonter) {
+        imKonter = true;
+        fire(target, 'onDamaged', ctx(target, { amount: amount }));
+        imKonter = false;
+      }
       return amount;
     }
 
@@ -557,6 +573,13 @@
       /* Resonanz vor onStart: Schild- und Heilfaktor müssen stehen, bevor die
          erste Barriere gelegt wird. */
       var r = res[side];
+      /* Seit die Gegner eigene Schlüsselwörter tragen, kann auch die andere
+         Seite resonieren — und ein Trupp, der ohne sichtbaren Grund 15 % mehr
+         heilt, ist ein unerklärter Kampf. Die eigene Resonanz steht auf dem
+         Truppschirm, die gegnerische stand nirgends. Also ins Log, für beide. */
+      Object.keys(r).forEach(function (k) {
+        log.push({ t: 0, type: 'resonanz', side: side, kw: k, teile: r[k] });
+      });
       mine.forEach(function (u) {
         if (r.donner) u.donnerFrueh = 2;
         if (r.schatten) u.schattenPlus = 0.02;

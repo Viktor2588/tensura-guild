@@ -431,6 +431,14 @@
       l.def + ' %, Tempo ' + l.spd + ' %';
     else if (l.type === 'fehlschlag') text = '✗ ' + esc(l.unit) + ': ' + esc(l.name) + ' verpufft im Chaos';
     else if (l.type === 'ausweichen') text = '↯ ' + esc(l.target) + ' weicht im Schatten aus';
+    /* Die Farbregel oben liest `side` als „wen trifft es" — hier ist es „wem
+       gehört es", also andersherum. Statt das Log zu verbiegen, wird die Klasse
+       an dieser einen Stelle gesetzt. */
+    else if (l.type === 'resonanz') {
+      klasse = l.side === 'player' ? 'spieler' : 'feind';
+      text = '◈ ' + (l.side === 'player' ? 'Euer Trupp' : 'Der Gegner') + ' resoniert: ' +
+        esc(kwName(l.kw)) + ' (' + l.teile + ' Teile) — ' + esc(C.RESONANZ[l.kw]);
+    }
     else if (l.type === 'entladung') text = '⚡ Entladung an ' + esc(l.unit) + ': ' + l.stapel + ' Stapel schlagen in die ganze Reihe';
     /* Eine Verwandlung ist der seltenste Moment im Kampf — sie darf nicht
        stumm im Log fehlen, sonst merkt niemand, dass die Schwelle fiel. */

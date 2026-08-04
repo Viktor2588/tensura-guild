@@ -2911,6 +2911,46 @@ mit ins Repo.
 Worktree `/home/viktor/tensura/worktree/phase-61-figuren`, Branch
 `phase-61-figuren`.
 
+### Phase 62 (2026-08-04): Gegner bekommen Schlüsselwörter
+
+Idee 1 aus „Offen aus der Recherche": die Resonanz gilt ausdrücklich für beide
+Seiten, aber gegnerseitig war sie tot. `spawn` liest `def.keywords` — und
+`build` hat das Feld nie gesetzt. Kein Gegnertrupp hat je eine Schwelle
+erreicht.
+
+**Abgeleitet statt abgeschrieben.** Der Plan sah 72 handgepflegte Wortlisten
+vor; geschrieben wurde stattdessen `schluesselwoerter(d, actives)` in
+`enemies.js`, die dieselben zwei Quellen ausliest, aus denen `Run.buildTeile`
+die Wörter des Spielers sammelt: die Aktive und die Passiven. Das ist nicht nur
+weniger Arbeit, es ist die haltbarere Fassung — eine zweite Liste würde beim
+ersten Umbau einer Fähigkeit lügen, und von Hand erfundene Wörter würden
+behaupten, ein Gegner täte etwas, was er nicht tut. Nicht entdoppelt: wer Gift
+anlegt UND Gift wirft, ist zwei Teile einer Giftlinie, genau wie beim Spieler.
+
+**Die Resonanz steht jetzt im Kampflog, für beide Seiten.** Sie war vorher nur
+auf dem Truppschirm sichtbar; ein Gegnertrupp, der ohne sichtbaren Grund 15 %
+mehr heilt, ist ein unerklärter Kampf.
+
+**Der teuerste Fund war ein Fehler, der älter ist als diese Phase.** „Elite:
+Steinerne Wacht" (zwei Gargoyles, zwei Blutgolems) erreicht als erste Begegnung
+überhaupt Konter-Resonanz — und der Kampf lief sofort in „Maximum call stack
+size exceeded". Ursache: ein Konter antwortete auf einen Konter. Zwei Trupps,
+die beide `onDamaged` austeilen, schlagen einander in derselben Aufrufkette
+endlos zurück; das endete bisher nur durch Sterben, und wo eine
+`onDamaged`-Heilung den Konterschaden aufwiegt (Blutgolem, 18 Leben je
+erlittenem Treffer), stirbt niemand. Die Sperre `imKonter` in `deal()` lässt
+Konter nur noch auf Angriffe antworten. **Der Fehler steckte seit Phase 14 im
+Spiel und war bloß unerreichbar** — es brauchte einen Gegnertrupp mit
+gebündelter Linie, um ihn auszulösen. Genau das ist das Argument für diese
+Phase: die eine Seite des Spiels, die nie gebündelt hat, hat auch nie geprüft.
+
+`node dev/sim.js` 443/443. Die Balance-Messung steht aus und läuft gesammelt
+nach Phase 66 — Gegner-Resonanz macht die Gegner stärker, `GRUNDHAERTE` ist
+deshalb ein Kandidat für die Nachkalibrierung.
+
+Worktree `/home/viktor/tensura/worktree/phase-62-gegnerworte`, Branch
+`phase-62-gegnerworte`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

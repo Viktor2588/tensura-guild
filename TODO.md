@@ -399,9 +399,10 @@ Abgearbeitet in Phase 40:
 
 Offen aus der Recherche (Ideen 1, 2, 3, 5):
 
-- **1. Gegnergruppen bekommen eigene Schlüsselwörter.** Die Resonanz-Maschinerie
-  läuft schon für beide Seiten, aber alle 72 Gegner haben `keywords: []`. Reine
-  Datenarbeit, größter Gewinn.
+- ~~**1. Gegnergruppen bekommen eigene Schlüsselwörter.**~~ — erledigt in
+  Phase 62. Nicht als Datenarbeit: die Wörter werden aus Aktive und Passiven
+  abgeleitet, so wie `Run.buildTeile` es beim Spieler tut. Nebenbei fiel ein
+  Konter-Rekursionsfehler auf, den erst ein resonierender Gegnertrupp erreicht.
 - **2. Bedrohung statt fester Zielwahl** — ein Panzer kann heute keine Treffer
   auf sich ziehen.
 - **3. Zwei Reihen statt einer Liste.**
