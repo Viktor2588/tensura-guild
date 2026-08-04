@@ -202,6 +202,7 @@
       chaos: null, enrage: def.enrage || 0, wut: 1, verschlungen: def.verschlungen || 0,
       schattenPlus: 0, dunkelPlus: 0, lichtPlus: 0,
       itemZahl: def.itemZahl || 0,
+      passivZahl: def.passivZahl || 0,
       dmgTaken: 0, dmgDealt: 0
     };
   }

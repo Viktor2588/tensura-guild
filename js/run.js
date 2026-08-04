@@ -18,7 +18,12 @@
   /* Kein Händler-Knoten mehr: nach JEDEM gewonnenen Kampf geht der Markt auf,
      ein eigener Knoten dafür wäre doppelt. Die drei Slots sind Kämpfe geworden. */
   var STEPS = [
-    ['kampf', 'kampf', 'event'],
+    /* Der erste Knoten ist immer ein Kampf — alle drei Wahlmoeglichkeiten sind
+       einer. Vorher konnte ein Run mit einem Ereignis beginnen, und der
+       Einstieg (das 1-gegen-1-Duell aus Phase 11) fiel damit ganz aus. Eine
+       Wahl bleibt es trotzdem: welcher Kampf, sagt der Knoten seit Phase 12
+       ohnehin nicht. */
+    ['kampf', 'kampf', 'kampf'],
     ['kampf', 'event', 'pruefung'],
     ['kampf', 'pruefung', 'elite'],
     ['kampf', 'elite', 'lager'],
@@ -202,7 +207,15 @@
     var lockedU = GD.units.filter(function (u) { return !u.hero && meta.unlockedUnits.indexOf(u.id) < 0; });
     var lockedR = GD.relics.filter(function (r) { return meta.unlockedRelics.indexOf(r.id) < 0; });
     if (lockedU.length) { var u = root.RNG.pick(rng, lockedU); meta.unlockedUnits.push(u.id); out.push(u.name); }
-    if (lockedR.length) { var r = root.RNG.pick(rng, lockedR); meta.unlockedRelics.push(r.id); out.push(r.name); }
+    /* Zwei Relikte je Run, nur eine Einheit. Es gibt mehr Relikte als
+       Einheiten, und ein Relikt ist der kleinere Zugewinn — bei je einem
+       dauerte der Relikt-Bestand doppelt so lange, und genau das stand als
+       „Relikt freischalten sollte schneller gehen" in TODO.md. */
+    for (var i = 0; i < 2 && lockedR.length; i++) {
+      var r = root.RNG.pick(rng, lockedR);
+      meta.unlockedRelics.push(r.id); out.push(r.name);
+      lockedR = lockedR.filter(function (x) { return x.id !== r.id; });
+    }
     return out;
   }
 
@@ -282,6 +295,14 @@
     });
 
     d.itemZahl = m.items.length;              // Kurobes Linie rechnet damit
+    /* Die Zwillingsklinge zaehlte bisher `c.self.effects` mit `art === 'passiv'`
+       durch — ein Feld, das an einer gebauten Einheit gar nicht existiert
+       (`art` traegt nur die Bibliothek in `abilities.js`, und `resolve` legt
+       nur die Wirkfunktionen ab). Sie gab deshalb seit jeher +0, gemessen mit
+       `dev/beute.js`. Dieselbe Sorte toter Zugriff wie `zaeherBrand` in
+       Phase 25, nur lesend statt schreibend — und darum vom Waechter-Test aus
+       Phase 27 nicht erfasst. */
+    d.passivZahl = passivIds(m).length;
     if (m.devoured.slice(0, PRAEDATOR_SLOTS[r]).length) d.verschlungen = 1;
     m.devoured.slice(0, PRAEDATOR_SLOTS[r]).forEach(function (eid) {
       var e = EN.get(eid);
