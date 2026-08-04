@@ -74,7 +74,12 @@ function bruchpunkt(id, rank, passives) {
   var lo = 0.2, hi = 3.0;
   if (quote(id, rank, passives, lo) < 0.5) return lo;      // schafft nicht mal das
   if (quote(id, rank, passives, hi) > 0.5) return hi;
-  for (var i = 0; i < 7; i++) {
+  /* Fünf Schritte, nicht sieben. Sieben lösen 2,8/128 = 0,02 Härte auf — bei
+     70 Proben je Punkt liegt der Standardfehler der Quote aber schon bei rund
+     6 Prozentpunkten, die letzten beiden Halbierungen messen also Rauschen und
+     kosten trotzdem je 140 Kämpfe. Fünf Schritte reichen auf 0,09 genau, und
+     der Lauf wird um gut ein Viertel kürzer. */
+  for (var i = 0; i < 5; i++) {
     var mid = (lo + hi) / 2;
     if (quote(id, rank, passives, mid) > 0.5) lo = mid; else hi = mid;
   }
