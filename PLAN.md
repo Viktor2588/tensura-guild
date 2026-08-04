@@ -3023,6 +3023,67 @@ Preiskurve. `node dev/sim.js` 443/443.
 
 Worktree `/home/viktor/tensura/worktree/phase-63-verstaerker`, Branch
 `phase-63-verstaerker`.
+### Phase 64 (2026-08-04): Es war der Bot, nicht die Preiskurve
+
+Zwei Fragen, eine sauber beantwortet, eine nicht.
+
+**A) Die 14 nie gekauften Einheiten waren ein Messfehler.** Der Plan nannte
+zwei moegliche Ursachen und bestand darauf, sie zu trennen: eine zu geizige
+Bot-Heuristik (dann ist der Inhalt in Ordnung und nur die Messung blind) oder
+eine zu steile Preiskurve (dann sieht ein Mensch dasselbe Problem). Getrennt
+wurde ueber die doppelte Kostenzaehlung: `passt()` addierte `u.cost` in den
+Zaehler, waehrend der Marktvergleich denselben Preis noch einmal in den Nenner
+schrieb (Wert je Magicule). Teure Einheiten wurden also zweimal bestraft.
+
+`passt()` bewertet jetzt nur noch Schluesselwoerter. Wo die Einheit gratis ist
+— im Startdraft — kommen die Kosten an der Aufrufstelle als Staerkemass wieder
+dazu, denn dort sind sie keine Kosten, sondern die einzige verfuegbare
+Auskunft ueber Staerke.
+
+Ergebnis bei 40 Runs mit voller Freischaltung: **von 14 teuren Einheiten
+bleiben 2 ungekauft statt 14.** Benimaru geht in 100 % der Faelle ueber die
+Theke, Adalmann in 80 %, Gerudo in 53 %. Die Preiskurve war nie das Problem.
+
+Damit die Frage nie wieder unentscheidbar ist, zaehlt `dev/balance.js` jetzt
+**Angebot und Kauf getrennt**. Ohne diese Trennung sieht „nie gekauft" wie eine
+geizige Heuristik aus, obwohl der Posten vielleicht nie im Regal lag: Hakuro
+stand in 40 Runs nur 4× ueberhaupt zum Verkauf, Apito dagegen 114×. Das sind
+zwei voellig verschiedene Befunde hinter derselben Zahl.
+
+Die Folge fuer alle frueheren Messungen ist unangenehm und gehoert hierhin:
+**jede Build- und Rollenzahl vor dieser Phase mittelt ueber die guenstige
+Haelfte des Rosters.** Phase 63 hat denselben Befund von der Rollenseite
+gefunden — die Rollen-Rangfolge war eine Preis-Rangfolge.
+
+**B) Breite gegen Spitze ist NICHT gemessen worden — der Versuch ist
+gescheitert.** Der Plan wollte wissen, ob „vier auf B" oder „eine auf S"
+gewinnt. Gebaut wurde dafuer ein zweiter Kaufstil (`--kaufstil spitze`):
+absoluter Wert statt Wert je Magicule, Reserve 600 statt 140, also warten statt
+zugreifen.
+
+| | Siege | Ø Trupp | Ø Truppkosten | Ø Rangstufen | Ø Staerke |
+|---|---|---|---|---|---|
+| breite | 70 % | 6,0 | 14,7 | 15,4 | 2104 |
+| spitze | 65 % | **6,0** | 15,3 | 14,9 | 2070 |
+
+**Beide Stile enden bei exakt derselben Truppgroesse.** Ein Regler an der
+Reserve erzeugt keine Spitzenstrategie — er verzoegert Kaeufe, die spaeter
+ohnehin stattfinden, weil das Einkommen weiterlaeuft und die Truppgroesse an
+anderen Grenzen haengt. Die fuenf Punkte Unterschied liegen bei n=40 im
+Rauschen (Standardfehler rund 8 Punkte). Die Frage bleibt damit offen, aber sie
+ist jetzt praeziser: **eine Breitenstrategie braucht eine eigene Regel, nicht
+einen Sparfaktor.** Der Stil bleibt als Schalter drin, damit der naechste
+Versuch nicht bei null anfaengt.
+
+**Die Siegquote ist erwartungsgemaess gestiegen** (70 % bei voller
+Freischaltung), weil der Bot endlich kauft, was er kaufen sollte.
+`GRUNDHAERTE` wird deshalb NICHT hier nachgezogen, sondern gesammelt nach
+Phase 66 — sonst kalibrieren fuenf Phasen denselben Knopf gegeneinander.
+
+`node dev/sim.js` 443/443.
+
+Worktree `/home/viktor/tensura/worktree/phase-64-oekonomie`, Branch
+`phase-64-oekonomie`.
 
 ## 5. Risiken
 

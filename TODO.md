@@ -547,7 +547,8 @@ Balance und Werkzeug:
   das Normalverhalten der Rolle. Komplett abgeschaltet ändert sich an keiner
   Siegquote etwas. Entweder soll die Rolle etwas anderes tun, oder die
   Signaturen der vier Unterstützer brauchen `wenn`-Bedingungen, die auch greifen.
-- **14 Einheiten werden nie gekauft, auch bei voller Freischaltung** — Benimaru,
+- ~~**14 Einheiten werden nie gekauft**~~ — erledigt in Phase 64: doppelte
+  Kostenzählung im Bot, nicht die Preiskurve. Jetzt 2 statt 14. Alte Notiz: — Benimaru,
   Hakuro, Echsenfürst, Zegion, Apito, Diablo, Testarossa, Ultima, Carrera,
   Veldora, Milim, Windrache, Gerudo, Adalmann. Alle haben **Kosten 4-5**. Der
   Bot bewertet Marktposten nach Wert je Magicule (`sc / price`), und das
@@ -555,7 +556,9 @@ Balance und Werkzeug:
   enthält. Entweder ist die Heuristik zu geizig oder die Preiskurve zu steil —
   beides ist messbar, aber es sind zwei verschiedene Eingriffe. Solange das
   offen ist, messen alle Build-Zahlen nur die günstige Hälfte der Besetzung.
-- **Der Rang ist keine Entscheidung, sondern ein Meilenstein.** Die alte Zahl
+- **Der Rang ist keine Entscheidung, sondern ein Meilenstein.** (Phase 64: ein
+  Reserve-Regler erzeugt keine Spitzenstrategie — beide Stile enden bei 6,0
+  Einheiten. Braucht eine eigene Regel.) Die alte Zahl
   („Rang A gewinnt nie") war eine Tautologie: `dev/balance.js` las den Rang am
   Run-Ende, und ein früh gestorbener Run hatte nie Geld für S. Phase 47 misst
   jetzt an fester Stelle, bei Akt-2-Beginn — und dort gibt es nur eine Zeile:
@@ -575,5 +578,6 @@ Balance und Werkzeug:
   stellt längst drei Begleiter dazu.
 
 - Anfänger/Veteran-Abstand bei 12 Punkten (50 gegen 62 % Siege).
-- Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
-  oder „eine auf S" besser ist, misst er damit nicht.
+- Der Bot in `balance.js` misst „vier auf B" gegen „eine auf S" weiterhin
+  nicht — Phase 64 hat es mit `--kaufstil spitze` versucht und gezeigt, dass ein
+  Sparfaktor dafuer nicht reicht.

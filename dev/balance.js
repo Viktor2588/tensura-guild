@@ -17,6 +17,15 @@ var STUFE = 0;                                  // --stufe N: Bedrohungsstufe mi
 /* Standard: der Bot stellt sinnvoll auf. Wer nicht aufstellt, verliert 15 Punkte —
    das zu messen wäre nicht mehr kompetentes Spiel. --chaos schaltet es ab. */
 var STELLEN = process.argv.indexOf('--chaos') < 0;
+/* Zwei Kaufstile, damit die Frage aus TODO.md ueberhaupt messbar wird: ist
+   „vier auf B" oder „eine auf S" besser? Seit Phase 51 wird der Rang nicht mehr
+   gekauft, sondern kommt mit der Einheit aus dem Markt — die Frage stellt also
+   der Geldbeutel, nicht ein Aufstiegsknopf.
+     breite (Standard): Wert je Magicule, kleine Reserve — viele guenstige Posten.
+     spitze:            absoluter Wert, grosse Reserve — auf den teuren warten. */
+var STIL = 'breite';
+process.argv.forEach(function (a, i) { if (a === '--kaufstil') STIL = process.argv[i + 1] || 'breite'; });
+var RESERVE = STIL === 'spitze' ? 600 : 140;
 process.argv.forEach(function (a, i) { if (a === '--stufe') STUFE = parseInt(process.argv[i + 1] || '0', 10); });
 
 /* --voll = alles frei. --nur-einheiten / --nur-relikte trennen die beiden
@@ -38,10 +47,15 @@ function vollMeta() {
 function teamKeywords(run) {
   return AB.keywords(R.buildTeile(run));
 }
+/* Wie gut passt die Einheit zum Trupp? NUR die Schluesselwoerter — die Kosten
+   gehoeren hier nicht hinein. Am Markt stehen sie ohnehin im Nenner (Wert je
+   Magicule), und wer sie zusaetzlich in den Zaehler schreibt, bewertet dieselbe
+   Zahl zweimal. Beim Startdraft ist die Einheit gratis, dort kommen die Kosten
+   an der Aufrufstelle als Staerkemass wieder dazu. */
 function passt(id, kw) {
   var u = GD.unit(id);
   if (!u) return 0;
-  var score = u.cost;
+  var score = 0;
   var sig = AB.get(u.signature);
   var eigene = (sig ? sig.keywords : []).concat();
   u.passives.forEach(function (p) {
@@ -148,7 +162,8 @@ function play(seed, voll) {
       var kws = teamKeywords(run);
       var bs = 0, bw = -1;
       run.startwahl.offers.forEach(function (o, i) {
-        var sc = passt(o.unit, kws);
+        var uu = GD.unit(o.unit);
+        var sc = passt(o.unit, kws) + (uu ? uu.cost : 0);   // gratis: teurer ist staerker
         if (sc > bw) { bw = sc; bs = i; }
       });
       R.chooseStart(run, bs);
@@ -209,6 +224,13 @@ function play(seed, voll) {
       }
       if (p.markt) {
         var kw2 = teamKeywords(run);
+        /* Angebot und Kauf getrennt zaehlen. Ohne diese Trennung sieht „nie
+           gespielt" wie eine zu geizige Heuristik aus, obwohl der Posten
+           vielleicht nie im Regal lag — genau die Verwechslung, die die 14
+           teuren Einheiten aus Phase 46 offen gelassen hat. */
+        p.markt.forEach(function (o) {
+          if (o.kind === 'unit') angebote[o.id] = (angebote[o.id] || 0) + 1;
+        });
         var posten = p.markt.map(function (o, i) {
           /* Seit Phase 51 gibt es keinen Aufstiegsposten: eine Einheit bringt
              ihren Rang mit, und der Rang ist ihr Wert. Rang+1 Passive und je
@@ -218,7 +240,7 @@ function play(seed, voll) {
           var sc = o.kind === 'unit' ? 12 + passt(o.id, kw2) + (o.rang || 0) * 14
             : o.kind === 'relic' ? reliktWert(run, o.id)
             : o.kind === 'item' ? 7 : 5;
-          return { i: i, wert: sc / Math.max(1, o.price) * 100 };
+          return { i: i, wert: STIL === 'spitze' ? sc : sc / Math.max(1, o.price) * 100 };
         }).sort(function (a, b) { return b.wert - a.wert; });
         posten.forEach(function (x) {
           var o = p.markt[x.i];
@@ -226,8 +248,11 @@ function play(seed, voll) {
           if (run.magicules < o.price) { unbezahlbar++; return; }
           /* Etwas Reserve bleibt stehen, damit nicht der erste Posten alles
              frisst und die naechste Runde nichts mehr geht. */
-          if (run.magicules - o.price < 140) return;
-          if (R.buy(run, x.i, run.team[0] && run.team[0].uid)) kaeufe[o.kind] = (kaeufe[o.kind] || 0) + 1;
+          if (run.magicules - o.price < RESERVE) return;
+          if (R.buy(run, x.i, run.team[0] && run.team[0].uid)) {
+            kaeufe[o.kind] = (kaeufe[o.kind] || 0) + 1;
+            if (o.kind === 'unit') gekauft[o.id] = (gekauft[o.id] || 0) + 1;
+          }
         });
       }
       R.advance(run);
@@ -255,6 +280,7 @@ var siege = 0, akte = {}, schritteSum = 0, rangSum = 0, teamSum = 0;
 var pruefGesamt = 0, pruefOk = 0;
 var bossKampf = {}, bossSieg = {};
 var kaeufe = {}, unbezahlbar = 0, kostenSum = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
+var angebote = {}, gekauft = {};                  // je Einheit: im Regal / gekauft
 var ohneFront = 0, ohneStuetze = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
 var proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {}, proResonanz = {};
 /* Der Rang am RUN-ENDE ist eine Folge der Laufzeit, keine Ursache: ein Run, der
@@ -341,7 +367,7 @@ function tabelle(titel, map, nameFn, minN) {
 }
 
 console.log('=== ' + N + ' Runs' + (VOLL ? ', volle Freischaltung' : ', frischer Spieler') +
-  (STUFE ? ', Bedrohungsstufe ' + STUFE : '') + (STELLEN ? '' : ', ohne Aufstellung') + ' ===');
+  (STUFE ? ', Bedrohungsstufe ' + STUFE : '') + (STELLEN ? '' : ', ohne Aufstellung') + ', Kaufstil ' + STIL + ' ===');
 console.log('Siege: ' + siege + ' (' + Math.round(siege / N * 100) + '%)');
 console.log('Bosse (Siegquote im echten Run):');
 Object.keys(bossKampf).sort().forEach(function (b) {
@@ -467,6 +493,24 @@ relRows.forEach(function (r) {
   });
   if (unvoll.length) console.log('  ! unvollstaendig gemessen: ' + unvoll.join(', ') +
     ' — die Quote gilt nur fuer die erreichten Einheiten, nicht fuer die Rolle');
+})();
+
+/* Die teure Haelfte der Besetzung (Kosten 4-5). Phase 46 hatte 14 Einheiten
+   notiert, die auch bei `--voll` nie gekauft werden, und zwei moegliche
+   Ursachen offen gelassen: geizige Heuristik oder zu steile Preiskurve. Die
+   Tabelle trennt das — eine Einheit, die nie IM REGAL liegt, kann keine von
+   beiden sein. */
+(function () {
+  var teuer = GD.units.filter(function (u) { return u.cost >= 4; });
+  var stumm = teuer.filter(function (u) { return !gekauft[u.id]; });
+  console.log('\nTeure Einheiten (Kosten 4-5): ' + teuer.length + ', davon nie gekauft ' + stumm.length);
+  teuer.map(function (u) {
+    return { u: u, a: angebote[u.id] || 0, g: gekauft[u.id] || 0 };
+  }).sort(function (a, b) { return a.g - b.g || a.a - b.a; }).forEach(function (r) {
+    console.log('  ' + (r.u.name + ' (' + r.u.cost + ')                    ').slice(0, 26) +
+      String(r.a).padStart(5) + '× im Regal ' + String(r.g).padStart(5) + '× gekauft' +
+      (r.a ? '  (' + Math.round(r.g / r.a * 100) + ' %)' : ''));
+  });
 })();
 
 var nie = GD.units.filter(function (u) { return !proEinheit[u.id]; });
