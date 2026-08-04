@@ -360,9 +360,18 @@ var linienSel = $('#linien-einheit');
 linienSel.value = 'zegion';
 linienSel.dispatchEvent(new win.Event('change', { bubbles: true }));
 /* Es gibt keine generierten Einheiten mehr — der Kopf zeigt jetzt die
-   Schlüsselwörter der Einheit statt eines Generator-Etiketts. */
-ok($$('#menu-linien .linien-kopf .kw-chip').length > 0,
+   Schlüsselwörter der Einheit statt eines Generator-Etiketts.
+   `.kw-tag` und nicht `.kw-chip`: seit Phase 73 tragen die Linien dieselbe
+   farbige Marke wie Markt und Kaempfer — eine Schreibweise fuer alle. */
+ok($$('#menu-linien .linien-kopf .kw-tag').length > 0,
    'die Übersicht nennt die Schlüsselwörter der Einheit');
+/* Und jede einzelne Passive traegt ihre eigenen Marken, nicht nur der Kopf:
+   das war der Punkt, an dem man sechzehn Tooltips einzeln anfahren musste. */
+ok($$('#menu-linien .linien-stufe .kw-tag').length > 0,
+   'auch die einzelnen Passiven tragen farbige Schlüsselwort-Marken');
+/* Die graue Zweitform ist ersatzlos weg. */
+ok($$('#menu-linien .kw-chip').length === 0,
+   'keine grauen kw-chips mehr in der Übersicht');
 ok(!!$('#menu-linien .signatur-block'), 'die Übersicht zeigt auch die Signatur-Aktive');
 ok($('#menu-linien .signatur-block .unter').textContent.length > 15,
    'samt ihrer Beschreibung');

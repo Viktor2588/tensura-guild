@@ -3665,6 +3665,36 @@ Kampfbilanz) · `dev/uitest.js` 104/104 · `dev/silhouetten.js` 201/201 ·
 Worktree `/home/viktor/tensura/worktree/phase-72-evolution`, Branch
 `phase-72-evolution`.
 
+### Phase 73 (2026-08-04): Eine Schreibweise fuer Schluesselwoerter
+
+Rueckmeldung: die farbigen Marken fehlen in den Entwicklungslinien. Zu Recht,
+und der Fehler ist meiner aus Phase 72 — ich habe dort `kw-chip` benutzt, weil
+es im Signatur-Block schon so stand, statt zu pruefen, womit der REST des
+Spiels Schluesselwoerter anzeigt.
+
+Es gab zwei Schreibweisen fuer dieselbe Information:
+
+- `.kw-tag` mit `kw-<wort>` — farbig, mit Glossar-Tooltip. Marktposten,
+  Belohnungskarten, Kaempfer. Ueber `tag()` gebaut.
+- `.kw-chip` — grau, ohne Tooltip. Nur in den Entwicklungslinien.
+
+Ausgerechnet dort also, wo man Schluesselwoerter **vergleicht**, standen sie in
+der stummen Variante. Alle drei Stellen (Kopf, Signatur, Passive) laufen jetzt
+ueber `kwTag(k)`, das genau das baut, was `belohnungTags` baut. `.kw-chip` ist
+ersatzlos geloescht — Zweitformen ohne Kundschaft sind genau die Sorte
+Doppelung, die diese Sitzung mehrfach als Fehlerquelle hatte.
+
+Der Test hing an der alten Klasse und schlug korrekt fehl. Er prueft jetzt drei
+Dinge statt einer: farbige Marken im Kopf, farbige Marken an **jeder einzelnen
+Passiven** (das war der eigentliche Gewinn aus Phase 72), und dass keine grauen
+Chips mehr uebrig sind.
+
+`dev/sim.js` 458/458 · `dev/uitest.js` **106/106** · `dev/silhouetten.js`
+201/201. Kein Eingriff am Kampf, keine Balance-Messung noetig.
+
+Worktree `/home/viktor/tensura/worktree/phase-73-labels`, Branch
+`phase-73-labels`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

@@ -492,11 +492,14 @@ table.dbg i.ab { color: #e77; }
 }
 .signatur-block .titel { display: block; font-weight: 700; }
 .signatur-block .unter { display: block; color: var(--grau); line-height: 1.4; }
-.signatur-block .kws { display: flex; flex-wrap: wrap; gap: .2rem; margin-top: .25rem; }
-.kw-chip {
-  font-size: .66rem; padding: .05rem .3rem; border-radius: 4px;
-  background: var(--bg3); border: 1px solid var(--rand); color: var(--grau);
-}
+.signatur-block .kws { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .3rem; }
+/* In der Linienliste stehen die Marken mitten im Fliesstext, nicht als Leiste. */
+.linien-stufe .kws { display: inline-flex; flex-wrap: wrap; gap: .25rem;
+                     vertical-align: middle; }
+.linien-kopf .kws { display: inline-flex; flex-wrap: wrap; gap: .25rem; margin-top: .3rem; }
+/* `.kw-chip` ist ersatzlos weg: die graue Zweitform der Schluesselwort-Marke
+   hatte keine Kundschaft mehr, seit die Entwicklungslinien dieselbe farbige
+   `.kw-tag` benutzen wie Markt und Kaempfer. */
 .tag-preis {
   font-size: .64rem; padding: .05rem .28rem; border-radius: 4px;
   background: #2e1a1a; border: 1px solid #7a3a34; color: #ffb0a8;

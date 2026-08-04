@@ -594,6 +594,16 @@
   /* Ein Tag mit eigenem Tooltip. Statt einer Textwand am Kartenrand bekommt
      jede Information ihr eigenes Häppchen: wer wissen will, was „Untot" heißt,
      tippt den Untot-Tag an. */
+  /* Schluesselwoerter sehen ueberall gleich aus. Die Entwicklungslinien hatten
+     mit `kw-chip` eine graue Zweitform — dieselbe Information in einer anderen
+     Sprache, und ausgerechnet dort, wo man Schluesselwoerter VERGLEICHT. Jetzt
+     dieselbe farbige Marke samt Glossar-Tooltip wie am Marktposten und am
+     Kaempfer. */
+  function kwTag(k) {
+    return tag('kw-' + k, kwName(k), kwName(k),
+      (G.keywords[k] || '') + (G.zustaende[k] ? '\n\n' + G.zustaende[k] : ''));
+  }
+
   function tag(klasse, text, titel, hilfe) {
     return '<span class="kw-tag ' + klasse + '"' + tip(titel, hilfe) + '>' + esc(text) + '</span>';
   }
@@ -1463,7 +1473,7 @@
     var liste = Object.keys(kws);
     var html = '<p class="linien-kopf"><b>' + esc(u.name) + '</b> · ' + esc(GD.artName(u.art)) +
       (liste.length ? '<br><span class="kws">' + liste.map(function (k) {
-        return '<span class="kw-chip">' + esc(kwName(k)) + '</span>';
+        return kwTag(k);
       }).join('') + '</span>' : '') + '</p>';
 
     /* Die Signatur steht über den Linien: sie ist die eine Aktive, die die
@@ -1478,7 +1488,7 @@
         '<span class="titel">✦ ' + esc(sig.name) + '</span>' +
         '<span class="unter">' + esc(sig.text) + '</span>' +
         (sigKs.length ? '<span class="kws">' + sigKs.map(function (k) {
-          return '<span class="kw-chip">' + esc(kwName(k)) + '</span>';
+          return kwTag(k);
         }).join('') + '</span>' : '') +
         '</div>';
     }
@@ -1505,7 +1515,7 @@
           '<b>' + esc(a.name) + '</b>' +
           (preis ? ' <span class="tag-preis">Preis</span>' : '') +
           (ks.length ? ' <span class="kws">' + ks.map(function (k) {
-            return '<span class="kw-chip">' + esc(kwName(k)) + '</span>';
+            return kwTag(k);
           }).join('') + '</span>' : '') +
           ' — ' + esc(a.text) + '</span>';
       });
