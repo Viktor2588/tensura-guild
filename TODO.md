@@ -534,14 +534,16 @@ Balance und Werkzeug:
   herausgerechnet: die alte Rangfolge korrelierte mit r = 0,67 zur mittleren
   Reichweite der Träger). Donner hat nur 2 Träger — der Ausreißer ist also auch
   einer, an den kaum jemand herankommt.
-- **Der Heilungs-BUILD bleibt bei 69 %**, obwohl der Vorsprung auf
+- ~~**Der Heilungs-BUILD bleibt bei 69 %**~~ — Phase 65: die Eimer-Zuordnung
+  war ein argmax über ungenormte Zählerstände. Heilung +8, Konter −12. Alt:, obwohl der Vorsprung auf
   Einheitenebene von +8 auf +3 gefallen ist. Die Festlegung (zwei Quellen plus
   ein Verstärker) zahlt sich also weiter aus, ohne dass eine einzelne Mechanik
   dahintersteckt — fünf Phasen haben zusammen 5 von 25 Punkten erklärt. Vor
   weiteren Eingriffen die Eimer-Zuordnung selbst prüfen: was unterscheidet einen
   festgelegten Heilungstrupp von einem festgelegten Schildtrupp AUSSER dem
   Schlüsselwort?
-- **Ein Rollenzweig feuert 33.735 Mal und entscheidet nichts.** Die Regel
+- ~~**Ein Rollenzweig feuert 33.735 Mal und entscheidet nichts.**~~ — Phase 65:
+  totes Gewicht, gelöscht. Alt: Die Regel
   „Unterstützer heilen, wenn gerade keine Fähigkeit bereit ist" nimmt 81 % aller
   Unterstützer-Züge (41.432 in 150 Runs) — sie ist also kein Sonderfall, sondern
   das Normalverhalten der Rolle. Komplett abgeschaltet ändert sich an keiner
@@ -568,9 +570,10 @@ Balance und Werkzeug:
   sondern nicht existent.
 
 
-- Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller
-  Eimer. Zwei Runden Trimmen bewegten ihn um null Punkte — vor dem nächsten
-  Eingriff gezielt nachmessen (wie bei Frost), statt weiter an Zahlen zu drehen.
+- ~~Der Konter-Eimer meldet 82 %~~ — Phase 65: er hat den Eimer der Trupps
+  geerbt, die weit kamen. Nach der Korrektur liegt Konter bei −12 und ist der
+  SCHWÄCHSTE Build. Dass zwei Runden Trimmen ihn um null Punkte bewegten, war
+  der Hinweis.
 
 - ~~`dev/linien.js` braucht über zehn Minuten~~ — erledigt in Phase 63: fünf
   statt sieben Halbierungen, die letzten beiden maßen nur Rauschen.

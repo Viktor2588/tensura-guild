@@ -288,6 +288,9 @@ var proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {}, proResonanz 
    FESTEN Zeitpunkt — Beginn von Akt 2 —, und von dort aus die Siegquote. Das ist
    die Zahl, die etwas darueber sagt, ob Rang traegt. */
 var proRangAkt2 = {};
+/* Grundgesamtheit der Build-Auswertung: alle Runs, die Akt 1 überlebt haben.
+   Aus ihr kommt die OHNE-Seite jeder Build-Zeile. */
+var buildGesamt = { n: 0, w: 0 };
 /* Wiederbelebungen: der offene Verdacht hinter dem Heilungs-Vorsprung. Ein Tod,
    der rueckgaengig gemacht wird, hat kein Gegenstueck in einer anderen Linie. */
 var reviveGewonnen = 0, reviveVerloren = 0, reviveRunsG = 0, reviveRunsV = 0;
@@ -340,10 +343,29 @@ for (var s = 0; s < N; s++) {
   var kw = AB.keywords(abs);
   var builds = Object.keys(kw).filter(function (k) {
     return kw[k].quellen >= 2 && kw[k].verstaerker >= 1;
-  }).sort(function (a, b) {
-    return (kw[b].quellen + kw[b].verstaerker) - (kw[a].quellen + kw[a].verstaerker);
   });
-  bump(proKeyword, builds.length ? builds[0] : 'kein Build', won, run.step + (run.act - 1) * R.STEPS.length);
+  /* Bis Phase 65 wanderte jeder Run in GENAU EINEN Eimer: den Build mit der
+     größten Summe aus Quellen und Verstärkern. Diese Zuordnung hat nichts
+     gemessen. Ein Trupp aus sechs Einheiten erfüllt die Hürde im Schnitt für
+     3,7 Schlüsselwörter gleichzeitig — die Zuordnung war also kein „wofür hat
+     sich der Trupp festgelegt", sondern ein argmax über ungenormte Zählerstände.
+     Und die Zählerstände sind nicht vergleichbar: Heilung kommt im Mittel auf
+     9,8, Schild auf 7,2, Frost auf 3,4. Wo Heilung und Schild BEIDE als Build
+     dastanden (256 von 500 Runs), nahm Heilung den Eimer 165 : 70. Der
+     Schild-Eimer war damit im Wesentlichen „Schild ohne Heilung", und der
+     Abstand 69 zu 35 Punkten war der Abstand zwischen diesen beiden Resten,
+     nicht zwischen zwei Builds.
+     Deshalb jetzt: kein exklusiver Eimer mehr, sondern je Build der Vergleich
+     MIT gegen OHNE — ein Run zählt in jeden Build, den er tatsächlich hat.
+     Zweite Korrektur derselben Zeile: nur Runs, die Akt 1 überlebt haben.
+     Vorher trugen die Eimer die Sterbetiefe mit (Heilung Ø 14,4 Knoten, Schild
+     12,5), und die Siegquote maß zur Hälfte, wie lange der Run überhaupt lief. */
+  var tiefe = run.step + (run.act - 1) * R.STEPS.length;
+  if (tiefe > R.STEPS.length) {
+    buildGesamt.n++; if (won) buildGesamt.w++;
+    if (!builds.length) bump(proKeyword, 'kein Build', won, tiefe);
+    builds.forEach(function (k) { bump(proKeyword, k, won, tiefe); });
+  }
   /* Resonanz ist die Schwelle, ab der ein Build im Kampf wirklich etwas tut —
      also die Zahl, die zeigt, ob sich das Bündeln lohnt. */
   var reso = Object.keys(R.resonanzen(run));
@@ -351,16 +373,24 @@ for (var s = 0; s < N; s++) {
   run.relics.forEach(function (id) { bump(proRelikt, id, won); });
 }
 
-function tabelle(titel, map, nameFn, minN) {
+/* `basis` = Grundgesamtheit. Seit ein Run in MEHRERE Eimer zaehlen kann (Phase
+   65), ist die rohe Quote eines Eimers keine Aussage mehr: sie enthaelt alles,
+   was der Trupp sonst noch mitbringt. Erst der Abstand zur Grundgesamtheit sagt,
+   was der Build beitraegt. Ohne `basis` verhaelt sich die Tabelle wie frueher. */
+function tabelle(titel, map, nameFn, minN, basis) {
   console.log('\n' + titel);
+  var bq = basis && basis.n ? basis.w / basis.n * 100 : null;
+  if (bq !== null) console.log('  (Grundgesamtheit: ' + Math.round(bq) + '% aus ' + basis.n + ' Runs)');
   var rows = Object.keys(map).map(function (k) {
     return { k: k, n: map[k].n, wr: Math.round(map[k].w / map[k].n * 100),
              tiefe: map[k].t ? map[k].t / map[k].n : null };
   }).filter(function (r) { return r.n >= (minN || 1); })
     .sort(function (a, b) { return b.wr - a.wr; });
   rows.forEach(function (r) {
+    if (bq !== null) r.delta = Math.round(r.wr - bq);
     console.log('  ' + (nameFn(r.k) + '                      ').slice(0, 24) +
       String(r.wr + '%').padStart(5) + '   (' + r.n + ')' +
+      (bq === null ? '' : '  ' + (r.delta >= 0 ? '+' : '') + r.delta + ' gegen Grundgesamtheit') +
       (r.tiefe === null ? '' : '  Ø Knoten ' + r.tiefe.toFixed(1)));
   });
   return rows;
@@ -389,7 +419,8 @@ console.log('Käufe im Laden: ' + Object.keys(kaeufe).map(function (k) {
   return k + ' ' + kaeufe[k];
 }).join(' · '));
 
-var kwRows = tabelle('Winrate nach Build (Quellen + Verstärker):', proKeyword, function (k) { return k; }, Math.max(10, N / 40));
+var kwRows = tabelle('Winrate nach Build (Quellen + Verstärker, ein Run zählt in JEDEN seiner Builds):',
+  proKeyword, function (k) { return k; }, Math.max(10, N / 40), buildGesamt);
 tabelle('Winrate nach Resonanz (drei Teile derselben Linie):', proResonanz, function (k) { return k; }, 10);
 tabelle('Winrate nach höchstem Rang AM RUN-ENDE (Folge der Laufzeit, nicht Ursache):',
   proRang, function (k) { return 'Rang ' + k; }, 10);
@@ -414,7 +445,13 @@ kwRows.forEach(function (r) {
      diese Hürde meldet das Werkzeug „Frost 0 %", und Frost gewinnt in Wahrheit
      100 % gegen alle drei Bosse. */
   if (r.tiefe !== null && r.tiefe < 4) return;
-  if (r.wr < 25 || r.wr > 75) { console.log('  ! Build ' + r.k + ': ' + r.wr + '%'); flags++; }
+  /* Gemeldet wird der ABSTAND zur Grundgesamtheit, nicht die rohe Quote. Bei
+     ueberlappenden Eimern liegt jede Quote nahe am Mittel des Feldes — das alte
+     Band 25-75 % wuerde nie mehr anschlagen und damit nichts mehr finden. */
+  if (r.delta !== undefined && Math.abs(r.delta) > 12) {
+    console.log('  ! Build ' + r.k + ': ' + (r.delta > 0 ? '+' : '') + r.delta +
+      ' gegen Grundgesamtheit (' + r.wr + '%, n=' + r.n + ')'); flags++;
+  }
 });
 relRows.forEach(function (r) {
   if (r.wr < 20 || r.wr > 80) { console.log('  ! Relikt ' + GD.relic(r.k).name + ': ' + r.wr + '%'); flags++; }

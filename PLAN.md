@@ -3084,6 +3084,81 @@ Phase 66 — sonst kalibrieren fuenf Phasen denselben Knopf gegeneinander.
 
 Worktree `/home/viktor/tensura/worktree/phase-64-oekonomie`, Branch
 `phase-64-oekonomie`.
+### Phase 65 (2026-08-04): Beide Verdachte waren Messfehler
+
+Zwei offene Punkte, und der Plan verlangte fuer beide ausdruecklich, ERST die
+Messung zu pruefen und nicht wieder an Zahlen zu drehen. Gut so — es war
+zweimal die Messung.
+
+**A) Der Heilungs-Eimer hat nie einen Heilungs-Build gemessen.** Bis hierher
+wanderte jeder Run in GENAU EINEN Eimer: den Build mit der groessten Summe aus
+Quellen und Verstaerkern. Diese Zuordnung ist aus zwei Gruenden wertlos:
+
+1. **Ein Trupp hat mehrere Builds gleichzeitig.** Sechs Einheiten erfuellen die
+   Huerde im Schnitt fuer 3,7 Schluesselwoerter. Die Zuordnung war also kein
+   „wofuer hat sich der Trupp festgelegt", sondern ein argmax.
+2. **Und dieses argmax lief ueber ungenormte Zaehlerstaende.** Heilung kommt im
+   Mittel auf 9,8 Teile, Schild auf 7,2, Frost auf 3,4 — Heilung gewinnt den
+   Vergleich strukturell. Wo Heilung und Schild BEIDE als Build dastanden (256
+   von 500 Runs), nahm Heilung den Eimer 165 : 70. Der Schild-Eimer war damit
+   im Wesentlichen „Schild ohne Heilung", und **der Abstand von 69 zu 35
+   Punkten war der Abstand zwischen diesen beiden Resten, nicht zwischen zwei
+   Builds.** Die Frage aus dem Plan — was einen festgelegten Heilungstrupp von
+   einem festgelegten Schildtrupp unterscheidet AUSSER dem Schluesselwort —
+   hatte die Antwort: nichts. Es waren nie zwei verschiedene Truppsorten.
+
+Dazu trugen die Eimer die Sterbetiefe mit (Heilung Ø 14,4 Knoten, Schild 12,5);
+die Siegquote mass zur Haelfte, wie lange der Run ueberhaupt lief.
+
+Jetzt zaehlt ein Run **in jeden Build, den er hat**, nur Runs nach Akt 1 werden
+gewertet, und die Tabelle weist den **Abstand zur Grundgesamtheit** aus statt
+einer rohen Quote. Damit muss auch die Ausreisser-Regel wechseln: bei
+ueberlappenden Eimern liegt jede Quote nahe am Feldmittel, das alte Band
+25–75 % wuerde nie wieder anschlagen. Gemeldet wird jetzt ein Abstand ueber
+12 Punkten.
+
+Das neue Bild (60 Runs, Grundgesamtheit 59 %):
+
+| Build | Quote | Abstand |
+|---|---|---|
+| tempo | 78 % | **+19** |
+| heilung | 67 % | +8 |
+| chaos | 65 % | +6 |
+| schild | 60 % | +1 |
+| frost | 53 % | −6 |
+| konter | 47 % | **−12** |
+
+**Heilung ist kein Ausreisser mehr, und Konter hat das Vorzeichen gewechselt.**
+Konter stand seit Phase 12 als 82-%-Ausreisser im Plan, zwei Runden Trimmen
+haben ihn um null Punkte bewegt — er war die ganze Zeit der schwaechste Build
+und hat nur den Eimer der Trupps geerbt, die weit kamen. Neu auffaellig ist
+tempo. Beide Zahlen gehoeren mit dem grossen Lauf bestaetigt, n ist hier klein.
+
+**B) Der Unterstuetzer-Rollenzweig ist geloescht.** Die Regel „Unterstuetzer
+heilen, wenn gerade keine Faehigkeit bereit ist" nahm 81 % aller
+Unterstuetzer-Zuege. Instrumentiert ueber 150 Runs: 31.776 Zuege, davon 24.641
+ohne bereite Faehigkeit — aber in **20.251 davon stand der ganze Trupp auf
+vollem Leben**, der Zweig tat also nichts. Und er fiel **kein einziges Mal**
+ein, waehrend jemand wirklich verwundet war: unter 85 % greift die
+`wenn`-Bedingung der Signatur, und die heilt um ein Vielfaches mehr. Uebrig
+blieben 4.390 Heilungen im Band zwischen 85 und 100 % Leben — 11 aufgefuellte
+Lebenspunkte je Ausloesung, der Rest Ueberheilung.
+
+Also die erste der beiden Antworten aus dem Plan: totes Gewicht, geloescht. Der
+Unterstuetzer schlaegt jetzt zu, wenn niemand Heilung braucht. Siegquote 51 →
+50 %. Der Glossartext beschrieb den geloeschten Zweig woertlich und sagt jetzt,
+was das Spiel tut.
+
+**Ein Test hing an dem toten Zweig.** „Das Todesurteil wartet auf ein
+angeschlagenes Ziel" liess Gobwa allein gegen einen Troll antreten — und sie
+hielt nur durch, weil sie sich ueber genau diesen Zweig selbst heilte. Ohne ihn
+stirbt sie, bevor der Troll unter die Haelfte faellt, und der Test misst
+schweigend nichts (0× spaet, 0× frueh). Der Troll schlaegt jetzt nicht mehr zu;
+damit trennt der Test die Wartebedingung von Gobwas Zaehigkeit. `node
+dev/sim.js` 443/443.
+
+Worktree `/home/viktor/tensura/worktree/phase-65-messung`, Branch
+`phase-65-messung`.
 
 ## 5. Risiken
 
