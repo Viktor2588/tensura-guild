@@ -16,6 +16,18 @@ bleiben. Bewusst r149 statt neuer: das ist die letzte Fassung mit einem
 UMD-Build, der sich per `<script>` einbinden lässt — der Rest des Projekts hat
 keinen Bauschritt und soll keinen bekommen.
 
+## Audio
+
+**Es gibt keine Audiodateien und soll vorerst auch keine geben.** `js/audio.js`
+erzeugt jeden Ton zur Laufzeit aus der Web Audio API (Oszillatoren für Töne,
+gefiltertes Rauschen für Einschläge) statt aus Samples. Das umgeht dieselbe
+Lizenzfrage, die die Figuren-Herkunftstabelle unten so ernst nimmt — ein
+synthetischer Ton hat keine Quelle, die belegt werden müsste — und braucht
+keinen neuen Ordner unter `assets/`. Sollten später echte Sample-Dateien
+dazukommen (Musik, Sprachausgabe, aufwendigere SFX), gehören sie unter
+`assets/audio/` und in eine eigene Herkunftstabelle nach demselben Muster wie
+bei den Figuren.
+
 ## Figuren
 
 **Stand: es gibt noch keine.** Die Ansicht zeichnet Platzhalter zur Laufzeit
