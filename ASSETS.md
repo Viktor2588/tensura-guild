@@ -16,6 +16,14 @@ bleiben. Bewusst r149 statt neuer: das ist die letzte Fassung mit einem
 UMD-Build, der sich per `<script>` einbinden lässt — der Rest des Projekts hat
 keinen Bauschritt und soll keinen bekommen.
 
+## Ton
+
+**Es gibt keine Audio-Dateien.** Wie das Bloom in `js/fx.js` entstehen alle
+Sound-Effekte zur Laufzeit aus eigenem Code — Oszillatoren und gefiltertes
+Rauschen über die Web Audio API, in `js/ton.js`. Damit fällt für Ton dieselbe
+Provenienz-Frage weg, die diese Datei sonst beantwortet: es gibt nichts
+Fremdes zu benennen und nichts, dessen Lizenz zu klären wäre.
+
 ## Figuren
 
 **Stand: es gibt noch keine.** Die Ansicht zeichnet Platzhalter zur Laufzeit
