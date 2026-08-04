@@ -3695,6 +3695,35 @@ Chips mehr uebrig sind.
 Worktree `/home/viktor/tensura/worktree/phase-73-labels`, Branch
 `phase-73-labels`.
 
+### Phase 74 (2026-08-04): Ein Tooltip an der Bedrohungsanzeige
+
+Rueckmeldung: der alte Tooltip am Warnzeichen soll weg. Beim Nachsehen waren es
+zwei Fehler statt einem.
+
+1. **Zwei Tooltips fuer dieselbe Anzeige.** `hudTips()` hing einen festen
+   Langtext an das umschliessende `<span>` — also an das ⚠ —, waehrend
+   `zeichneHud` die kumulierten Mali an das `<b>` darin setzte. Nebeneinander,
+   der aeltere der laengere. Der feste Text ist weg; was gilt, sagen die Mali,
+   und wie die Stufe steigt, steht im Menue unter „Fortschritt", wo man sie auch
+   umstellt.
+2. **Der Mali-Tooltip aus Phase 72 war halb kaputt.** Er setzte nur `data-tip`,
+   also den TITEL, und liess `data-tip-text` leer — die ganze Liste stand als
+   Ueberschrift. Der Motor liest den Rumpf aus `data-tip-text` (`tip()` schreibt
+   beide, ich hatte von Hand nur eines gesetzt). Jetzt getrennt: Titel „Stufe 5 ·
+   Sturmgott", Rumpf die Mali-Liste.
+
+Der Tooltip sitzt jetzt am umschliessenden `<span>`, damit auch das Warnzeichen
+davor ihn zeigt — es gehoert zur Anzeige, nicht daneben.
+
+Vier neue Tests halten das fest: Rumpf vorhanden, Titel wohlgeformt, der alte
+Langtext weg, und am inneren `<b>` haengt kein zweiter Tooltip mehr.
+
+`dev/sim.js` 458/458 · `dev/uitest.js` **110/110** · `dev/silhouetten.js`
+201/201. Kein Eingriff am Kampf.
+
+Worktree `/home/viktor/tensura/worktree/phase-74-hudtip`, Branch
+`phase-74-hudtip`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

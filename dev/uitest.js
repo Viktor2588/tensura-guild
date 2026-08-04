@@ -372,6 +372,20 @@ ok($$('#menu-linien .linien-stufe .kw-tag').length > 0,
 /* Die graue Zweitform ist ersatzlos weg. */
 ok($$('#menu-linien .kw-chip').length === 0,
    'keine grauen kw-chips mehr in der Übersicht');
+
+/* Phase 74: die Bedrohungsanzeige oben rechts traegt GENAU EINEN Tooltip, und
+   zwar die kumulierten Mali — Titel und Rumpf getrennt. Vorher hingen dort
+   zwei: der alte Langtext am umschliessenden <span> (also am Warnzeichen) und
+   die Mali am <b> darin, letztere ganz im Titel. */
+var stufeSpan = $('#hud-stufe').parentNode;
+ok(!!stufeSpan.dataset.tipText,
+   'die Bedrohungsanzeige hat einen Tooltip-Rumpf, nicht nur eine Überschrift');
+ok(/^Stufe \d+ · /.test(stufeSpan.dataset.tip || ''),
+   'der Titel nennt Stufe und Namen');
+ok(!/GEWINNST/.test(stufeSpan.dataset.tipText || ''),
+   'der alte Langtext am Warnzeichen ist weg');
+ok(!$('#hud-stufe').getAttribute('data-tip'),
+   'am inneren <b> haengt kein zweiter Tooltip mehr');
 ok(!!$('#menu-linien .signatur-block'), 'die Übersicht zeigt auch die Signatur-Aktive');
 ok($('#menu-linien .signatur-block .unter').textContent.length > 15,
    'samt ihrer Beschreibung');

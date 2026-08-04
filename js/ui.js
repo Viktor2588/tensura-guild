@@ -114,10 +114,12 @@
   function hudTips() {
     var paare = [['hud-mag', 'Magicule', G.begriffe.magicule],
                  ['hud-leben', 'Verbleibende Niederlagen', G.begriffe.leben]];
-    paare.push(['hud-stufe', 'Bedrohungsstufe', G.begriffe.bedrohungsstufe +
-      '\n\nSie steigt, sobald du einen Run auf der aktuellen Stufe GEWINNST — ' +
-      'ein verlorener Run ändert nichts. Umstellen kannst du sie im Menü unter ' +
-      '„Fortschritt"; das setzt den laufenden Run neu auf.']);
+    /* Die Bedrohungsstufe bekommt hier KEINEN festen Text mehr. Er hing am
+       umschliessenden <span> — also am Warnzeichen — und stand damit neben dem
+       Mali-Tooltip, den `zeichneHud` an dieselbe Stelle setzt: zwei Tooltips
+       fuer dieselbe Anzeige, und der aeltere war der laengere. Was gilt, sagen
+       jetzt die kumulierten Mali; wie die Stufe steigt, steht im Menue unter
+       „Fortschritt", wo man sie auch umstellt. */
     paare.forEach(function (p) {
       var el = $(p[0]).parentNode;
       el.dataset.tip = p[1];
@@ -135,13 +137,16 @@
     var ml = R.mali(run.threat || 0);
     $('hud-stufe').innerHTML = st.stufe +
       (offen > (run.threat || 0) ? '<i class="hoeher">+' + (offen - run.threat) + '</i>' : '');
-    /* Oben rechts neben dem Menue: alle geltenden Mali auf einen Blick, nicht
-       der Text der obersten Stufe. */
-    $('hud-stufe').setAttribute('data-tip', ml.length
-      ? 'Stufe ' + run.threat + ' · ' + st.name + '\n\n' + ml.map(function (m) {
-          return '• ' + m;
-        }).join('\n')
-      : 'Stufe 0 · ' + st.name + '\n\nKeine Mali.');
+    /* Oben rechts neben dem Menue: alle geltenden Mali auf einen Blick.
+       An das umschliessende <span>, damit auch das Warnzeichen davor denselben
+       Tooltip zeigt — und getrennt in Titel und Rumpf. In Phase 72 stand hier
+       nur `data-tip`, also die ganze Liste als UEBERSCHRIFT; der Motor liest
+       den Rumpf aus `data-tip-text`. */
+    var stufeBox = $('hud-stufe').parentNode;
+    stufeBox.dataset.tip = 'Stufe ' + (run.threat || 0) + ' · ' + st.name;
+    stufeBox.dataset.tipText = ml.length
+      ? ml.map(function (m) { return '• ' + m; }).join('\n')
+      : 'Keine Mali — der normale Weg.';
     $('hud-mag').textContent = run.magicules;
     $('hud-leben').textContent = run.lives;
     zeichnePfad();
