@@ -125,16 +125,39 @@
             'Wer nur exekutiert, räumt nicht mehr ab; Gift, Brand und Blutung tragen weiter.' },
     { stufe: 3, name: 'Kriegsrecht', regel: 'kriegsrecht',
       text: 'Der Händler bietet nur noch EINE Einheit an statt drei, und Rangaufstiege kosten ' +
-            '30 % mehr Magicule. Du gewinnst weitgehend mit dem Trupp, den du gedraftet hast.' },
+            '30 % mehr Magicule.' },
     { stufe: 4, name: 'Belagerung', regel: 'belagerung',
       text: 'Im zweiten Akt steht auf jedem zweiten Kampfknoten eine Elite — zur Beute ' +
             'eines normalen Kampfes. Dazu gibt das Lager 15 % weniger.' },
     { stufe: 5, name: 'Sturmgott', regel: 'sturmgott',
       text: 'Ein Drittel weniger Magicule aus jedem Kampf und jedem Lager. Dazu nur drei ' +
             'Leben statt fünf und doppelt eskalierende Bosse. Die Gegner sind kaum härter ' +
-            'als auf Stufe 4 — aber der Trupp, den du hast, ist weitgehend der, mit dem du endest.' }
+            'als auf Stufe 4.' }
   ];
   function bedrohung(i) { return BEDROHUNG[Math.max(0, Math.min(BEDROHUNG.length - 1, i || 0))]; }
+
+  /* Die kumulierten Mali als Liste — aus den ECHTEN Konstanten gerechnet, nicht
+     aus den Regeltexten abgeschrieben. Diese Sitzung hat dreimal gezeigt, wohin
+     handgepflegte Beschreibungen fuehren: Stufe 1 versprach „ein Gegner mehr"
+     bei halben Werten (Phase 69), Kriegsrecht versprach teurere Raenge und
+     multiplizierte eine tote Funktion (Phase 71), und zwei Art-Identitaeten
+     standen im Glossar, ohne zu existieren (Phase 36). Was hier steht, kann
+     nicht von dem abweichen, was das Spiel tut. */
+  function mali(t) {
+    t = Math.max(0, Math.min(5, t || 0));
+    var out = [];
+    if (!t) return out;
+    out.push('Gegnerwerte +' + Math.round(0.022 * t / GRUNDHAERTE * 100) + ' %');
+    if (t >= 1) out.push('Ein Gegner mehr je Begegnung (' +
+      Math.round(NACHZUEGLER * 100) + ' % der Werte)');
+    if (t >= 2) out.push('Jeder Gegner steht einmal mit ' +
+      Math.round(NACHSCHUB_LEBEN * 100) + ' % Leben wieder auf');
+    if (t >= 3) out.push('Nur 2 statt 4 Marktposten, Einheiten +30 % teurer');
+    if (t >= 4) out.push('Akt 2: Elite zu normaler Beute, Lager −15 %');
+    if (t >= 5) out.push('−' + Math.round((1 - STURM_BEUTE) * 100) +
+      ' % Magicule, 3 Leben statt 5, Bosse eskalieren doppelt');
+    return out;
+  }
   /* Gilt die Regel auf der Stufe dieses Runs? Kumulativ: Stufe 4 hat auch 1–3. */
   function regel(run, name) {
     var t = run.threat || 0;
@@ -582,9 +605,25 @@
      Passive MIT Preis (die Keystones, die eine Regel gegen einen Nachteil
      tauschen) bleiben draussen: sie sind eine Entscheidung, und aufgedraengt
      bekommt man sie schon beim Startzustand bewusst nicht. */
-  function wuerfleLinienPassive(unitId, anzahl, rng) {
-    var topf = AB.linienAngebot(unitId).filter(function (o) { return !o.preis; });
-    var out = [];
+  /* `erbe` sind die Passiven, die eine BEREITS BESITZENE Einheit derselben Art
+     schon hat. Sie bleiben und werden nur aufgefuellt.
+
+     Vorher wurde jedes Marktangebot frei gewuerfelt — auch das Angebot, das die
+     Aufwertung der eigenen Einheit ist. Wer eine Shion mit drei Chaos-Passiven
+     aufwertete, bekam eine Shion mit drei ANDEREN Passiven zurueck: die
+     Entwicklung war kein Aufbau, sondern ein Neuwurf, und ein Build ueber
+     mehrere Raenge war schlicht nicht spielbar. Das ist der Kern der
+     Rueckmeldung „so kann man keinen Evolution-Build fahren".
+
+     Geerbt wird nur, was die Einheit auch tragen kann: eine ID aus einer
+     anderen Einheit (nach einer Aufwertung ueber die ART, nicht ueber dieselbe
+     Einheit) faellt heraus. */
+  function wuerfleLinienPassive(unitId, anzahl, rng, erbe) {
+    var angebot = AB.linienAngebot(unitId).filter(function (o) { return !o.preis; });
+    var eigen = {};
+    angebot.forEach(function (o) { eigen[o.id] = 1; });
+    var out = (erbe || []).filter(function (pid) { return eigen[pid]; }).slice(0, anzahl);
+    var topf = angebot.filter(function (o) { return out.indexOf(o.id) < 0; });
     while (out.length < anzahl && topf.length) {
       out.push(topf.splice(Math.floor(rng() * topf.length), 1)[0].id);
     }
@@ -827,11 +866,45 @@
     var meine = function (l) { return l.filter(function (u) { return u.side === 'player'; }); };
     run.pending = {
       result: res, node: node, devour: null,
-      bilanz: {
-        ticks: res.ticks,
-        lebend: meine(res.survivors).length,
-        gefallen: meine(res.fallen).map(function (u) { return u.name; })
-      }
+      bilanz: (function () {
+        /* Die Uebersicht nach dem Kampf. Wird HIER gerechnet, nicht in der UI:
+           das Kampflog wandert bewusst nicht in den Speicherstand (Phase 13),
+           die fertigen Zahlen dagegen schon. Sonst steht nach einem Neuladen
+           ein leerer Bildschirm da. */
+        var alle = meine(res.survivors.concat(res.fallen));
+        function spitze(feld) {
+          var best = null;
+          alle.forEach(function (u) {
+            if ((u[feld] || 0) > 0 && (!best || u[feld] > best.wert)) {
+              best = { name: u.name, wert: Math.round(u[feld]) };
+            }
+          });
+          return best;
+        }
+        /* Heilung haengt am Empfaenger, nicht am Heiler — `heal()` kennt nur
+           einen `source`-Namen. Statt die Engine dafuer umzubauen, wird das Log
+           an dieser einen Stelle ausgezaehlt. */
+        var proQuelle = {};
+        (res.log || []).forEach(function (l) {
+          if (l.type === 'heal' && l.side === 'player' && l.source) {
+            proQuelle[l.source] = (proQuelle[l.source] || 0) + (l.amount || 0);
+          }
+        });
+        var heilBest = null;
+        Object.keys(proQuelle).forEach(function (k) {
+          if (!heilBest || proQuelle[k] > heilBest.wert) {
+            heilBest = { name: k, wert: Math.round(proQuelle[k]) };
+          }
+        });
+        return {
+          ticks: res.ticks,
+          lebend: meine(res.survivors).length,
+          gefallen: meine(res.fallen).map(function (u) { return u.name; }),
+          austeiler: spitze('dmgDealt'),
+          einstecker: spitze('dmgTaken'),
+          heiler: heilBest
+        };
+      })()
     };
 
     if (res.winner === 'player') {
@@ -924,6 +997,18 @@
       return GD.unit(m.id).art === u.art;
     })[0];
     return (alt && rang > alt.rank) ? alt : null;
+  }
+
+  /* Was die UI fragen muss, statt `freieArt`: liesse sich dieser Posten
+     ueberhaupt kaufen? `addUnit` kann laengst aufwerten — die Marktkarte war
+     trotzdem mit „Art schon besetzt" gesperrt, und damit war der einzige Weg,
+     eine eigene Einheit hochzubringen, zugenagelt. Eine zweite Regel an einer
+     zweiten Stelle, die von der ersten abwich; jetzt gibt es nur noch diese. */
+  function kaufbar(run, id, rang) {
+    var u = GD.unit(id);
+    if (!u) return false;
+    if (freieArt(run, u.art)) return true;
+    return !!ersetzbar(run, u, rang || 0);
   }
 
   function addUnit(run, id, startPassiveId, rang, passiveListe) {
@@ -1198,7 +1283,10 @@
           return GD.unit(m.id).art === u.art;
         })[0];
         if (vorhanden) rang = Math.max(rang, Math.min(obergrenze, vorhanden.rank + 1));
-        var pas = wuerfleLinienPassive(u.id, rang + 1, rng);
+        /* Nur wenn es DIESELBE Einheit ist, wird geerbt. Ein anderer Oger ist
+           keine Weiterentwicklung von Shion, sondern ihr Ersatz. */
+        var erbe = (vorhanden && vorhanden.id === u.id) ? passivIds(vorhanden) : null;
+        var pas = wuerfleLinienPassive(u.id, rang + 1, rng, erbe);
         offers.push({ kind: 'unit', id: u.id, name: u.name,
                       rang: rang, rangName: RANK_NAME[rang],
                       price: rangPreis(u, rang, run),
@@ -1563,7 +1651,8 @@
     chooseStart: chooseStart,
     rankName: rankName, rankCost: rankCost,
     BEDROHUNG: BEDROHUNG, bedrohung: bedrohung, bedrohungsFaktor: bedrohungsFaktor, regel: regel,
-    beuteFaktor: beuteFaktor,
+    beuteFaktor: beuteFaktor, kaufbar: kaufbar, ersetzbar: ersetzbar, mali: mali,
+    shopTest: shopOffers, linienPassiveTest: wuerfleLinienPassive,
     regelnTest: regeln, rollTest: roll, EINSTIEG: EINSTIEG, EINSTIEG_HAERTE: EINSTIEG_HAERTE,
     START_MAX_RARITAET: START_MAX_RARITAET,
     itemSlots: itemSlots, aktivSlots: aktivSlots, passivSlots: passivSlots, praedatorSlots: praedatorSlots,

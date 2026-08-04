@@ -865,11 +865,19 @@
     log.push({ t: t, type: 'end', winner: winner });
     return {
       winner: winner, ticks: t, log: log, roster: roster,
+      /* `dmgDealt`/`dmgTaken` gehoeren mit in die Projektion: die Kampfbilanz
+         nach dem Sieg (Phase 72) braucht sie, und die vollen Einheitenobjekte
+         verlassen `simulate` bewusst nicht. Auch die Gefallenen tragen sie —
+         wer viel eingesteckt hat, ist oft genau der, der nicht mehr steht. */
       survivors: units.filter(alive).map(function (u) {
-        return { id: u.id, name: u.name, hp: u.hp, maxHp: u.maxHp, side: u.side };
+        return { id: u.id, name: u.name, hp: u.hp, maxHp: u.maxHp, side: u.side,
+                 dmgDealt: u.dmgDealt, dmgTaken: u.dmgTaken };
       }),
       fallen: units.filter(function (u) { return !alive(u); })
-        .map(function (u) { return { id: u.id, name: u.name, side: u.side }; })
+        .map(function (u) {
+          return { id: u.id, name: u.name, side: u.side,
+                   dmgDealt: u.dmgDealt, dmgTaken: u.dmgTaken };
+        })
     };
   }
 

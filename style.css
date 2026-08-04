@@ -559,3 +559,17 @@ table.dbg i.ab { color: #e77; }
   text-anchor: middle; dominant-baseline: middle; pointer-events: none;
 }
 .feld-einheit.tot { opacity: .25; }
+
+/* Kumulierte Bedrohungs-Mali (Phase 72): Liste statt Fliesstext. */
+ul.mali { margin: .4rem 0 0; padding-left: 1.1rem; list-style: none; }
+ul.mali li { position: relative; font-size: .82rem; opacity: .8; line-height: 1.5; }
+ul.mali li::before { content: '−'; position: absolute; left: -.9rem; opacity: .7; }
+.unter.gut { color: #7fd08a; }
+
+/* Kampfbilanz nach dem Sieg (Phase 72). */
+.kampfbilanz { display: flex; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; }
+.bilanz-zeile { display: flex; flex-direction: column; align-items: flex-start;
+  padding: .4rem .6rem; border-radius: .4rem; background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.09); min-width: 8.5rem; }
+.bilanz-zeile i { font-style: normal; opacity: .8; }
+.bilanz-zeile b { font-size: .95rem; }

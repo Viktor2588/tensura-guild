@@ -3602,6 +3602,69 @@ vorweggenommen.
 Worktree `/home/viktor/tensura/worktree/phase-71-sturmgott`, Branch
 `phase-71-sturmgott`.
 
+### Phase 72 (2026-08-04): Aufwertung war zugenagelt
+
+Sechs Punkte aus dem echten Spiel, nach einem gewonnenen Run auf Stufe 5. Einer
+davon war ein Konstruktionsfehler, der eine ganze Spielweise unmoeglich machte.
+
+**Der kritische Fehler: zwei Regeln an zwei Stellen, die voneinander abwichen.**
+`addUnit` kann laengst aufwerten — steht die Art schon im Trupp, raeumt sie die
+alte Einheit weg, gibt die Ausruestung zurueck und rechnet den VOLLEN Einsatz
+an (Phase 51 hat das eigens so gebaut, samt Messung). `shopOffers` bietet das
+auch ausdruecklich an: „Steht die Art schon im Trupp, ist das Angebot eine
+Aufwertung — dann muss der Rang darueber liegen." Aber die Marktkarte in
+`ui.js` fragte `freieArt` und sperrte den Posten mit „Art schon besetzt".
+
+**Der einzige Weg, eine eigene Einheit hochzubringen, war damit zugenagelt.**
+Der Motor konnte es, der Markt bot es an, die Oberflaeche verbot es. Jetzt gibt
+es nur noch eine Regel: `kaufbar(run, id, rang)` beantwortet dieselbe Frage, die
+`addUnit` beim Kauf stellt, und die Karte weist die Aufwertung ausdruecklich aus
+(„ersetzt X, Einsatz wird angerechnet"). Die Sperrmeldung nennt jetzt den echten
+Grund — „Rang zu niedrig zum Aufwerten" statt „Art besetzt".
+
+**Der zweite Teil desselben Problems: die Aufwertung wuerfelte neu.**
+`wuerfleLinienPassive` zog fuer JEDES Angebot frei aus dem Topf, auch fuer das,
+das die eigene Einheit weiterentwickelt. Wer eine Shion mit drei Chaos-Passiven
+aufwertete, bekam eine Shion mit drei ANDEREN zurueck. Ein Build ueber mehrere
+Raenge war damit nicht spielbar — genau die Rueckmeldung „so kann man keinen
+Evolution-Build fahren". Jetzt erbt das Angebot die vorhandenen Passiven und
+fuellt nur auf. Geerbt wird ausschliesslich bei DERSELBEN Einheit: ein anderer
+Oger ist keine Weiterentwicklung von Shion, sondern ihr Ersatz. Fremde IDs
+fallen heraus.
+
+**Kampfbilanz nach dem Sieg.** Wer hat ausgeteilt, wer eingesteckt, wer
+geheilt — bis hierher war ein Sieg eine Zahl, und ob der teure Neuzugang etwas
+beigetragen hat, erfuhr man nie. Gerechnet wird sie beim Kampf, nicht in der UI:
+das Log wandert bewusst nicht in den Speicherstand (Phase 13), die fertigen
+Zahlen dagegen schon. Dafuer tragen `survivors` und `fallen` jetzt `dmgDealt`
+und `dmgTaken` — die vollen Einheitenobjekte verlassen `simulate` nicht.
+Heilung haengt am Empfaenger und nicht am Heiler; statt die Engine umzubauen,
+wird das Log an dieser einen Stelle nach `source` ausgezaehlt.
+
+**Schluesselwoerter in den Entwicklungslinien.** Sie standen nur im Tooltip —
+man musste jede der sechzehn Passiven einzeln anfahren, um zu sehen, welche
+Gift macht und welche Schild. Jetzt Chips, ueberfliegbar.
+
+**Kumulierte Mali statt Fliesstext.** Oben rechts stand der Text der OBERSTEN
+Stufe, waehrend die vier darunter weiterlaufen — man las „drei Leben statt
+fuenf" und erfuhr nichts von den vier anderen Regeln. `R.mali(t)` liefert die
+Liste, **aus den echten Konstanten gerechnet**. Das ist kein Zufall: diese
+Sitzung hat dreimal gezeigt, wohin handgepflegte Beschreibungen fuehren — Stufe
+1 versprach „ein Gegner mehr" bei halben Werten (Phase 69), Kriegsrecht
+versprach teurere Raenge und multiplizierte eine tote Funktion (Phase 71), zwei
+Art-Identitaeten standen im Glossar ohne zu existieren (Phase 36). Was hier
+steht, kann nicht mehr abweichen.
+
+Dazu die zwei „der Trupp, den du hast"-Saetze aus den Regeltexten entfernt — sie
+stimmen seit der Aufwertungs-Reparatur ohnehin nicht mehr.
+
+`dev/sim.js` **458/458** (5 neue Tests: Aufwertung kaufbar, Passiv-Erbe,
+Kampfbilanz) · `dev/uitest.js` 104/104 · `dev/silhouetten.js` 201/201 ·
+`dev/balance.js 500` 50 % — `GRUNDHAERTE` unveraendert.
+
+Worktree `/home/viktor/tensura/worktree/phase-72-evolution`, Branch
+`phase-72-evolution`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

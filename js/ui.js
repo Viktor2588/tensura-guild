@@ -132,8 +132,16 @@
       (run.threat ? ' · Stufe ' + run.threat : '');
     var st = R.bedrohung(run.threat || 0);
     var offen = run.meta.threat || 0;
+    var ml = R.mali(run.threat || 0);
     $('hud-stufe').innerHTML = st.stufe +
       (offen > (run.threat || 0) ? '<i class="hoeher">+' + (offen - run.threat) + '</i>' : '');
+    /* Oben rechts neben dem Menue: alle geltenden Mali auf einen Blick, nicht
+       der Text der obersten Stufe. */
+    $('hud-stufe').setAttribute('data-tip', ml.length
+      ? 'Stufe ' + run.threat + ' · ' + st.name + '\n\n' + ml.map(function (m) {
+          return '• ' + m;
+        }).join('\n')
+      : 'Stufe 0 · ' + st.name + '\n\nKeine Mali.');
     $('hud-mag').textContent = run.magicules;
     $('hud-leben').textContent = run.lives;
     zeichnePfad();
@@ -253,11 +261,17 @@
     if (!run.threat) return '';
     var aktiv = R.BEDROHUNG.filter(function (b) { return b.regel && b.stufe <= run.threat; });
     if (!aktiv.length) return '';
+    /* Statt des Fliesstextes der obersten Stufe die KUMULIERTEN Mali als Liste:
+       der Text beschrieb nur die letzte Stufe, waehrend alle darunter
+       weiterlaufen — man las „drei Leben statt fuenf" und erfuhr nichts von den
+       vier Regeln, die ebenfalls gelten. */
     return '<div class="regeln">' + aktiv.map(function (b) {
       return '<span class="regel"' + tip(b.stufe + ' · ' + b.name, b.text) + '>' +
         esc(b.name) + '</span>';
     }).join('') + '</div>' +
-      (lang ? '<p class="hinweis">' + esc(R.bedrohung(run.threat).text) + '</p>' : '');
+      (lang ? '<ul class="mali">' + R.mali(run.threat).map(function (m) {
+        return '<li>' + esc(m) + '</li>';
+      }).join('') + '</ul>' : '');
   }
 
   function zeichneStart() {
@@ -651,6 +665,22 @@
     return tag('tag-mag', 'Vorräte', 'Vorräte', G.begriffe.magicule);
   }
 
+  /* Die drei Spitzenwerte des Kampfes. Leere Felder fallen weg statt „—" zu
+     zeigen: ein Trupp ohne Heiler soll keine leere Zeile bekommen. */
+  function bilanzHtml(b) {
+    var zeilen = [
+      ['⚔', 'meister Schaden', b.austeiler],
+      ['🛡', 'meisten eingesteckt', b.einstecker],
+      ['✚', 'meiste Heilung', b.heiler]
+    ].filter(function (z) { return z[2]; });
+    if (!zeilen.length) return '';
+    return '<div class="kampfbilanz">' + zeilen.map(function (z) {
+      return '<span class="bilanz-zeile"><i>' + z[0] + '</i>' +
+        '<b>' + esc(z[2].name) + '</b>' +
+        '<span class="unter">' + esc(z[1]) + ': ' + z[2].wert + '</span></span>';
+    }).join('') + '</div>';
+  }
+
   function ergebnisHtml(p) {
     var html = '';
     if (p.result.winner === 'player') {
@@ -663,6 +693,10 @@
         (b.ticks ? '<p class="hinweis">' + b.ticks + ' Züge · ' + b.lebend + ' von ' +
           (b.lebend + gefallen.length) + ' Einheiten stehen noch' +
           (gefallen.length ? ' · gefallen: ' + esc(gefallen.join(', ')) : '') + '</p>' : '') +
+        /* Wer hat den Kampf getragen? Ohne diese drei Zeilen ist ein Sieg eine
+           Zahl, und man erfaehrt nie, ob der teure Neuzugang etwas beigetragen
+           hat oder nur danebenstand. */
+        bilanzHtml(b) +
         '<p class="hinweis">Magicule gesamt: ' + run.magicules + ' ✦</p></div>';
       if (p.devour && p.devour.length) {
         var moeglich = run.team.filter(function (m) { return m.devoured.length < R.praedatorSlots(m); });
@@ -793,7 +827,11 @@
       'Verkaufen: Gegenstand, Relikt oder Einheit auf die Fläche unten ziehen.</p>';
     html += '<div class="karten markt">';
     offers.forEach(function (o, i) {
-      var frei = o.kind !== 'unit' || R.freieArt(run, GD.unit(o.id).art);
+      /* `kaufbar` statt `freieArt`: der Motor kann eine Einheit derselben Art
+         aufwerten (addUnit raeumt die alte weg und rechnet ihren Einsatz an),
+         die Karte war trotzdem gesperrt. */
+      var frei = o.kind !== 'unit' || R.kaufbar(run, o.id, o.rang);
+      var aufwertung = o.kind === 'unit' && frei && !R.freieArt(run, GD.unit(o.id).art);
       if (o.kind === 'rang') {
         var zielM = R.find(run, o.uid);
         frei = !!zielM && zielM.rank < 3 && !R.passivWahl(run);
@@ -804,7 +842,10 @@
         '<span class="titel">' + esc(o.name) + ' — ' + o.price + ' ✦' + (o.sold ? ' (gekauft)' : '') + '</span>' +
         '<div class="kw-leiste">' + belohnungTags(o) + '</div>' +
         '<span class="beschreibung">' + marktText(o) + '</span>' +
-        (frei ? '' : '<span class="unter">Art schon besetzt</span>') +
+        (frei ? '' : '<span class="unter">Art besetzt — Rang zu niedrig zum Aufwerten</span>') +
+        (aufwertung ? '<span class="unter gut">Aufwertung: ersetzt ' +
+          esc(GD.unit(R.ersetzbar(run, GD.unit(o.id), o.rang).id).name) +
+          ', Einsatz wird angerechnet</span>' : '') +
         (!o.sold && frei && run.magicules < o.price
           ? '<span class="unter">' + (o.price - run.magicules) + ' ✦ fehlen</span>' : '') +
         '</button>';
@@ -1456,9 +1497,16 @@
         var ks = (a.keywords || []).concat(a.amplifies || []);
         var tipText = a.text + (preis ? '\n\nÄndert eine Regel und kostet dafür etwas.' : '') +
           (ks.length ? '\n\n' + ks.map(kwName).join(' · ') : '');
+        /* Die Schluesselwoerter standen bisher nur im Tooltip — man musste jede
+           der sechzehn Passiven einzeln anfahren, um zu sehen, welche Gift und
+           welche Schild macht. Als Chips sind sie ueberfliegbar, und genau das
+           ist die Frage, mit der man diese Uebersicht oeffnet. */
         html += '<span class="linien-stufe"' + tip(a.name, tipText) + '>' +
           '<b>' + esc(a.name) + '</b>' +
           (preis ? ' <span class="tag-preis">Preis</span>' : '') +
+          (ks.length ? ' <span class="kws">' + ks.map(function (k) {
+            return '<span class="kw-chip">' + esc(kwName(k)) + '</span>';
+          }).join('') + '</span>' : '') +
           ' — ' + esc(a.text) + '</span>';
       });
       html += '</div>';

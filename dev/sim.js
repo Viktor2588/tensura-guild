@@ -2357,6 +2357,66 @@ if (beute2) {
 }
 
 /* Kompletter Run */
+head('Aufwertung und Passiv-Erbe');
+/* Phase 72: die Marktkarte fragte `freieArt`, der Motor kann laengst aufwerten.
+   Der Widerspruch hat das Hochbringen der eigenen Einheiten komplett gesperrt. */
+(function () {
+  var run = R.create(7, R.newMeta());
+  run.team = [];
+  R.addUnit(run, 'shion', null, 1, R.abilities ? null : null);
+  var shion = run.team[0];
+  ok(!R.freieArt(run, 'oger'), 'Oger ist nach Shion belegt');
+  ok(!R.kaufbar(run, 'shion', 1), 'gleicher Rang ist keine Aufwertung — nicht kaufbar');
+  ok(R.kaufbar(run, 'shion', 2), 'HOEHERER Rang derselben Einheit ist kaufbar (war der Bug)');
+  ok(R.kaufbar(run, 'benimaru', 2), 'auch eine andere Einheit derselben Art wertet auf');
+  ok(R.kaufbar(run, 'gobta', 0), 'freie Art bleibt ohne Rangbedingung kaufbar');
+
+  /* Das Erbe: eine Aufwertung derselben Einheit behaelt ihre Passiven. */
+  var alle = AB.linienAngebot('shion').filter(function (o) { return !o.preis; });
+  var hatte = [alle[0].id, alle[1].id];
+  var rng = globalThis.RNG(9);
+  var geerbt = R.linienPassiveTest('shion', 4, rng, hatte);
+  hatte.forEach(function (pid) {
+    ok(geerbt.indexOf(pid) >= 0, 'Aufwertung erbt ' + pid + ' statt neu zu wuerfeln');
+  });
+  ok(geerbt.length === 4, 'und fuellt auf den neuen Rang auf (4 Passive)');
+  ok(new Set(geerbt).size === 4, 'ohne Dubletten');
+
+  /* Fremde IDs faellt heraus: eine Passive von Souei gehoert nicht in Shion. */
+  var fremd = R.linienPassiveTest('shion', 2, globalThis.RNG(3),
+                                  AB.linienAngebot('souei')[0].id ? [AB.linienAngebot('souei')[0].id] : []);
+  ok(fremd.every(function (pid) {
+    return alle.concat(AB.linienAngebot('shion')).some(function (o) { return o.id === pid; });
+  }), 'eine fremde Passive wird nicht vererbt');
+})();
+
+head('Kampfbilanz');
+/* Phase 72: die Uebersicht nach dem Kampf. Sie wird beim Kampf gerechnet, nicht
+   in der UI — das Log steht nach einem Neuladen nicht mehr zur Verfuegung. */
+(function () {
+  var run = R.create(11, R.newMeta());
+  var versuche = 0, b = null;
+  while (versuche++ < 40 && !b) {
+    if (run.phase === 'karte' || run.startwahl) {
+      if (run.startwahl) { R.chooseStart(run, 0); continue; }
+    }
+    try { R.choose(run, 0); } catch (e) { break; }
+    if (run.pending && run.pending.bilanz && run.pending.result &&
+        run.pending.result.winner === 'player') { b = run.pending.bilanz; break; }
+    try { R.advance(run); } catch (e) { break; }
+  }
+  ok(!!b, 'ein gewonnener Kampf legt eine Bilanz an');
+  if (b) {
+    ok(typeof b.ticks === 'number', 'Bilanz traegt die Zuege');
+    ok(b.austeiler && b.austeiler.wert > 0,
+       'Bilanz nennt die Einheit mit dem meisten ausgeteilten Schaden');
+    /* Ein gewonnener Kampf ohne einen einzigen eingesteckten Treffer ist
+       moeglich — deshalb nur pruefen, dass das Feld wohlgeformt ist. */
+    ok(!b.einstecker || b.einstecker.wert > 0, 'Einstecker ist entweder leer oder positiv');
+    ok(!b.heiler || b.heiler.wert > 0, 'Heiler ist entweder leer oder positiv');
+  }
+})();
+
 head('Durchspiel');
 var d = fertigerRun(2024);
 var schritte = 0;
