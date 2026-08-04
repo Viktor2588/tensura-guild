@@ -319,7 +319,7 @@
      nur das eine stumm schalten will, soll nicht das andere mitnehmen. */
   var ton = 'voll';
   try { ton = localStorage.getItem('tensura-ton') || 'voll'; } catch (e) {}
-  Ton.stufe(ton);
+  ton = Ton.stufe(ton);
 
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
