@@ -76,44 +76,185 @@
      Gesicht liest sich als kaputt, eine Silhouette als Absicht. Die Rolle formt
      die Umrisse — daran erkennt man auf dem Brett, wer weit reicht und wer
      heranlaufen muss, und genau das ist die Regel, die die Karte zeigen soll. */
+  /* Die ART formt die Silhouette, die ROLLE die Waffe. Zwei Achsen, damit ein
+     Blick aufs Brett beides beantwortet: was steht da, und was tut es.
+
+     Die Merkmale sind bewusst grob — Hoerner, Ohren, Schweif, Fluegel,
+     Kopfform, Breite. Feiner zu werden hiesse, ein Gesicht anzudeuten, und ein
+     schlechtes Gesicht liest sich als kaputt. Alles hier haelt die acht
+     Vorgaben aus ASSETS.md per Konstruktion ein: freigestellt, Fuesse auf
+     y=232, Kopf bei rund vier Fuenfteln, kein eingemalter Schatten, eigene
+     Kantentrennung, spiegelbar (keine Schrift), nichts ueber 0,85 Luminanz. */
+  var ARTEN = {
+    slime:        { breite: 1.25, kopf: 'blob',     rumpf: 'tropfen' },
+    goblin:       { breite: 0.78, kopf: 'rund',     ohren: 'spitz' },
+    oger:         { breite: 1.22, kopf: 'rund',     hoerner: 'kurz' },
+    direwolf:     { breite: 1.05, kopf: 'schnauze', ohren: 'spitz', schweif: 1 },
+    echsenmensch: { breite: 1.00, kopf: 'schnauze', kamm: 1, schweif: 1 },
+    insektoid:    { breite: 0.92, kopf: 'insekt',   fuehler: 1 },
+    daemon:       { breite: 0.95, kopf: 'rund',     hoerner: 'lang', fluegel: 1 },
+    drache:       { breite: 1.15, kopf: 'schnauze', hoerner: 'lang', fluegel: 1, schweif: 1 },
+    untot:        { breite: 0.82, kopf: 'schaedel' },
+    bestie:       { breite: 1.02, kopf: 'rund',     ohren: 'rund', schweif: 1 },
+    ork:          { breite: 1.28, kopf: 'rund',     hauer: 1 },
+    mensch:       { breite: 1.00, kopf: 'rund' }
+  };
+
   function platzhalter(u) {
     var c = root.document.createElement('canvas');
     c.width = 128; c.height = 256;
     var x = c.getContext('2d'), mitte = 64;
     var haut = u.side === 'player' ? '#7fb0e8' : '#e08078';
     var stoff = u.side === 'player' ? '#2c4a72' : '#6b2a26';
+    /* `tags[0]` ist die Art — bei Einheiten wie bei Gegnern. Unbekanntes faellt
+       auf `mensch` zurueck, damit ein neuer Eintrag in `data.js` nie eine leere
+       Kachel erzeugt. */
+    var a = ARTEN[(u.tags || [])[0]] || ARTEN.mensch;
 
     x.lineJoin = 'round';
 
-    /* Umhang/Körper: unten breit, oben schmal. Die Breite trägt die Rolle. */
-    var breit = u.role === 'front' ? 40 : u.role === 'fernkampf' ? 26 : 32;
+    /* Die Rolle traegt die Breite, die Art skaliert sie. */
+    var breit = (u.role === 'front' ? 40 : u.role === 'fernkampf' ? 26 : 32) * a.breite;
+    var kopfY = 92, kopfR = 26 * (a.breite > 1.1 ? 1.1 : 1);
+
     function koerper() {
       x.beginPath();
-      x.moveTo(mitte - breit, 232);
-      x.lineTo(mitte - breit * 0.55, 120);
-      x.lineTo(mitte + breit * 0.55, 120);
-      x.lineTo(mitte + breit, 232);
+      if (a.rumpf === 'tropfen') {                  // Slime: kein Bein, eine Kuppel
+        x.moveTo(mitte - breit, 232);
+        x.bezierCurveTo(mitte - breit, 130, mitte - breit * 0.5, 104, mitte, 104);
+        x.bezierCurveTo(mitte + breit * 0.5, 104, mitte + breit, 130, mitte + breit, 232);
+      } else {
+        x.moveTo(mitte - breit, 232);
+        x.lineTo(mitte - breit * 0.55, 120);
+        x.lineTo(mitte + breit * 0.55, 120);
+        x.lineTo(mitte + breit, 232);
+      }
       x.closePath();
     }
-    function kopf() { x.beginPath(); x.arc(mitte, 92, 26, 0, Math.PI * 2); }
+    function kopf() {
+      x.beginPath();
+      if (a.kopf === 'blob') {                      // im Rumpf aufgegangen
+        x.arc(mitte, 118, kopfR * 0.7, 0, Math.PI * 2);
+      } else if (a.kopf === 'schnauze') {           // nach vorn gezogen
+        x.moveTo(mitte - kopfR, kopfY);
+        x.quadraticCurveTo(mitte - kopfR, kopfY - kopfR, mitte, kopfY - kopfR);
+        x.quadraticCurveTo(mitte + kopfR * 1.5, kopfY - kopfR * 0.7, mitte + kopfR * 1.8, kopfY + 2);
+        x.quadraticCurveTo(mitte + kopfR * 1.2, kopfY + kopfR, mitte, kopfY + kopfR);
+        x.quadraticCurveTo(mitte - kopfR, kopfY + kopfR, mitte - kopfR, kopfY);
+      } else if (a.kopf === 'insekt') {             // schmal, hochoval
+        x.ellipse(mitte, kopfY, kopfR * 0.72, kopfR * 1.15, 0, 0, Math.PI * 2);
+      } else if (a.kopf === 'schaedel') {           // eckiger Kiefer
+        x.moveTo(mitte - kopfR, kopfY - kopfR * 0.6);
+        x.lineTo(mitte + kopfR, kopfY - kopfR * 0.6);
+        x.lineTo(mitte + kopfR * 0.8, kopfY + kopfR * 0.5);
+        x.lineTo(mitte + kopfR * 0.45, kopfY + kopfR);
+        x.lineTo(mitte - kopfR * 0.45, kopfY + kopfR);
+        x.lineTo(mitte - kopfR * 0.8, kopfY + kopfR * 0.5);
+        x.closePath();
+      } else {
+        x.arc(mitte, kopfY, kopfR, 0, Math.PI * 2);
+      }
+    }
+    /* Alles, was HINTER der Figur liegt. Eigener Pfad, damit der Umriss ihn
+       mitnimmt — sonst haengt ein Fluegel ohne Kantentrennung im Brett. */
+    function hinten() {
+      x.beginPath();
+      if (a.fluegel) {
+        x.moveTo(mitte - breit * 0.5, 132);
+        x.quadraticCurveTo(mitte - breit * 2.2, 96, mitte - breit * 1.5, 176);
+        x.quadraticCurveTo(mitte - breit * 1.1, 150, mitte - breit * 0.5, 156);
+        x.closePath();
+        x.moveTo(mitte + breit * 0.5, 132);
+        x.quadraticCurveTo(mitte + breit * 2.2, 96, mitte + breit * 1.5, 176);
+        x.quadraticCurveTo(mitte + breit * 1.1, 150, mitte + breit * 0.5, 156);
+        x.closePath();
+      }
+      if (a.schweif) {
+        x.moveTo(mitte - breit * 0.7, 214);
+        x.quadraticCurveTo(mitte - breit * 2.0, 214, mitte - breit * 1.9, 158);
+        x.quadraticCurveTo(mitte - breit * 1.4, 202, mitte - breit * 0.7, 228);
+        x.closePath();
+      }
+      return !!(a.fluegel || a.schweif);
+    }
+    /* Alles, was AUF dem Kopf sitzt. */
+    function aufsatz() {
+      x.beginPath();
+      var h = a.hoerner === 'lang' ? 34 : a.hoerner === 'kurz' ? 18 : 0;
+      if (h) {
+        x.moveTo(mitte - kopfR * 0.8, kopfY - kopfR * 0.6);
+        x.lineTo(mitte - kopfR * 1.25, kopfY - kopfR * 0.6 - h);
+        x.lineTo(mitte - kopfR * 0.35, kopfY - kopfR * 0.85);
+        x.closePath();
+        x.moveTo(mitte + kopfR * 0.8, kopfY - kopfR * 0.6);
+        x.lineTo(mitte + kopfR * 1.25, kopfY - kopfR * 0.6 - h);
+        x.lineTo(mitte + kopfR * 0.35, kopfY - kopfR * 0.85);
+        x.closePath();
+      }
+      if (a.ohren === 'spitz') {
+        x.moveTo(mitte - kopfR * 0.9, kopfY - 6);
+        x.lineTo(mitte - kopfR * 2.0, kopfY - 22);
+        x.lineTo(mitte - kopfR * 0.8, kopfY + 8); x.closePath();
+        x.moveTo(mitte + kopfR * 0.9, kopfY - 6);
+        x.lineTo(mitte + kopfR * 2.0, kopfY - 22);
+        x.lineTo(mitte + kopfR * 0.8, kopfY + 8); x.closePath();
+      } else if (a.ohren === 'rund') {
+        x.moveTo(mitte - kopfR * 0.75, kopfY - kopfR * 0.5);
+        x.arc(mitte - kopfR * 0.85, kopfY - kopfR * 0.75, 8, 0, Math.PI * 2);
+        x.moveTo(mitte + kopfR * 0.95, kopfY - kopfR * 0.75);
+        x.arc(mitte + kopfR * 0.85, kopfY - kopfR * 0.75, 8, 0, Math.PI * 2);
+      }
+      if (a.kamm) {                                  // Echsenkamm
+        x.moveTo(mitte - 3, kopfY - kopfR);
+        x.lineTo(mitte - 2, kopfY - kopfR - 22);
+        x.lineTo(mitte + 7, kopfY - kopfR - 4);
+        x.lineTo(mitte + 6, kopfY - kopfR + 2);
+        x.closePath();
+      }
+      if (a.fuehler) {
+        x.moveTo(mitte - 5, kopfY - kopfR * 1.05);
+        x.quadraticCurveTo(mitte - 22, kopfY - kopfR - 26, mitte - 30, kopfY - kopfR - 16);
+        x.quadraticCurveTo(mitte - 20, kopfY - kopfR - 20, mitte - 1, kopfY - kopfR * 0.95);
+        x.closePath();
+        x.moveTo(mitte + 5, kopfY - kopfR * 1.05);
+        x.quadraticCurveTo(mitte + 22, kopfY - kopfR - 26, mitte + 30, kopfY - kopfR - 16);
+        x.quadraticCurveTo(mitte + 20, kopfY - kopfR - 20, mitte + 1, kopfY - kopfR * 0.95);
+        x.closePath();
+      }
+      if (a.hauer) {                                 // Orkhauer, aus dem Kiefer
+        x.moveTo(mitte - kopfR * 0.45, kopfY + kopfR * 0.55);
+        x.lineTo(mitte - kopfR * 0.62, kopfY + kopfR * 0.05);
+        x.lineTo(mitte - kopfR * 0.22, kopfY + kopfR * 0.5); x.closePath();
+        x.moveTo(mitte + kopfR * 0.45, kopfY + kopfR * 0.55);
+        x.lineTo(mitte + kopfR * 0.62, kopfY + kopfR * 0.05);
+        x.lineTo(mitte + kopfR * 0.22, kopfY + kopfR * 0.5); x.closePath();
+      }
+      return !!(h || a.ohren || a.kamm || a.fuehler || a.hauer);
+    }
 
     /* Zuerst eine breite Kontur in der Seitenfarbe UNTER der Figur: seit die
        Kachel dunkel und die Vignette da ist, versinkt eine Silhouette sonst im
        Brett. Der Umriss stellt sie davor, ohne sie zu einer Zeichnung zu
-       machen. */
+       machen. Er muss ALLE Teile mitnehmen, auch Fluegel und Hoerner. */
     x.lineWidth = 13;
     x.strokeStyle = u.side === 'player' ? 'rgba(122,180,255,.85)' : 'rgba(255,138,120,.85)';
+    if (hinten()) x.stroke();
     koerper(); x.stroke();
     kopf(); x.stroke();
+    if (aufsatz()) x.stroke();
 
     x.lineWidth = 5;
     x.strokeStyle = 'rgba(0,0,0,.55)';
+    /* Anhaengsel dunkler als der Stoff: sie liegen hinter der Figur und sollen
+       sich nicht mit ihr zu einer Flaeche verbinden. */
+    if (hinten()) { x.fillStyle = stoff; x.globalAlpha = 0.75; x.fill(); x.globalAlpha = 1; x.stroke(); }
     koerper();
     x.fillStyle = stoff; x.fill(); x.stroke();
     kopf();
     x.fillStyle = haut; x.fill(); x.stroke();
+    if (aufsatz()) { x.fillStyle = a.hauer || a.kopf === 'schaedel' ? '#d8d2c4' : haut; x.fill(); x.stroke(); }
 
-    /* Die Waffe macht den Unterschied auf einen Blick sichtbar. */
+    /* Die Waffe macht die ROLLE auf einen Blick sichtbar. */
     x.strokeStyle = 'rgba(0,0,0,.55)';
     x.fillStyle = '#cfd6df';
     if (u.role === 'front') {                       // Klinge, aufrecht
@@ -1090,5 +1231,8 @@
   root.Brett3D = { verfuegbar: verfuegbar, montiere: montiere, montiert: montiert,
                    aktualisiere: aktualisiere, effekt: effekt, treffer: treffer,
                    halt: halt, stufe: setzeStufe, blick: blick,
-                   zeitlupe: zeitlupe, loese: loese };
+                   zeitlupe: zeitlupe, loese: loese,
+                   /* nur fuer dev/silhouetten.js: der Prueflauf kann das Brett
+                      nicht montieren, aber die Figur zeichnen. */
+                   platzhalter: platzhalter };
 })(globalThis);

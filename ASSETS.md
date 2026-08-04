@@ -18,11 +18,23 @@ keinen Bauschritt und soll keinen bekommen.
 
 ## Figuren
 
-**Stand: es gibt noch keine.** Die Ansicht zeichnet Platzhalter zur Laufzeit
-auf ein Canvas (`platzhalter()` in `js/brett3d.js`): eine Silhouette, deren
-Umriss und Waffe von der Rolle kommen und deren Farbe von der Seite. Kein
-Gesicht — ein schlechtes Gesicht liest sich als Fehler, eine Silhouette als
-Absicht.
+**Stand: es gibt noch keine Bilddateien.** Die Ansicht zeichnet Platzhalter zur
+Laufzeit auf ein Canvas (`platzhalter()` in `js/brett3d.js`). Seit Phase 68
+tragen sie **zwei Achsen**:
+
+- die **Art** formt die Silhouette (Tabelle `ARTEN`): Breite, Kopfform und die
+  Anhängsel — Hörner, Ohren, Schweif, Flügel, Kamm, Fühler, Hauer. Zwölf
+  Einträge, einer je Art in `data.js` und `enemies.js`.
+- die **Rolle** trägt weiterhin die Waffe: Klinge, Bogen oder Stab.
+
+Kein Gesicht — ein schlechtes Gesicht liest sich als Fehler, eine Silhouette als
+Absicht. Die Merkmale sind bewusst grob; feiner zu werden hiesse, ein Gesicht
+anzudeuten.
+
+`node dev/silhouetten.js` prüft, dass jede Kombination zeichnet, dass **keine
+zwei Arten identisch aussehen** und dass jede Art aus dem Spiel einen Eintrag
+hat. Der Rückfall auf `mensch` ist eine Notbremse gegen leere Kacheln, kein
+Ersatz für einen eigenen Eintrag.
 
 Sobald es echte Bilder gibt, gehören sie hierhin:
 
@@ -89,10 +101,21 @@ Prompt**, Datum, Lizenz. **Ohne diesen Eintrag gilt ein Bild als nicht
 verwendbar** — das ist keine Formalie, sondern der einzige Weg, später noch
 feststellen zu können, was benutzt werden darf.
 
-Offen und vor dem ersten Bild zu entscheiden: `.gitignore` enthält heute nur
-`node_modules`. Die Bilder gehen also mit ins Repo, rund fünfzig Stück. Das ist
-vertretbar (das Spiel läuft offline und soll das bleiben), aber es ist eine
-Entscheidung und keine Nebenwirkung.
+### Entschieden am 2026-08-04
+
+Die Fragen aus `dev/asset-recherche.md` sind beantwortet:
+
+- **Privat.** Das Spiel wird nicht veröffentlicht. Damit dürfen die Figuren ihre
+  Tensura-Namen tragen; die Grenze verläuft bei der Veröffentlichung, nicht bei
+  der Erstellung. Sollte sich das ändern, ist es eine Umbenennung und kein
+  Umbau — die IDs sind nur Schlüssel.
+- **Erst die ausgebauten Silhouetten (Option D), dann echte Bilder (Option A).**
+  D ist in Phase 68 umgesetzt und kostet nichts; es beantwortet, ob fünfzig
+  Einzelbilder überhaupt gepflegt werden wollen.
+- **Lokale GPU** für die Generierung, kein gemieteter Rechner.
+- **Bilder ins Repo.** `.gitignore` bleibt bei `node_modules`. Rund 15–30 MB —
+  vertretbar, weil das Spiel offline läuft und das bleiben soll.
+- **Alle Einheiten UND alle 72 Gegner**, nicht nur die Einheiten.
 
 | Datei | Werkzeug / Quelle | Prompt | Datum | Lizenz |
 |---|---|---|---|---|

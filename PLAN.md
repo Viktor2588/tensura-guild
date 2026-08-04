@@ -3360,6 +3360,56 @@ Bedrohungsleiter (je 150) **49/39/33/32/29/11 — monoton.**
 Worktree `/home/viktor/tensura/worktree/phase-67-seltenheit`, Branch
 `phase-67-seltenheit`.
 
+### Phase 68 (2026-08-04): Die Silhouette bekommt eine zweite Achse
+
+Option D aus `dev/asset-recherche.md`, und zwar bewusst VOR den echten Bildern:
+sie kostet einen Nachmittag und beantwortet, ob fuenfzig Einzelbilder ueberhaupt
+gepflegt werden wollen. Die Entscheidungen dazu stehen jetzt in `ASSETS.md`
+(privat, lokale GPU, Bilder ins Repo, alle Einheiten und alle 72 Gegner).
+
+Bis hierher trug der Platzhalter genau EINE Achse: die Rolle bestimmte Breite
+und Waffe, die Seite die Farbe. Auf dem Brett sahen damit ein Oger, ein Slime
+und ein Skelett identisch aus, solange sie dieselbe Rolle hatten — und das ist
+die Haelfte der Information, die eine Figur tragen soll.
+
+Jetzt formt die **Art** die Silhouette (Tabelle `ARTEN`, zwoelf Eintraege), die
+**Rolle** traegt weiter die Waffe. Merkmale: Breite, Kopfform (rund, Schnauze,
+Insektenoval, Schaedel, Blob) und Anhaengsel — Hoerner kurz/lang, Ohren
+spitz/rund, Schweif, Fluegel, Echsenkamm, Fuehler, Orkhauer.
+
+Zwei Dinge, die beim Bauen wichtig waren:
+
+1. **Der Umriss muss alle Teile mitnehmen.** Die Kantentrennung aus Phase 58 war
+   ein breiter Strich unter Koerper und Kopf. Ein Fluegel oder Horn, das nicht
+   mitgestrichen wird, haengt ohne Rand im dunklen Brett. `hinten()` und
+   `aufsatz()` sind deshalb eigene Pfadfunktionen, die in BEIDEN Durchgaengen
+   laufen — erst breit in der Seitenfarbe, dann gefuellt.
+2. **Anhaengsel liegen hinter der Figur** und werden mit 75 % Deckkraft
+   gefuellt, sonst verschmelzen Fluegel und Rumpf zu einer Flaeche.
+
+**`dev/silhouetten.js`** ist der Pruefstand dazu. Noetig, weil weder
+`dev/sim.js` (kein DOM) noch `dev/uitest.js` (jsdom ohne 2D-Kontext) eine
+Canvas-Zeichnung ausfuehren koennen; ein Stub-Kontext schreibt die
+Zeichenbefehle mit. Er prueft drei Dinge, und das zweite ist der eigentliche
+Punkt:
+
+- Jede Kombination aus 12 Arten x 5 Rollen x 2 Seiten zeichnet ohne Fehler.
+- **Keine zwei Arten zeichnen identisch.** Ein doppelter Eintrag in der
+  Merkmalstabelle faellt sonst niemandem auf — auf dem Brett stuenden zwei Arten
+  mit derselben Silhouette, also genau der Zustand, gegen den die Achse gebaut
+  ist.
+- Jede Art aus `data.js` UND aus `enemies.js` hat einen Eintrag. Der Rueckfall
+  auf `mensch` bleibt als Notbremse gegen leere Kacheln, ist aber kein Ersatz
+  fuer Pflege. Geprueft: die 72 Gegner verteilen sich auf neun Arten, alle
+  vorhanden.
+
+`node dev/silhouetten.js` 201/201 · `dev/sim.js` 443/443 ·
+`dev/uitest.js` 104/104. Am Kampf wurde nichts geaendert, eine Balance-Messung
+entfaellt.
+
+Worktree `/home/viktor/tensura/worktree/phase-68-silhouetten`, Branch
+`phase-68-silhouetten`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
