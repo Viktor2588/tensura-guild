@@ -322,6 +322,18 @@
     });
   }
 
+  /* Spiegelbildlich zu `zeigeEffektwahl` — der Zustand selbst lebt in
+     `js/audio.js` (`Ton.aktiv()`), damit `localStorage.tensura-ton` an
+     genau einer Stelle geschrieben wird. */
+  function zeigeTonwahl() {
+    var reihe = $('menu-ton');
+    if (!reihe || !root.Ton) return;
+    var v = Ton.aktiv() ? 'an' : 'aus';
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=ton]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === v);
+    });
+  }
+
   function pumpe(nun) {
     if (!replay || replay.fertig) return;
     replay.raf = requestAnimationFrame(pumpe);
@@ -359,6 +371,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    if (root.Ton) Ton.spiele(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -1308,6 +1321,12 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    ton: function (d) {
+      if (!root.Ton) return;
+      var v = Ton.stufe(d.v);
+      try { localStorage.setItem('tensura-ton', v); } catch (e) {}
+      zeigeTonwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1615,6 +1634,9 @@
   }
 
   function klick(ev) {
+    /* Browser sperren Ton bis zur ersten Nutzerinteraktion — der erste Klick
+       irgendwo im Spiel hebt die Sperre auf, lange vor dem ersten Kampfton. */
+    if (root.Ton) Ton.entsperren();
     var el = ev.target.closest('[data-a]');
     if (!el) return;
     var a = aktionen[el.dataset.a];
@@ -1659,6 +1681,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeTonwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
