@@ -492,11 +492,11 @@
   var items = [
     { id: 'kurzschwert', rarity: 1, name: 'Kurzschwert', cost: 35, stats: { atk: 5 },
       text: 'Schlichte Klinge. +5 Angriff.' },
-    { id: 'langschwert', rarity: 2, name: 'Langschwert', cost: 60, stats: { atk: 10 },
+    { id: 'langschwert', rarity: 3, name: 'Langschwert', cost: 60, stats: { atk: 10 },
       text: 'Schwere Klinge. +10 Angriff.' },
     { id: 'lederpanzer', rarity: 1, name: 'Lederpanzer', cost: 35, stats: { hp: 30, def: 2 },
       text: '+30 Leben und +2 Rüstung. Rüstung senkt jeden eingehenden Treffer.' },
-    { id: 'plattenpanzer', rarity: 2, name: 'Plattenpanzer', cost: 70, stats: { hp: 55, def: 5 },
+    { id: 'plattenpanzer', rarity: 4, name: 'Plattenpanzer', cost: 70, stats: { hp: 55, def: 5 },
       text: '+55 Leben und +5 Rüstung. Für die vorderste Einheit gedacht.' },
     { id: 'stiefel', rarity: 1, name: 'Windstiefel', cost: 40, stats: { spd: 6 },
       text: '+6 Tempo. Mehr Tempo heißt mehr Züge — und damit öfter die eigene Signatur.' },
@@ -511,7 +511,7 @@
     { id: 'frostklinge', rarity: 4, name: 'Frostklinge', cost: 70, stats: { atk: 3 },
       effects: [eff('onHit', 'Frost', chance(0.15, inflict('erstarrung', 1)))], keywords: ['frost'],
       text: '+3 Angriff. 15 % Chance, dem Ziel einen ganzen Zug zu rauben.' },
-    { id: 'vampirring', rarity: 4, name: 'Vampirring', cost: 75, stats: { atk: 3 },
+    { id: 'vampirring', rarity: 3, name: 'Vampirring', cost: 75, stats: { atk: 3 },
       effects: [eff('onStart', 'Vampirring', function (c) { c.self.lifesteal += 0.25; })], keywords: ['heilung'],
       text: '+3 Angriff. Die Einheit heilt 25 % des Schadens, den sie verursacht.' },
     { id: 'regenerationsmal', rarity: 3, name: 'Regenerationsmal', cost: 55, stats: { hp: 20 },
@@ -524,7 +524,7 @@
     { id: 'schutzstein', rarity: 2, name: 'Schutzstein', cost: 45, stats: { def: 3 },
       effects: [eff('onStart', 'Schild', function (c) { c.applyStatus(c.self, 'schild', 40); })], keywords: ['schild'],
       text: '+3 Rüstung. Startet jeden Kampf mit Schild 40, der nicht verfällt.' },
-    { id: 'zorngurt', rarity: 3, name: 'Zorngurt', cost: 70, stats: {},
+    { id: 'zorngurt', rarity: 1, name: 'Zorngurt', cost: 70, stats: {},
       effects: [eff('onDamaged', 'Zorn', function (c) { c.self.atk += 2; })],
       text: 'Jeder erlittene Treffer gibt dauerhaft +2 Angriff für den Rest des Kampfes.' },
     { id: 'ruestungsbrecher', rarity: 4, name: 'Rüstungsbrecher', cost: 75, stats: { atk: 3 },
@@ -548,7 +548,7 @@
       effects: [eff('onHit', 'Aschemantel', function (c) {
         if (c.self.keywords.indexOf('brand') >= 0 && c.target.status.brand > 0) c.dmg *= 1.35;
       })] },
-    { id: 'frostkette', rarity: 4, name: 'Frostkette', cost: 75, stats: { atk: 3 },
+    { id: 'frostkette', rarity: 2, name: 'Frostkette', cost: 75, stats: { atk: 3 },
       amplifies: ['frost'],
       text: '+3 Angriff. Gegen erstarrte Ziele verursacht die Trägerin +35 % Schaden.',
       effects: [eff('onHit', 'Frostkette', function (c) {
@@ -578,7 +578,7 @@
     { id: 'zwillingsklinge', rarity: 4, name: 'Zwillingsklinge', cost: 80, stats: {},
       text: 'Je Passive der Trägerin +5 Angriff und +2 Tempo — lohnt sich erst ab Rang B.',
       effects: [eff('onStart', 'Zwillingsklinge', function (c) {
-        var n = c.self.effects.filter(function (e) { return e.art === 'passiv'; }).length;
+        var n = c.self.passivZahl || 0;
         c.self.atk += 5 * n;
         c.self.spd += 2 * n;
       })] },
@@ -586,7 +586,7 @@
       amplifies: ['heilung'],
       text: '+20 Leben. Jede Heilung an der Trägerin wirkt um 50 % stärker.',
       effects: [eff('onStart', 'Kelch', function (c) { c.self.heilfaktor += 0.5; })] },
-    { id: 'bollwerkstein', rarity: 3, name: 'Bollwerkstein', cost: 55, stats: { def: 2 },
+    { id: 'bollwerkstein', rarity: 4, name: 'Bollwerkstein', cost: 55, stats: { def: 2 },
       amplifies: ['schild'],
       text: '+2 Rüstung. Jeder Schild auf der Trägerin ist um 40 % stärker.',
       effects: [eff('onStart', 'Bollwerk', function (c) { c.self.schildfaktor += 0.4; })] },
@@ -611,7 +611,7 @@
       effects: [eff('onStart', 'Fluchring', function (c) {
         c.self.fluchmeister = (c.self.fluchmeister || 1) * 1.4;
       })] },
-    { id: 'segensring', rarity: 3, name: 'Segensring', cost: 75, stats: {},
+    { id: 'segensring', rarity: 1, name: 'Segensring', cost: 75, stats: {},
       text: 'Jeder Stapel, den die Trägerin der EIGENEN Reihe anlegt, fällt 40 % größer aus — Schild, Licht, Antichaos, alles.',
       effects: [eff('onStart', 'Segensring', function (c) {
         c.self.segenmeister = (c.self.segenmeister || 1) * 1.4;
@@ -621,7 +621,7 @@
       effects: [eff('onStart', 'Chaoszepter', function (c) {
         c.self.chaosmeister = (c.self.chaosmeister || 1) * 1.6;
       })] },
-    { id: 'ordnungsreif', rarity: 4, name: 'Ordnungsreif', cost: 95, stats: { def: 4 },
+    { id: 'ordnungsreif', rarity: 5, name: 'Ordnungsreif', cost: 95, stats: { def: 4 },
       text: '+4 Rüstung. Zu Kampfbeginn 4 Antichaos für die Trägerin, und jeder eigene Antichaos-Stapel fällt 50 % größer aus.',
       effects: [eff('onStart', 'Ordnungsreif', function (c) {
         c.self.segenmeister = (c.self.segenmeister || 1) * 1.5;

@@ -3160,6 +3160,79 @@ dev/sim.js` 443/443.
 Worktree `/home/viktor/tensura/worktree/phase-65-messung`, Branch
 `phase-65-messung`.
 
+### Phase 66 (2026-08-04): Die Seltenheit sagte nichts über die Stärke
+
+Drei alte Punkte aus `TODO.md`, alle drei Nutzer-Beobachtungen statt
+Messbefunde. Der erste war der eigentliche Brocken.
+
+**Das Werkzeug zuerst: `dev/beute.js`.** Ausrüstung und Relikte lassen sich
+nicht über Schadenssummen vergleichen — härtere Treffer verkürzen den Kampf,
+die Summe ist nicht monoton (der Fehler aus Phase 34). Gemessen wird deshalb
+gegen zwei Prüfstände: „Zustand" trägt Gift-, Brand- und Frostquellen, „Wacht"
+trägt Schild, Konter und Heilung; gewertet wird der bessere von beiden, denn ein
+Spieler kauft ein Stück für die Trägerin, zu der es passt.
+
+Der Bruchpunkt aus `dev/linien.js` taugte dabei nur als Referenz, nicht als
+Messwert: die binäre Suche gibt ihn gequantelt zurück, dutzende Stücke lasen
+denselben Wert, die Rangfolge war eine Treppe mit drei Stufen. Jetzt wird der
+Bruchpunkt **einmal je Prüfstand** gesucht und alles Weitere als **Siegquote an
+genau dieser Härte** gemessen — dort ist die Kurve am steilsten, und ein Stück
+kostet einen statt neun Läufen.
+
+**Der Befund bestätigt die Beschwerde.** Mittelwerte je Stufe:
+
+| Stufe | n | Ø Gewinn |
+|---|---|---|
+| üblich | 3 | +12 Pkt |
+| ungewöhnlich | 4 | **+21 Pkt** |
+| selten | 12 | **+16 Pkt** |
+| episch | 11 | +21 Pkt |
+| legendär | 2 | +23 Pkt |
+
+Die Kurve steigt nicht: „ungewöhnlich" schlägt „selten" um fünf Punkte, und von
+„ungewöhnlich" bis „legendär" liegen zwei Punkte. Die Raritätsstufe steuerte
+Angebotshäufigkeit, Preis und Farbe — aber nicht die Stärke. Acht Stücke sind
+umgestuft, die ≥ 2 Stufen danebenlagen (Plattenpanzer und Bollwerkstein hoch,
+Frostkette, Segensring und Zorngurt runter, Ordnungsreif auf legendär). Die
+übrigen bleiben: 28 Stufen nach der Lesung eines Prüfstands zu setzen wäre
+dasselbe Überanpassen, vor dem der Plan seit Phase 8 warnt.
+
+**Zwei tote Zugriffe, gefunden durch die Messung.**
+
+1. **Die Zwillingsklinge gab seit jeher +0.** Sie zählte
+   `c.self.effects.filter(e => e.art === 'passiv')` — ein Feld, das an einer
+   gebauten Einheit nicht existiert; `art` trägt nur die Bibliothek in
+   `abilities.js`. Dieselbe Sorte toter Zugriff wie `zaeherBrand` in Phase 25,
+   nur **lesend statt schreibend** — und darum vom Wächter-Test aus Phase 27
+   nicht erfasst, der nur prüft, ob gesetzte Felder gelesen werden. `resolve`
+   legt jetzt `passivZahl` ab, nach dem Muster von `itemZahl` (Kurobe,
+   Phase 15).
+2. **Der Prüfstand war blind für genau diese Sorte Ausrüstung.** Nach der
+   Reparatur mass die Zwillingsklinge immer noch +0 — weil `bau()` frische
+   `member` baute, und die haben **keine gewählten Passiven**. Ein Prüftrupp
+   ohne Passive kann kein passiv-abhängiges Stück bewerten. Die Prüflinge
+   bekommen jetzt je Linie die erste Passive, soviele wie der Rang trägt.
+   **Der zweite Fehler hätte den ersten verdeckt**, wenn ich die Messung nach
+   der Reparatur nicht wiederholt hätte.
+
+**Die zwei kleineren Punkte:**
+
+- **Der erste Knoten ist immer ein Kampf.** `STEPS[0]` bot `['kampf', 'kampf',
+  'event']` an — ein Run konnte mit einem Ereignis beginnen, und der Einstieg
+  (das 1-gegen-1-Duell aus Phase 11) fiel dann ganz aus. Jetzt dreimal `kampf`.
+  Eine Wahl bleibt es: welcher Kampf, verrät der Knoten seit Phase 12 ohnehin
+  nicht.
+- **Relikte schalten doppelt so schnell frei**, zwei je Run statt einem. Es gibt
+  mehr Relikte als Einheiten, und ein Relikt ist der kleinere Zugewinn.
+
+**Offen:** die Stufen-Mittelwerte oben stammen aus dem Lauf VOR der
+Prüfstand-Reparatur. Sie sind für die grobe Aussage gut genug — die Kurve ist
+flach —, aber die Zahlen einzelner passiv-abhängiger Stücke gehören neu gelesen.
+`node dev/sim.js` 443/443.
+
+Worktree `/home/viktor/tensura/worktree/phase-66-beute`, Branch
+`phase-66-beute`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

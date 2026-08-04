@@ -374,9 +374,12 @@ Abgearbeitet in Phase 39:
       nachgereicht — diese Kombination kann nur durch den Bug entstanden sein.
 - [x] Geld heißt Gerudo.
 
-- Die Stärke von Items & relikten ist nicht sauber gebalanced. Manche items fühlen sich viel zu stark an dafür das sie ungewühnlich sind & mache legendary items fühlen sich zu schwach an.
-- Erste begegnung sollte immer ein kampf sein.
-- Relikt freischalten sollte schneller gehen
+- ~~Die Stärke von Items & Relikten ist nicht sauber gebalanced.~~ — bestätigt
+  und angegangen in Phase 66 (`dev/beute.js`): die Kurve war flach,
+  „ungewöhnlich" schlug „selten". Acht Stücke umgestuft. Alte Notiz: Manche items fühlen sich viel zu stark an dafür das sie ungewühnlich sind & mache legendary items fühlen sich zu schwach an.
+- ~~Erste begegnung sollte immer ein kampf sein.~~ — erledigt in Phase 66.
+- ~~Relikt freischalten sollte schneller gehen~~ — erledigt in Phase 66: zwei
+  Relikte je Run statt einem.
 - ~~Ich brauche eine Möglichkeit alle Fähigkeiten jeder Einheit einzusehen~~ —
   erledigt: **Menü → Entwicklungslinien** zeigt je Einheit die Signatur samt
   Beschreibung und alle sechzehn Passiven in vier Linien, mit Tooltips und
