@@ -161,7 +161,10 @@
     var el = $('pfad');
     if (!el) return;
     if (run.over) { el.innerHTML = ''; return; }
-    var boss = R.boss(run);
+    /* Auch die Wegleiste nennt ihn erst nach dem ersten Kampf — sie stand
+       waehrend des Startdrafts unter der Kopfzeile und verriet dort denselben
+       Namen, den die Vorschau gerade verschweigt. */
+    var boss = bossBekannt() ? R.boss(run) : null;
     var html = '<span class="pfad-akt"' + tip('Akt ' + run.act + ' von ' + R.AKTE,
       'Jeder Akt hat ' + R.STEPS.length + ' Knoten und endet mit seinem Boss.') +
       '>Akt ' + run.act + '/' + R.AKTE + '</span>';
@@ -239,9 +242,26 @@
 
   /* Wer den Boss des Akts kennt, kann darauf hinbauen — deshalb steht er von
      Anfang an da, samt Fähigkeiten. */
+  /* Der Boss zeigt sich erst NACH dem ersten Kampf. Vorher stand er auf dem
+     Startbildschirm — also bevor die erste Einheit gedraftet war —, und damit
+     liess sich der ganze Trupp gegen genau ihn bauen. Ein Run soll eine Antwort
+     auf das sein, was kommt, nicht ein Konter, der vor dem ersten Zug feststeht.
+
+     `run.step > 0` ist die Bedingung und braucht kein neues Feld: der erste
+     Knoten ist seit Phase 66 immer ein Kampf, und `step` steht im
+     Speicherstand — der Boss bleibt also auch nach einem Neuladen verdeckt.
+     Ab Akt 2 ist ohnehin gekaempft worden. */
+  function bossBekannt() {
+    return (run.act || 1) > 1 || (run.step || 0) > 0;
+  }
+
   function bossVorschau(akt) {
     var b = R.boss(run, akt);
     if (!b) return '';
+    if (!bossBekannt()) {
+      return '<p class="hinweis">Wer am Ende von Akt ' + akt +
+        ' wartet, zeigt sich nach dem ersten Kampf.</p>';
+    }
     return '<p class="hinweis">Am Ende von Akt ' + akt + ' wartet <b' +
       tip('BOSS: ' + b.name, gegnerDetails(b)) + '>' + esc(b.name) + '</b>.</p>';
   }
@@ -281,7 +301,7 @@
 
   function zeichneStart() {
     var w = run.startwahl;
-    var html = stufenHtml() + bossVorschau(1) + '<h2>Womit fängst du an?</h2>' +
+    var html = stufenHtml() + '<h2>Womit fängst du an?</h2>' +
       '<p class="hinweis">Eine Einheit und ein Relikt — mehr hast du nicht. ' +
       'Der Rest wird erkämpft.</p><div class="karten">';
     /* Zwei getrennte Blöcke statt einer gemischten Liste: sonst steht die

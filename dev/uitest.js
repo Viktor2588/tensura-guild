@@ -89,8 +89,17 @@ head('Wegleiste und Aufstellung');
 ok($$('#pfad .pfad-knoten').length === win.Run.STEPS.length,
    'die Wegleiste zeigt jeden Knoten des Akts');
 ok($$('#pfad .pfad-knoten.jetzt').length === 1, 'genau ein Knoten ist als aktueller markiert');
-ok(!!$('#pfad .pfad-knoten.boss') && !!$('#pfad .pfad-boss'),
-   'der Boss am Ende des Akts ist sichtbar, bevor man dort ankommt');
+/* Phase 75: der Boss zeigt sich erst NACH dem ersten Kampf. Vorher liess sich
+   der ganze Startdraft gegen genau ihn bauen. Der Knoten am Ende bleibt als
+   Krone sichtbar — verdeckt ist nur, WER dort steht. */
+ok(!!$('#pfad .pfad-knoten.boss'), 'der Boss-Knoten steht von Anfang an in der Wegleiste');
+ok(!$('#pfad .pfad-boss'), 'sein NAME steht vor dem ersten Kampf noch nicht da');
+var vorherStep = run.step;
+run.step = 1;
+win.UI.render();
+ok(!!$('#pfad .pfad-boss'), 'nach dem ersten Kampf nennt die Wegleiste ihn');
+run.step = vorherStep;
+win.UI.render();
 
 /* Aufstellung: zwei Klicks tauschen zwei Plätze. */
 var vorherOrder = run.team.map(function (m) { return m.uid; });

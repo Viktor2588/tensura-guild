@@ -3724,6 +3724,40 @@ Langtext weg, und am inneren `<b>` haengt kein zweiter Tooltip mehr.
 Worktree `/home/viktor/tensura/worktree/phase-74-hudtip`, Branch
 `phase-74-hudtip`.
 
+### Phase 75 (2026-08-04): Der Boss zeigt sich erst nach dem ersten Kampf
+
+Rueckmeldung: der Akt-Boss stand auf dem Startbildschirm — also bevor die erste
+Einheit gedraftet war. Damit liess sich der ganze Trupp gegen genau ihn bauen,
+und ein Run war ein Konter, der vor dem ersten Zug feststand statt einer
+Antwort auf das, was kommt.
+
+Er zeigt sich jetzt nach dem ersten Kampf. Bedingung ist `run.step > 0`, und
+das braucht **kein neues Feld**: der erste Knoten ist seit Phase 66 immer ein
+Kampf, und `step` liegt im Speicherstand — der Boss bleibt also auch nach einem
+Neuladen verdeckt. Ab Akt 2 ist ohnehin gekaempft worden.
+
+**Er stand an drei Stellen, nicht an einer.** Die Sperre sitzt deshalb zentral
+in `bossVorschau`, nicht an den Aufrufstellen:
+
+1. Startbildschirm — dort ist die Vorschau ersatzlos weg, auch der Platzhalter.
+2. Kartenansicht — dort steht jetzt „wer wartet, zeigt sich nach dem ersten
+   Kampf", damit die Zeile nicht kommentarlos verschwindet.
+3. **Die Wegleiste unter der Kopfzeile**, und die haette ich fast uebersehen:
+   sie nennt den Namen am Ende der Knotenreihe und war waehrend des Drafts
+   sichtbar. Der Boss-KNOTEN bleibt als Krone stehen — verdeckt ist nur, wer
+   dort steht.
+
+Ein Test forderte ausdruecklich das alte Verhalten („der Boss ist sichtbar,
+bevor man dort ankommt") und schlug korrekt fehl. Er prueft jetzt beide
+Zustaende: Knoten sichtbar und Name verdeckt vor dem ersten Kampf, Name da
+danach.
+
+`dev/sim.js` 458/458 · `dev/uitest.js` **112/112** · `dev/silhouetten.js`
+201/201. Nur `ui.js` angefasst — `dev/balance.js` laeuft ohne die Oberflaeche,
+eine Balance-Messung entfaellt.
+
+Worktree `/home/viktor/tensura/worktree/phase-75-boss`, Branch `phase-75-boss`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
