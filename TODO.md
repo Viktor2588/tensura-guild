@@ -522,7 +522,8 @@ Balance und Werkzeug:
 - ~~Unbezahlbare Marktangebote~~ — erledigt: 1,2 vor Phase 51, 8,0 danach, 5,7
   mit dem Rangfenster (Phase 52) und **2,0 seit Phase 53**, weil vor dem Endspiel
   kein S mehr im Markt haengt.
-- **Verstärker ist die schwächste Rolle, und es sind die Kits.** Phase 49 hat ihm
+- ~~**Verstärker ist die schwächste Rolle, und es sind die Kits.**~~ — in
+  Phase 63 widerlegt: es ist die Preiskurve, nicht das Kit. Alte Notiz: Phase 49 hat ihm
   Reichweite 2 und 3 Schritte gegeben — genau das, was Unterstützer hat. Der
   steht bei 60 %, Verstärker bei **46 %** (n=756). Damit ist die Lage als Ursache
   ausgeschlossen; es liegt an dem, was die acht Verstärker-Einheiten tun. Das ist
@@ -567,11 +568,10 @@ Balance und Werkzeug:
   Eimer. Zwei Runden Trimmen bewegten ihn um null Punkte — vor dem nächsten
   Eingriff gezielt nachmessen (wie bei Frost), statt weiter an Zahlen zu drehen.
 
-- `dev/linien.js` braucht seit Phase 23 über zehn Minuten statt drei — die
-  Binärsuche läuft öfter, weil zähere Einheiten den Bruchpunkt weiter oben
-  suchen. Obergrenze oder gröbere Schritte einziehen.
-- `dev/linien.js` misst eine Einheit allein und bewertet die
-  Unterstützungslinie deshalb strukturell zu schlecht. Mit Trupp messen.
+- ~~`dev/linien.js` braucht über zehn Minuten~~ — erledigt in Phase 63: fünf
+  statt sieben Halbierungen, die letzten beiden maßen nur Rauschen.
+- ~~`dev/linien.js` misst eine Einheit allein~~ — Notiz war veraltet, `trupp()`
+  stellt längst drei Begleiter dazu.
 
 - Anfänger/Veteran-Abstand bei 12 Punkten (50 gegen 62 % Siege).
 - Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"

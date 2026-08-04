@@ -438,12 +438,15 @@ relRows.forEach(function (r) {
    nie je Rolle. Genau diese Zahl fehlte. */
 (function () {
   var proRolle = {};
-  Object.keys(proEinheit).forEach(function (uid) {
-    var u = GD.unit(uid);
-    if (!u) return;
+  /* Erst den ganzen Bestand einsammeln, dann erst die gespielten. Sonst zeigt
+     die Tabelle nur die Einheiten, die vorkamen — und genau das war die Falle:
+     die Rangfolge las sich als Aussage ueber die Rollen, war aber eine ueber
+     ihre Preise. */
+  GD.units.forEach(function (u) {
     var r = u.tags[1] || 'front';
-    var e = proRolle[r] = proRolle[r] || { n: 0, w: 0 };
-    e.n += proEinheit[uid].n; e.w += proEinheit[uid].w;
+    var e = proRolle[r] = proRolle[r] || { n: 0, w: 0, ges: 0, da: 0, kosten: 0 };
+    e.ges++; e.kosten += u.cost;
+    if (proEinheit[u.id]) { e.da++; e.n += proEinheit[u.id].n; e.w += proEinheit[u.id].w; }
   });
   var RW = globalThis.Combat.REICHWEITE, SCH = globalThis.Combat.SCHRITTE_JE_ROLLE;
   console.log('\nSiegquote der EINHEITEN je Rolle (Reichweite in Klammern):');
@@ -452,8 +455,18 @@ relRows.forEach(function (r) {
   }).forEach(function (r) {
     var e = proRolle[r];
     console.log('  ' + (r + ' (rw ' + (RW[r] || 1) + ', ' + (SCH[r] || 4) + ' Schritte)').padEnd(34) +
-      Math.round(e.w / e.n * 100) + '%   (n=' + e.n + ')');
+      (e.n ? Math.round(e.w / e.n * 100) + '%' : '  –').padStart(4) + '   (n=' + e.n + ')' +
+      '   ' + e.da + '/' + e.ges + ' Einheiten erreicht, Ø Kosten ' +
+      (e.kosten / e.ges).toFixed(1));
   });
+  /* Die Rollen-Rangfolge ist nur dann eine Aussage ueber Rollen, wenn jede mit
+     ihrem vollen Bestand antritt. Steht hier eine Rolle mit 5/8, misst ihre
+     Quote die guenstige Haelfte — siehe Phase 63. */
+  var unvoll = Object.keys(proRolle).filter(function (r) {
+    return proRolle[r].da < proRolle[r].ges;
+  });
+  if (unvoll.length) console.log('  ! unvollstaendig gemessen: ' + unvoll.join(', ') +
+    ' — die Quote gilt nur fuer die erreichten Einheiten, nicht fuer die Rolle');
 })();
 
 var nie = GD.units.filter(function (u) { return !proEinheit[u.id]; });

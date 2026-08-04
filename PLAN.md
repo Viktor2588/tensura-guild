@@ -2911,6 +2911,80 @@ mit ins Repo.
 Worktree `/home/viktor/tensura/worktree/phase-61-figuren`, Branch
 `phase-61-figuren`.
 
+### Phase 63 (2026-08-04): Die Verstaerker-Diagnose war falsch
+
+Der Auftrag lautete, die acht Verstaerker-Kits umzuschreiben. Die Notiz dazu
+stand seit Phase 51 im Plan: Verstaerker 46 %, Unterstuetzer 60 %, Lage und
+Reichweite als Ursache durch Phase 49 ausgeschlossen, also *"es liegt an dem,
+was die acht Verstaerker-Einheiten tun"*. Die vermutete Ursache war benannt:
+Verstaerker haengen mehr als andere an KOMBINATIONEN, brauchen also Passive,
+die einzeln tragen.
+
+**Zwei Messungen, beide gegen die Vermutung.** Vor dem ersten Umbau geprueft,
+und gut, dass es so herum lief:
+
+1. **Der Rueckfallwert ist bei Verstaerkern normal.** Jede Einheit im Spiel
+   traegt an Stelle 3 jeder Linie eine Passive mit Truppbedingung („Fuehrt ein
+   Verbuendeter Konter, … — sonst …", die Phase-21-Struktur). Ueber alle 633
+   Linien-Passiven ausgezaehlt, wie viel vom vollen Wert uebrig bleibt, wenn die
+   Bedingung NICHT erfuellt ist:
+
+   | Rolle | bedingte Passive | Ø Rueckfall |
+   |---|---|---|
+   | Unterstuetzer | 16 % | **60 %** |
+   | Verstaerker | 18 % | 71 % |
+   | Fernkampf | 11 % | 72 % |
+   | Front | 15 % | 74 % |
+   | Magier | 16 % | 77 % |
+
+   Ausgerechnet Unterstuetzer — die beste Rolle — faellt am haertesten zurueck.
+   Die Vermutung sagt das Gegenteil vorher. Sie ist damit erledigt.
+
+2. **Unterstuetzer ist die einzige Rolle, deren Bestand vollstaendig bezahlbar
+   ist.** Abgeglichen mit der Liste der 14 nie gekauften Einheiten:
+
+   | Rolle | Einheiten | nie gekauft | erreichbar | Ø Kosten |
+   |---|---|---|---|---|
+   | Unterstuetzer | 4 | **0** | 4 | 2,5 |
+   | Front | 14 | 4 | 10 | 2,8 |
+   | Verstaerker | 8 | 3 | 5 | 3,0 |
+   | Fernkampf | 8 | 3 | 5 | 3,0 |
+   | Magier | 5 | 4 | **1** | 3,6 |
+
+   Die 46 % der Verstaerker sind ein Mittel ueber fuenf billige Einheiten;
+   Benimaru, Carrera und Milim — die drei staerksten — kommen nie vor. Die 60 %
+   der Unterstuetzer sind ein Mittel ueber ihren vollstaendigen Bestand. **Die
+   Rollen-Rangfolge ist eine Preis-Rangfolge**, wie schon die
+   Schluesselwort-Rangfolge in Phase 49 eine Reichweiten-Rangfolge war.
+
+**Deshalb wurde kein Kit angefasst.** Acht Einheiten auf einen widerlegten
+Befund hin umzuschreiben haette den Inhalt beschaedigt und die Zahl trotzdem
+nicht bewegt. Stattdessen zwei Eingriffe am Werkzeug, damit die Messung nicht
+noch einmal so gelesen wird:
+
+- **`dev/balance.js` weist je Rolle aus, wie viel vom Bestand ueberhaupt
+  vorkam** (`4/8 Einheiten erreicht, Ø Kosten 3.0`) und warnt ausdruecklich,
+  wenn eine Rolle unvollstaendig gemessen ist. Beim ersten Probelauf las die
+  Tabelle „magier 80 %" — aus einer einzigen Einheit bei n=5. Genau diese Zeile
+  war vorher nicht von einer echten Rollenaussage zu unterscheiden.
+- **`dev/linien.js` sucht in fuenf statt sieben Schritten.** Sieben loesen 0,02
+  Haerte auf, waehrend der Standardfehler bei 70 Proben rund 6 Prozentpunkte
+  betraegt — die letzten beiden Halbierungen haben Rauschen gemessen und je 140
+  Kaempfe gekostet. Das war der offene Punkt „laeuft ueber zehn Minuten".
+
+**Und eine veraltete Notiz gestrichen:** der Plan verlangte, `dev/linien.js`
+solle „mit Trupp messen statt eine Einheit allein". Das tut es laengst —
+`trupp()` stellt drei Begleiter dazu, deren Art nicht kollidiert. Die Notiz
+stammt aus Phase 15 und ist seither ueberholt worden, ohne dass sie jemand
+gestrichen hat.
+
+**Was offen bleibt:** ob Verstaerker mit vollem Bestand immer noch
+zuruecksteht. Das ist erst nach Phase 64 messbar — vorher misst die Zahl die
+Preiskurve. `node dev/sim.js` 443/443.
+
+Worktree `/home/viktor/tensura/worktree/phase-63-verstaerker`, Branch
+`phase-63-verstaerker`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
