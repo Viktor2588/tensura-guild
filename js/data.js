@@ -282,45 +282,45 @@
   }
 
   var relics = [
-    relic('kern_des_zorns', 'Kern des Zorns', 1, 'Alle Einheiten +12 % Angriff',
+    relic('kern_des_zorns', 'Kern des Zorns', 4, 'Alle Einheiten +12 % Angriff',
       jeder(function (x) { scale(x, { atk: 0.12 }); })),
-    relic('schuppenpanzer', 'Schuppenpanzer', 1, 'Alle Einheiten +3 Rüstung',
+    relic('schuppenpanzer', 'Schuppenpanzer', 4, 'Alle Einheiten +3 Rüstung',
       jeder(function (x) { buff(x, { def: 3 }); })),
-    relic('lebensquell', 'Lebensquell', 1, 'Alle Einheiten +15 % Leben',
+    relic('lebensquell', 'Lebensquell', 2, 'Alle Einheiten +15 % Leben',
       jeder(function (x) { scale(x, { hp: 0.15 }); })),
-    relic('windschuhe', 'Windschuhe', 1, 'Alle Einheiten +10 % Tempo',
+    relic('windschuhe', 'Windschuhe', 2, 'Alle Einheiten +10 % Tempo',
       jeder(function (x) { scale(x, { spd: 0.1 }); })),
 
     relic('giftdorn', 'Giftdorn', 2, 'Jeder Treffer legt 1 Gift an',
       anhaengen('onHit', 'Giftdorn', function (c) { c.applyStatus(c.target, 'gift', 1); }), ['gift']),
-    relic('gifttraeger', 'Giftträger', 3, '+30 % Schaden gegen vergiftete Ziele',
+    relic('gifttraeger', 'Giftträger', 2, '+30 % Schaden gegen vergiftete Ziele',
       anhaengen('onHit', 'Giftträger', function (c) { if (c.target.status.gift > 0) c.dmg *= 1.3; }), [], ['gift'],
       function (run) { return hatKeyword(run, 'gift'); }),
-    relic('brandmal', 'Brandmal', 2, '20 % Chance auf 2 Brand je Treffer',
+    relic('brandmal', 'Brandmal', 1, '20 % Chance auf 2 Brand je Treffer',
       anhaengen('onHit', 'Brandmal', chance(0.2, inflict('brand', 2))), ['brand']),
-    relic('aschewind', 'Aschewind', 3, '+40 % Schaden gegen brennende Ziele',
+    relic('aschewind', 'Aschewind', 4, '+40 % Schaden gegen brennende Ziele',
       anhaengen('onHit', 'Aschewind', function (c) { if (c.target.status.brand > 0) c.dmg *= 1.4; }), [], ['brand'],
       function (run) { return hatKeyword(run, 'brand'); }),
-    relic('frostsiegel', 'Frostsiegel', 2, '12 % Chance, das Ziel erstarren zu lassen',
+    relic('frostsiegel', 'Frostsiegel', 3, '12 % Chance, das Ziel erstarren zu lassen',
       anhaengen('onHit', 'Frostsiegel', chance(0.12, inflict('erstarrung', 1))), ['frost']),
     relic('frostbrecher', 'Frostbrecher', 4, '+35 % Schaden gegen erstarrte Ziele',
       anhaengen('onHit', 'Frostbrecher', function (c) { if (c.target.status.erstarrung > 0) c.dmg *= 1.35; }), [], ['frost'],
       function (run) { return hatKeyword(run, 'frost'); }),
-    relic('verderbnismal', 'Verderbnismal', 3, 'Jeder Treffer legt 1 Verderbnis an',
+    relic('verderbnismal', 'Verderbnismal', 4, 'Jeder Treffer legt 1 Verderbnis an',
       anhaengen('onHit', 'Verderbnismal', inflict('verderbnis', 1)), ['verderbnis']),
-    relic('fluchspiegel', 'Fluchspiegel', 4, '+25 % Schaden gegen verderbte Ziele',
+    relic('fluchspiegel', 'Fluchspiegel', 3, '+25 % Schaden gegen verderbte Ziele',
       anhaengen('onHit', 'Fluchspiegel', function (c) { if (c.target.status.verderbnis > 0) c.dmg *= 1.25; }), [], ['verderbnis'],
       function (run) { return hatKeyword(run, 'verderbnis'); }),
 
     relic('giftmeister', 'Zeichen der Brutmutter', 4, 'Je Gift-Fähigkeit im Trupp erhalten alle +7 % Angriff',
       proKeyword('gift', 0.07, [], ['gift'], function (run) { return hatKeyword(run, 'gift'); }), [], ['gift']),
-    relic('brandmeister', 'Zeichen der Flamme', 4, 'Je Brand-Fähigkeit im Trupp erhalten alle +7 % Angriff',
+    relic('brandmeister', 'Zeichen der Flamme', 5, 'Je Brand-Fähigkeit im Trupp erhalten alle +7 % Angriff',
       proKeyword('brand', 0.07, [], ['brand'], function (run) { return hatKeyword(run, 'brand'); }), [], ['brand']),
-    relic('frostmeister', 'Zeichen des Frosts', 4, 'Je Frost-Fähigkeit im Trupp erhalten alle +8 % Angriff',
+    relic('frostmeister', 'Zeichen des Frosts', 3, 'Je Frost-Fähigkeit im Trupp erhalten alle +8 % Angriff',
       proKeyword('frost', 0.08, [], ['frost'], function (run) { return hatKeyword(run, 'frost'); }), [], ['frost']),
     relic('kontermeister', 'Zeichen der Dornen', 4, 'Je Konter-Fähigkeit im Trupp erhalten alle +8 % Angriff',
       proKeyword('konter', 0.08, [], ['konter'], function (run) { return hatKeyword(run, 'konter'); }), [], ['konter']),
-    relic('heilmeister', 'Zeichen der Quelle', 4, 'Je Heilungs-Fähigkeit im Trupp erhalten alle +6 % Leben',
+    relic('heilmeister', 'Zeichen der Quelle', 3, 'Je Heilungs-Fähigkeit im Trupp erhalten alle +6 % Leben',
       function (m) {
         var n = zaehle(m, 'heilung');
         if (n) m.forEach(function (x) { scale(x, { hp: n * 0.06 }); });
@@ -328,34 +328,34 @@
 
     relic('barriere_stein', 'Barrierestein', 2, 'Alle starten mit Schild 25',
       anhaengen('onStart', 'Barriere', function (c) { c.applyStatus(c.self, 'schild', 25); }), ['schild']),
-    relic('blutkelch', 'Blutkelch', 3, 'Alle heilen 15 % des verursachten Schadens',
+    relic('blutkelch', 'Blutkelch', 2, 'Alle heilen 15 % des verursachten Schadens',
       jeder(function (x) { x.lifesteal += 0.15; }), ['heilung']),
     relic('heilsegen', 'Heilsegen', 2, 'Alle Einheiten +4 Regeneration',
       jeder(function (x) { x.regen += 4; }), ['heilung']),
-    relic('dornenhaut_relikt', 'Dornenkranz', 2, 'Angreifer erleiden 6 Schaden plus 14 % des eigenen Angriffs zurück',
+    relic('dornenhaut_relikt', 'Dornenkranz', 4, 'Angreifer erleiden 6 Schaden plus 14 % des eigenen Angriffs zurück',
       anhaengen('onDamaged', 'Dornen', function (c) {
         var f = c.foes()[0]; if (f) c.deal(f, 6 + c.self.atk * 0.14, 'Dornen');
       }), ['konter']),
     relic('rachegeist_relikt', 'Rachegeist', 2, 'Stirbt ein Verbündeter: alle +4 Angriff',
       anhaengen('onAllyDeath', 'Rachegeist', function (c) { c.self.atk += 4; })),
-    relic('letzter_wille', 'Letzter Wille', 3, 'Stirbt ein Verbündeter: alle heilen 25 Leben',
+    relic('letzter_wille', 'Letzter Wille', 1, 'Stirbt ein Verbündeter: alle heilen 25 Leben',
       anhaengen('onAllyDeath', 'Letzter Wille', function (c) { c.heal(c.self, 25, 'Letzter Wille'); }), ['heilung']),
-    relic('erstschlag_relikt', 'Erstschlagsstein', 2, 'Der erste Angriff jeder Einheit verursacht +80 % Schaden',
+    relic('erstschlag_relikt', 'Erstschlagsstein', 4, 'Der erste Angriff jeder Einheit verursacht +80 % Schaden',
       anhaengen('onHit', 'Erstschlag', function (c) {
         if (!c.self._esr) { c.self._esr = 1; c.dmg *= 1.8; }
       })),
-    relic('scharfrichter_relikt', 'Scharfrichterbeil', 4, 'Doppelter Schaden gegen Ziele unter 30 % Leben',
+    relic('scharfrichter_relikt', 'Scharfrichterbeil', 3, 'Doppelter Schaden gegen Ziele unter 30 % Leben',
       anhaengen('onHit', 'Scharfrichter', function (c) {
         if (c.target.hp < c.target.maxHp * 0.3) c.dmg *= 2;
       }), [], ['exekution']),
 
-    relic('turmschild', 'Turmschild', 2, 'Frontlinie +30 % Leben',
+    relic('turmschild', 'Turmschild', 1, 'Frontlinie +30 % Leben',
       jeder(function (x) { if (x.role === 'front') scale(x, { hp: 0.3 }); }), [], [],
       function (run) { return rollen(run).indexOf('front') >= 0; }),
-    relic('magiestein', 'Magiestein', 2, 'Magier und Fernkämpfer +20 % Angriff',
+    relic('magiestein', 'Magiestein', 3, 'Magier und Fernkämpfer +20 % Angriff',
       jeder(function (x) { if (x.role === 'magier' || x.role === 'fernkampf') scale(x, { atk: 0.2 }); }), [], [],
       function (run) { var r = rollen(run); return r.indexOf('magier') >= 0 || r.indexOf('fernkampf') >= 0; }),
-    relic('taktstock', 'Taktstock', 2, 'Unterstützer und Verstärker +25 % Angriff und Tempo',
+    relic('taktstock', 'Taktstock', 5, 'Unterstützer und Verstärker +25 % Angriff und Tempo',
       jeder(function (x) {
         if (x.role === 'unterstuetzer' || x.role === 'verstaerker') scale(x, { atk: 0.25, spd: 0.25 });
       }), [], [],
@@ -364,14 +364,14 @@
     relic('namenlose_macht', 'Namenlose Macht', 4, 'Einheiten ab Rang A: +30 % Angriff',
       jeder(function (x) { if ((x.rank || 0) >= 2) scale(x, { atk: 0.3 }); }), [], [],
       function (run) { return raenge(run).some(function (r) { return r >= 2; }); }),
-    relic('siegel_des_aufstiegs', 'Siegel des Aufstiegs', 3, 'Je Rangstufe im Trupp erhalten alle +4 % Leben',
+    relic('siegel_des_aufstiegs', 'Siegel des Aufstiegs', 4, 'Je Rangstufe im Trupp erhalten alle +4 % Leben',
       function (m) {
         var n = 0;
         m.forEach(function (x) { n += x.rank || 0; });
         if (n) m.forEach(function (x) { scale(x, { hp: n * 0.04 }); });
       }, [], [],
       function (run) { return raenge(run).some(function (r) { return r > 0; }); }),
-    relic('praedator_zahn', 'Prädatorzahn', 5, 'Rimuru erhält +50 % Angriff und Leben',
+    relic('praedator_zahn', 'Prädatorzahn', 3, 'Rimuru erhält +50 % Angriff und Leben',
       jeder(function (x) { if (x.id === 'rimuru') scale(x, { hp: 0.5, atk: 0.5 }); }), [], [],
       function (run) { return run.team.some(function (m) { return m.id === 'rimuru'; }); }),
     relic('kleines_team', 'Einsamer Pfad', 5, 'Bei höchstens 3 Einheiten: +45 % auf alle Werte',
@@ -379,36 +379,36 @@
         if (m.length <= 3) m.forEach(function (x) { scale(x, { hp: 0.45, atk: 0.45, def: 0.45, spd: 0.45 }); });
       }, [], [],
       function (run) { return run.team.length <= 3; }),
-    relic('grosses_team', 'Heerschar', 4, 'Ab 6 Einheiten: +25 % Angriff und Leben',
+    relic('grosses_team', 'Heerschar', 5, 'Ab 6 Einheiten: +25 % Angriff und Leben',
       function (m) {
         if (m.length >= 6) m.forEach(function (x) { scale(x, { hp: 0.25, atk: 0.25 }); });
       }, [], [],
       function (run) { return run.team.length >= 6; }),
-    relic('anfuehrerkrone', 'Anführerkrone', 5, 'Die vorderste Einheit erhält +60 % auf alle Werte',
+    relic('anfuehrerkrone', 'Anführerkrone', 4, 'Die vorderste Einheit erhält +60 % auf alle Werte',
       function (m) { if (m[0]) scale(m[0], { hp: 0.6, atk: 0.6, def: 0.6, spd: 0.6 }); }),
-    relic('sturmauge', 'Sturmauge', 3, 'Einheiten über 30 Tempo erhalten +25 % Angriff',
+    relic('sturmauge', 'Sturmauge', 4, 'Einheiten über 30 Tempo erhalten +25 % Angriff',
       jeder(function (x) { if (x.spd > 30) scale(x, { atk: 0.25 }); }), [], [],
       function (run) { return run.team.some(function (m) { return R_resolve(m).spd > 30; }); }),
     relic('schwerer_stand', 'Schwerer Stand', 2, 'Einheiten unter 22 Tempo: +35 % Leben, +4 Rüstung',
       jeder(function (x) { if (x.spd < 22) { scale(x, { hp: 0.35 }); buff(x, { def: 4 }); } }), [], [],
       function (run) { return run.team.some(function (m) { return R_resolve(m).spd < 22; }); }),
-    relic('quell_der_lebenskraft', 'Quell der Lebenskraft', 4,
+    relic('quell_der_lebenskraft', 'Quell der Lebenskraft', 2,
       'Jede Heilung im Trupp wirkt um 40 % stärker',
       jeder(function (x) { x.heilfaktor += 0.4; }), [], ['heilung'],
       function (run) { return hatKeyword(run, 'heilung'); }),
-    relic('bollwerk_banner', 'Bollwerkbanner', 4, 'Alle Schilde im Trupp sind um 30 % stärker',
+    relic('bollwerk_banner', 'Bollwerkbanner', 3, 'Alle Schilde im Trupp sind um 30 % stärker',
       jeder(function (x) { x.schildfaktor += 0.3; }), [], ['schild'],
       function (run) { return hatKeyword(run, 'schild'); }),
     relic('sturmtakt', 'Sturmtakt', 4,
       'Einheiten über 30 Tempo verursachen +30 % Schaden',
       jeder(function (x) { if (x.spd > 30) scale(x, { atk: 0.3 }); }), [], ['tempo'],
       function (run) { return run.team.some(function (m) { return R_resolve(m).spd > 30; }); }),
-    relic('brandopfer', 'Massengrab', 4,
+    relic('brandopfer', 'Massengrab', 2,
       'Alle verursachen +6 % Schaden je lebendem Gegner',
       anhaengen('onHit', 'Massengrab', function (c) {
         c.dmg *= 1 + 0.06 * c.foes().length;
       }), [], ['flaeche']),
-    relic('trophaensammler', 'Trophäensammler', 4,
+    relic('trophaensammler', 'Trophäensammler', 1,
       'Jeder erlegte Gegner gibt dem ganzen Trupp dauerhaft +5 Angriff',
       anhaengen('onKill', 'Trophäensammler', function (c) {
         c.allies().forEach(function (u) { u.atk += 5; });
@@ -449,7 +449,7 @@
         });
         if (n) m.forEach(function (x) { scale(x, { atk: n * 0.03, hp: n * 0.03 }); });
       }),
-    relic('erbe_der_ahnen', 'Erbe der Ahnen', 5,
+    relic('erbe_der_ahnen', 'Erbe der Ahnen', 4,
       'Die Einheit mit den meisten Fähigkeiten erhält +45 % auf alle Werte',
       function (m) {
         if (!m.length) return;
@@ -459,23 +459,23 @@
         });
         scale(best, { hp: 0.45, atk: 0.45, def: 0.45, spd: 0.45 });
       }),
-    relic('lehrmeister', 'Lehrmeister', 3, 'Einheiten auf Rang C erhalten +35 % Leben und Angriff',
+    relic('lehrmeister', 'Lehrmeister', 5, 'Einheiten auf Rang C erhalten +35 % Leben und Angriff',
       jeder(function (x) { if (!(x.rank || 0)) scale(x, { hp: 0.35, atk: 0.35 }); }), [], [],
       function (run) { return raenge(run).some(function (r) { return r === 0; }); }),
 
-    relic('taktgeber', 'Taktgeber', 5, 'Alle Einheiten +18 % Tempo — und damit öfter am Zug',
+    relic('taktgeber', 'Taktgeber', 3, 'Alle Einheiten +18 % Tempo — und damit öfter am Zug',
       jeder(function (x) { scale(x, { spd: 0.18 }); }), ['tempo']),
 
     /* Stapel-Relikte: dieselben zwei Stellschrauben, aber für den GANZEN Trupp.
        Deshalb kleiner als die Ringe — ein Faktor auf fünf Einheiten multipliziert
        sich mit allem, was sie ohnehin anlegen. */
-    relic('fluchsiegel', 'Fluchsiegel', 3,
+    relic('fluchsiegel', 'Fluchsiegel', 4,
       'Jeder Stapel, den der Trupp einem Gegner anlegt, fällt 25 % größer aus',
       jeder(function (x, api) { x.fluchmeister = (x.fluchmeister || 1) * 1.25; })),
-    relic('segensbanner', 'Segensbanner', 3,
+    relic('segensbanner', 'Segensbanner', 2,
       'Jeder Stapel, den der Trupp der eigenen Reihe anlegt, fällt 25 % größer aus',
       jeder(function (x) { x.segenmeister = (x.segenmeister || 1) * 1.25; })),
-    relic('verzerrter_spiegel', 'Verzerrter Spiegel', 4,
+    relic('verzerrter_spiegel', 'Verzerrter Spiegel', 3,
       'Chaos des Trupps fällt 50 % größer aus, und jede Einheit beginnt mit 3 Antichaos',
       function (m, api) {
         m.forEach(function (x) {
@@ -490,44 +490,44 @@
   /* ---- Ausrüstung ---------------------------------------------------------- */
 
   var items = [
-    { id: 'kurzschwert', rarity: 1, name: 'Kurzschwert', cost: 35, stats: { atk: 5 },
+    { id: 'kurzschwert', rarity: 3, name: 'Kurzschwert', cost: 35, stats: { atk: 5 },
       text: 'Schlichte Klinge. +5 Angriff.' },
-    { id: 'langschwert', rarity: 3, name: 'Langschwert', cost: 60, stats: { atk: 10 },
+    { id: 'langschwert', rarity: 4, name: 'Langschwert', cost: 60, stats: { atk: 10 },
       text: 'Schwere Klinge. +10 Angriff.' },
-    { id: 'lederpanzer', rarity: 1, name: 'Lederpanzer', cost: 35, stats: { hp: 30, def: 2 },
+    { id: 'lederpanzer', rarity: 3, name: 'Lederpanzer', cost: 35, stats: { hp: 30, def: 2 },
       text: '+30 Leben und +2 Rüstung. Rüstung senkt jeden eingehenden Treffer.' },
     { id: 'plattenpanzer', rarity: 4, name: 'Plattenpanzer', cost: 70, stats: { hp: 55, def: 5 },
       text: '+55 Leben und +5 Rüstung. Für die vorderste Einheit gedacht.' },
-    { id: 'stiefel', rarity: 1, name: 'Windstiefel', cost: 40, stats: { spd: 6 },
+    { id: 'stiefel', rarity: 4, name: 'Windstiefel', cost: 40, stats: { spd: 6 },
       text: '+6 Tempo. Mehr Tempo heißt mehr Züge — und damit öfter die eigene Signatur.' },
-    { id: 'amulett', rarity: 2, name: 'Magicule-Amulett', cost: 55, stats: { atk: 6, spd: 3 },
+    { id: 'amulett', rarity: 4, name: 'Magicule-Amulett', cost: 55, stats: { atk: 6, spd: 3 },
       text: '+6 Angriff und +3 Tempo.' },
-    { id: 'giftklinge', rarity: 3, name: 'Giftklinge', cost: 60, stats: { atk: 4 },
+    { id: 'giftklinge', rarity: 4, name: 'Giftklinge', cost: 60, stats: { atk: 4 },
       effects: [eff('onHit', 'Gift', inflict('gift', 2))], keywords: ['gift'],
       text: '+4 Angriff. Jeder Treffer legt 2 Gift an (2 Schaden je Stapel pro gegnerischem Zug).' },
-    { id: 'flammenklinge', rarity: 3, name: 'Flammenklinge', cost: 60, stats: { atk: 4 },
+    { id: 'flammenklinge', rarity: 2, name: 'Flammenklinge', cost: 60, stats: { atk: 4 },
       effects: [eff('onHit', 'Flamme', chance(0.35, inflict('brand', 2)))], keywords: ['brand'],
       text: '+4 Angriff. 35 % Chance auf 2 Brand — Schaden über Zeit, halbiert die Heilung des Ziels.' },
-    { id: 'frostklinge', rarity: 4, name: 'Frostklinge', cost: 70, stats: { atk: 3 },
+    { id: 'frostklinge', rarity: 3, name: 'Frostklinge', cost: 70, stats: { atk: 3 },
       effects: [eff('onHit', 'Frost', chance(0.15, inflict('erstarrung', 1)))], keywords: ['frost'],
       text: '+3 Angriff. 15 % Chance, dem Ziel einen ganzen Zug zu rauben.' },
     { id: 'vampirring', rarity: 3, name: 'Vampirring', cost: 75, stats: { atk: 3 },
       effects: [eff('onStart', 'Vampirring', function (c) { c.self.lifesteal += 0.25; })], keywords: ['heilung'],
       text: '+3 Angriff. Die Einheit heilt 25 % des Schadens, den sie verursacht.' },
-    { id: 'regenerationsmal', rarity: 3, name: 'Regenerationsmal', cost: 55, stats: { hp: 20 },
+    { id: 'regenerationsmal', rarity: 1, name: 'Regenerationsmal', cost: 55, stats: { hp: 20 },
       effects: [eff('onStart', 'Regeneration', function (c) { c.self.regen += 6; })], keywords: ['heilung'],
       text: '+20 Leben. Heilt zusätzlich 6 Leben in jedem eigenen Zug.' },
     { id: 'dornenschild', rarity: 4, name: 'Dornenschild', cost: 60, stats: { hp: 25, def: 3 },
       effects: [eff('onDamaged', 'Dornen', function (c) { var f = c.foes()[0]; if (f) c.deal(f, 10, 'Dornen'); })],
       keywords: ['konter'],
       text: '+25 Leben, +3 Rüstung. Jeder Angreifer erleidet 10 Schaden zurück.' },
-    { id: 'schutzstein', rarity: 2, name: 'Schutzstein', cost: 45, stats: { def: 3 },
+    { id: 'schutzstein', rarity: 3, name: 'Schutzstein', cost: 45, stats: { def: 3 },
       effects: [eff('onStart', 'Schild', function (c) { c.applyStatus(c.self, 'schild', 40); })], keywords: ['schild'],
       text: '+3 Rüstung. Startet jeden Kampf mit Schild 40, der nicht verfällt.' },
-    { id: 'zorngurt', rarity: 1, name: 'Zorngurt', cost: 70, stats: {},
+    { id: 'zorngurt', rarity: 2, name: 'Zorngurt', cost: 70, stats: {},
       effects: [eff('onDamaged', 'Zorn', function (c) { c.self.atk += 2; })],
       text: 'Jeder erlittene Treffer gibt dauerhaft +2 Angriff für den Rest des Kampfes.' },
-    { id: 'ruestungsbrecher', rarity: 4, name: 'Rüstungsbrecher', cost: 75, stats: { atk: 3 },
+    { id: 'ruestungsbrecher', rarity: 3, name: 'Rüstungsbrecher', cost: 75, stats: { atk: 3 },
       effects: [eff('onStart', 'Rüstungsbruch', function (c) { c.self.pierce = Math.max(c.self.pierce || 0, 0.75); })],
       keywords: [],
       text: '+3 Angriff. Ignoriert 75 % der gegnerischen Rüstung.' },
@@ -536,7 +536,7 @@
 
     /* Ausrüstung, die auf die Fähigkeiten ihrer Trägerin schaut. Erst dadurch
        wird der Kauf eine Frage von „passt das zu wem?" statt „mehr Angriff". */
-    { id: 'giftmeisterhandschuh', rarity: 3, name: 'Handschuh der Brutmutter', cost: 70, stats: { atk: 4 },
+    { id: 'giftmeisterhandschuh', rarity: 4, name: 'Handschuh der Brutmutter', cost: 70, stats: { atk: 4 },
       keywords: ['gift'],
       text: '+4 Angriff. Erzeugt die Trägerin selbst Gift, legt jeder ihrer Treffer 2 Gift zusätzlich an.',
       effects: [eff('onHit', 'Brutmutter', function (c) {
@@ -548,7 +548,7 @@
       effects: [eff('onHit', 'Aschemantel', function (c) {
         if (c.self.keywords.indexOf('brand') >= 0 && c.target.status.brand > 0) c.dmg *= 1.35;
       })] },
-    { id: 'frostkette', rarity: 2, name: 'Frostkette', cost: 75, stats: { atk: 3 },
+    { id: 'frostkette', rarity: 1, name: 'Frostkette', cost: 75, stats: { atk: 3 },
       amplifies: ['frost'],
       text: '+3 Angriff. Gegen erstarrte Ziele verursacht die Trägerin +35 % Schaden.',
       effects: [eff('onHit', 'Frostkette', function (c) {
@@ -561,13 +561,13 @@
         if (c.self.keywords.indexOf('konter') < 0) return;
         var f = c.foes()[0]; if (f) c.deal(f, 10 + c.self.atk * 0.2, 'Spiegelpanzer');
       })] },
-    { id: 'lebensrune', rarity: 3, name: 'Lebensrune', cost: 60, stats: {},
+    { id: 'lebensrune', rarity: 1, name: 'Lebensrune', cost: 60, stats: {},
       text: 'Heilt die Trägerin bereits selbst, gibt die Rune +8 Regeneration — sonst +35 Leben.',
       effects: [eff('onStart', 'Lebensrune', function (c) {
         if (c.self.keywords.indexOf('heilung') >= 0) c.self.regen += 8;
         else { c.self.maxHp += 35; c.self.hp += 35; }
       })] },
-    { id: 'rangabzeichen', rarity: 4, name: 'Rangabzeichen', cost: 80, stats: {},
+    { id: 'rangabzeichen', rarity: 5, name: 'Rangabzeichen', cost: 80, stats: {},
       text: 'Je Rangstufe der Trägerin +7 Angriff und +15 Leben. Auf Rang C wirkungslos.',
       effects: [eff('onStart', 'Rangabzeichen', function (c) {
         var r = c.self.rank || 0;
@@ -575,29 +575,29 @@
         c.self.maxHp += 15 * r;
         c.self.hp += 15 * r;
       })] },
-    { id: 'zwillingsklinge', rarity: 4, name: 'Zwillingsklinge', cost: 80, stats: {},
+    { id: 'zwillingsklinge', rarity: 5, name: 'Zwillingsklinge', cost: 80, stats: {},
       text: 'Je Passive der Trägerin +5 Angriff und +2 Tempo — lohnt sich erst ab Rang B.',
       effects: [eff('onStart', 'Zwillingsklinge', function (c) {
         var n = c.self.passivZahl || 0;
         c.self.atk += 5 * n;
         c.self.spd += 2 * n;
       })] },
-    { id: 'heilkelch', rarity: 3, name: 'Kelch der Quelle', cost: 55, stats: { hp: 20 },
+    { id: 'heilkelch', rarity: 1, name: 'Kelch der Quelle', cost: 55, stats: { hp: 20 },
       amplifies: ['heilung'],
       text: '+20 Leben. Jede Heilung an der Trägerin wirkt um 50 % stärker.',
       effects: [eff('onStart', 'Kelch', function (c) { c.self.heilfaktor += 0.5; })] },
-    { id: 'bollwerkstein', rarity: 4, name: 'Bollwerkstein', cost: 55, stats: { def: 2 },
+    { id: 'bollwerkstein', rarity: 3, name: 'Bollwerkstein', cost: 55, stats: { def: 2 },
       amplifies: ['schild'],
       text: '+2 Rüstung. Jeder Schild auf der Trägerin ist um 40 % stärker.',
       effects: [eff('onStart', 'Bollwerk', function (c) { c.self.schildfaktor += 0.4; })] },
-    { id: 'schwaechenfinder', rarity: 4, name: 'Auge für Schwächen', cost: 65, stats: { atk: 3 },
+    { id: 'schwaechenfinder', rarity: 3, name: 'Auge für Schwächen', cost: 65, stats: { atk: 3 },
       amplifies: ['gift', 'brand', 'frost', 'verderbnis'],
       text: '+3 Angriff. +25 % Schaden gegen jedes Ziel, das irgendeinen Zustand trägt — passt zu jedem Zustands-Build.',
       effects: [eff('onHit', 'Schwächen', function (c) {
         var s2 = c.target.status;
         if (s2.gift > 0 || s2.brand > 0 || s2.erstarrung > 0 || s2.verderbnis > 0) c.dmg *= 1.25;
       })] },
-    { id: 'schildbrecher', rarity: 5, name: 'Schildbrecher', cost: 100, stats: { atk: 4 },
+    { id: 'schildbrecher', rarity: 4, name: 'Schildbrecher', cost: 100, stats: { atk: 4 },
       text: '+4 Angriff. Alle Angriffe der Trägerin gehen durch Schilde hindurch.',
       effects: [eff('onStart', 'Schildbrecher', function (c) { c.self.durchschlag = 1; })] },
 
@@ -611,23 +611,23 @@
       effects: [eff('onStart', 'Fluchring', function (c) {
         c.self.fluchmeister = (c.self.fluchmeister || 1) * 1.4;
       })] },
-    { id: 'segensring', rarity: 1, name: 'Segensring', cost: 75, stats: {},
+    { id: 'segensring', rarity: 2, name: 'Segensring', cost: 75, stats: {},
       text: 'Jeder Stapel, den die Trägerin der EIGENEN Reihe anlegt, fällt 40 % größer aus — Schild, Licht, Antichaos, alles.',
       effects: [eff('onStart', 'Segensring', function (c) {
         c.self.segenmeister = (c.self.segenmeister || 1) * 1.4;
       })] },
-    { id: 'chaoszepter', rarity: 4, name: 'Chaoszepter', cost: 95, stats: { atk: 6 },
+    { id: 'chaoszepter', rarity: 3, name: 'Chaoszepter', cost: 95, stats: { atk: 6 },
       text: '+6 Angriff. Chaos, das die Trägerin anlegt, fällt 60 % größer aus — zusätzlich zu allem, was sie selbst schon kann.',
       effects: [eff('onStart', 'Chaoszepter', function (c) {
         c.self.chaosmeister = (c.self.chaosmeister || 1) * 1.6;
       })] },
-    { id: 'ordnungsreif', rarity: 5, name: 'Ordnungsreif', cost: 95, stats: { def: 4 },
+    { id: 'ordnungsreif', rarity: 4, name: 'Ordnungsreif', cost: 95, stats: { def: 4 },
       text: '+4 Rüstung. Zu Kampfbeginn 4 Antichaos für die Trägerin, und jeder eigene Antichaos-Stapel fällt 50 % größer aus.',
       effects: [eff('onStart', 'Ordnungsreif', function (c) {
         c.self.segenmeister = (c.self.segenmeister || 1) * 1.5;
         c.applyStatus(c.self, 'antichaos', 4);
       })] },
-    { id: 'markenbrenner', rarity: 3, name: 'Markenbrenner', cost: 70, stats: { atk: 4 },
+    { id: 'markenbrenner', rarity: 1, name: 'Markenbrenner', cost: 70, stats: { atk: 4 },
       text: '+4 Angriff. Marken der Trägerin fallen 60 % größer aus — und jeder Angreifer im Trupp profitiert davon.',
       effects: [eff('onStart', 'Markenbrenner', function (c) {
         c.self.markenmeister = (c.self.markenmeister || 1) * 1.6;

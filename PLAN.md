@@ -3212,6 +3212,11 @@ dasselbe Überanpassen, vor dem der Plan seit Phase 8 warnt.
    `member` baute, und die haben **keine gewählten Passiven**. Ein Prüftrupp
    ohne Passive kann kein passiv-abhängiges Stück bewerten. Die Prüflinge
    bekommen jetzt je Linie die erste Passive, soviele wie der Rang trägt.
+   *(Nachtrag Phase 67: diese Reparatur hat nie gegriffen — sie fragte
+   `R.hatLinien(id)` mit einer Id, und die Funktion erwartet das Member. Der
+   Zweig war immer falsch, der Prüftrupp blieb ohne Passive. Die
+   Stufen-Mittelwerte unten stammen deshalb sämtlich aus einem blinden
+   Prüfstand.)*
    **Der zweite Fehler hätte den ersten verdeckt**, wenn ich die Messung nach
    der Reparatur nicht wiederholt hätte.
 
@@ -3274,6 +3279,86 @@ ist eine Design-Frage, keine Fehlfunktion.
    fuer eine Aussage.
 
 Der Merge liegt auf `integration-62-66` und ist NICHT auf `main`.
+
+
+### Phase 67 (2026-08-04): Die Seltenheit sagt jetzt die Stärke
+
+Phase 66 hatte gemessen, dass die Raritätsstufe nichts über die Stärke sagt,
+aber nur acht Stücke umgestuft. Hier vollständig — und erst, nachdem der
+Prüfstand wirklich funktionierte.
+
+**Der Prüfstand war zum dritten Mal kaputt.** Phase 66 hatte ihn repariert:
+Prüflinge sollten Passive bekommen, weil ein Trupp ohne Passive keine
+passiv-abhängige Ausrüstung bewerten kann. Die Reparatur fragte
+`R.hatLinien(id)` — mit einer **Id**, während die Funktion das **Member**
+erwartet (`AB.linien[m.id]`). Mit einem String liest sie `AB.linien[undefined]`
+und ist immer falsch. Der Zweig lief nie, der Prüftrupp blieb ohne Passive,
+und sämtliche Stufen-Mittelwerte aus Phase 66 stammen aus einem blinden
+Prüfstand.
+
+Damit sind es drei Schichten desselben Fehlers, jede von der darüber verdeckt:
+
+1. Die Zwillingsklinge las `e.art === 'passiv'` — ein Feld, das an einer
+   gebauten Einheit nicht existiert. Sie gab seit jeher +0.
+2. Der Prüfstand konnte das nicht sehen, weil seine Einheiten keine Passiven
+   hatten.
+3. Die Reparatur von Punkt 2 war selbst kaputt.
+
+Erst nach Punkt 3 misst die Zwillingsklinge, was sie tut — und zwar **+39, das
+stärkste Ausrüstungsstück im Spiel** statt des schwächsten. Ihr Wert steigt mit
+der Zahl der Passiven, also mit dem Rang; im Prüfstand auf Rang A sind das
++15 Angriff und +6 Tempo.
+
+**Auflösung erhöht: 240 Proben statt 60.** Bei 60 liegt der Standardfehler bei
+rund 6,5 Punkten, während fast alle Stücke zwischen +12 und +32 lagen —
+Nachbarstufen wären ununterscheidbar gewesen, und eine Umstufung darauf hätte
+Rauschen kartiert. Bei 240 sind es rund 3.
+
+**Die Regel für die Umstufung: rangerhaltend.** Die Stücke werden nach
+gemessener Stärke sortiert und bekommen die Stufen in genau der
+Häufigkeitsverteilung zugeteilt, die es vorher gab — gleich viele legendäre,
+gleich viele übliche. Damit ist die Stufe per Konstruktion monoton in der
+Stärke, ohne dass sich die Ökonomie verschiebt (die Stufe steuert
+Angebotshäufigkeit und, bei Ausrüstung, den Preis). Eine Neuvergabe nach festen
+Punktebändern hätte dagegen alle Stücke in zwei Stufen gedrängt.
+
+**61 Umstufungen**, 25 bei der Ausrüstung, 36 bei den Relikten. Ergebnis:
+
+| Stufe | Ausrüstung vorher | nachher | Relikte vorher | nachher |
+|---|---|---|---|---|
+| üblich | +15 | **+9** | +8 | **+2** |
+| ungewöhnlich | +16 | **+12** | +9 | **+5** |
+| selten | +16 | **+16** | +13 | **+9** |
+| episch | +22 | **+24** | +10 | **+13** |
+| legendär | +25 | **+33** | +21 | **+30** |
+
+Vorher war die Kurve bei der Ausrüstung in den unteren drei Stufen flach
+(15/16/16) und bei den Relikten sogar fallend (selten +13 über episch +10).
+Jetzt steigt sie in beiden Tabellen streng.
+
+Die auffälligsten Einzelfälle: **Windstiefel** standen auf „üblich" und messen
++22 (jetzt episch), **Kern des Zorns** auf „üblich" mit +12 (jetzt episch);
+umgekehrt lag **Prädatorzahn** auf „legendär" bei +8 und **Taktgeber**
+ebenfalls legendär bei +8 (beide jetzt selten).
+
+**Drei Relikte blieben ausdrücklich unangetastet.** Frostbrecher, Zeichen der
+Dornen und Zwillingsseele messen +0 — aber sie sind nicht tot, sondern in
+diesen zwei Prüfständen **nicht auslösbar**: sie brauchen erstarrte Ziele,
+Konter-Fähigkeiten im Trupp beziehungsweise eine verschlungene Fähigkeit.
+Nichts davon liefern „Zustand" und „Wacht". Sie aufgrund einer Messung
+herabzustufen, die sie gar nicht messen konnte, wäre genau der Fehler, den
+diese Phase aufgeklärt hat. Sie behalten ihre Stufe und stehen als offener
+Punkt.
+
+**Kalibriert:** die Umstufung hob die Siegquote von 48 auf 54 %, also
+`GRUNDHAERTE` 1.085 → 1.13 (gemessen: 1.10 → 56 %, 1.115 → 53 %, 1.13 → 51 %).
+
+`dev/balance.js 500`: **49 % frisch**, 59 % voll freigeschaltet.
+Bedrohungsleiter (je 150) **49/39/33/32/29/11 — monoton.**
+`dev/sim.js` 443/443 · `dev/uitest.js` 104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-67-seltenheit`, Branch
+`phase-67-seltenheit`.
 
 ## 5. Risiken
 

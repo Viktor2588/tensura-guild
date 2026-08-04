@@ -21,7 +21,7 @@ require('../js/enemies.js');
 require('../js/run.js');
 var GD = globalThis.GameData, EN = globalThis.Enemies, R = globalThis.Run, C = globalThis.Combat;
 
-var PROBEN = 60;                 // Kämpfe je Härtestufe
+var PROBEN = 240;                // SE rund 3 Punkte statt 6,5 — erst damit sind Nachbarstufen unterscheidbar
 var RANG = 2;                    // Rang A: drei Item-Slots, zwei Passive
 
 /* Die Prüfstände. `fix` ist die Grundausrüstung des Trupps — die Frostklinge
@@ -49,7 +49,12 @@ var SONDERSTAND = {
 function bau(id, rang, items) {
   var m = R.member(id);
   m.rank = rang;
-  if (R.hatLinien(id)) {
+  /* `hatLinien` erwartet das MEMBER, nicht die Id — mit einem String liest es
+     `AB.linien[undefined]` und ist immer falsch. Genau so stand es nach
+     Phase 66 hier, weshalb der Prueftrupp weiterhin ohne Passive antrat und
+     die Zwillingsklinge weiterhin +0 mass. Der reparierte Pruefstand war
+     selbst kaputt. */
+  if (R.hatLinien(m)) {
     var L = globalThis.Abilities.linien[id], reihe = [];
     ['angriff', 'mechanik', 'unterstuetzung', 'defensive'].forEach(function (k) {
       if ((L[k] || [])[0]) reihe.push(L[k][0]);
