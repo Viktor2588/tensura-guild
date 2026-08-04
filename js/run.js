@@ -119,7 +119,8 @@
       text: 'Der normale Weg.' },
     { stufe: 1, name: 'Überzahl', regel: 'ueberzahl',
       text: 'Jede Begegnung bringt einen Gegner mehr mit. Fläche und Konter gewinnen dadurch, ' +
-            'reiner Einzelzielschaden verliert.' },
+            'reiner Einzelzielschaden verliert. Dazu 4,5 % weniger Magicule je Stufe — ' +
+            'ab hier ist jeder Kauf ein verzichteter anderer.' },
     { stufe: 2, name: 'Nachschub', regel: 'nachschub',
       text: 'Jeder normale Gegner steht einmal mit 30 % Leben wieder auf — Bosse nicht. ' +
             'Wer nur exekutiert, räumt nicht mehr ab; Gift, Brand und Blutung tragen weiter.' },
@@ -173,6 +174,20 @@
   var START_MAX_RARITAET = 2;
   function ertrag(x) { return Math.round(x * WACHSTUM); }
 
+  /* Weniger Beute je Bedrohungsstufe. Phase 69 hat die Leiter steiler gemacht,
+     aber nur auf der KAMPFEBENE — mehr Gegner, schneller, zaeher. Das verlangt
+     einen staerkeren Trupp, nicht bessere Entscheidungen. Ein knapperer Beutel
+     verlangt beides: bei 35 % weniger Einkommen ist jeder Kauf ein verzichteter
+     anderer Kauf, und genau da liegt die Tiefe dieses Spiels (siehe Phase 11,
+     als das Zusammenlegen der Waehrungen dieselbe Wirkung hatte).
+     Greift nur auf EINKOMMEN — Kampfbeute und Lager. Verkaufserloese sind
+     Rueckerstattungen; sie zu kuerzen wuerde denselben Magicule zweimal
+     besteuern und das Umbauen des Trupps bestrafen statt das Ausgeben. */
+  var BEUTE_JE_STUFE = 0.045;
+  function beuteFaktor(run) {
+    return 1 - BEUTE_JE_STUFE * Math.min(run.threat || 0, 5);
+  }
+
   /* Gegnerhärte je Stufe — greift auf denselben mult wie die Begegnung selbst. */
   function bedrohungsFaktor(run, node) {
     var t = run.threat || 0;
@@ -184,7 +199,7 @@
        ein halbstarker Nachzuegler, ein Gegner der einmal aufsteht, zwei Leben
        weniger. Wer die Kaempfe gewinnt, merkt von keiner davon etwas — und
        genau das war die Rueckmeldung. Jetzt 0.045, also +22 % auf Stufe 5. */
-    var f = GRUNDHAERTE + 0.032 * Math.min(t, 5);
+    var f = GRUNDHAERTE + 0.022 * Math.min(t, 5);
     if (node && node.type === 'pruefung') f *= PRUEFUNG_HAERTE;
     if (run.act === 1 && node && node.type !== 'boss' && EINSTIEG_HAERTE[run.step]) {
       f *= EINSTIEG_HAERTE[run.step];
@@ -705,7 +720,7 @@
      Ziel mehr im Log. */
   var NACHZUEGLER = 0.75;
   var NACHSCHUB_LEBEN = 0.3;
-  var STURM_TEMPO = 1.12;      // Stufe 5: alle Gegner schneller, nicht nur Bosse
+  var STURM_TEMPO = 1.06;      // Stufe 5: alle Gegner schneller, nicht nur Bosse
 
   var NACHSCHUB = { hook: 'onDeath', name: 'Nachschub',
     text: 'Steht einmal mit 30 % Leben wieder auf.', keywords: ['heilung'],
@@ -797,8 +812,8 @@
     if (res.winner === 'player') {
       /* Eine Währung. Gold und Magicule waren dieselbe Zahl in zwei Beuteln:
          beide kamen aus Kämpfen, beide gingen in Truppstärke. */
-      var beute = ertrag(node.encounter.beute * (node.belagert ? 0.75 : 1)) +
-        ertrag(MAG_JE_KAMPF + inhaltsStufe(run) * 15);
+      var beute = Math.round((ertrag(node.encounter.beute * (node.belagert ? 0.75 : 1)) +
+        ertrag(MAG_JE_KAMPF + inhaltsStufe(run) * 15)) * beuteFaktor(run));
       run.magicules += beute;
       /* Auflage erfüllt: mehr Magicule und ein Posten mehr im Markt. */
       if (p) {
@@ -1264,7 +1279,7 @@
     var f = regel(run, 'belagerung') ? 0.85 : 1;
     /* Drei verschiedene Antworten, nicht dreimal dieselbe Währung: Magicule
        jetzt, ein Ausrüstungsstück, oder dauerhafte Werte. */
-    if (i === 0) run.magicules += Math.round(ertrag(140) * f);
+    if (i === 0) run.magicules += Math.round(ertrag(140) * f * beuteFaktor(run));
     else if (i === 1) api.grantItem(run);
     else api.buffRandom(run, { hp: Math.round(30 * f), atk: Math.round(4 * f) });
     run.pending.done = true;
@@ -1523,6 +1538,7 @@
     chooseStart: chooseStart,
     rankName: rankName, rankCost: rankCost,
     BEDROHUNG: BEDROHUNG, bedrohung: bedrohung, bedrohungsFaktor: bedrohungsFaktor, regel: regel,
+    beuteFaktor: beuteFaktor,
     regelnTest: regeln, rollTest: roll, EINSTIEG: EINSTIEG, EINSTIEG_HAERTE: EINSTIEG_HAERTE,
     START_MAX_RARITAET: START_MAX_RARITAET,
     itemSlots: itemSlots, aktivSlots: aktivSlots, passivSlots: passivSlots, praedatorSlots: praedatorSlots,

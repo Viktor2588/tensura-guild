@@ -3480,6 +3480,62 @@ die naechste Rueckmeldung in einer Zeile beantwortet werden kann.
 Worktree `/home/viktor/tensura/worktree/phase-69-bedrohung`, Branch
 `phase-69-bedrohung`.
 
+### Phase 70 (2026-08-04): Die Leiter greift jetzt in den Beutel
+
+Auf Zuruf: je Bedrohungsstufe weniger Magicule. Die Begruendung des Nutzers ist
+die richtige und sie deckt eine Luecke in Phase 69 auf — **diese hatte die
+Leiter nur auf der KAMPFEBENE steiler gemacht**: mehr Gegner, schneller,
+zaeher. Das verlangt einen staerkeren Trupp, nicht bessere Entscheidungen. Ein
+knapperer Beutel verlangt beides.
+
+Umgesetzt als `beuteFaktor(run)`, **4,5 % weniger je Stufe** — Stufe 5 bekommt
+78 % des Einkommens. Der Faktor greift nur auf EINKOMMEN (Kampfbeute, Lager),
+nicht auf Verkaufserloese: die sind Rueckerstattungen, und sie zu kuerzen wuerde
+denselben Magicule zweimal besteuern und das Umbauen des Trupps bestrafen statt
+das Ausgeben.
+
+**Die Oekonomie ist der mit Abstand steilste Hebel — das war zu lernen.** Der
+erste Versuch mit 7 % je Stufe liess die Leiter auf 49/25/12/7/**2/2** fallen:
+Stufe 4 und 5 waren nicht mehr zu unterscheiden, also genau der Zustand, gegen
+den diese Arbeit laeuft. Der Grund ist Kumulation — 65 % Einkommen ueber 16
+Knoten ergibt einen schwaecheren Trupp, der mehr Kaempfe verliert, was wieder
+Einkommen kostet. Derselbe Befund wie in Phase 11, als das Zusammenlegen der
+Waehrungen die Siegquote auf 4 % schickte.
+
+Deshalb wurden die Kampfschrauben aus Phase 69 zurueckgenommen, damit die
+Oekonomie die Arbeit tragen kann:
+
+| | Phase 69 | jetzt |
+|---|---|---|
+| Werteschraube je Stufe | 0.032 | **0.022** |
+| Sturmgott-Tempo | 1.12 | **1.06** |
+| Beute je Stufe | — | **−4,5 %** |
+
+**Gemessen** (`dev/balance.js`, 150–400 Runs je Stufe):
+
+| Stufe | 0 | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|---|
+| vor Phase 69 | 49 | 39 | 33 | 32 | 29 | 11 |
+| Phase 69 | 49 | 33 | 21 | 17 | 11 | 3 |
+| **jetzt** | **50** | **32** | **22** | **17** | **12** | **3** |
+
+Stufe 0 unveraendert bei 50 % ueber 400 Runs, `GRUNDHAERTE` nicht angefasst.
+Gegenueber Phase 69 ist die Kurve fast identisch — aber sie entsteht jetzt zu
+einem guten Teil aus knappen Magicule statt aus haerteren Gegnern, und das ist
+der Unterschied zwischen „staerkerer Trupp noetig" und „bessere Entscheidungen
+noetig".
+
+**Weiterhin offen, und ehrlich so:** der Bot misst Monotonie, nicht
+Schwierigkeit (Befund aus Phase 69). Ob sich die Leiter von Hand jetzt
+gestaffelt anfuehlt, kann nur das echte Spiel sagen. Die vier Stellschrauben
+liegen bewusst beieinander in `run.js`: `0.022` im `bedrohungsFaktor`,
+`NACHZUEGLER`, `STURM_TEMPO`, `BEUTE_JE_STUFE`.
+
+`dev/sim.js` 443/443 · `dev/uitest.js` 104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-70-beutestufe`, Branch
+`phase-70-beutestufe`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
