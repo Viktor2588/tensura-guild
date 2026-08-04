@@ -3410,6 +3410,76 @@ entfaellt.
 Worktree `/home/viktor/tensura/worktree/phase-68-silhouetten`, Branch
 `phase-68-silhouetten`.
 
+### Phase 69 (2026-08-04): Die Leiter war eine Attrappe
+
+Rueckmeldung aus dem echten Spiel: die fuenf Bedrohungsstufen fuehlen sich zu
+aehnlich an, Stufe 5 sei muehelos, und zwischen 0 und 5 sei kaum ein
+Unterschied zu merken. Beides trifft zu, und der Befund ist unangenehm genau.
+
+**1. Die Werteschraube war ein Gerucht.** Ueber die GANZE Leiter stieg der
+Gegnerfaktor von 0.435 auf 0.458 — **fuenf Prozent von Stufe 0 bis Stufe 5**.
+Phase 9 hatte sie bewusst auf 0.012 je Stufe gedrosselt, weil „die Regeln die
+Haerte tragen" sollten.
+
+**2. Die Regeln trugen sie nicht — sie bestrafen Verlieren, nicht Spielen.**
+Ein Nachzuegler mit halben Werten, ein einzelner Gegner der einmal mit 30 %
+aufsteht, zwei Leben weniger: keine dieser Regeln aendert etwas fuer jemanden,
+der seine Kaempfe gewinnt. Genau das war die Rueckmeldung.
+
+**3. Zwei Regeltexte beschrieben ein Spiel, das es nicht gab.** Stufe 1
+versprach woertlich „jede Begegnung bringt einen Gegner mehr mit" — der Code
+gab ihm halbe Werte. Stufe 2 versprach „JEDER normale Gegner steht einmal
+wieder auf" — der Code liess nur den vordersten zurueckkommen. Beides waren
+Rueckzieher aus Phase 9, weil die Vollversion die Siegquote des BOTS
+einbrechen liess (46 → 14 %, bzw. 17 statt 7 Punkte). Die Texte blieben stehen.
+Dasselbe Muster wie die Art-Identitaeten in Phase 36: die Beschreibung sagte,
+was gemeint war, der Code etwas anderes — und der Spieler liest die
+Beschreibung.
+
+**Und das ist der eigentliche Befund dieser Phase: ich habe fuenf Phasen lang
+gegen einen Bot kalibriert, der schwaecher spielt als der Mensch.** Bei den
+alten Werten mass `dev/balance.js` fuer Stufe 5 elf Prozent Siege — waehrend
+dieselbe Stufe von Hand muehelos zu gewinnen war. Jede Ruecknahme in Phase 9
+wurde damit begruendet, dass der Bot einbricht. Der Bot ist ein gutes
+Messinstrument fuer Monotonie und fuer Ausreisser, aber er ist **kein Massstab
+fuer die Schwierigkeit.**
+
+**Umgesetzt:**
+
+- **Werteschraube 0.012 → 0.032** je Stufe. Der Gegnerfaktor laeuft jetzt von
+  0.435 auf 0.522, also +20 % statt +5 %.
+- **Ueberzahl:** Nachzuegler von 0.5 auf 0.75 der Werte. Ein Ziel mehr im Log
+  war keine Ueberzahl.
+- **Nachschub:** JEDER Gegner steht einmal auf, nicht nur der vorderste. Damit
+  ist es die Stufe, auf der geballter Schaden zaehlt und Nadelstiche zweimal
+  abraeumen muessen — also das, was der Text immer schon behauptet hat.
+- **Sturmgott:** fasste bisher nur Bosse an, auf 14 von 16 Knoten war Stufe 5
+  identisch mit Stufe 4 plus zwei Leben weniger. Jetzt schlagen ALLE Gegner
+  12 % schneller zu; die Boss-Eskalation kommt beim Boss obendrauf. Der Text
+  versprach „jetzt zaehlt Tempo" — jetzt stimmt er.
+
+**Gemessen** (`dev/balance.js 150 --stufe N`), Bot:
+
+| Stufe | 0 | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|---|
+| vorher | 49 | 39 | 33 | 32 | 29 | 11 |
+| nachher | 49 | 33 | 21 | 17 | 11 | 3 |
+
+Vorher lagen die Stufen 2, 3 und 4 bei 33/32/29 — drei Stufen ohne messbaren
+Unterschied, was die Rueckmeldung „zu nah beieinander" exakt bestaetigt. Jetzt
+sind sie getrennt. Stufe 0 ist unveraendert bei 50 % (400 Runs), `GRUNDHAERTE`
+wurde nicht angefasst — die Leiter wurde steiler, das Grundspiel nicht haerter.
+
+**Offen und ehrlich:** wie hart sich das von Hand anfuehlt, kann dieses
+Werkzeug nicht sagen. Die drei Stellschrauben stehen bewusst beieinander in
+`run.js` (`0.032` im `bedrohungsFaktor`, `NACHZUEGLER`, `STURM_TEMPO`), damit
+die naechste Rueckmeldung in einer Zeile beantwortet werden kann.
+
+`dev/sim.js` 443/443 · `dev/uitest.js` 104/104 · `dev/silhouetten.js` 201/201.
+
+Worktree `/home/viktor/tensura/worktree/phase-69-bedrohung`, Branch
+`phase-69-bedrohung`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

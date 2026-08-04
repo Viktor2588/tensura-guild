@@ -130,7 +130,8 @@
       text: 'Im zweiten Akt steht auf jedem zweiten Kampfknoten eine Elite — zur Beute ' +
             'eines normalen Kampfes. Dazu gibt das Lager 15 % weniger.' },
     { stufe: 5, name: 'Sturmgott', regel: 'sturmgott',
-      text: 'Nur drei Leben statt fünf, und Bosse eskalieren doppelt so schnell. Jetzt zählt Tempo.' }
+      text: 'ALLE Gegner schlagen 25 % schneller zu, Bosse eskalieren doppelt, und du hast ' +
+            'nur drei Leben statt fünf. Wer den Kampf nicht schnell beendet, verliert ihn.' }
   ];
   function bedrohung(i) { return BEDROHUNG[Math.max(0, Math.min(BEDROHUNG.length - 1, i || 0))]; }
   /* Gilt die Regel auf der Stufe dieses Runs? Kumulativ: Stufe 4 hat auch 1–3. */
@@ -177,8 +178,13 @@
     var t = run.threat || 0;
     /* Klein halten: die Kurve ist steil, 20 % mehr Gegnerwerte kippen fast jeden
        Run. Gemessen mit `node dev/balance.js 500 --stufe N`. */
-    /* Nur noch ein leiser Anstieg: die Regeln oben tragen die Härte. */
-    var f = GRUNDHAERTE + 0.012 * Math.min(t, 5);
+    /* Phase 69: 0.012 war zu leise. Ueber die ganze Leiter stieg der
+       Gegnerfaktor damit von 0.435 auf 0.458 — fuenf Prozent von Stufe 0 bis 5.
+       Die Regeln sollten die Haerte tragen, aber sie waren Abnutzungssteuern:
+       ein halbstarker Nachzuegler, ein Gegner der einmal aufsteht, zwei Leben
+       weniger. Wer die Kaempfe gewinnt, merkt von keiner davon etwas — und
+       genau das war die Rueckmeldung. Jetzt 0.045, also +22 % auf Stufe 5. */
+    var f = GRUNDHAERTE + 0.032 * Math.min(t, 5);
     if (node && node.type === 'pruefung') f *= PRUEFUNG_HAERTE;
     if (run.act === 1 && node && node.type !== 'boss' && EINSTIEG_HAERTE[run.step]) {
       f *= EINSTIEG_HAERTE[run.step];
@@ -692,8 +698,14 @@
   /* Nachschub: normale Gegner stehen einmal wieder auf. Als Effekt an der
      Kampfdefinition, nicht als Sonderfall in combat.js — die Engine soll von
      Bedrohungsstufen nichts wissen. */
-  var NACHZUEGLER = 0.5;
+  /* Phase 9 hatte den Nachzuegler auf halbe Werte gesetzt, weil ein voller
+     Extragegner die Siegquote des BOTS von 46 auf 14 % drueckte. Phase 69 dreht
+     das zurueck auf 0.85: der Bot ist ein schwaecherer Spieler als der Mensch,
+     und gegen den Menschen war eine Halbfigur keine Ueberzahl, sondern ein
+     Ziel mehr im Log. */
+  var NACHZUEGLER = 0.75;
   var NACHSCHUB_LEBEN = 0.3;
+  var STURM_TEMPO = 1.12;      // Stufe 5: alle Gegner schneller, nicht nur Bosse
 
   var NACHSCHUB = { hook: 'onDeath', name: 'Nachschub',
     text: 'Steht einmal mit 30 % Leben wieder auf.', keywords: ['heilung'],
@@ -732,22 +744,28 @@
       foes = foes.concat([nach]);
     }
     if (regel(run, 'nachschub') && node.type !== 'boss') {
-      /* Nur der vorderste Gegner kommt zurück. Auf alle angewandt kostete die
-         Regel gemessen 17 Punkte Siegquote statt der gewollten 7 — die Zahl der
-         zusätzlichen Körper wiegt schwerer als deren Leben. */
-      foes = foes.map(function (f, i) {
-        if (i) return f;
+      /* Jetzt steht JEDER Gegner einmal auf, nicht nur der vorderste. Phase 9
+         hatte das zurueckgenommen, weil es den Bot 17 statt 7 Punkte kostete —
+         aber die Regel soll das Spiel aendern, nicht die Quote schonen: wer
+         Schaden nur verteilt, raeumt jetzt zweimal ab. Das ist die Stufe, auf
+         der Exekution und Ballung zaehlen statt Nadelstiche. */
+      foes = foes.map(function (f) {
         var k = {};
         for (var x in f) k[x] = f[x];
         k.effects = (f.effects || []).concat([NACHSCHUB]);
         return k;
       });
     }
-    if (regel(run, 'sturmgott') && node.type === 'boss') {
+    if (regel(run, 'sturmgott')) {
+      /* Der Regeltext verspricht „jetzt zaehlt Tempo", aber die Regel fasste
+         nur Bosse an — auf 14 von 16 Knoten war Stufe 5 identisch mit Stufe 4
+         plus zwei Leben weniger. Jetzt schlagen ALLE Gegner schneller zu, und
+         die Boss-Eskalation kommt beim Boss obendrauf. */
       foes = foes.map(function (f) {
         var k = {};
         for (var x in f) k[x] = f[x];
-        k.enrage = (f.enrage || 0) * 2;
+        k.spd = Math.round((f.spd || 0) * STURM_TEMPO);
+        if (node.type === 'boss') k.enrage = (f.enrage || 0) * 2;
         return k;
       });
     }
