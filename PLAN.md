@@ -3233,6 +3233,48 @@ flach —, aber die Zahlen einzelner passiv-abhängiger Stücke gehören neu gel
 Worktree `/home/viktor/tensura/worktree/phase-66-beute`, Branch
 `phase-66-beute`.
 
+### QA nach den Phasen 62-66 (2026-08-04): eine gesammelte Kalibrierung
+
+Die fuenf Phasen wurden bewusst OHNE eigene Balance-Messung gebaut und erst am
+Ende gemeinsam kalibriert — sonst haetten fuenf Zweige denselben Knopf
+gegeneinander eingestellt. Zusammengefuehrt auf `integration-62-66`; die
+Konflikte lagen ausschliesslich in `PLAN.md` und wurden als Vereinigung
+aufgeloest.
+
+`node dev/sim.js` 443/443 · `node dev/uitest.js` 104/104.
+
+**`GRUNDHAERTE` 1.01 → 1.085.** Der Merge hob die Siegquote auf 57 %, im
+Wesentlichen durch Phase 64 (der Bot kauft endlich die teuren Einheiten).
+Gemessen ueber je 300 Runs: 1.045 → 57 %, 1.06 → 52 %, 1.075 → 52 %,
+1.09 → 48 %. Steht auf 1.085.
+
+Ergebnis `dev/balance.js 500`: **48 % frisch**, 65 % voll freigeschaltet.
+Bedrohungsleiter (je 150) **41/35/32/31/27/14 — monoton.**
+
+Der Anfaenger/Veteran-Abstand ist von 12 auf 17 Punkte gewachsen. Das ist die
+erwartete Folge von Phase 64: teure Einheiten sind jetzt kaufbar, und teure
+Einheiten sind ueberwiegend die freigeschalteten. Ob 17 Punkte zu viel sind,
+ist eine Design-Frage, keine Fehlfunktion.
+
+**Drei Auffaelligkeiten, offen und ausdruecklich nicht nachgezogen:**
+
+1. **Geld, der Orklord steht bei 27 %**, waehrend die uebrigen sieben Bosse
+   zwischen 53 und 80 % liegen. Phase 14 hatte ihn von 89 % heruntergezogen,
+   indem sein Fleischwall nur noch halb so viel heilt und sein Angriff mit
+   jedem erlittenen Treffer waechst — diese Skalierung traegt jetzt zu weit. Er
+   ist der einzige Boss ausserhalb des Bandes und der naechste offensichtliche
+   Eingriff.
+2. **Der Schatten-Build gewinnt 100 % von 28 Runs**, bei Ø 16,0 Knoten — also
+   kein einziger Fehlschlag. Das ist der hoechste Abstand, den die neue
+   Auswertung je gemeldet hat (+36). n ist klein, aber 28 von 28 ist kein
+   Rauschen. Gezielt nachmessen, wie Phase 30 es bei Frost getan hat, statt an
+   Zahlen zu drehen.
+3. **`verderbnis` erschien im ersten Lauf mit −41 bei n=13** und im zweiten gar
+   nicht mehr. Ein Eimer, der zwischen zwei Laeufen verschwindet, ist zu duenn
+   fuer eine Aussage.
+
+Der Merge liegt auf `integration-62-66` und ist NICHT auf `main`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
