@@ -119,20 +119,20 @@
       text: 'Der normale Weg.' },
     { stufe: 1, name: 'Überzahl', regel: 'ueberzahl',
       text: 'Jede Begegnung bringt einen Gegner mehr mit. Fläche und Konter gewinnen dadurch, ' +
-            'reiner Einzelzielschaden verliert. Dazu 4,5 % weniger Magicule je Stufe — ' +
-            'ab hier ist jeder Kauf ein verzichteter anderer.' },
+            'reiner Einzelzielschaden verliert.' },
     { stufe: 2, name: 'Nachschub', regel: 'nachschub',
       text: 'Jeder normale Gegner steht einmal mit 30 % Leben wieder auf — Bosse nicht. ' +
             'Wer nur exekutiert, räumt nicht mehr ab; Gift, Brand und Blutung tragen weiter.' },
     { stufe: 3, name: 'Kriegsrecht', regel: 'kriegsrecht',
       text: 'Der Händler bietet nur noch EINE Einheit an statt drei, und Rangaufstiege kosten ' +
-            '15 % mehr Magicule. Du gewinnst weitgehend mit dem Trupp, den du gedraftet hast.' },
+            '30 % mehr Magicule. Du gewinnst weitgehend mit dem Trupp, den du gedraftet hast.' },
     { stufe: 4, name: 'Belagerung', regel: 'belagerung',
       text: 'Im zweiten Akt steht auf jedem zweiten Kampfknoten eine Elite — zur Beute ' +
             'eines normalen Kampfes. Dazu gibt das Lager 15 % weniger.' },
     { stufe: 5, name: 'Sturmgott', regel: 'sturmgott',
-      text: 'ALLE Gegner schlagen 25 % schneller zu, Bosse eskalieren doppelt, und du hast ' +
-            'nur drei Leben statt fünf. Wer den Kampf nicht schnell beendet, verliert ihn.' }
+      text: 'Ein Drittel weniger Magicule aus jedem Kampf und jedem Lager. Dazu nur drei ' +
+            'Leben statt fünf und doppelt eskalierende Bosse. Die Gegner sind kaum härter ' +
+            'als auf Stufe 4 — aber der Trupp, den du hast, ist weitgehend der, mit dem du endest.' }
   ];
   function bedrohung(i) { return BEDROHUNG[Math.max(0, Math.min(BEDROHUNG.length - 1, i || 0))]; }
   /* Gilt die Regel auf der Stufe dieses Runs? Kumulativ: Stufe 4 hat auch 1–3. */
@@ -183,9 +183,15 @@
      Greift nur auf EINKOMMEN — Kampfbeute und Lager. Verkaufserloese sind
      Rueckerstattungen; sie zu kuerzen wuerde denselben Magicule zweimal
      besteuern und das Umbauen des Trupps bestrafen statt das Ausgeben. */
-  var BEUTE_JE_STUFE = 0.045;
+  /* Kein gleichmaessiger Abzug ueber die Leiter, sondern EIN Sprung ganz oben:
+     Sturmgott nimmt 30 % des Einkommens, alle anderen Stufen nichts. Die
+     verteilte Fassung aus Phase 70 (4,5 % je Stufe) war spuerbar richtig, aber
+     nirgends ein Ereignis — 4,5 % merkt man in keinem einzelnen Kauf. Ein
+     Drittel weniger merkt man in jedem, und der Schritt von 4 auf 5 bekommt
+     damit eine eigene Handschrift statt nur „dasselbe, etwas mehr". */
+  var STURM_BEUTE = 0.70;
   function beuteFaktor(run) {
-    return 1 - BEUTE_JE_STUFE * Math.min(run.threat || 0, 5);
+    return regel(run, 'sturmgott') ? STURM_BEUTE : 1;
   }
 
   /* Gegnerhärte je Stufe — greift auf denselben mult wie die Begegnung selbst. */
@@ -274,6 +280,10 @@
   function rankCost(m, run) {
     if (m.rank >= 3) return 0;
     var k = RANK_COST[m.rank];
+    /* Bleibt bei 1.15. Diese Funktion zaehlt seit Phase 51 kaum noch: Raenge
+       werden nicht gekauft, sie kommen mit der Einheit aus dem Markt. Sie greift
+       nur noch beim Gratisaufstieg aus Ereignissen und in der Anzeige. Der
+       eigentliche Druck von Kriegsrecht sitzt darum in `rangPreis`. */
     if (run && regel(run, 'kriegsrecht')) k = Math.round(k * 1.15);
     return k;
   }
@@ -584,9 +594,17 @@
   /* Was eine fertige Einheit kostet: der Anwerbepreis plus genau die Aufstiege,
      die man sonst bezahlt haette. Kein Rabatt und kein Zuschlag — der Markt
      nimmt einem die Arbeit ab, nicht das Geld. */
-  function rangPreis(u, rang) {
+  function rangPreis(u, rang, run) {
     var p = PREIS_EINHEIT + u.cost * 45;
     for (var r = 0; r < rang; r++) p += RANK_COST[r];
+    /* Kriegsrecht greift HIER, nicht mehr an `rankCost`. Seit Phase 51 kauft
+       niemand mehr einen Aufstieg — der Rang kommt mit der Einheit aus dem
+       Markt —, und damit lief die Klausel „Raenge kosten 15 % mehr" seit
+       zwoelf Phasen ins Leere. Gemessen: Stufe 3 lag gleichauf mit Stufe 2
+       (22 % gegen 22 %), und die Verteuerung auf 32 % bewegte davon exakt
+       nichts. Ein Zuschlag auf den Marktpreis ist dieselbe Absicht an der
+       Stelle, an der heute wirklich bezahlt wird. */
+    if (run && regel(run, 'kriegsrecht')) p = Math.round(p * 1.30);
     return p;
   }
 
@@ -720,7 +738,14 @@
      Ziel mehr im Log. */
   var NACHZUEGLER = 0.75;
   var NACHSCHUB_LEBEN = 0.3;
-  var STURM_TEMPO = 1.06;      // Stufe 5: alle Gegner schneller, nicht nur Bosse
+  /* Phase 69 hatte Sturmgott zusaetzlich Tempo gegeben, weil die Stufe sonst
+     auf 14 von 16 Knoten identisch mit Stufe 4 war. Seit die Beutekuerzung
+     diese Stufe traegt, ist der Aufschlag Ballast: mit ihm mass der Bot 0 %,
+     also gar nichts mehr. Sturmgott ist jetzt die OEKONOMIE-Stufe — ein
+     Drittel weniger Einkommen, drei Leben, doppelt eskalierende Bosse —, und
+     das unterscheidet sie deutlicher von 1 bis 4 als noch ein Werteaufschlag,
+     von denen die unteren Stufen schon vier haben. */
+  var STURM_TEMPO = 1.0;
 
   var NACHSCHUB = { hook: 'onDeath', name: 'Nachschub',
     text: 'Steht einmal mit 30 % Leben wieder auf.', keywords: ['heilung'],
@@ -1176,7 +1201,7 @@
         var pas = wuerfleLinienPassive(u.id, rang + 1, rng);
         offers.push({ kind: 'unit', id: u.id, name: u.name,
                       rang: rang, rangName: RANK_NAME[rang],
-                      price: rangPreis(u, rang),
+                      price: rangPreis(u, rang, run),
                       text: unitText(u), rarity: u.rarity,
                       passive: pas[0] || null,
                       passives: pas,

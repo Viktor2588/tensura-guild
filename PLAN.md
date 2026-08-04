@@ -3536,6 +3536,72 @@ liegen bewusst beieinander in `run.js`: `0.022` im `bedrohungsFaktor`,
 Worktree `/home/viktor/tensura/worktree/phase-70-beutestufe`, Branch
 `phase-70-beutestufe`.
 
+### Phase 71 (2026-08-04): Sturmgott ist die Oekonomie-Stufe
+
+Auf Zuruf: statt 4,5 % je Stufe (Phase 70) **ein flacher Abzug von 30 % nur auf
+Stufe 5**. Die Begruendung des Nutzers trifft einen Konstruktionsfehler von
+Phase 70 — 4,5 % sind in keinem einzelnen Kauf zu merken. Ein Drittel ist in
+jedem zu merken, und der Schritt von 4 auf 5 bekommt damit eine eigene
+Handschrift statt „dasselbe, etwas mehr".
+
+`beuteFaktor(run)` gibt jetzt 0.70 unter Sturmgott und sonst 1.
+
+**Und weil die Beutekuerzung diese Stufe jetzt traegt, ist der Tempo-Aufschlag
+aus Phase 69 wieder raus.** Er war dort noetig, weil Stufe 5 sonst auf 14 von 16
+Knoten identisch mit Stufe 4 war; jetzt ist er nur noch Ballast auf einer Stufe,
+die schon vier kumulierte Regeln mitschleppt. Sturmgott ist damit die
+**Oekonomie-Stufe**: ein Drittel weniger Einkommen, drei Leben, doppelt
+eskalierende Bosse — die Gegner selbst sind kaum haerter als auf Stufe 4. Das
+unterscheidet sie schaerfer von 1 bis 4 als noch ein Werteaufschlag.
+
+**Nebenbefund, und kein kleiner: Kriegsrecht hatte eine tote Klausel.** Ohne die
+verteilte Kuerzung lag Stufe 3 gemessen gleichauf mit Stufe 2 (22 % gegen 22 %).
+Die Regel verspricht „Raenge kosten mehr" und multiplizierte dafuer `rankCost`
+— aber **seit Phase 51 kauft niemand mehr einen Aufstieg**, der Rang kommt mit
+der Einheit aus dem Markt. Die Klausel lief zwoelf Phasen ins Leere; sie testweise
+von 15 auf 32 % zu erhoehen bewegte exakt null Punkte. Derselbe Fehlertyp wie
+die toten Felder aus Phase 25 und 66, nur an einer Regel statt an einer
+Faehigkeit. Der Zuschlag sitzt jetzt in `rangPreis` — an der Stelle, an der
+heute wirklich bezahlt wird — und betraegt 30 %. Gemessen faellt Stufe 3 damit
+von 22 auf 12 %.
+
+**Gemessen** (`dev/balance.js`, 200–250 Runs je Stufe):
+
+| Stufe | 0 | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|---|
+| ursprünglich | 49 | 39 | 33 | 32 | 29 | 11 |
+| Phase 70 | 50 | 32 | 22 | 17 | 12 | 3 |
+| **jetzt** | **49** | **33** | **22** | **12** | **8** | **0** |
+
+**Der Vorbehalt zu Stufe 5 gehoert deutlich hierhin.** 0 % ist keine Zahl, mit
+der sich weiterarbeiten laesst. Die Lauftiefe sagt mehr — und sie sagt etwas
+Unangenehmes:
+
+| Stufe | Ø erreichte Knoten | in Akt 1 gescheitert |
+|---|---|---|
+| 3 | 8,5 von 16 | 131 von 200 |
+| 4 | 8,2 von 16 | 138 von 200 |
+| 5 | **5,6** | **186 von 200** |
+
+Auf Stufe 5 stirbt der Bot nicht am Ende, sondern **am Anfang**. Der flache
+Abzug wirkt ab dem ersten Knoten, und ein Run, der mit einer Einheit beginnt,
+kommt mit 70 % Einkommen gar nicht erst in Gang — die Kuerzung kumuliert
+ueber den ganzen Lauf, statt eine Entscheidung zu verschaerfen. Aus einer
+Zermuerbung ist eine **Wand** geworden.
+
+Ob das fuer einen Menschen zutrifft, kann dieses Werkzeug nicht sagen (Befund
+aus Phase 69: der Bot misst Monotonie, nicht Schwierigkeit) — und der Bot ist
+gerade in der Fruehphase am schwaechsten, weil er ohne Plan kauft. Die
+naheliegende Milderung, falls es sich von Hand als Wand anfuehlt, waere, den
+Abzug **erst ab Akt 2** greifen zu lassen: dann verschaerft er die
+Endspiel-Entscheidungen, ohne den Aufbau zu ersticken. Bewusst nicht
+vorweggenommen.
+
+`dev/sim.js` 443/443 · `dev/uitest.js` 104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-71-sturmgott`, Branch
+`phase-71-sturmgott`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
