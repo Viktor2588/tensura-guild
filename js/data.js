@@ -60,7 +60,7 @@
       front: 'Greift die vorderste gegnerische Einheit an. Steht selbst vorn und wird zuerst getroffen.',
       fernkampf: 'Greift die HINTERSTE gegnerische Einheit an — geht an der Front vorbei auf Magier und Heiler.',
       magier: 'Greift das Ziel mit dem WENIGSTEN Leben an und ignoriert 60 % der Rüstung. Exekutiert Angeschlagene.',
-      unterstuetzer: 'Heilt den am stärksten verwundeten Verbündeten, statt anzugreifen — außer eine aktive Fähigkeit ist bereit.',
+      unterstuetzer: 'Seine Heilung steckt in der Signatur, und die feuert, sobald ein Verbündeter unter 85 % Leben fällt. Steht der Trupp voll da, greift er die vorderste gegnerische Einheit an, statt eine volle Leiste nachzufüllen.',
       verstaerker: 'Kämpft normal, bringt seine Stärke über Fähigkeiten ins Team statt über die Zielwahl.'
     },
     zustaende: {

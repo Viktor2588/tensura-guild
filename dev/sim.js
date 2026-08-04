@@ -932,6 +932,12 @@ ok(setztEin('heilwelle', EN.get('kreuzritter'), 4), 'sobald Schaden ankommt, wir
 /* Das Todesurteil darf erst fallen, wenn das Ziel angeschlagen ist. */
 var zaeherTroll = JSON.parse(JSON.stringify(EN.get('hoehlentroll')));
 zaeherTroll.effects = [];                      // ohne Trollhaut endet der Kampf überhaupt
+/* Und ohne Zuschlagen ueberlebt der Pruefling lange genug. Bis Phase 65 hat
+   Gobwa sich in diesem Duell selbst geheilt — ueber den Rollenzweig, den es
+   nicht mehr gibt —, und nur deshalb hielt sie durch, bis der Troll unter die
+   Haelfte fiel. Der Test will die Wartebedingung des Todesurteils messen, nicht
+   Gobwas Zaehigkeit; ein harmloser Gegner trennt die beiden Fragen. */
+zaeherTroll.atk = 0;
 var hRun = C.simulate([(function () { var d = def('gobwa', 1); d.actives = [AB.get('hinrichtung')]; return d; })()],
   [zaeherTroll], 6);
 var anteil = 1, frueh = 0, spaet = 0;

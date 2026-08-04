@@ -786,15 +786,17 @@
       }
       var aktive = waehleAktive(u, target);
 
-      /* Unterstützer heilen, wenn gerade keine Fähigkeit bereit ist. */
-      if (u.role === 'unterstuetzer' && !aktive) {
-        var hurt = living(u.side).filter(function (a) { return a.hp < a.maxHp; });
-        if (hurt.length) {
-          var worst = hurt.reduce(function (a, b) { return (b.hp / b.maxHp) < (a.hp / a.maxHp) ? b : a; });
-          heal(worst, u.atk * 1.5, u.name);
-          return;
-        }
-      }
+      /* Hier stand bis Phase 65 der Rollenzweig „Unterstützer heilen, wenn
+         gerade keine Fähigkeit bereit ist". Gemessen (150 Runs): 31.776
+         Unterstützer-Züge, davon 24.641 ohne bereite Fähigkeit — aber in 20.251
+         davon stand der ganze Trupp auf vollem Leben, der Zweig tat also
+         nichts. Und kein einziges Mal fiel er ein, während jemand WIRKLICH
+         verwundet war: unter 85 % greift die `wenn`-Bedingung der Signatur, und
+         die heilt um ein Vielfaches mehr. Übrig blieben 4.390 Heilungen im
+         Band zwischen 85 und 100 % Leben, die zusammen 48.829 fehlende
+         Lebenspunkte auffüllten — 11 je Auslösung, der Rest war Überheilung.
+         Ohne den Zweig schlägt der Unterstützer stattdessen zu; die Siegquote
+         bewegte sich von 51 auf 50 %. */
 
       /* Chaos lässt das Wirken misslingen: der Zug ist weg, die Abklingzeit läuft. */
       if (aktive && u.chaos && u.chaos.stapel &&
