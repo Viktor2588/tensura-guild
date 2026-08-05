@@ -314,11 +314,20 @@
   try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
   Brett3D.stufe(effekte);
 
+  /* Derselbe Merk-Mechanismus wie bei den Effekten, eigener Schalter: wer
+     Bildschirmeffekte abstellt, will nicht zwangsläufig auch Ton abstellen. */
+  var ton = 'an';
+  try { ton = localStorage.getItem('tensura-ton') || 'an'; } catch (e) {}
+  Ton.stufe(ton);
+
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
-    if (!reihe) return;
-    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=effekte]'), function (b) {
+    if (reihe) Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=effekte]'), function (b) {
       b.classList.toggle('an', b.dataset.v === effekte);
+    });
+    var tonReihe = $('menu-ton');
+    if (tonReihe) Array.prototype.forEach.call(tonReihe.querySelectorAll('[data-a=ton]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === ton);
     });
   }
 
@@ -359,6 +368,9 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    /* Unabhängig von `Brett3D.verfuegbar()`: Ton hängt nicht am Board, er
+       hängt am Kampflog — er spielt auch im Textmodus. */
+    Ton.spiele(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -1308,6 +1320,11 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    ton: function (d) {
+      ton = Ton.stufe(d.v);
+      try { localStorage.setItem('tensura-ton', ton); } catch (e) {}
+      zeigeEffektwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1615,6 +1632,9 @@
   }
 
   function klick(ev) {
+    /* Browser sperren Audio bis zur ersten echten Nutzergeste — jeder Klick
+       im Spiel ist eine, unabhängig davon, ob er ein `data-a` trifft. */
+    Ton.entsperren();
     var el = ev.target.closest('[data-a]');
     if (!el) return;
     var a = aktionen[el.dataset.a];
