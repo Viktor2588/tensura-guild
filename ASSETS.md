@@ -16,6 +16,15 @@ bleiben. Bewusst r149 statt neuer: das ist die letzte Fassung mit einem
 UMD-Build, der sich per `<script>` einbinden lässt — der Rest des Projekts hat
 keinen Bauschritt und soll keinen bekommen.
 
+## Klang
+
+Seit `js/audio.js` (siehe ROUTINE.md) gibt es Ton — **keine einzige Audiodatei**.
+Jeder Effekt entsteht zur Laufzeit aus Oszillatoren und gefiltertem Rauschen
+(Web Audio API), an denselben sechs Formen orientiert wie `FORM` in
+`js/brett3d.js`. Keine Provenienz-Zeile nötig, weil nichts generiert oder
+heruntergeladen wurde — es ist Code, kein Asset. Bleibt das so (kein Musikbett
+aus fremder Quelle, keine Sample-Bibliothek), bleibt diese Sektion leer.
+
 ## Figuren
 
 **Stand: es gibt noch keine.** Die Ansicht zeichnet Platzhalter zur Laufzeit
