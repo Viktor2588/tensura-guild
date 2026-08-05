@@ -357,7 +357,12 @@
      Gerät (und zur Uhrzeit), nicht zum Spielstand. */
   var klang = 'voll';
   try { klang = localStorage.getItem('tensura-klang') || 'voll'; } catch (e) {}
-  if (root.Klang) Klang.stufe(klang);
+  /* Rueckgabewert uebernehmen, nicht nur setzen: `Klang.stufe` verwirft einen
+     ungueltigen Wert intern auf die vorherige Stufe, ohne das der lokalen
+     Variable etwas davon mitteilt — sonst zeigt `zeigeKlangwahl()` bei einem
+     verunreinigten localStorage-Eintrag keine Schaltflaeche als aktiv an,
+     obwohl Klang tatsaechlich mit 'voll' laeuft. */
+  if (root.Klang) klang = Klang.stufe(klang);
 
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
@@ -1732,6 +1737,10 @@
        die dieses Spiel hat. Ohne diese Zeile bliebe der erste Kampf stumm. */
     if (root.Klang) Klang.init();
     a(el.dataset);
+    /* Nach der Aktion, nicht davor: `klang` kann sich innerhalb von `a()`
+       gerade erst geaendert haben (die Aktion `klang` selbst), und der Klick
+       soll dann schon mit der neuen Stufe klingen. */
+    if (root.Klang) Klang.klick();
   }
 
   function start() {
