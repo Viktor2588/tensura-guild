@@ -353,11 +353,25 @@
   try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
   Brett3D.stufe(effekte);
 
+  /* Wie `effekte`: im Browser gemerkt, nicht im Run — Lautstärke gehört zum
+     Gerät (und zur Uhrzeit), nicht zum Spielstand. */
+  var klang = 'voll';
+  try { klang = localStorage.getItem('tensura-klang') || 'voll'; } catch (e) {}
+  if (root.Klang) Klang.stufe(klang);
+
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
     if (!reihe) return;
     Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=effekte]'), function (b) {
       b.classList.toggle('an', b.dataset.v === effekte);
+    });
+  }
+
+  function zeigeKlangwahl() {
+    var reihe = $('menu-klang');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=klang]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === klang);
     });
   }
 
@@ -398,6 +412,9 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    /* Unabhaengig von `Brett3D.verfuegbar()`: Klang haengt nicht an WebGL,
+       und `zeige()` kehrt bei abgeschaltetem Brett vorzeitig zurueck. */
+    if (root.Klang) Klang.spiele(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -1385,6 +1402,12 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    klang: function (d) {
+      if (!root.Klang) return;
+      klang = Klang.stufe(d.v);
+      try { localStorage.setItem('tensura-klang', klang); } catch (e) {}
+      zeigeKlangwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1704,6 +1727,10 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    /* Autoplay-Regeln verlangen eine Nutzergeste, bevor ein AudioContext
+       Ton ausgeben darf — ein Klick auf irgendeine Aktion ist die früheste,
+       die dieses Spiel hat. Ohne diese Zeile bliebe der erste Kampf stumm. */
+    if (root.Klang) Klang.init();
     a(el.dataset);
   }
 
@@ -1743,6 +1770,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeKlangwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
