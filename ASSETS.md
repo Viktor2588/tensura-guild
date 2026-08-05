@@ -97,3 +97,16 @@ Entscheidung und keine Nebenwirkung.
 | Datei | Werkzeug / Quelle | Prompt | Datum | Lizenz |
 |---|---|---|---|---|
 | — | noch keine | — | — | — |
+
+## Ton
+
+**Es gibt keine Audiodateien und soll vorerst auch keine geben.** Genauso wie
+bei den Figuren fehlt eine Quelle für fertige Sounddateien — anders als bei
+den Figuren braucht ein Ton aber keine: `js/klang.js` erzeugt jeden Effekt
+zur Laufzeit aus Oszillatoren und gefiltertem Rauschen (Web Audio API), ohne
+ein einziges Sample. Es ist deshalb **kein Eintrag in der Herkunftstabelle
+nötig** — der Code selbst ist die Quelle, nachlesbar und ohne Lizenzfrage.
+
+Sobald echte Musik oder aufgenommene Effekte dazukommen (Ambient-Loops je
+Akt, Bosskampf-Themes), gehören sie hierhin und brauchen dann wie jedes Bild
+einen Herkunftseintrag — Werkzeug/Quelle, Lizenz, Datum.
