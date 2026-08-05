@@ -427,10 +427,7 @@ ok(gespeichert.team[0].rank === run.team[0].rank, 'der Rang überlebt das Speich
    Passive (keine Karten-Auswahl mehr). Shion wird angeworben, damit der Fall
    auch dann greift, wenn der Startdraft sie nicht angeboten hat. */
 head('Wählbare Passive');
-if (win.Run.freieArt(run, 'oger')) win.Run.addUnit(run, 'shion');
-else { win.Run.entlassen(run, run.team.filter(function (m) {
-  return win.GameData.unit(m.id).art === 'oger'; })[0].uid);
-  win.Run.addUnit(run, 'shion'); }
+if (win.Run.freieEinheit(run, 'shion')) win.Run.addUnit(run, 'shion');
 win.UI.render();
 var pkarten = $$('#wahl .karte');
 ok(pkarten.length === 0, 'beim Anwerben gibt es keine Passive-Auswahl mehr');

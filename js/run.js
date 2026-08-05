@@ -170,7 +170,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.13;   // nach der Umstufung in Phase 67; gemessen 50 % (frisch)
+  var GRUNDHAERTE = 1.03;   // Phase 76: die Artsperre ist weg, gemessen 50 % (frisch)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -695,12 +695,18 @@
     return waehle(rng, passend.length >= n ? passend : pool, akt, n);
   }
 
-  /* ---- Eine Einheit je Art ------------------------------------------------ */
+  /* ---- Eine Einheit nur einmal -------------------------------------------- */
 
-  function belegteArten(run) {
-    return run.team.concat(run.bank).map(function (m) { return GD.unit(m.id).art; });
+  /* Bis Phase 76 hing die Sperre an der ART: zwei Oger gingen nicht, also
+     schlossen Shion und Souei einander aus. Das war als Vielfaltsregel gedacht,
+     kam im Spiel aber als Verlust an — der Markt bot die zweite Einheit als
+     „Aufwertung" an und raeumte die erste weg. Gesperrt ist jetzt nur noch
+     dieselbe EINHEIT; der Aufwertungsweg (bessere Fassung ersetzt die alte)
+     laeuft damit ueber die Einheit statt ueber ihr Volk. */
+  function belegteIds(run) {
+    return run.team.concat(run.bank).map(function (m) { return m.id; });
   }
-  function freieArt(run, art) { return belegteArten(run).indexOf(art) < 0; }
+  function freieEinheit(run, id) { return belegteIds(run).indexOf(id) < 0; }
 
   /* Der Boss dieses Akts — feststehend, nicht je Aufruf neu gewürfelt. */
   function bossOf(run, akt) {
@@ -945,26 +951,24 @@
 
   /* ---- Belohnungen -------------------------------------------------------- */
 
-  /* Belegte Arten waren hier ausgeschlossen — richtig, solange eine Einheit
-     nur EINMAL in den Trupp konnte. Seit Phase 51 ist der Markt aber der
-     Aufwertungsweg: eine belegte Art darf angeboten werden, wenn der Rang des
-     Angebots ueber dem liegt, was schon da steht. Ohne diese Ausnahme erschien
-     nie ein Aufstieg, und der Trupp blieb auf seinen Startraengen sitzen —
-     gemessen 2 % Siege und 3,3 Rangstufen statt 14. */
+  /* Wer schon im Trupp steht, war hier ausgeschlossen — richtig, solange eine
+     Einheit nur EINMAL in den Trupp konnte. Seit Phase 51 ist der Markt aber der
+     Aufwertungsweg: eine belegte Einheit darf angeboten werden, wenn der Rang
+     des Angebots ueber dem liegt, was schon da steht. Ohne diese Ausnahme
+     erschien nie ein Aufstieg, und der Trupp blieb auf seinen Startraengen
+     sitzen — gemessen 2 % Siege und 3,3 Rangstufen statt 14. */
   function unitPool(run, hoechsterRang) {
     var st = inhaltsStufe(run);
     var maxCost = st <= 2 ? 3 : st === 3 ? 4 : 5;
-    var belegt = belegteArten(run);
     var raenge = {};
     run.team.concat(run.bank).forEach(function (m) {
-      var a = GD.unit(m.id).art;
-      if (raenge[a] === undefined || m.rank < raenge[a]) raenge[a] = m.rank;
+      if (raenge[m.id] === undefined || m.rank < raenge[m.id]) raenge[m.id] = m.rank;
     });
     return run.meta.unlockedUnits.map(GD.unit).filter(function (u) {
       if (!u || u.cost > maxCost) return false;
-      if (belegt.indexOf(u.art) < 0) return true;
+      if (raenge[u.id] === undefined) return true;
       /* Belegt: nur, wenn ueberhaupt ein besserer Rang gezogen werden KANN. */
-      return (hoechsterRang || 0) > raenge[u.art];
+      return (hoechsterRang || 0) > raenge[u.id];
     });
   }
   function relicPool(run) {
@@ -984,38 +988,38 @@
 
   /* Wen ersetzt dieses Angebot? Seit Phase 51 ist der Markt der Aufwertungsweg:
      Raenge werden nicht mehr einzeln gekauft, also muss eine bessere Fassung
-     derselben Art die alte ERSETZEN koennen. Ohne das war der Rang bei vollem
-     Trupp fuer immer eingefroren — gemessen fiel die Siegquote damit auf 2 %,
-     weil `addUnit` an der belegten Art scheiterte und niemand je aufstieg.
+     derselben EINHEIT die alte ERSETZEN koennen. Ohne das war der Rang bei
+     vollem Trupp fuer immer eingefroren — gemessen fiel die Siegquote damit auf
+     2 %, weil `addUnit` am belegten Platz scheiterte und niemand je aufstieg.
 
      Nur nach oben: eine schwaechere Fassung zu kaufen ist kein Aufstieg, sondern
      ein Versehen. Der Einsatz der alten Einheit kommt als Anrechnung zurueck,
      wie beim Entlassen — sonst zahlt man denselben Weg zweimal. */
   function ersetzbar(run, u, rang) {
-    if (freieArt(run, u.art)) return null;
+    if (freieEinheit(run, u.id)) return null;
     var alt = run.team.concat(run.bank).filter(function (m) {
-      return GD.unit(m.id).art === u.art;
+      return m.id === u.id;
     })[0];
     return (alt && rang > alt.rank) ? alt : null;
   }
 
-  /* Was die UI fragen muss, statt `freieArt`: liesse sich dieser Posten
+  /* Was die UI fragen muss, statt `freieEinheit`: liesse sich dieser Posten
      ueberhaupt kaufen? `addUnit` kann laengst aufwerten — die Marktkarte war
-     trotzdem mit „Art schon besetzt" gesperrt, und damit war der einzige Weg,
+     trotzdem gesperrt, und damit war der einzige Weg,
      eine eigene Einheit hochzubringen, zugenagelt. Eine zweite Regel an einer
      zweiten Stelle, die von der ersten abwich; jetzt gibt es nur noch diese. */
   function kaufbar(run, id, rang) {
     var u = GD.unit(id);
     if (!u) return false;
-    if (freieArt(run, u.art)) return true;
+    if (freieEinheit(run, u.id)) return true;
     return !!ersetzbar(run, u, rang || 0);
   }
 
   function addUnit(run, id, startPassiveId, rang, passiveListe) {
     var u = GD.unit(id);
     if (!u) return false;
-    if (!freieArt(run, u.art)) {
-      /* Aufwertung derselben Art: die alte Einheit macht Platz und ihr Einsatz
+    if (!freieEinheit(run, u.id)) {
+      /* Aufwertung derselben Einheit: die alte Einheit macht Platz und ihr Einsatz
          wird angerechnet. Die Ausruestung wandert zurueck in den Beutel. */
       var weg = ersetzbar(run, u, rang || 0);
       if (!weg) return false;
@@ -1273,19 +1277,38 @@
     /* Der Pool kennt dieselbe Obergrenze wie der Wurf — sonst stehen Arten im
        Angebot, deren Aufwertung das Fenster gar nicht hergibt. */
     var obergrenze = rangObergrenze(st);
-    themenWahl(run, rng, unitPool(run, obergrenze), st,
-               (regel(run, 'kriegsrecht') ? 2 : 4) + (extra || 0))
-      .forEach(function (u) {
+    var wahl = themenWahl(run, rng, unitPool(run, obergrenze), st,
+                          (regel(run, 'kriegsrecht') ? 2 : 4) + (extra || 0));
+    /* EIN Platz gehoert der Aufwertung. Solange die Art den Trupp sperrte, war
+       fast jedes Angebot einer belegten Art automatisch eine Aufwertung — mit
+       der Sperre fiel auch dieser Weg weg: bei 39 Einheiten trifft der Wurf die
+       eigenen sechs kaum noch. Gemessen sackten die Rangstufen von 14,4 auf
+       10,5 und die Siegquote von 53 auf 27 %. Also wird der Platz reserviert,
+       statt auf den Zufall zu hoffen. */
+    var eigene = run.team.concat(run.bank).filter(function (m) { return m.rank < obergrenze; });
+    var soll = Math.min(wahl.length - 1, eigene.length);
+    for (var iA = 0; iA < soll; iA++) {
+      var drin = wahl.filter(function (u) {
+        return eigene.some(function (m) { return m.id === u.id; });
+      }).length;
+      if (drin > iA) continue;                       // der Wurf hat den Platz selbst gefuellt
+      var kand = eigene.filter(function (m) {
+        return !wahl.some(function (u) { return u.id === m.id; });
+      });
+      if (!kand.length) break;
+      wahl[wahl.length - 1 - iA] = GD.unit(kand[Math.floor(rng() * kand.length)].id);
+    }
+    wahl.forEach(function (u) {
         var rang = wuerfleRang(rng, st);
-        /* Steht die Art schon im Trupp, ist das Angebot eine Aufwertung — dann
-           muss der Rang darueber liegen, sonst waere der Posten unkaufbar. */
+        /* Steht die EINHEIT schon im Trupp, ist das Angebot eine Aufwertung —
+           dann muss der Rang darueber liegen, sonst waere der Posten unkaufbar.
+           Seit Phase 76 haengt das an der Einheit, nicht mehr an ihrer Art: ein
+           zweiter Oger ist ein Zugang, keine Verdraengung. */
         var vorhanden = run.team.concat(run.bank).filter(function (m) {
-          return GD.unit(m.id).art === u.art;
+          return m.id === u.id;
         })[0];
         if (vorhanden) rang = Math.max(rang, Math.min(obergrenze, vorhanden.rank + 1));
-        /* Nur wenn es DIESELBE Einheit ist, wird geerbt. Ein anderer Oger ist
-           keine Weiterentwicklung von Shion, sondern ihr Ersatz. */
-        var erbe = (vorhanden && vorhanden.id === u.id) ? passivIds(vorhanden) : null;
+        var erbe = vorhanden ? passivIds(vorhanden) : null;
         var pas = wuerfleLinienPassive(u.id, rang + 1, rng, erbe);
         offers.push({ kind: 'unit', id: u.id, name: u.name,
                       rang: rang, rangName: RANK_NAME[rang],
@@ -1662,7 +1685,7 @@
     entlassenWert: entlassenWert, darfEntlassen: darfEntlassen,
     verkaufeItem: verkaufeItem, verkaufeRelikt: verkaufeRelikt,
     itemWert: itemWert, reliktWert: reliktWert,
-    belegteArten: belegteArten, freieArt: freieArt, waehle: waehle, gewicht: gewicht,
+    belegteIds: belegteIds, freieEinheit: freieEinheit, waehle: waehle, gewicht: gewicht,
     inhaltsStufe: inhaltsStufe, boss: bossOf, STUFEN: STUFEN, ertrag: ertrag,
     PRUEFUNGEN: PRUEFUNGEN, pruefung: pruefung, TYP_NAME: TYP_NAME,
     RANK_COST: RANK_COST, wuerfleRang: wuerfleRang, rangPreis: rangPreis,

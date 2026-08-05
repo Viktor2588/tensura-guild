@@ -7,9 +7,10 @@ Rang treibst und wen du verschlingst.
 
 ## Zwei Regeln bestimmen alles
 
-**Eine Einheit je Art.** Goblin, Oger, Sturmwolf, Echsenmensch, Insektoid, Dämon,
-Drache, Untot, Slime — von jeder Art steht genau eine im Trupp. Es gibt keine
-Völker-Boni; ein Build entsteht ausschließlich aus Fähigkeiten.
+**Jede Einheit nur einmal.** Zweimal Gobta geht nicht, zwei Oger nebeneinander
+schon. Die Art (Goblin, Oger, Sturmwolf, Echsenmensch, Insektoid, Dämon, Drache,
+Untot, Slime) ordnet nur ein, woher eine Einheit kommt — Völker-Boni gibt es
+keine, ein Build entsteht ausschließlich aus Fähigkeiten.
 
 **Rang C → B → A → S.** Jeder Aufstieg kostet Magicule und gibt einen Item-Slot,
 eine weitere aktive Fähigkeit (aus drei Angeboten gewählt) und schaltet die

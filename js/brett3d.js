@@ -335,7 +335,7 @@
      Streuung und Tempo. */
   var FARBE = {
     brand: 0xff7a2a, gift: 0x86d94a, frost: 0x8fe0ff, donner: 0xffe14a,
-    blutung: 0xd8382f, verderbnis: 0xc44ad8, chaos: 0xff5fbf,
+    blutung: 0xd8382f, verderbnis: 0xc44ad8, chaos: 0xff5fbf, antichaos: 0x3fd2ad,
     schatten: 0x8b5cf6, dunkelheit: 0x6c34a8, licht: 0xfff0b0,
     heilung: 0x6ee7a8, schild: 0x6aa8ff, konter: 0xffc46a,
     exekution: 0xff3b3b, verwundbar: 0xff9a5a, tempo: 0xa8ffe0,
@@ -365,7 +365,13 @@
   /* Die drei sichtbarsten Zustaende — der Rest bleibt in der Kartenansicht.
      Links der Name im Zustand, rechts die Farbe: `erstarrung` heisst als
      Schluesselwort `frost`, und die Farbtabelle kennt nur das Schluesselwort. */
-  var MARKEN = [['brand', 'brand'], ['gift', 'gift'], ['erstarrung', 'frost']];
+  /* Drei Plaetze, aber mehr Kandidaten als drei: gezeigt werden die STAERKSTEN
+     Stapel, nicht die ersten drei der Liste (siehe den `ponytail:`-Hinweis an
+     den Markenslots — genau dieser Fall ist eingetreten). Chaos und Antichaos
+     gehoeren dazu, weil ganze Kits darauf laufen und man auf dem Brett sonst
+     nicht sieht, ob Shion gerade auf- oder abgebaut wird. */
+  var MARKEN = [['brand', 'brand'], ['gift', 'gift'], ['erstarrung', 'frost'],
+                ['chaos', 'chaos'], ['antichaos', 'antichaos']];
 
   /* Abstand zweier benachbarter Kachelmitten in Weltmassen — aus `Hex.pixel`
      (pointy top): waagerecht sqrt(3) mal Groesse. Damit geht die Welle auf dem
@@ -1204,8 +1210,10 @@
       f.leben.visible = !u.tot;
       /* Material und Hoehe schreibt nur noch `schleife()` — hier steht bloss,
          WAS gilt, nicht wie es gerade aussieht. */
-      /* Nur die drei, die man auf dem Brett auch verstehen kann. */
-      var sichtbar = MARKEN.filter(function (m) { return !u.tot && (u.status || {})[m[0]] > 0; });
+      /* Drei Plaetze, nach Stapelzahl vergeben: was am staerksten liegt, steht
+         auch da. Vorher gewann schlicht die Reihenfolge in `MARKEN`. */
+      var sichtbar = MARKEN.filter(function (m) { return !u.tot && (u.status || {})[m[0]] > 0; })
+        .sort(function (a, b) { return u.status[b[0]] - u.status[a[0]]; });
       f.marken.forEach(function (mk, i) {
         mk.visible = i < sichtbar.length;
         if (mk.visible) mk.material.color.setHex(FARBE[sichtbar[i][1]]);

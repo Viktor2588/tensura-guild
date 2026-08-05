@@ -95,7 +95,8 @@
       licht: 'Göttliches Licht. Heilt stetig, brennt Dunkelheit weg und trägt durch fremde Schatten. Die Antwort auf beide Finsternis-Elemente.',
       verwundbar: 'Die Trupp-Marke. Quellen setzen sie, Verstärker docken daran an — und zwar für ALLE Einheiten, nicht nur für die, die markiert hat. Das ist das Schlüsselwort für Trupps, die um einen Assassinen herum gebaut sind.',
       blutung: 'Schaden über Zeit nach dem maximalen Leben des Ziels. Skaliert gegen Bosse, wo Gift und Brand mit ihren festen Zahlen abfallen.',
-      chaos: 'Streuung statt Schaden. Quellen legen dem Gegner Chaos an — schwankende Werte und verpuffende Fähigkeiten. Verstärker schlagen härter zu, je mehr Stapel liegen. Shions Linie, aber der Trupp kann sie mittragen.'
+      chaos: 'Streuung statt Schaden. Quellen legen dem Gegner Chaos an — schwankende Werte und verpuffende Fähigkeiten. Verstärker schlagen härter zu, je mehr Stapel liegen. Shions Linie, aber der Trupp kann sie mittragen.',
+      antichaos: 'Dieselbe Streuung auf der eigenen Seite, aber nur nach oben. Quellen legen dem TRUPP Antichaos an, Verstärker lesen die Stapel — je mehr liegen, desto härter der Schlag oder desto weicher der Treffer. Zählt für die Resonanz als Chaos: es ist die andere Seite desselben Rades, nicht eine zweite Linie.'
     },
     raritaeten: {
       1: 'Üblich. Grundsolide Werte ohne Eigenheit — das Rückgrat der ersten Akte.',
@@ -126,7 +127,7 @@
       quelle: 'Eine Fähigkeit, die diesen Zustand erzeugt.',
       verstaerker: 'Eine Fähigkeit, die diesen Zustand ausnutzt — mehr Schaden gegen Ziele, die ihn tragen.',
       resonanz: 'Drei Teile mit demselben Schlüsselwort — Fähigkeiten, Ausrüstung, Relikte zusammengezählt — schalten für den ganzen Trupp einen Bonus frei. Das ist der Grund, eine Linie zu Ende zu bauen statt überall etwas mitzunehmen. Gegner haben dieselbe Regel.',
-      art: 'Volk der Einheit. Gibt KEINE Boni: Arten regeln nur, dass von jeder genau eine Einheit im Trupp stehen darf.',
+      art: 'Volk der Einheit. Gibt KEINE Boni und schraenkt den Trupp auch nicht ein — mehrere Oger duerfen nebeneinander stehen. Sie ordnet nur ein, wo eine Einheit herkommt, und einige Art-Eigenheiten (Goblins skalieren mit dem Rang, Echsenmenschen mit der Kampfdauer) haengen daran. Gesperrt ist nur dieselbe Einheit zweimal.',
       rolle: 'Bestimmt, wen die Einheit im Kampf angreift.',
       aufstellung: 'Die Reihenfolge ist die Aufstellung auf dem Schlachtfeld: Plätze 1-3 bilden das vordere Glied, 4-6 das hintere. Wer vorn steht, kommt zuerst in Reichweite — und fängt für die Hinteren mit ab: Steht jemand näher am Angreifer als sein Ziel, übernimmt er ein Drittel des Treffers. Gift, Brand und Blutung gehen durch die Deckung hindurch. Der Platz entscheidet ausserdem, wie weit Truppwirkungen tragen: aus der MITTE (Platz 2 und 5) erreicht ein Umkreis von 1 Feld fünf der sechs Plätze, von Platz 3 nur drei. Wer den Trupp stärkt oder heilt, gehört in die Mitte.',
       deckung: 'Steht ein lebender Verbündeter näher am Angreifer als das Ziel, fängt er ein Drittel des Treffers ab. Es zählt die Lage auf dem Hexfeld, nicht der Listenplatz. Gift, Brand und Blutung gehen daran vorbei.',
@@ -145,7 +146,7 @@
     return d;
   }
 
-  /* ---- Einheiten: eine je Art im Trupp, also zählt jede für sich ---------- */
+  /* ---- Einheiten: jede nur einmal im Trupp, also zählt jede für sich ------- */
 
   var units = [
     u('rimuru', 'Rimuru', 'slime', 'magier', 0, 100, 16, 4, 28,

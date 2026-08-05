@@ -1,3 +1,17 @@
+Abgearbeitet in Phase 76:
+
+- [x] "Antichaos" fehlte als Status im Spiel und als Tag an Shion, sobald sie
+      Realitätswarp trägt. Es steht jetzt als Schlüsselwort an den Fähigkeiten,
+      die es LEGEN und die es LESEN — Tag an Einheit und Marktposten in eigener
+      Farbe, eigene Marke auf dem Brett, Eintrag unter den Schlüsselwörtern.
+      Für die Resonanz zählt es weiter als Chaos (`Abilities.FOLGT`): dieselbe
+      Linie, andere Seite des Rades.
+- [x] Shion und Souei dürfen zusammen im Trupp stehen. Die Artsperre ist raus,
+      gesperrt ist nur noch dieselbe EINHEIT. Der Rangaufstieg hing daran (er
+      lief über "Angebot einer belegten Art") und hat einen reservierten
+      Marktplatz als Ersatz bekommen — ohne den fiel die Siegquote von 53 auf
+      27 %. `GRUNDHAERTE` 1.13 → 1.03, gemessen 50 % Siege (frisch).
+
 Abgearbeitet in Phase 7 — Details in PLAN.md:
 
 - [x] Frontlinie rückt beim Anwerben direkt auf Platz 1 (Testabkürzung, `Run.addUnit`)

@@ -3758,6 +3758,74 @@ eine Balance-Messung entfaellt.
 
 Worktree `/home/viktor/tensura/worktree/phase-75-boss`, Branch `phase-75-boss`.
 
+### Phase 76 (2026-08-05): Antichaos ist sichtbar, die Art sperrt nichts mehr
+
+Zwei Rueckmeldungen aus `TODO.md`, beide an derselben Stelle: was das Spiel
+tut, stand nicht dort, wo man es sieht.
+
+**1. Antichaos war eine unsichtbare Mechanik.** Es hat einen Glossareintrag,
+eine Farbe an der Kampfkarte und rund 40 Faehigkeiten — aber kein einziges
+`keywords`-Eintrag. Damit tauchte es nirgends als Tag auf: nicht an Shion,
+nicht an Rimuru, nicht am Marktposten. Wer `Realitaetswarp` nahm, sah dem Trupp
+nicht an, dass er jetzt eine zweite Mechanik fuehrt.
+
+- `antichaos` steht jetzt an den Faehigkeiten, die es LEGEN (`keywords`), und an
+  denen, die die Stapel LESEN (`amplifies` — Ordnungsteufel, Ordnungspanzer,
+  Angepasst, Azathoth, Herr der Monster). Beide Seiten braucht es: der Test
+  „jedes Schluesselwort mit Quellen hat auch Verstaerker" schlug sonst zu Recht
+  an.
+- **Fuer die Resonanz zaehlt es weiter als `chaos`** (`Abilities.FOLGT`). Als
+  eigene Linie gefuehrt wuerde es Shion und Rimuru spalten: zwei halbe Themen
+  statt eines ganzen, und die Resonanzschwelle waere seltener erreicht.
+  `Combat.RESONANZ.chaos` sagt woertlich, dass beide dasselbe Rad sind.
+- Sichtbar ist es trotzdem an drei Stellen: Tag an Einheit und Marktposten
+  (eigene Farbe, nicht mehr die von Chaos), Marke auf dem 2.5D-Brett, und
+  Glossareintrag unter den Schluesselwoertern statt nur unter den Zustaenden.
+- Die Brettmarken haben nur drei Plaetze, aber jetzt fuenf Kandidaten. Vergeben
+  werden sie nach STAPELZAHL statt nach Reihenfolge in der Liste — sonst haette
+  ein Brandstapel von 1 einen Antichaos-Stapel von 20 verdeckt.
+
+**2. Die Artsperre ist weg.** „Warum kann ich Shion und Souei nicht gleichzeitig
+haben?" — weil beide Oger sind und der Trupp bis hierher genau eine Einheit je
+Art zuliess. Als Vielfaltsregel gedacht, im Spiel als Verlust angekommen: der
+Markt bot den zweiten Oger als „Aufwertung" an und raeumte den ersten weg.
+
+Gesperrt ist jetzt nur noch dieselbe EINHEIT (`belegteIds`/`freieEinheit` statt
+`belegteArten`/`freieArt`). Die Art ordnet weiter ein, woher jemand kommt, und
+traegt ihre Eigenheiten (Goblins am Rang, Echsenmenschen an der Kampfdauer,
+Insektoiden an der Haeutung) — den Trupp schraenkt sie nicht mehr ein.
+
+**Das hat den Rangaufstieg mitgerissen, und das war der eigentliche Aufwand.**
+Seit Phase 51 werden Raenge nicht gekauft, sondern ueber den Markt: eine bessere
+Fassung ersetzt die alte. Solange die Art sperrte, war fast jedes Angebot einer
+belegten Art automatisch so eine Aufwertung — bei 6 belegten von 12 Arten also
+etwa jedes zweite. Ueber die Einheit gerechnet trifft der Wurf die eigenen sechs
+von 39 kaum noch: gemessen fielen die Rangstufen von 14,4 auf 10,5 und die
+Siegquote von 53 auf **27 %**.
+
+Deshalb ist im Markt ein Platz reserviert statt dem Zufall ueberlassen: alle
+Einheiten-Posten bis auf einen gehen an eigene Einheiten, die noch Rang holen
+koennen. Der eine freie Platz ist nicht Kosmetik — mit allen Plaetzen als
+Aufwertung (kein Zugang mehr) fiel die Quote wieder auf 33 %, mit der Haelfte
+auf 35 %.
+
+`GRUNDHAERTE` 1.13 → **1.03**, gemessen 50 % Siege (frisch, n=300). Die Differenz
+ist der Preis der Regel: eine schwache Einheit auszutauschen kostet jetzt den
+Umweg ueber das Entlassen (ein Viertel zurueck) statt der vollen Anrechnung beim
+Artentausch.
+
+Der Trupp-Kopf sagt „jede Einheit nur einmal", die Zeile „Freie Arten: …" ist
+ersatzlos weg — bei 39 Einheiten waere sie eine Liste ohne Aussage. Glossar,
+`README.md` und `GAMEGUIDE.md` sagen dasselbe wie der Code.
+
+`dev/sim.js` **459/459** · `dev/uitest.js` 112/112 · `dev/silhouetten.js`
+201/201. Sechs Tests hingen an der Artregel und pruefen jetzt die Einheitenregel
+— darunter einer, der ausdruecklich „eine zweite Goblin-Einheit wird abgelehnt"
+verlangte, und ein neuer, der Shion und Souei zusammen in den Trupp stellt.
+
+Worktree `/home/viktor/tensura/worktree/phase-76-antichaos`, Branch
+`phase-76-antichaos`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

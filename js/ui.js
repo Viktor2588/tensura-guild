@@ -70,7 +70,7 @@
     exekution: 'kw-exekution',
     signatur: 'typ-signatur', aktive: 'typ-aktiv', aktiv: 'typ-aktiv',
     passive: 'typ-passiv', passiv: 'typ-passiv',
-    chaos: 'kw-chaos', antichaos: 'kw-chaos', verwundbar: 'kw-verwundbar', blutung: 'kw-blutung',
+    chaos: 'kw-chaos', antichaos: 'kw-antichaos', verwundbar: 'kw-verwundbar', blutung: 'kw-blutung',
     schatten: 'kw-schatten', dunkel: 'kw-dunkelheit', licht: 'kw-licht', donner: 'kw-donner',
     relikt: 'typ-relikt', ausrüstung: 'typ-item',
     üblich: 'rar-text-1', ungewöhnlich: 'rar-text-2', selten: 'rar-text-3',
@@ -862,11 +862,11 @@
       'Verkaufen: Gegenstand, Relikt oder Einheit auf die Fläche unten ziehen.</p>';
     html += '<div class="karten markt">';
     offers.forEach(function (o, i) {
-      /* `kaufbar` statt `freieArt`: der Motor kann eine Einheit derselben Art
-         aufwerten (addUnit raeumt die alte weg und rechnet ihren Einsatz an),
-         die Karte war trotzdem gesperrt. */
+      /* `kaufbar` statt `freieEinheit`: der Motor kann dieselbe Einheit auf
+         einem hoeheren Rang aufwerten (addUnit raeumt die alte weg und rechnet
+         ihren Einsatz an), die Karte war trotzdem gesperrt. */
       var frei = o.kind !== 'unit' || R.kaufbar(run, o.id, o.rang);
-      var aufwertung = o.kind === 'unit' && frei && !R.freieArt(run, GD.unit(o.id).art);
+      var aufwertung = o.kind === 'unit' && frei && !R.freieEinheit(run, o.id);
       if (o.kind === 'rang') {
         var zielM = R.find(run, o.uid);
         frei = !!zielM && zielM.rank < 3 && !R.passivWahl(run);
@@ -877,7 +877,7 @@
         '<span class="titel">' + esc(o.name) + ' — ' + o.price + ' ✦' + (o.sold ? ' (gekauft)' : '') + '</span>' +
         '<div class="kw-leiste">' + belohnungTags(o) + '</div>' +
         '<span class="beschreibung">' + marktText(o) + '</span>' +
-        (frei ? '' : '<span class="unter">Art besetzt — Rang zu niedrig zum Aufwerten</span>') +
+        (frei ? '' : '<span class="unter">Steht schon im Trupp — Rang zu niedrig zum Aufwerten</span>') +
         (aufwertung ? '<span class="unter gut">Aufwertung: ersetzt ' +
           esc(GD.unit(R.ersetzbar(run, GD.unit(o.id), o.rang).id).name) +
           ', Einsatz wird angerechnet</span>' : '') +
@@ -1294,22 +1294,15 @@
     zeichneWahl();
     $('synergien').innerHTML = synergienHtml();
 
-    var frei = GD.ARTEN.filter(function (a) { return R.freieArt(run, a); });
     var html = '<h3' + tip('Aufstellung', G.begriffe.aufstellung + '\n\n' + G.begriffe.art) +
       '>Trupp — vorn zuerst getroffen (' + run.team.length + '/' + R.TEAM_MAX + ')' +
-      ' · eine Einheit je Art' +
+      ' · jede Einheit nur einmal' +
       '<button class="dbg-schalter' + (debugAn ? ' an' : '') + '" data-a="debug"' +
       tip('Debug-Übersicht', 'Zeigt für jede Einheit, woher jeder Punkt kommt: Basis, Rang, ' +
         'Ausrüstung, und was Relikte, Resonanz und Passive im Kampf daraus machen.') +
       '>🔬 Debug</button></h3>' +
       debugHtml() +
       verkaufsflaeche() + aufstellungHtml() +
-      '<p class="hinweis">Freie Arten: ' + (frei.length
-        ? frei.map(function (a2) {
-            return '<span class="frei-art"' + tip(GD.artName(a2), G.arten[a2]) + '>' +
-              esc(GD.artName(a2)) + '</span>';
-          }).join(', ')
-        : 'keine — für eine neue Einheit musst du erst eine entlassen') + '</p>' +
       '<div class="einheiten">';
     run.team.forEach(function (m) { html += einheitHtml(m, false); });
     html += '</div>';
