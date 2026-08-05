@@ -86,13 +86,43 @@ in `js/brett3d.js` nimmt es beim nächsten Kampf.
 
 Nach jedem Stapel im Spiel ansehen, nicht erst am Ende:
 
-1. die sechs Starteinheiten
+1. die sechs Pilotfiguren (`PILOT` in `dev/prompts.js`)
 2. die übrigen Einheiten aus `js/data.js`
 3. die Bosse
 4. die häufigen Gegner aus `js/enemies.js`
 
 Ein gemischter Bestand ist ausdrücklich in Ordnung und soll auch geprüft
 werden: wo eine Datei fehlt, springt der Platzhalter ein.
+
+**Die sechs Pilotfiguren sind sechs verschiedene ARTEN** (Rimuru, Shion, Ranga,
+Gobta, Gabiru, Orkkrieger), nicht die sechs meistgespielten. Der Pilot soll
+nicht zeigen, dass das Modell Oger kann, sondern ob die Vorgaben oben über
+verschiedene Körperformen halten: ein Slime hat keine Füße, ein Wolf steht auf
+vieren — und genau daran scheitert „Füße am unteren Bildrand" als Erstes.
+
+### Zwei Werkzeuge
+
+```
+node dev/prompts.js            Prompts + Herkunftszeilen für die sechs Pilotfiguren
+node dev/prompts.js --alle     für alle Einheiten
+node dev/bildcheck.js          prüft, was in assets/einheiten/ liegt
+```
+
+`dev/prompts.js` hält den Prompt-Rumpf an EINER Stelle: nur das erste Feld
+wechselt je Figur, der Rest ist über alle Bilder wortgleich. Das, derselbe Seed
+und derselbe Sampler sind der ganze Konsistenz-Mechanismus (Begründung in
+`dev/asset-recherche.md`). Die Herkunftszeile für die Tabelle unten fällt beim
+Generieren gleich mit ab — von Hand wäre sie bei jedem Bild dieselbe
+Abschreibübung mit genau einem wechselnden Wort.
+
+`dev/bildcheck.js` misst die vier Anforderungen von oben, die messbar sind:
+Format 512 × 1024 mit Alphakanal, unterste Bildzeile deckend (Füße am Rand),
+Scheitel bei 0,85–0,95 der Höhe, höchstens 1,5 % der Figurenfläche über
+Luminanz 0,86. Die anderen vier (Stil, Pose, Spiegelbarkeit, kein eingemalter
+Schatten) sind Geschmack und werden am Brett beurteilt — dafür gibt es keine
+Zahl. Das Skript bringt keine Abhängigkeit mit: `zlib` liegt in Node, der
+PNG-Dekoder sind sechzig Zeilen, und `node dev/bildcheck.js --selftest` prüft
+den Prüfer gegen fünf absichtlich kaputte Bilder (Teil von `npm test`).
 
 ### Herkunft
 
@@ -112,10 +142,28 @@ Die Fragen aus `dev/asset-recherche.md` sind beantwortet:
 - **Erst die ausgebauten Silhouetten (Option D), dann echte Bilder (Option A).**
   D ist in Phase 68 umgesetzt und kostet nichts; es beantwortet, ob fünfzig
   Einzelbilder überhaupt gepflegt werden wollen.
-- **Lokale GPU** für die Generierung, kein gemieteter Rechner.
+- **Lokale GPU** für die Generierung, kein gemieteter Rechner. — *Am 2026-08-05
+  verworfen, siehe unten.*
 - **Bilder ins Repo.** `.gitignore` bleibt bei `node_modules`. Rund 15–30 MB —
   vertretbar, weil das Spiel offline läuft und das bleiben soll.
 - **Alle Einheiten UND alle 72 Gegner**, nicht nur die Einheiten.
+
+### Entschieden am 2026-08-05
+
+- **Browser-Generator statt eigener oder gemieteter GPU.** Civitai, SeaArt und
+  tensor.art fahren dieselben Illustrious-/NoobAI-Checkpoints, um die es in der
+  Recherche geht, im kostenlosen Tagesbudget. Damit fällt der ganze Unterbau
+  weg: keine ComfyUI-Einrichtung, kein Torch, kein Pod. Der lokale Weg hätte
+  hier zusätzlich `python3.12` gebraucht — dieser Rechner hat Python 3.14 und
+  kein `pip`, und für 3.14 gibt es noch keine Torch-Wheels.
+- **Erst die sechs Pilotfiguren, dann neu entscheiden.** Nicht 111 Bilder auf
+  Verdacht. Der Bestand ist seit der Recherche von 29 auf **39 Einheiten +
+  72 Gegner** gewachsen; ob 47 oder 111 Einzelbilder gepflegt werden wollen,
+  beantwortet der Pilot ehrlicher als jede Schätzung.
+- **Nachbearbeitung von Hand statt Pipeline.** Zuschneiden und Einpassen von
+  sechs Bildern dauert in einem Bildprogramm kürzer, als das Pillow-Skript aus
+  der Recherche zu schreiben. `dev/bildcheck.js` sagt, ob es gesessen hat.
+  Ab etwa zwanzig Bildern lohnt das Skript — vorher nicht.
 
 | Datei | Werkzeug / Quelle | Prompt | Datum | Lizenz |
 |---|---|---|---|---|
