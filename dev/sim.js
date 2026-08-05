@@ -8,9 +8,11 @@ require('../js/data.js');
 require('../js/combat.js');
 require('../js/enemies.js');
 require('../js/regie.js');
+require('../js/klang.js');
 require('../js/run.js');
 var GD = globalThis.GameData, EN = globalThis.Enemies, C = globalThis.Combat,
-    R = globalThis.Run, AB = globalThis.Abilities, RG = globalThis.Regie;
+    R = globalThis.Run, AB = globalThis.Abilities, RG = globalThis.Regie,
+    KL = globalThis.Klang;
 
 var pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) pass++; else { fail++; console.log('  ✗ ' + msg); } }
@@ -2060,6 +2062,33 @@ head('Regie');
   rLog.forEach(function (l) { if (l.key) keys[l.key] = 1; });
   ok(mitVon.every(function (l) { return keys[l.von]; }),
      'der Angreiferschlüssel gehört zu einer Einheit aus demselben Kampf');
+}
+
+/* ---------------------------------------------------------- Klang */
+/* Ohne `AudioContext` (Node kennt keins) muss jeder Aufruf ein No-op sein,
+   nicht werfen — genau das prüft `Brett3D.verfuegbar()` in Node schon für
+   das Brett, hier dieselbe Zusicherung fürs Klangmodul. */
+head('Klang');
+{
+  ok(!KL.verfuegbar(), 'ohne AudioContext meldet sich Klang als nicht verfügbar');
+  var klangLog = C.simulate([def('benimaru', 2), def('shion', 1), def('gobta', 1)],
+                            EN.build(EN.forAct(2)[0]), 2718).log;
+  var wirft = false;
+  try {
+    KL.init();
+    klangLog.forEach(function (l) { KL.spiele(l, 'gross'); });
+    KL.klick();
+  } catch (e) { wirft = true; }
+  ok(!wirft, 'ein ganzes Kampflog durch spiele() zu schicken wirft nichts, auch ohne Audio');
+
+  ok(KL.stufe('leise') === 'leise' && KL.stufe('unsinn') === 'leise' && KL.stufe('voll') === 'voll',
+     'stufe() nimmt nur die drei gültigen Werte an und ignoriert den Rest');
+
+  ok(KL.familie('brand') === 'feuer' && KL.familie('frost') === 'eis' &&
+     KL.familie('donner') === 'blitz' && KL.familie('heilung') === 'segen' &&
+     KL.familie('schild') === 'metall' && KL.familie('gift') === 'dunkel' &&
+     KL.familie('nichtvorhanden') === 'arkan',
+     'jedes gängige Schlüsselwort fällt in eine Klangfamilie, Unbekanntes in die arkane');
 }
 
 /* ------------------------------------------------------------- Run */
