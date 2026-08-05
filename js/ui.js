@@ -327,7 +327,9 @@
     });
     var tonReihe = $('menu-ton');
     if (tonReihe) Array.prototype.forEach.call(tonReihe.querySelectorAll('[data-a=ton]'), function (b) {
-      b.classList.toggle('an', b.dataset.v === ton);
+      var aktiv = b.dataset.v === ton;
+      b.classList.toggle('an', aktiv);
+      b.setAttribute('aria-pressed', String(aktiv));
     });
   }
 

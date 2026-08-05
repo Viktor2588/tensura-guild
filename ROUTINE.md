@@ -12,12 +12,12 @@ Punkte durchgearbeitet und abgehakt oder mit Begründung offen gelassen.
   Heilung, Schild, Ausweichen, Tod, Wiederbelebung, Verwandlung und
   Sieg/Niederlage rein aus Oszillatoren und gefiltertem Rauschen — keine
   Audiodatei, kein Lizenzrisiko, passt zum Offline-Anspruch. Eingehängt in
-  `js/ui.js` (`schritt()`, neben `zeige()`), Menü-Schalter „Ton: An/Aus" in
+  `js/ui.js` (`schritt()`, neben `zeige()`), Menü-Schalter „Ton: An/Aus“ in
   `index.html`/`style.css`, dokumentiert in `ASSETS.md`.
   Umgesetzt: `js/audio.js` neu, `js/ui.js` (Wiedergabe-Hook, Klick-Freischaltung,
   Menü-Schalter), `index.html` (Script-Tag, Menüzeile), `style.css`
   (`#menu-ton`), `dev/uitest.js` (Skriptliste ergänzt), `ASSETS.md`
-  (Abschnitt „Klang"). Getestet: `dev/sim.js` 443/443, `dev/uitest.js`
+  (Abschnitt „Klang“). Getestet: `dev/sim.js` 443/443, `dev/uitest.js`
   104/104, sowie ein Playwright-Rundgang (Menü öffnen, Ton umschalten, Lauf
   starten, Kampf antriggern) ohne neue Konsolenfehler — nur die erwarteten
   404 der fehlenden Platzhalterbilder.
