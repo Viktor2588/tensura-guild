@@ -322,6 +322,17 @@
     });
   }
 
+  /* Derselbe Merkzettel-Schalter wie `effekte`, nur fuer `Klang` — der Zustand
+     (an/aus) liegt in `js/klang.js`, hier steht nur die Anzeige. */
+  function zeigeKlangwahl() {
+    var reihe = $('menu-klang');
+    if (!reihe) return;
+    var an = Klang.istAn();
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=klang]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === (an ? 'an' : 'aus'));
+    });
+  }
+
   function pumpe(nun) {
     if (!replay || replay.fertig) return;
     replay.raf = requestAnimationFrame(pumpe);
@@ -359,6 +370,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    klingt(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -416,6 +428,22 @@
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
     else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
     else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
+  }
+
+  /* Ton haengt nicht an `Brett3D.verfuegbar()` — auch die SVG-Lagekarte ohne
+     WebGL soll klingen. `Klang` faellt selbst still, wenn der Browser keine
+     Web Audio API hat oder der Nutzer stummgeschaltet hat. */
+  function klingt(l, beat) {
+    if (l.type === 'aktiv') Klang.spiele('aktiv', l.kw, null, beat);
+    else if (l.type === 'hit') Klang.spiele('hit', null, l.dmg / (l.maxHp || 1), beat);
+    else if (l.type === 'heal') Klang.spiele('heal', null, null, beat);
+    else if (l.type === 'death') Klang.spiele('death', null, null, beat);
+    else if (l.type === 'revive') Klang.spiele('revive', null, null, beat);
+    else if (l.type === 'entladung') Klang.spiele('entladung', null, null, beat);
+    else if (l.type === 'verwandlung') Klang.spiele('verwandlung', null, null, beat);
+    else if (l.type === 'kombi') Klang.spiele('kombi', null, null, beat);
+    else if (l.type === 'ausweichen') Klang.spiele('ausweichen', null, null, beat);
+    else if (l.type === 'fehlschlag') Klang.spiele('fehlschlag', null, null, beat);
   }
 
   function zeile(l) {
@@ -1308,6 +1336,10 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    klang: function (d) {
+      Klang.setzeAn(d.v === 'an');
+      zeigeKlangwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1620,6 +1652,12 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    /* `spiele()` weckt den AudioContext bei Bedarf selbst — Browser sperren
+       ihn, bis eine Nutzergeste kommt, und dieser Klick ist eine. Ist Ton
+       gerade aus, bleibt es beim stillen No-Op, statt trotzdem einen Kontext
+       anzulegen. Der leise Klick selbst ist reine UI-Rueckmeldung, kein
+       Ersatz fuer die Kampftoene aus `klingt()`. */
+    Klang.spiele('ui');
     a(el.dataset);
   }
 
@@ -1659,6 +1697,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeKlangwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
