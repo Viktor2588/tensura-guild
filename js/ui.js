@@ -70,7 +70,7 @@
     exekution: 'kw-exekution',
     signatur: 'typ-signatur', aktive: 'typ-aktiv', aktiv: 'typ-aktiv',
     passive: 'typ-passiv', passiv: 'typ-passiv',
-    chaos: 'kw-chaos', antichaos: 'kw-chaos', verwundbar: 'kw-verwundbar', blutung: 'kw-blutung',
+    chaos: 'kw-chaos', antichaos: 'kw-antichaos', verwundbar: 'kw-verwundbar', blutung: 'kw-blutung',
     schatten: 'kw-schatten', dunkel: 'kw-dunkelheit', licht: 'kw-licht', donner: 'kw-donner',
     relikt: 'typ-relikt', ausrüstung: 'typ-item',
     üblich: 'rar-text-1', ungewöhnlich: 'rar-text-2', selten: 'rar-text-3',
@@ -114,10 +114,12 @@
   function hudTips() {
     var paare = [['hud-mag', 'Magicule', G.begriffe.magicule],
                  ['hud-leben', 'Verbleibende Niederlagen', G.begriffe.leben]];
-    paare.push(['hud-stufe', 'Bedrohungsstufe', G.begriffe.bedrohungsstufe +
-      '\n\nSie steigt, sobald du einen Run auf der aktuellen Stufe GEWINNST — ' +
-      'ein verlorener Run ändert nichts. Umstellen kannst du sie im Menü unter ' +
-      '„Fortschritt"; das setzt den laufenden Run neu auf.']);
+    /* Die Bedrohungsstufe bekommt hier KEINEN festen Text mehr. Er hing am
+       umschliessenden <span> — also am Warnzeichen — und stand damit neben dem
+       Mali-Tooltip, den `zeichneHud` an dieselbe Stelle setzt: zwei Tooltips
+       fuer dieselbe Anzeige, und der aeltere war der laengere. Was gilt, sagen
+       jetzt die kumulierten Mali; wie die Stufe steigt, steht im Menue unter
+       „Fortschritt", wo man sie auch umstellt. */
     paare.forEach(function (p) {
       var el = $(p[0]).parentNode;
       el.dataset.tip = p[1];
@@ -132,8 +134,19 @@
       (run.threat ? ' · Stufe ' + run.threat : '');
     var st = R.bedrohung(run.threat || 0);
     var offen = run.meta.threat || 0;
+    var ml = R.mali(run.threat || 0);
     $('hud-stufe').innerHTML = st.stufe +
       (offen > (run.threat || 0) ? '<i class="hoeher">+' + (offen - run.threat) + '</i>' : '');
+    /* Oben rechts neben dem Menue: alle geltenden Mali auf einen Blick.
+       An das umschliessende <span>, damit auch das Warnzeichen davor denselben
+       Tooltip zeigt — und getrennt in Titel und Rumpf. In Phase 72 stand hier
+       nur `data-tip`, also die ganze Liste als UEBERSCHRIFT; der Motor liest
+       den Rumpf aus `data-tip-text`. */
+    var stufeBox = $('hud-stufe').parentNode;
+    stufeBox.dataset.tip = 'Stufe ' + (run.threat || 0) + ' · ' + st.name;
+    stufeBox.dataset.tipText = ml.length
+      ? ml.map(function (m) { return '• ' + m; }).join('\n')
+      : 'Keine Mali — der normale Weg.';
     $('hud-mag').textContent = run.magicules;
     $('hud-leben').textContent = run.lives;
     zeichnePfad();
@@ -148,7 +161,10 @@
     var el = $('pfad');
     if (!el) return;
     if (run.over) { el.innerHTML = ''; return; }
-    var boss = R.boss(run);
+    /* Auch die Wegleiste nennt ihn erst nach dem ersten Kampf — sie stand
+       waehrend des Startdrafts unter der Kopfzeile und verriet dort denselben
+       Namen, den die Vorschau gerade verschweigt. */
+    var boss = bossBekannt() ? R.boss(run) : null;
     var html = '<span class="pfad-akt"' + tip('Akt ' + run.act + ' von ' + R.AKTE,
       'Jeder Akt hat ' + R.STEPS.length + ' Knoten und endet mit seinem Boss.') +
       '>Akt ' + run.act + '/' + R.AKTE + '</span>';
@@ -226,9 +242,26 @@
 
   /* Wer den Boss des Akts kennt, kann darauf hinbauen — deshalb steht er von
      Anfang an da, samt Fähigkeiten. */
+  /* Der Boss zeigt sich erst NACH dem ersten Kampf. Vorher stand er auf dem
+     Startbildschirm — also bevor die erste Einheit gedraftet war —, und damit
+     liess sich der ganze Trupp gegen genau ihn bauen. Ein Run soll eine Antwort
+     auf das sein, was kommt, nicht ein Konter, der vor dem ersten Zug feststeht.
+
+     `run.step > 0` ist die Bedingung und braucht kein neues Feld: der erste
+     Knoten ist seit Phase 66 immer ein Kampf, und `step` steht im
+     Speicherstand — der Boss bleibt also auch nach einem Neuladen verdeckt.
+     Ab Akt 2 ist ohnehin gekaempft worden. */
+  function bossBekannt() {
+    return (run.act || 1) > 1 || (run.step || 0) > 0;
+  }
+
   function bossVorschau(akt) {
     var b = R.boss(run, akt);
     if (!b) return '';
+    if (!bossBekannt()) {
+      return '<p class="hinweis">Wer am Ende von Akt ' + akt +
+        ' wartet, zeigt sich nach dem ersten Kampf.</p>';
+    }
     return '<p class="hinweis">Am Ende von Akt ' + akt + ' wartet <b' +
       tip('BOSS: ' + b.name, gegnerDetails(b)) + '>' + esc(b.name) + '</b>.</p>';
   }
@@ -253,16 +286,22 @@
     if (!run.threat) return '';
     var aktiv = R.BEDROHUNG.filter(function (b) { return b.regel && b.stufe <= run.threat; });
     if (!aktiv.length) return '';
+    /* Statt des Fliesstextes der obersten Stufe die KUMULIERTEN Mali als Liste:
+       der Text beschrieb nur die letzte Stufe, waehrend alle darunter
+       weiterlaufen — man las „drei Leben statt fuenf" und erfuhr nichts von den
+       vier Regeln, die ebenfalls gelten. */
     return '<div class="regeln">' + aktiv.map(function (b) {
       return '<span class="regel"' + tip(b.stufe + ' · ' + b.name, b.text) + '>' +
         esc(b.name) + '</span>';
     }).join('') + '</div>' +
-      (lang ? '<p class="hinweis">' + esc(R.bedrohung(run.threat).text) + '</p>' : '');
+      (lang ? '<ul class="mali">' + R.mali(run.threat).map(function (m) {
+        return '<li>' + esc(m) + '</li>';
+      }).join('') + '</ul>' : '');
   }
 
   function zeichneStart() {
     var w = run.startwahl;
-    var html = stufenHtml() + bossVorschau(1) + '<h2>Womit fängst du an?</h2>' +
+    var html = stufenHtml() + '<h2>Womit fängst du an?</h2>' +
       '<p class="hinweis">Eine Einheit und ein Relikt — mehr hast du nicht. ' +
       'Der Rest wird erkämpft.</p><div class="karten">';
     /* Zwei getrennte Blöcke statt einer gemischten Liste: sonst steht die
@@ -431,6 +470,14 @@
       l.def + ' %, Tempo ' + l.spd + ' %';
     else if (l.type === 'fehlschlag') text = '✗ ' + esc(l.unit) + ': ' + esc(l.name) + ' verpufft im Chaos';
     else if (l.type === 'ausweichen') text = '↯ ' + esc(l.target) + ' weicht im Schatten aus';
+    /* Die Farbregel oben liest `side` als „wen trifft es" — hier ist es „wem
+       gehört es", also andersherum. Statt das Log zu verbiegen, wird die Klasse
+       an dieser einen Stelle gesetzt. */
+    else if (l.type === 'resonanz') {
+      klasse = l.side === 'player' ? 'spieler' : 'feind';
+      text = '◈ ' + (l.side === 'player' ? 'Euer Trupp' : 'Der Gegner') + ' resoniert: ' +
+        esc(kwName(l.kw)) + ' (' + l.teile + ' Teile) — ' + esc(C.RESONANZ[l.kw]);
+    }
     else if (l.type === 'entladung') text = '⚡ Entladung an ' + esc(l.unit) + ': ' + l.stapel + ' Stapel schlagen in die ganze Reihe';
     /* Eine Verwandlung ist der seltenste Moment im Kampf — sie darf nicht
        stumm im Log fehlen, sonst merkt niemand, dass die Schwelle fiel. */
@@ -572,6 +619,16 @@
   /* Ein Tag mit eigenem Tooltip. Statt einer Textwand am Kartenrand bekommt
      jede Information ihr eigenes Häppchen: wer wissen will, was „Untot" heißt,
      tippt den Untot-Tag an. */
+  /* Schluesselwoerter sehen ueberall gleich aus. Die Entwicklungslinien hatten
+     mit `kw-chip` eine graue Zweitform — dieselbe Information in einer anderen
+     Sprache, und ausgerechnet dort, wo man Schluesselwoerter VERGLEICHT. Jetzt
+     dieselbe farbige Marke samt Glossar-Tooltip wie am Marktposten und am
+     Kaempfer. */
+  function kwTag(k) {
+    return tag('kw-' + k, kwName(k), kwName(k),
+      (G.keywords[k] || '') + (G.zustaende[k] ? '\n\n' + G.zustaende[k] : ''));
+  }
+
   function tag(klasse, text, titel, hilfe) {
     return '<span class="kw-tag ' + klasse + '"' + tip(titel, hilfe) + '>' + esc(text) + '</span>';
   }
@@ -643,6 +700,22 @@
     return tag('tag-mag', 'Vorräte', 'Vorräte', G.begriffe.magicule);
   }
 
+  /* Die drei Spitzenwerte des Kampfes. Leere Felder fallen weg statt „—" zu
+     zeigen: ein Trupp ohne Heiler soll keine leere Zeile bekommen. */
+  function bilanzHtml(b) {
+    var zeilen = [
+      ['⚔', 'meister Schaden', b.austeiler],
+      ['🛡', 'meisten eingesteckt', b.einstecker],
+      ['✚', 'meiste Heilung', b.heiler]
+    ].filter(function (z) { return z[2]; });
+    if (!zeilen.length) return '';
+    return '<div class="kampfbilanz">' + zeilen.map(function (z) {
+      return '<span class="bilanz-zeile"><i>' + z[0] + '</i>' +
+        '<b>' + esc(z[2].name) + '</b>' +
+        '<span class="unter">' + esc(z[1]) + ': ' + z[2].wert + '</span></span>';
+    }).join('') + '</div>';
+  }
+
   function ergebnisHtml(p) {
     var html = '';
     if (p.result.winner === 'player') {
@@ -655,6 +728,10 @@
         (b.ticks ? '<p class="hinweis">' + b.ticks + ' Züge · ' + b.lebend + ' von ' +
           (b.lebend + gefallen.length) + ' Einheiten stehen noch' +
           (gefallen.length ? ' · gefallen: ' + esc(gefallen.join(', ')) : '') + '</p>' : '') +
+        /* Wer hat den Kampf getragen? Ohne diese drei Zeilen ist ein Sieg eine
+           Zahl, und man erfaehrt nie, ob der teure Neuzugang etwas beigetragen
+           hat oder nur danebenstand. */
+        bilanzHtml(b) +
         '<p class="hinweis">Magicule gesamt: ' + run.magicules + ' ✦</p></div>';
       if (p.devour && p.devour.length) {
         var moeglich = run.team.filter(function (m) { return m.devoured.length < R.praedatorSlots(m); });
@@ -785,7 +862,11 @@
       'Verkaufen: Gegenstand, Relikt oder Einheit auf die Fläche unten ziehen.</p>';
     html += '<div class="karten markt">';
     offers.forEach(function (o, i) {
-      var frei = o.kind !== 'unit' || R.freieArt(run, GD.unit(o.id).art);
+      /* `kaufbar` statt `freieEinheit`: der Motor kann dieselbe Einheit auf
+         einem hoeheren Rang aufwerten (addUnit raeumt die alte weg und rechnet
+         ihren Einsatz an), die Karte war trotzdem gesperrt. */
+      var frei = o.kind !== 'unit' || R.kaufbar(run, o.id, o.rang);
+      var aufwertung = o.kind === 'unit' && frei && !R.freieEinheit(run, o.id);
       if (o.kind === 'rang') {
         var zielM = R.find(run, o.uid);
         frei = !!zielM && zielM.rank < 3 && !R.passivWahl(run);
@@ -796,7 +877,10 @@
         '<span class="titel">' + esc(o.name) + ' — ' + o.price + ' ✦' + (o.sold ? ' (gekauft)' : '') + '</span>' +
         '<div class="kw-leiste">' + belohnungTags(o) + '</div>' +
         '<span class="beschreibung">' + marktText(o) + '</span>' +
-        (frei ? '' : '<span class="unter">Art schon besetzt</span>') +
+        (frei ? '' : '<span class="unter">Steht schon im Trupp — Rang zu niedrig zum Aufwerten</span>') +
+        (aufwertung ? '<span class="unter gut">Aufwertung: ersetzt ' +
+          esc(GD.unit(R.ersetzbar(run, GD.unit(o.id), o.rang).id).name) +
+          ', Einsatz wird angerechnet</span>' : '') +
         (!o.sold && frei && run.magicules < o.price
           ? '<span class="unter">' + (o.price - run.magicules) + ' ✦ fehlen</span>' : '') +
         '</button>';
@@ -1210,22 +1294,15 @@
     zeichneWahl();
     $('synergien').innerHTML = synergienHtml();
 
-    var frei = GD.ARTEN.filter(function (a) { return R.freieArt(run, a); });
     var html = '<h3' + tip('Aufstellung', G.begriffe.aufstellung + '\n\n' + G.begriffe.art) +
       '>Trupp — vorn zuerst getroffen (' + run.team.length + '/' + R.TEAM_MAX + ')' +
-      ' · eine Einheit je Art' +
+      ' · jede Einheit nur einmal' +
       '<button class="dbg-schalter' + (debugAn ? ' an' : '') + '" data-a="debug"' +
       tip('Debug-Übersicht', 'Zeigt für jede Einheit, woher jeder Punkt kommt: Basis, Rang, ' +
         'Ausrüstung, und was Relikte, Resonanz und Passive im Kampf daraus machen.') +
       '>🔬 Debug</button></h3>' +
       debugHtml() +
       verkaufsflaeche() + aufstellungHtml() +
-      '<p class="hinweis">Freie Arten: ' + (frei.length
-        ? frei.map(function (a2) {
-            return '<span class="frei-art"' + tip(GD.artName(a2), G.arten[a2]) + '>' +
-              esc(GD.artName(a2)) + '</span>';
-          }).join(', ')
-        : 'keine — für eine neue Einheit musst du erst eine entlassen') + '</p>' +
       '<div class="einheiten">';
     run.team.forEach(function (m) { html += einheitHtml(m, false); });
     html += '</div>';
@@ -1414,7 +1491,7 @@
     var liste = Object.keys(kws);
     var html = '<p class="linien-kopf"><b>' + esc(u.name) + '</b> · ' + esc(GD.artName(u.art)) +
       (liste.length ? '<br><span class="kws">' + liste.map(function (k) {
-        return '<span class="kw-chip">' + esc(kwName(k)) + '</span>';
+        return kwTag(k);
       }).join('') + '</span>' : '') + '</p>';
 
     /* Die Signatur steht über den Linien: sie ist die eine Aktive, die die
@@ -1429,7 +1506,7 @@
         '<span class="titel">✦ ' + esc(sig.name) + '</span>' +
         '<span class="unter">' + esc(sig.text) + '</span>' +
         (sigKs.length ? '<span class="kws">' + sigKs.map(function (k) {
-          return '<span class="kw-chip">' + esc(kwName(k)) + '</span>';
+          return kwTag(k);
         }).join('') + '</span>' : '') +
         '</div>';
     }
@@ -1448,9 +1525,16 @@
         var ks = (a.keywords || []).concat(a.amplifies || []);
         var tipText = a.text + (preis ? '\n\nÄndert eine Regel und kostet dafür etwas.' : '') +
           (ks.length ? '\n\n' + ks.map(kwName).join(' · ') : '');
+        /* Die Schluesselwoerter standen bisher nur im Tooltip — man musste jede
+           der sechzehn Passiven einzeln anfahren, um zu sehen, welche Gift und
+           welche Schild macht. Als Chips sind sie ueberfliegbar, und genau das
+           ist die Frage, mit der man diese Uebersicht oeffnet. */
         html += '<span class="linien-stufe"' + tip(a.name, tipText) + '>' +
           '<b>' + esc(a.name) + '</b>' +
           (preis ? ' <span class="tag-preis">Preis</span>' : '') +
+          (ks.length ? ' <span class="kws">' + ks.map(function (k) {
+            return kwTag(k);
+          }).join('') + '</span>' : '') +
           ' — ' + esc(a.text) + '</span>';
       });
       html += '</div>';

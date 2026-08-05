@@ -2911,6 +2911,921 @@ mit ins Repo.
 Worktree `/home/viktor/tensura/worktree/phase-61-figuren`, Branch
 `phase-61-figuren`.
 
+### Phase 62 (2026-08-04): Gegner bekommen Schlüsselwörter
+
+Idee 1 aus „Offen aus der Recherche": die Resonanz gilt ausdrücklich für beide
+Seiten, aber gegnerseitig war sie tot. `spawn` liest `def.keywords` — und
+`build` hat das Feld nie gesetzt. Kein Gegnertrupp hat je eine Schwelle
+erreicht.
+
+**Abgeleitet statt abgeschrieben.** Der Plan sah 72 handgepflegte Wortlisten
+vor; geschrieben wurde stattdessen `schluesselwoerter(d, actives)` in
+`enemies.js`, die dieselben zwei Quellen ausliest, aus denen `Run.buildTeile`
+die Wörter des Spielers sammelt: die Aktive und die Passiven. Das ist nicht nur
+weniger Arbeit, es ist die haltbarere Fassung — eine zweite Liste würde beim
+ersten Umbau einer Fähigkeit lügen, und von Hand erfundene Wörter würden
+behaupten, ein Gegner täte etwas, was er nicht tut. Nicht entdoppelt: wer Gift
+anlegt UND Gift wirft, ist zwei Teile einer Giftlinie, genau wie beim Spieler.
+
+**Die Resonanz steht jetzt im Kampflog, für beide Seiten.** Sie war vorher nur
+auf dem Truppschirm sichtbar; ein Gegnertrupp, der ohne sichtbaren Grund 15 %
+mehr heilt, ist ein unerklärter Kampf.
+
+**Der teuerste Fund war ein Fehler, der älter ist als diese Phase.** „Elite:
+Steinerne Wacht" (zwei Gargoyles, zwei Blutgolems) erreicht als erste Begegnung
+überhaupt Konter-Resonanz — und der Kampf lief sofort in „Maximum call stack
+size exceeded". Ursache: ein Konter antwortete auf einen Konter. Zwei Trupps,
+die beide `onDamaged` austeilen, schlagen einander in derselben Aufrufkette
+endlos zurück; das endete bisher nur durch Sterben, und wo eine
+`onDamaged`-Heilung den Konterschaden aufwiegt (Blutgolem, 18 Leben je
+erlittenem Treffer), stirbt niemand. Die Sperre `imKonter` in `deal()` lässt
+Konter nur noch auf Angriffe antworten. **Der Fehler steckte seit Phase 14 im
+Spiel und war bloß unerreichbar** — es brauchte einen Gegnertrupp mit
+gebündelter Linie, um ihn auszulösen. Genau das ist das Argument für diese
+Phase: die eine Seite des Spiels, die nie gebündelt hat, hat auch nie geprüft.
+
+`node dev/sim.js` 443/443. Die Balance-Messung steht aus und läuft gesammelt
+nach Phase 66 — Gegner-Resonanz macht die Gegner stärker, `GRUNDHAERTE` ist
+deshalb ein Kandidat für die Nachkalibrierung.
+
+Worktree `/home/viktor/tensura/worktree/phase-62-gegnerworte`, Branch
+`phase-62-gegnerworte`.
+### Phase 63 (2026-08-04): Die Verstaerker-Diagnose war falsch
+
+Der Auftrag lautete, die acht Verstaerker-Kits umzuschreiben. Die Notiz dazu
+stand seit Phase 51 im Plan: Verstaerker 46 %, Unterstuetzer 60 %, Lage und
+Reichweite als Ursache durch Phase 49 ausgeschlossen, also *"es liegt an dem,
+was die acht Verstaerker-Einheiten tun"*. Die vermutete Ursache war benannt:
+Verstaerker haengen mehr als andere an KOMBINATIONEN, brauchen also Passive,
+die einzeln tragen.
+
+**Zwei Messungen, beide gegen die Vermutung.** Vor dem ersten Umbau geprueft,
+und gut, dass es so herum lief:
+
+1. **Der Rueckfallwert ist bei Verstaerkern normal.** Jede Einheit im Spiel
+   traegt an Stelle 3 jeder Linie eine Passive mit Truppbedingung („Fuehrt ein
+   Verbuendeter Konter, … — sonst …", die Phase-21-Struktur). Ueber alle 633
+   Linien-Passiven ausgezaehlt, wie viel vom vollen Wert uebrig bleibt, wenn die
+   Bedingung NICHT erfuellt ist:
+
+   | Rolle | bedingte Passive | Ø Rueckfall |
+   |---|---|---|
+   | Unterstuetzer | 16 % | **60 %** |
+   | Verstaerker | 18 % | 71 % |
+   | Fernkampf | 11 % | 72 % |
+   | Front | 15 % | 74 % |
+   | Magier | 16 % | 77 % |
+
+   Ausgerechnet Unterstuetzer — die beste Rolle — faellt am haertesten zurueck.
+   Die Vermutung sagt das Gegenteil vorher. Sie ist damit erledigt.
+
+2. **Unterstuetzer ist die einzige Rolle, deren Bestand vollstaendig bezahlbar
+   ist.** Abgeglichen mit der Liste der 14 nie gekauften Einheiten:
+
+   | Rolle | Einheiten | nie gekauft | erreichbar | Ø Kosten |
+   |---|---|---|---|---|
+   | Unterstuetzer | 4 | **0** | 4 | 2,5 |
+   | Front | 14 | 4 | 10 | 2,8 |
+   | Verstaerker | 8 | 3 | 5 | 3,0 |
+   | Fernkampf | 8 | 3 | 5 | 3,0 |
+   | Magier | 5 | 4 | **1** | 3,6 |
+
+   Die 46 % der Verstaerker sind ein Mittel ueber fuenf billige Einheiten;
+   Benimaru, Carrera und Milim — die drei staerksten — kommen nie vor. Die 60 %
+   der Unterstuetzer sind ein Mittel ueber ihren vollstaendigen Bestand. **Die
+   Rollen-Rangfolge ist eine Preis-Rangfolge**, wie schon die
+   Schluesselwort-Rangfolge in Phase 49 eine Reichweiten-Rangfolge war.
+
+**Deshalb wurde kein Kit angefasst.** Acht Einheiten auf einen widerlegten
+Befund hin umzuschreiben haette den Inhalt beschaedigt und die Zahl trotzdem
+nicht bewegt. Stattdessen zwei Eingriffe am Werkzeug, damit die Messung nicht
+noch einmal so gelesen wird:
+
+- **`dev/balance.js` weist je Rolle aus, wie viel vom Bestand ueberhaupt
+  vorkam** (`4/8 Einheiten erreicht, Ø Kosten 3.0`) und warnt ausdruecklich,
+  wenn eine Rolle unvollstaendig gemessen ist. Beim ersten Probelauf las die
+  Tabelle „magier 80 %" — aus einer einzigen Einheit bei n=5. Genau diese Zeile
+  war vorher nicht von einer echten Rollenaussage zu unterscheiden.
+- **`dev/linien.js` sucht in fuenf statt sieben Schritten.** Sieben loesen 0,02
+  Haerte auf, waehrend der Standardfehler bei 70 Proben rund 6 Prozentpunkte
+  betraegt — die letzten beiden Halbierungen haben Rauschen gemessen und je 140
+  Kaempfe gekostet. Das war der offene Punkt „laeuft ueber zehn Minuten".
+
+**Und eine veraltete Notiz gestrichen:** der Plan verlangte, `dev/linien.js`
+solle „mit Trupp messen statt eine Einheit allein". Das tut es laengst —
+`trupp()` stellt drei Begleiter dazu, deren Art nicht kollidiert. Die Notiz
+stammt aus Phase 15 und ist seither ueberholt worden, ohne dass sie jemand
+gestrichen hat.
+
+**Was offen bleibt:** ob Verstaerker mit vollem Bestand immer noch
+zuruecksteht. Das ist erst nach Phase 64 messbar — vorher misst die Zahl die
+Preiskurve. `node dev/sim.js` 443/443.
+
+Worktree `/home/viktor/tensura/worktree/phase-63-verstaerker`, Branch
+`phase-63-verstaerker`.
+### Phase 64 (2026-08-04): Es war der Bot, nicht die Preiskurve
+
+Zwei Fragen, eine sauber beantwortet, eine nicht.
+
+**A) Die 14 nie gekauften Einheiten waren ein Messfehler.** Der Plan nannte
+zwei moegliche Ursachen und bestand darauf, sie zu trennen: eine zu geizige
+Bot-Heuristik (dann ist der Inhalt in Ordnung und nur die Messung blind) oder
+eine zu steile Preiskurve (dann sieht ein Mensch dasselbe Problem). Getrennt
+wurde ueber die doppelte Kostenzaehlung: `passt()` addierte `u.cost` in den
+Zaehler, waehrend der Marktvergleich denselben Preis noch einmal in den Nenner
+schrieb (Wert je Magicule). Teure Einheiten wurden also zweimal bestraft.
+
+`passt()` bewertet jetzt nur noch Schluesselwoerter. Wo die Einheit gratis ist
+— im Startdraft — kommen die Kosten an der Aufrufstelle als Staerkemass wieder
+dazu, denn dort sind sie keine Kosten, sondern die einzige verfuegbare
+Auskunft ueber Staerke.
+
+Ergebnis bei 40 Runs mit voller Freischaltung: **von 14 teuren Einheiten
+bleiben 2 ungekauft statt 14.** Benimaru geht in 100 % der Faelle ueber die
+Theke, Adalmann in 80 %, Gerudo in 53 %. Die Preiskurve war nie das Problem.
+
+Damit die Frage nie wieder unentscheidbar ist, zaehlt `dev/balance.js` jetzt
+**Angebot und Kauf getrennt**. Ohne diese Trennung sieht „nie gekauft" wie eine
+geizige Heuristik aus, obwohl der Posten vielleicht nie im Regal lag: Hakuro
+stand in 40 Runs nur 4× ueberhaupt zum Verkauf, Apito dagegen 114×. Das sind
+zwei voellig verschiedene Befunde hinter derselben Zahl.
+
+Die Folge fuer alle frueheren Messungen ist unangenehm und gehoert hierhin:
+**jede Build- und Rollenzahl vor dieser Phase mittelt ueber die guenstige
+Haelfte des Rosters.** Phase 63 hat denselben Befund von der Rollenseite
+gefunden — die Rollen-Rangfolge war eine Preis-Rangfolge.
+
+**B) Breite gegen Spitze ist NICHT gemessen worden — der Versuch ist
+gescheitert.** Der Plan wollte wissen, ob „vier auf B" oder „eine auf S"
+gewinnt. Gebaut wurde dafuer ein zweiter Kaufstil (`--kaufstil spitze`):
+absoluter Wert statt Wert je Magicule, Reserve 600 statt 140, also warten statt
+zugreifen.
+
+| | Siege | Ø Trupp | Ø Truppkosten | Ø Rangstufen | Ø Staerke |
+|---|---|---|---|---|---|
+| breite | 70 % | 6,0 | 14,7 | 15,4 | 2104 |
+| spitze | 65 % | **6,0** | 15,3 | 14,9 | 2070 |
+
+**Beide Stile enden bei exakt derselben Truppgroesse.** Ein Regler an der
+Reserve erzeugt keine Spitzenstrategie — er verzoegert Kaeufe, die spaeter
+ohnehin stattfinden, weil das Einkommen weiterlaeuft und die Truppgroesse an
+anderen Grenzen haengt. Die fuenf Punkte Unterschied liegen bei n=40 im
+Rauschen (Standardfehler rund 8 Punkte). Die Frage bleibt damit offen, aber sie
+ist jetzt praeziser: **eine Breitenstrategie braucht eine eigene Regel, nicht
+einen Sparfaktor.** Der Stil bleibt als Schalter drin, damit der naechste
+Versuch nicht bei null anfaengt.
+
+**Die Siegquote ist erwartungsgemaess gestiegen** (70 % bei voller
+Freischaltung), weil der Bot endlich kauft, was er kaufen sollte.
+`GRUNDHAERTE` wird deshalb NICHT hier nachgezogen, sondern gesammelt nach
+Phase 66 — sonst kalibrieren fuenf Phasen denselben Knopf gegeneinander.
+
+`node dev/sim.js` 443/443.
+
+Worktree `/home/viktor/tensura/worktree/phase-64-oekonomie`, Branch
+`phase-64-oekonomie`.
+### Phase 65 (2026-08-04): Beide Verdachte waren Messfehler
+
+Zwei offene Punkte, und der Plan verlangte fuer beide ausdruecklich, ERST die
+Messung zu pruefen und nicht wieder an Zahlen zu drehen. Gut so — es war
+zweimal die Messung.
+
+**A) Der Heilungs-Eimer hat nie einen Heilungs-Build gemessen.** Bis hierher
+wanderte jeder Run in GENAU EINEN Eimer: den Build mit der groessten Summe aus
+Quellen und Verstaerkern. Diese Zuordnung ist aus zwei Gruenden wertlos:
+
+1. **Ein Trupp hat mehrere Builds gleichzeitig.** Sechs Einheiten erfuellen die
+   Huerde im Schnitt fuer 3,7 Schluesselwoerter. Die Zuordnung war also kein
+   „wofuer hat sich der Trupp festgelegt", sondern ein argmax.
+2. **Und dieses argmax lief ueber ungenormte Zaehlerstaende.** Heilung kommt im
+   Mittel auf 9,8 Teile, Schild auf 7,2, Frost auf 3,4 — Heilung gewinnt den
+   Vergleich strukturell. Wo Heilung und Schild BEIDE als Build dastanden (256
+   von 500 Runs), nahm Heilung den Eimer 165 : 70. Der Schild-Eimer war damit
+   im Wesentlichen „Schild ohne Heilung", und **der Abstand von 69 zu 35
+   Punkten war der Abstand zwischen diesen beiden Resten, nicht zwischen zwei
+   Builds.** Die Frage aus dem Plan — was einen festgelegten Heilungstrupp von
+   einem festgelegten Schildtrupp unterscheidet AUSSER dem Schluesselwort —
+   hatte die Antwort: nichts. Es waren nie zwei verschiedene Truppsorten.
+
+Dazu trugen die Eimer die Sterbetiefe mit (Heilung Ø 14,4 Knoten, Schild 12,5);
+die Siegquote mass zur Haelfte, wie lange der Run ueberhaupt lief.
+
+Jetzt zaehlt ein Run **in jeden Build, den er hat**, nur Runs nach Akt 1 werden
+gewertet, und die Tabelle weist den **Abstand zur Grundgesamtheit** aus statt
+einer rohen Quote. Damit muss auch die Ausreisser-Regel wechseln: bei
+ueberlappenden Eimern liegt jede Quote nahe am Feldmittel, das alte Band
+25–75 % wuerde nie wieder anschlagen. Gemeldet wird jetzt ein Abstand ueber
+12 Punkten.
+
+Das neue Bild (60 Runs, Grundgesamtheit 59 %):
+
+| Build | Quote | Abstand |
+|---|---|---|
+| tempo | 78 % | **+19** |
+| heilung | 67 % | +8 |
+| chaos | 65 % | +6 |
+| schild | 60 % | +1 |
+| frost | 53 % | −6 |
+| konter | 47 % | **−12** |
+
+**Heilung ist kein Ausreisser mehr, und Konter hat das Vorzeichen gewechselt.**
+Konter stand seit Phase 12 als 82-%-Ausreisser im Plan, zwei Runden Trimmen
+haben ihn um null Punkte bewegt — er war die ganze Zeit der schwaechste Build
+und hat nur den Eimer der Trupps geerbt, die weit kamen. Neu auffaellig ist
+tempo. Beide Zahlen gehoeren mit dem grossen Lauf bestaetigt, n ist hier klein.
+
+**B) Der Unterstuetzer-Rollenzweig ist geloescht.** Die Regel „Unterstuetzer
+heilen, wenn gerade keine Faehigkeit bereit ist" nahm 81 % aller
+Unterstuetzer-Zuege. Instrumentiert ueber 150 Runs: 31.776 Zuege, davon 24.641
+ohne bereite Faehigkeit — aber in **20.251 davon stand der ganze Trupp auf
+vollem Leben**, der Zweig tat also nichts. Und er fiel **kein einziges Mal**
+ein, waehrend jemand wirklich verwundet war: unter 85 % greift die
+`wenn`-Bedingung der Signatur, und die heilt um ein Vielfaches mehr. Uebrig
+blieben 4.390 Heilungen im Band zwischen 85 und 100 % Leben — 11 aufgefuellte
+Lebenspunkte je Ausloesung, der Rest Ueberheilung.
+
+Also die erste der beiden Antworten aus dem Plan: totes Gewicht, geloescht. Der
+Unterstuetzer schlaegt jetzt zu, wenn niemand Heilung braucht. Siegquote 51 →
+50 %. Der Glossartext beschrieb den geloeschten Zweig woertlich und sagt jetzt,
+was das Spiel tut.
+
+**Ein Test hing an dem toten Zweig.** „Das Todesurteil wartet auf ein
+angeschlagenes Ziel" liess Gobwa allein gegen einen Troll antreten — und sie
+hielt nur durch, weil sie sich ueber genau diesen Zweig selbst heilte. Ohne ihn
+stirbt sie, bevor der Troll unter die Haelfte faellt, und der Test misst
+schweigend nichts (0× spaet, 0× frueh). Der Troll schlaegt jetzt nicht mehr zu;
+damit trennt der Test die Wartebedingung von Gobwas Zaehigkeit. `node
+dev/sim.js` 443/443.
+
+Worktree `/home/viktor/tensura/worktree/phase-65-messung`, Branch
+`phase-65-messung`.
+
+### Phase 66 (2026-08-04): Die Seltenheit sagte nichts über die Stärke
+
+Drei alte Punkte aus `TODO.md`, alle drei Nutzer-Beobachtungen statt
+Messbefunde. Der erste war der eigentliche Brocken.
+
+**Das Werkzeug zuerst: `dev/beute.js`.** Ausrüstung und Relikte lassen sich
+nicht über Schadenssummen vergleichen — härtere Treffer verkürzen den Kampf,
+die Summe ist nicht monoton (der Fehler aus Phase 34). Gemessen wird deshalb
+gegen zwei Prüfstände: „Zustand" trägt Gift-, Brand- und Frostquellen, „Wacht"
+trägt Schild, Konter und Heilung; gewertet wird der bessere von beiden, denn ein
+Spieler kauft ein Stück für die Trägerin, zu der es passt.
+
+Der Bruchpunkt aus `dev/linien.js` taugte dabei nur als Referenz, nicht als
+Messwert: die binäre Suche gibt ihn gequantelt zurück, dutzende Stücke lasen
+denselben Wert, die Rangfolge war eine Treppe mit drei Stufen. Jetzt wird der
+Bruchpunkt **einmal je Prüfstand** gesucht und alles Weitere als **Siegquote an
+genau dieser Härte** gemessen — dort ist die Kurve am steilsten, und ein Stück
+kostet einen statt neun Läufen.
+
+**Der Befund bestätigt die Beschwerde.** Mittelwerte je Stufe:
+
+| Stufe | n | Ø Gewinn |
+|---|---|---|
+| üblich | 3 | +12 Pkt |
+| ungewöhnlich | 4 | **+21 Pkt** |
+| selten | 12 | **+16 Pkt** |
+| episch | 11 | +21 Pkt |
+| legendär | 2 | +23 Pkt |
+
+Die Kurve steigt nicht: „ungewöhnlich" schlägt „selten" um fünf Punkte, und von
+„ungewöhnlich" bis „legendär" liegen zwei Punkte. Die Raritätsstufe steuerte
+Angebotshäufigkeit, Preis und Farbe — aber nicht die Stärke. Acht Stücke sind
+umgestuft, die ≥ 2 Stufen danebenlagen (Plattenpanzer und Bollwerkstein hoch,
+Frostkette, Segensring und Zorngurt runter, Ordnungsreif auf legendär). Die
+übrigen bleiben: 28 Stufen nach der Lesung eines Prüfstands zu setzen wäre
+dasselbe Überanpassen, vor dem der Plan seit Phase 8 warnt.
+
+**Zwei tote Zugriffe, gefunden durch die Messung.**
+
+1. **Die Zwillingsklinge gab seit jeher +0.** Sie zählte
+   `c.self.effects.filter(e => e.art === 'passiv')` — ein Feld, das an einer
+   gebauten Einheit nicht existiert; `art` trägt nur die Bibliothek in
+   `abilities.js`. Dieselbe Sorte toter Zugriff wie `zaeherBrand` in Phase 25,
+   nur **lesend statt schreibend** — und darum vom Wächter-Test aus Phase 27
+   nicht erfasst, der nur prüft, ob gesetzte Felder gelesen werden. `resolve`
+   legt jetzt `passivZahl` ab, nach dem Muster von `itemZahl` (Kurobe,
+   Phase 15).
+2. **Der Prüfstand war blind für genau diese Sorte Ausrüstung.** Nach der
+   Reparatur mass die Zwillingsklinge immer noch +0 — weil `bau()` frische
+   `member` baute, und die haben **keine gewählten Passiven**. Ein Prüftrupp
+   ohne Passive kann kein passiv-abhängiges Stück bewerten. Die Prüflinge
+   bekommen jetzt je Linie die erste Passive, soviele wie der Rang trägt.
+   *(Nachtrag Phase 67: diese Reparatur hat nie gegriffen — sie fragte
+   `R.hatLinien(id)` mit einer Id, und die Funktion erwartet das Member. Der
+   Zweig war immer falsch, der Prüftrupp blieb ohne Passive. Die
+   Stufen-Mittelwerte unten stammen deshalb sämtlich aus einem blinden
+   Prüfstand.)*
+   **Der zweite Fehler hätte den ersten verdeckt**, wenn ich die Messung nach
+   der Reparatur nicht wiederholt hätte.
+
+**Die zwei kleineren Punkte:**
+
+- **Der erste Knoten ist immer ein Kampf.** `STEPS[0]` bot `['kampf', 'kampf',
+  'event']` an — ein Run konnte mit einem Ereignis beginnen, und der Einstieg
+  (das 1-gegen-1-Duell aus Phase 11) fiel dann ganz aus. Jetzt dreimal `kampf`.
+  Eine Wahl bleibt es: welcher Kampf, verrät der Knoten seit Phase 12 ohnehin
+  nicht.
+- **Relikte schalten doppelt so schnell frei**, zwei je Run statt einem. Es gibt
+  mehr Relikte als Einheiten, und ein Relikt ist der kleinere Zugewinn.
+
+**Offen:** die Stufen-Mittelwerte oben stammen aus dem Lauf VOR der
+Prüfstand-Reparatur. Sie sind für die grobe Aussage gut genug — die Kurve ist
+flach —, aber die Zahlen einzelner passiv-abhängiger Stücke gehören neu gelesen.
+`node dev/sim.js` 443/443.
+
+Worktree `/home/viktor/tensura/worktree/phase-66-beute`, Branch
+`phase-66-beute`.
+
+### QA nach den Phasen 62-66 (2026-08-04): eine gesammelte Kalibrierung
+
+Die fuenf Phasen wurden bewusst OHNE eigene Balance-Messung gebaut und erst am
+Ende gemeinsam kalibriert — sonst haetten fuenf Zweige denselben Knopf
+gegeneinander eingestellt. Zusammengefuehrt auf `integration-62-66`; die
+Konflikte lagen ausschliesslich in `PLAN.md` und wurden als Vereinigung
+aufgeloest.
+
+`node dev/sim.js` 443/443 · `node dev/uitest.js` 104/104.
+
+**`GRUNDHAERTE` 1.01 → 1.085.** Der Merge hob die Siegquote auf 57 %, im
+Wesentlichen durch Phase 64 (der Bot kauft endlich die teuren Einheiten).
+Gemessen ueber je 300 Runs: 1.045 → 57 %, 1.06 → 52 %, 1.075 → 52 %,
+1.09 → 48 %. Steht auf 1.085.
+
+Ergebnis `dev/balance.js 500`: **48 % frisch**, 65 % voll freigeschaltet.
+Bedrohungsleiter (je 150) **41/35/32/31/27/14 — monoton.**
+
+Der Anfaenger/Veteran-Abstand ist von 12 auf 17 Punkte gewachsen. Das ist die
+erwartete Folge von Phase 64: teure Einheiten sind jetzt kaufbar, und teure
+Einheiten sind ueberwiegend die freigeschalteten. Ob 17 Punkte zu viel sind,
+ist eine Design-Frage, keine Fehlfunktion.
+
+**Drei Auffaelligkeiten, offen und ausdruecklich nicht nachgezogen:**
+
+1. **Geld, der Orklord steht bei 27 %**, waehrend die uebrigen sieben Bosse
+   zwischen 53 und 80 % liegen. Phase 14 hatte ihn von 89 % heruntergezogen,
+   indem sein Fleischwall nur noch halb so viel heilt und sein Angriff mit
+   jedem erlittenen Treffer waechst — diese Skalierung traegt jetzt zu weit. Er
+   ist der einzige Boss ausserhalb des Bandes und der naechste offensichtliche
+   Eingriff.
+2. **Der Schatten-Build gewinnt 100 % von 28 Runs**, bei Ø 16,0 Knoten — also
+   kein einziger Fehlschlag. Das ist der hoechste Abstand, den die neue
+   Auswertung je gemeldet hat (+36). n ist klein, aber 28 von 28 ist kein
+   Rauschen. Gezielt nachmessen, wie Phase 30 es bei Frost getan hat, statt an
+   Zahlen zu drehen.
+3. **`verderbnis` erschien im ersten Lauf mit −41 bei n=13** und im zweiten gar
+   nicht mehr. Ein Eimer, der zwischen zwei Laeufen verschwindet, ist zu duenn
+   fuer eine Aussage.
+
+Der Merge liegt auf `integration-62-66` und ist NICHT auf `main`.
+
+
+### Phase 67 (2026-08-04): Die Seltenheit sagt jetzt die Stärke
+
+Phase 66 hatte gemessen, dass die Raritätsstufe nichts über die Stärke sagt,
+aber nur acht Stücke umgestuft. Hier vollständig — und erst, nachdem der
+Prüfstand wirklich funktionierte.
+
+**Der Prüfstand war zum dritten Mal kaputt.** Phase 66 hatte ihn repariert:
+Prüflinge sollten Passive bekommen, weil ein Trupp ohne Passive keine
+passiv-abhängige Ausrüstung bewerten kann. Die Reparatur fragte
+`R.hatLinien(id)` — mit einer **Id**, während die Funktion das **Member**
+erwartet (`AB.linien[m.id]`). Mit einem String liest sie `AB.linien[undefined]`
+und ist immer falsch. Der Zweig lief nie, der Prüftrupp blieb ohne Passive,
+und sämtliche Stufen-Mittelwerte aus Phase 66 stammen aus einem blinden
+Prüfstand.
+
+Damit sind es drei Schichten desselben Fehlers, jede von der darüber verdeckt:
+
+1. Die Zwillingsklinge las `e.art === 'passiv'` — ein Feld, das an einer
+   gebauten Einheit nicht existiert. Sie gab seit jeher +0.
+2. Der Prüfstand konnte das nicht sehen, weil seine Einheiten keine Passiven
+   hatten.
+3. Die Reparatur von Punkt 2 war selbst kaputt.
+
+Erst nach Punkt 3 misst die Zwillingsklinge, was sie tut — und zwar **+39, das
+stärkste Ausrüstungsstück im Spiel** statt des schwächsten. Ihr Wert steigt mit
+der Zahl der Passiven, also mit dem Rang; im Prüfstand auf Rang A sind das
++15 Angriff und +6 Tempo.
+
+**Auflösung erhöht: 240 Proben statt 60.** Bei 60 liegt der Standardfehler bei
+rund 6,5 Punkten, während fast alle Stücke zwischen +12 und +32 lagen —
+Nachbarstufen wären ununterscheidbar gewesen, und eine Umstufung darauf hätte
+Rauschen kartiert. Bei 240 sind es rund 3.
+
+**Die Regel für die Umstufung: rangerhaltend.** Die Stücke werden nach
+gemessener Stärke sortiert und bekommen die Stufen in genau der
+Häufigkeitsverteilung zugeteilt, die es vorher gab — gleich viele legendäre,
+gleich viele übliche. Damit ist die Stufe per Konstruktion monoton in der
+Stärke, ohne dass sich die Ökonomie verschiebt (die Stufe steuert
+Angebotshäufigkeit und, bei Ausrüstung, den Preis). Eine Neuvergabe nach festen
+Punktebändern hätte dagegen alle Stücke in zwei Stufen gedrängt.
+
+**61 Umstufungen**, 25 bei der Ausrüstung, 36 bei den Relikten. Ergebnis:
+
+| Stufe | Ausrüstung vorher | nachher | Relikte vorher | nachher |
+|---|---|---|---|---|
+| üblich | +15 | **+9** | +8 | **+2** |
+| ungewöhnlich | +16 | **+12** | +9 | **+5** |
+| selten | +16 | **+16** | +13 | **+9** |
+| episch | +22 | **+24** | +10 | **+13** |
+| legendär | +25 | **+33** | +21 | **+30** |
+
+Vorher war die Kurve bei der Ausrüstung in den unteren drei Stufen flach
+(15/16/16) und bei den Relikten sogar fallend (selten +13 über episch +10).
+Jetzt steigt sie in beiden Tabellen streng.
+
+Die auffälligsten Einzelfälle: **Windstiefel** standen auf „üblich" und messen
++22 (jetzt episch), **Kern des Zorns** auf „üblich" mit +12 (jetzt episch);
+umgekehrt lag **Prädatorzahn** auf „legendär" bei +8 und **Taktgeber**
+ebenfalls legendär bei +8 (beide jetzt selten).
+
+**Drei Relikte blieben ausdrücklich unangetastet.** Frostbrecher, Zeichen der
+Dornen und Zwillingsseele messen +0 — aber sie sind nicht tot, sondern in
+diesen zwei Prüfständen **nicht auslösbar**: sie brauchen erstarrte Ziele,
+Konter-Fähigkeiten im Trupp beziehungsweise eine verschlungene Fähigkeit.
+Nichts davon liefern „Zustand" und „Wacht". Sie aufgrund einer Messung
+herabzustufen, die sie gar nicht messen konnte, wäre genau der Fehler, den
+diese Phase aufgeklärt hat. Sie behalten ihre Stufe und stehen als offener
+Punkt.
+
+**Kalibriert:** die Umstufung hob die Siegquote von 48 auf 54 %, also
+`GRUNDHAERTE` 1.085 → 1.13 (gemessen: 1.10 → 56 %, 1.115 → 53 %, 1.13 → 51 %).
+
+`dev/balance.js 500`: **49 % frisch**, 59 % voll freigeschaltet.
+Bedrohungsleiter (je 150) **49/39/33/32/29/11 — monoton.**
+`dev/sim.js` 443/443 · `dev/uitest.js` 104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-67-seltenheit`, Branch
+`phase-67-seltenheit`.
+
+### Phase 68 (2026-08-04): Die Silhouette bekommt eine zweite Achse
+
+Option D aus `dev/asset-recherche.md`, und zwar bewusst VOR den echten Bildern:
+sie kostet einen Nachmittag und beantwortet, ob fuenfzig Einzelbilder ueberhaupt
+gepflegt werden wollen. Die Entscheidungen dazu stehen jetzt in `ASSETS.md`
+(privat, lokale GPU, Bilder ins Repo, alle Einheiten und alle 72 Gegner).
+
+Bis hierher trug der Platzhalter genau EINE Achse: die Rolle bestimmte Breite
+und Waffe, die Seite die Farbe. Auf dem Brett sahen damit ein Oger, ein Slime
+und ein Skelett identisch aus, solange sie dieselbe Rolle hatten — und das ist
+die Haelfte der Information, die eine Figur tragen soll.
+
+Jetzt formt die **Art** die Silhouette (Tabelle `ARTEN`, zwoelf Eintraege), die
+**Rolle** traegt weiter die Waffe. Merkmale: Breite, Kopfform (rund, Schnauze,
+Insektenoval, Schaedel, Blob) und Anhaengsel — Hoerner kurz/lang, Ohren
+spitz/rund, Schweif, Fluegel, Echsenkamm, Fuehler, Orkhauer.
+
+Zwei Dinge, die beim Bauen wichtig waren:
+
+1. **Der Umriss muss alle Teile mitnehmen.** Die Kantentrennung aus Phase 58 war
+   ein breiter Strich unter Koerper und Kopf. Ein Fluegel oder Horn, das nicht
+   mitgestrichen wird, haengt ohne Rand im dunklen Brett. `hinten()` und
+   `aufsatz()` sind deshalb eigene Pfadfunktionen, die in BEIDEN Durchgaengen
+   laufen — erst breit in der Seitenfarbe, dann gefuellt.
+2. **Anhaengsel liegen hinter der Figur** und werden mit 75 % Deckkraft
+   gefuellt, sonst verschmelzen Fluegel und Rumpf zu einer Flaeche.
+
+**`dev/silhouetten.js`** ist der Pruefstand dazu. Noetig, weil weder
+`dev/sim.js` (kein DOM) noch `dev/uitest.js` (jsdom ohne 2D-Kontext) eine
+Canvas-Zeichnung ausfuehren koennen; ein Stub-Kontext schreibt die
+Zeichenbefehle mit. Er prueft drei Dinge, und das zweite ist der eigentliche
+Punkt:
+
+- Jede Kombination aus 12 Arten x 5 Rollen x 2 Seiten zeichnet ohne Fehler.
+- **Keine zwei Arten zeichnen identisch.** Ein doppelter Eintrag in der
+  Merkmalstabelle faellt sonst niemandem auf — auf dem Brett stuenden zwei Arten
+  mit derselben Silhouette, also genau der Zustand, gegen den die Achse gebaut
+  ist.
+- Jede Art aus `data.js` UND aus `enemies.js` hat einen Eintrag. Der Rueckfall
+  auf `mensch` bleibt als Notbremse gegen leere Kacheln, ist aber kein Ersatz
+  fuer Pflege. Geprueft: die 72 Gegner verteilen sich auf neun Arten, alle
+  vorhanden.
+
+`node dev/silhouetten.js` 201/201 · `dev/sim.js` 443/443 ·
+`dev/uitest.js` 104/104. Am Kampf wurde nichts geaendert, eine Balance-Messung
+entfaellt.
+
+Worktree `/home/viktor/tensura/worktree/phase-68-silhouetten`, Branch
+`phase-68-silhouetten`.
+
+### Phase 69 (2026-08-04): Die Leiter war eine Attrappe
+
+Rueckmeldung aus dem echten Spiel: die fuenf Bedrohungsstufen fuehlen sich zu
+aehnlich an, Stufe 5 sei muehelos, und zwischen 0 und 5 sei kaum ein
+Unterschied zu merken. Beides trifft zu, und der Befund ist unangenehm genau.
+
+**1. Die Werteschraube war ein Gerucht.** Ueber die GANZE Leiter stieg der
+Gegnerfaktor von 0.435 auf 0.458 — **fuenf Prozent von Stufe 0 bis Stufe 5**.
+Phase 9 hatte sie bewusst auf 0.012 je Stufe gedrosselt, weil „die Regeln die
+Haerte tragen" sollten.
+
+**2. Die Regeln trugen sie nicht — sie bestrafen Verlieren, nicht Spielen.**
+Ein Nachzuegler mit halben Werten, ein einzelner Gegner der einmal mit 30 %
+aufsteht, zwei Leben weniger: keine dieser Regeln aendert etwas fuer jemanden,
+der seine Kaempfe gewinnt. Genau das war die Rueckmeldung.
+
+**3. Zwei Regeltexte beschrieben ein Spiel, das es nicht gab.** Stufe 1
+versprach woertlich „jede Begegnung bringt einen Gegner mehr mit" — der Code
+gab ihm halbe Werte. Stufe 2 versprach „JEDER normale Gegner steht einmal
+wieder auf" — der Code liess nur den vordersten zurueckkommen. Beides waren
+Rueckzieher aus Phase 9, weil die Vollversion die Siegquote des BOTS
+einbrechen liess (46 → 14 %, bzw. 17 statt 7 Punkte). Die Texte blieben stehen.
+Dasselbe Muster wie die Art-Identitaeten in Phase 36: die Beschreibung sagte,
+was gemeint war, der Code etwas anderes — und der Spieler liest die
+Beschreibung.
+
+**Und das ist der eigentliche Befund dieser Phase: ich habe fuenf Phasen lang
+gegen einen Bot kalibriert, der schwaecher spielt als der Mensch.** Bei den
+alten Werten mass `dev/balance.js` fuer Stufe 5 elf Prozent Siege — waehrend
+dieselbe Stufe von Hand muehelos zu gewinnen war. Jede Ruecknahme in Phase 9
+wurde damit begruendet, dass der Bot einbricht. Der Bot ist ein gutes
+Messinstrument fuer Monotonie und fuer Ausreisser, aber er ist **kein Massstab
+fuer die Schwierigkeit.**
+
+**Umgesetzt:**
+
+- **Werteschraube 0.012 → 0.032** je Stufe. Der Gegnerfaktor laeuft jetzt von
+  0.435 auf 0.522, also +20 % statt +5 %.
+- **Ueberzahl:** Nachzuegler von 0.5 auf 0.75 der Werte. Ein Ziel mehr im Log
+  war keine Ueberzahl.
+- **Nachschub:** JEDER Gegner steht einmal auf, nicht nur der vorderste. Damit
+  ist es die Stufe, auf der geballter Schaden zaehlt und Nadelstiche zweimal
+  abraeumen muessen — also das, was der Text immer schon behauptet hat.
+- **Sturmgott:** fasste bisher nur Bosse an, auf 14 von 16 Knoten war Stufe 5
+  identisch mit Stufe 4 plus zwei Leben weniger. Jetzt schlagen ALLE Gegner
+  12 % schneller zu; die Boss-Eskalation kommt beim Boss obendrauf. Der Text
+  versprach „jetzt zaehlt Tempo" — jetzt stimmt er.
+
+**Gemessen** (`dev/balance.js 150 --stufe N`), Bot:
+
+| Stufe | 0 | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|---|
+| vorher | 49 | 39 | 33 | 32 | 29 | 11 |
+| nachher | 49 | 33 | 21 | 17 | 11 | 3 |
+
+Vorher lagen die Stufen 2, 3 und 4 bei 33/32/29 — drei Stufen ohne messbaren
+Unterschied, was die Rueckmeldung „zu nah beieinander" exakt bestaetigt. Jetzt
+sind sie getrennt. Stufe 0 ist unveraendert bei 50 % (400 Runs), `GRUNDHAERTE`
+wurde nicht angefasst — die Leiter wurde steiler, das Grundspiel nicht haerter.
+
+**Offen und ehrlich:** wie hart sich das von Hand anfuehlt, kann dieses
+Werkzeug nicht sagen. Die drei Stellschrauben stehen bewusst beieinander in
+`run.js` (`0.032` im `bedrohungsFaktor`, `NACHZUEGLER`, `STURM_TEMPO`), damit
+die naechste Rueckmeldung in einer Zeile beantwortet werden kann.
+
+`dev/sim.js` 443/443 · `dev/uitest.js` 104/104 · `dev/silhouetten.js` 201/201.
+
+Worktree `/home/viktor/tensura/worktree/phase-69-bedrohung`, Branch
+`phase-69-bedrohung`.
+
+### Phase 70 (2026-08-04): Die Leiter greift jetzt in den Beutel
+
+Auf Zuruf: je Bedrohungsstufe weniger Magicule. Die Begruendung des Nutzers ist
+die richtige und sie deckt eine Luecke in Phase 69 auf — **diese hatte die
+Leiter nur auf der KAMPFEBENE steiler gemacht**: mehr Gegner, schneller,
+zaeher. Das verlangt einen staerkeren Trupp, nicht bessere Entscheidungen. Ein
+knapperer Beutel verlangt beides.
+
+Umgesetzt als `beuteFaktor(run)`, **4,5 % weniger je Stufe** — Stufe 5 bekommt
+78 % des Einkommens. Der Faktor greift nur auf EINKOMMEN (Kampfbeute, Lager),
+nicht auf Verkaufserloese: die sind Rueckerstattungen, und sie zu kuerzen wuerde
+denselben Magicule zweimal besteuern und das Umbauen des Trupps bestrafen statt
+das Ausgeben.
+
+**Die Oekonomie ist der mit Abstand steilste Hebel — das war zu lernen.** Der
+erste Versuch mit 7 % je Stufe liess die Leiter auf 49/25/12/7/**2/2** fallen:
+Stufe 4 und 5 waren nicht mehr zu unterscheiden, also genau der Zustand, gegen
+den diese Arbeit laeuft. Der Grund ist Kumulation — 65 % Einkommen ueber 16
+Knoten ergibt einen schwaecheren Trupp, der mehr Kaempfe verliert, was wieder
+Einkommen kostet. Derselbe Befund wie in Phase 11, als das Zusammenlegen der
+Waehrungen die Siegquote auf 4 % schickte.
+
+Deshalb wurden die Kampfschrauben aus Phase 69 zurueckgenommen, damit die
+Oekonomie die Arbeit tragen kann:
+
+| | Phase 69 | jetzt |
+|---|---|---|
+| Werteschraube je Stufe | 0.032 | **0.022** |
+| Sturmgott-Tempo | 1.12 | **1.06** |
+| Beute je Stufe | — | **−4,5 %** |
+
+**Gemessen** (`dev/balance.js`, 150–400 Runs je Stufe):
+
+| Stufe | 0 | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|---|
+| vor Phase 69 | 49 | 39 | 33 | 32 | 29 | 11 |
+| Phase 69 | 49 | 33 | 21 | 17 | 11 | 3 |
+| **jetzt** | **50** | **32** | **22** | **17** | **12** | **3** |
+
+Stufe 0 unveraendert bei 50 % ueber 400 Runs, `GRUNDHAERTE` nicht angefasst.
+Gegenueber Phase 69 ist die Kurve fast identisch — aber sie entsteht jetzt zu
+einem guten Teil aus knappen Magicule statt aus haerteren Gegnern, und das ist
+der Unterschied zwischen „staerkerer Trupp noetig" und „bessere Entscheidungen
+noetig".
+
+**Weiterhin offen, und ehrlich so:** der Bot misst Monotonie, nicht
+Schwierigkeit (Befund aus Phase 69). Ob sich die Leiter von Hand jetzt
+gestaffelt anfuehlt, kann nur das echte Spiel sagen. Die vier Stellschrauben
+liegen bewusst beieinander in `run.js`: `0.022` im `bedrohungsFaktor`,
+`NACHZUEGLER`, `STURM_TEMPO`, `BEUTE_JE_STUFE`.
+
+`dev/sim.js` 443/443 · `dev/uitest.js` 104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-70-beutestufe`, Branch
+`phase-70-beutestufe`.
+
+### Phase 71 (2026-08-04): Sturmgott ist die Oekonomie-Stufe
+
+Auf Zuruf: statt 4,5 % je Stufe (Phase 70) **ein flacher Abzug von 30 % nur auf
+Stufe 5**. Die Begruendung des Nutzers trifft einen Konstruktionsfehler von
+Phase 70 — 4,5 % sind in keinem einzelnen Kauf zu merken. Ein Drittel ist in
+jedem zu merken, und der Schritt von 4 auf 5 bekommt damit eine eigene
+Handschrift statt „dasselbe, etwas mehr".
+
+`beuteFaktor(run)` gibt jetzt 0.70 unter Sturmgott und sonst 1.
+
+**Und weil die Beutekuerzung diese Stufe jetzt traegt, ist der Tempo-Aufschlag
+aus Phase 69 wieder raus.** Er war dort noetig, weil Stufe 5 sonst auf 14 von 16
+Knoten identisch mit Stufe 4 war; jetzt ist er nur noch Ballast auf einer Stufe,
+die schon vier kumulierte Regeln mitschleppt. Sturmgott ist damit die
+**Oekonomie-Stufe**: ein Drittel weniger Einkommen, drei Leben, doppelt
+eskalierende Bosse — die Gegner selbst sind kaum haerter als auf Stufe 4. Das
+unterscheidet sie schaerfer von 1 bis 4 als noch ein Werteaufschlag.
+
+**Nebenbefund, und kein kleiner: Kriegsrecht hatte eine tote Klausel.** Ohne die
+verteilte Kuerzung lag Stufe 3 gemessen gleichauf mit Stufe 2 (22 % gegen 22 %).
+Die Regel verspricht „Raenge kosten mehr" und multiplizierte dafuer `rankCost`
+— aber **seit Phase 51 kauft niemand mehr einen Aufstieg**, der Rang kommt mit
+der Einheit aus dem Markt. Die Klausel lief zwoelf Phasen ins Leere; sie testweise
+von 15 auf 32 % zu erhoehen bewegte exakt null Punkte. Derselbe Fehlertyp wie
+die toten Felder aus Phase 25 und 66, nur an einer Regel statt an einer
+Faehigkeit. Der Zuschlag sitzt jetzt in `rangPreis` — an der Stelle, an der
+heute wirklich bezahlt wird — und betraegt 30 %. Gemessen faellt Stufe 3 damit
+von 22 auf 12 %.
+
+**Gemessen** (`dev/balance.js`, 200–250 Runs je Stufe):
+
+| Stufe | 0 | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|---|
+| ursprünglich | 49 | 39 | 33 | 32 | 29 | 11 |
+| Phase 70 | 50 | 32 | 22 | 17 | 12 | 3 |
+| **jetzt** | **49** | **33** | **22** | **12** | **8** | **0** |
+
+**Der Vorbehalt zu Stufe 5 gehoert deutlich hierhin.** 0 % ist keine Zahl, mit
+der sich weiterarbeiten laesst. Die Lauftiefe sagt mehr — und sie sagt etwas
+Unangenehmes:
+
+| Stufe | Ø erreichte Knoten | in Akt 1 gescheitert |
+|---|---|---|
+| 3 | 8,5 von 16 | 131 von 200 |
+| 4 | 8,2 von 16 | 138 von 200 |
+| 5 | **5,6** | **186 von 200** |
+
+Auf Stufe 5 stirbt der Bot nicht am Ende, sondern **am Anfang**. Der flache
+Abzug wirkt ab dem ersten Knoten, und ein Run, der mit einer Einheit beginnt,
+kommt mit 70 % Einkommen gar nicht erst in Gang — die Kuerzung kumuliert
+ueber den ganzen Lauf, statt eine Entscheidung zu verschaerfen. Aus einer
+Zermuerbung ist eine **Wand** geworden.
+
+Ob das fuer einen Menschen zutrifft, kann dieses Werkzeug nicht sagen (Befund
+aus Phase 69: der Bot misst Monotonie, nicht Schwierigkeit) — und der Bot ist
+gerade in der Fruehphase am schwaechsten, weil er ohne Plan kauft. Die
+naheliegende Milderung, falls es sich von Hand als Wand anfuehlt, waere, den
+Abzug **erst ab Akt 2** greifen zu lassen: dann verschaerft er die
+Endspiel-Entscheidungen, ohne den Aufbau zu ersticken. Bewusst nicht
+vorweggenommen.
+
+`dev/sim.js` 443/443 · `dev/uitest.js` 104/104.
+
+Worktree `/home/viktor/tensura/worktree/phase-71-sturmgott`, Branch
+`phase-71-sturmgott`.
+
+### Phase 72 (2026-08-04): Aufwertung war zugenagelt
+
+Sechs Punkte aus dem echten Spiel, nach einem gewonnenen Run auf Stufe 5. Einer
+davon war ein Konstruktionsfehler, der eine ganze Spielweise unmoeglich machte.
+
+**Der kritische Fehler: zwei Regeln an zwei Stellen, die voneinander abwichen.**
+`addUnit` kann laengst aufwerten — steht die Art schon im Trupp, raeumt sie die
+alte Einheit weg, gibt die Ausruestung zurueck und rechnet den VOLLEN Einsatz
+an (Phase 51 hat das eigens so gebaut, samt Messung). `shopOffers` bietet das
+auch ausdruecklich an: „Steht die Art schon im Trupp, ist das Angebot eine
+Aufwertung — dann muss der Rang darueber liegen." Aber die Marktkarte in
+`ui.js` fragte `freieArt` und sperrte den Posten mit „Art schon besetzt".
+
+**Der einzige Weg, eine eigene Einheit hochzubringen, war damit zugenagelt.**
+Der Motor konnte es, der Markt bot es an, die Oberflaeche verbot es. Jetzt gibt
+es nur noch eine Regel: `kaufbar(run, id, rang)` beantwortet dieselbe Frage, die
+`addUnit` beim Kauf stellt, und die Karte weist die Aufwertung ausdruecklich aus
+(„ersetzt X, Einsatz wird angerechnet"). Die Sperrmeldung nennt jetzt den echten
+Grund — „Rang zu niedrig zum Aufwerten" statt „Art besetzt".
+
+**Der zweite Teil desselben Problems: die Aufwertung wuerfelte neu.**
+`wuerfleLinienPassive` zog fuer JEDES Angebot frei aus dem Topf, auch fuer das,
+das die eigene Einheit weiterentwickelt. Wer eine Shion mit drei Chaos-Passiven
+aufwertete, bekam eine Shion mit drei ANDEREN zurueck. Ein Build ueber mehrere
+Raenge war damit nicht spielbar — genau die Rueckmeldung „so kann man keinen
+Evolution-Build fahren". Jetzt erbt das Angebot die vorhandenen Passiven und
+fuellt nur auf. Geerbt wird ausschliesslich bei DERSELBEN Einheit: ein anderer
+Oger ist keine Weiterentwicklung von Shion, sondern ihr Ersatz. Fremde IDs
+fallen heraus.
+
+**Kampfbilanz nach dem Sieg.** Wer hat ausgeteilt, wer eingesteckt, wer
+geheilt — bis hierher war ein Sieg eine Zahl, und ob der teure Neuzugang etwas
+beigetragen hat, erfuhr man nie. Gerechnet wird sie beim Kampf, nicht in der UI:
+das Log wandert bewusst nicht in den Speicherstand (Phase 13), die fertigen
+Zahlen dagegen schon. Dafuer tragen `survivors` und `fallen` jetzt `dmgDealt`
+und `dmgTaken` — die vollen Einheitenobjekte verlassen `simulate` nicht.
+Heilung haengt am Empfaenger und nicht am Heiler; statt die Engine umzubauen,
+wird das Log an dieser einen Stelle nach `source` ausgezaehlt.
+
+**Schluesselwoerter in den Entwicklungslinien.** Sie standen nur im Tooltip —
+man musste jede der sechzehn Passiven einzeln anfahren, um zu sehen, welche
+Gift macht und welche Schild. Jetzt Chips, ueberfliegbar.
+
+**Kumulierte Mali statt Fliesstext.** Oben rechts stand der Text der OBERSTEN
+Stufe, waehrend die vier darunter weiterlaufen — man las „drei Leben statt
+fuenf" und erfuhr nichts von den vier anderen Regeln. `R.mali(t)` liefert die
+Liste, **aus den echten Konstanten gerechnet**. Das ist kein Zufall: diese
+Sitzung hat dreimal gezeigt, wohin handgepflegte Beschreibungen fuehren — Stufe
+1 versprach „ein Gegner mehr" bei halben Werten (Phase 69), Kriegsrecht
+versprach teurere Raenge und multiplizierte eine tote Funktion (Phase 71), zwei
+Art-Identitaeten standen im Glossar ohne zu existieren (Phase 36). Was hier
+steht, kann nicht mehr abweichen.
+
+Dazu die zwei „der Trupp, den du hast"-Saetze aus den Regeltexten entfernt — sie
+stimmen seit der Aufwertungs-Reparatur ohnehin nicht mehr.
+
+`dev/sim.js` **458/458** (5 neue Tests: Aufwertung kaufbar, Passiv-Erbe,
+Kampfbilanz) · `dev/uitest.js` 104/104 · `dev/silhouetten.js` 201/201 ·
+`dev/balance.js 500` 50 % — `GRUNDHAERTE` unveraendert.
+
+Worktree `/home/viktor/tensura/worktree/phase-72-evolution`, Branch
+`phase-72-evolution`.
+
+### Phase 73 (2026-08-04): Eine Schreibweise fuer Schluesselwoerter
+
+Rueckmeldung: die farbigen Marken fehlen in den Entwicklungslinien. Zu Recht,
+und der Fehler ist meiner aus Phase 72 — ich habe dort `kw-chip` benutzt, weil
+es im Signatur-Block schon so stand, statt zu pruefen, womit der REST des
+Spiels Schluesselwoerter anzeigt.
+
+Es gab zwei Schreibweisen fuer dieselbe Information:
+
+- `.kw-tag` mit `kw-<wort>` — farbig, mit Glossar-Tooltip. Marktposten,
+  Belohnungskarten, Kaempfer. Ueber `tag()` gebaut.
+- `.kw-chip` — grau, ohne Tooltip. Nur in den Entwicklungslinien.
+
+Ausgerechnet dort also, wo man Schluesselwoerter **vergleicht**, standen sie in
+der stummen Variante. Alle drei Stellen (Kopf, Signatur, Passive) laufen jetzt
+ueber `kwTag(k)`, das genau das baut, was `belohnungTags` baut. `.kw-chip` ist
+ersatzlos geloescht — Zweitformen ohne Kundschaft sind genau die Sorte
+Doppelung, die diese Sitzung mehrfach als Fehlerquelle hatte.
+
+Der Test hing an der alten Klasse und schlug korrekt fehl. Er prueft jetzt drei
+Dinge statt einer: farbige Marken im Kopf, farbige Marken an **jeder einzelnen
+Passiven** (das war der eigentliche Gewinn aus Phase 72), und dass keine grauen
+Chips mehr uebrig sind.
+
+`dev/sim.js` 458/458 · `dev/uitest.js` **106/106** · `dev/silhouetten.js`
+201/201. Kein Eingriff am Kampf, keine Balance-Messung noetig.
+
+Worktree `/home/viktor/tensura/worktree/phase-73-labels`, Branch
+`phase-73-labels`.
+
+### Phase 74 (2026-08-04): Ein Tooltip an der Bedrohungsanzeige
+
+Rueckmeldung: der alte Tooltip am Warnzeichen soll weg. Beim Nachsehen waren es
+zwei Fehler statt einem.
+
+1. **Zwei Tooltips fuer dieselbe Anzeige.** `hudTips()` hing einen festen
+   Langtext an das umschliessende `<span>` — also an das ⚠ —, waehrend
+   `zeichneHud` die kumulierten Mali an das `<b>` darin setzte. Nebeneinander,
+   der aeltere der laengere. Der feste Text ist weg; was gilt, sagen die Mali,
+   und wie die Stufe steigt, steht im Menue unter „Fortschritt", wo man sie auch
+   umstellt.
+2. **Der Mali-Tooltip aus Phase 72 war halb kaputt.** Er setzte nur `data-tip`,
+   also den TITEL, und liess `data-tip-text` leer — die ganze Liste stand als
+   Ueberschrift. Der Motor liest den Rumpf aus `data-tip-text` (`tip()` schreibt
+   beide, ich hatte von Hand nur eines gesetzt). Jetzt getrennt: Titel „Stufe 5 ·
+   Sturmgott", Rumpf die Mali-Liste.
+
+Der Tooltip sitzt jetzt am umschliessenden `<span>`, damit auch das Warnzeichen
+davor ihn zeigt — es gehoert zur Anzeige, nicht daneben.
+
+Vier neue Tests halten das fest: Rumpf vorhanden, Titel wohlgeformt, der alte
+Langtext weg, und am inneren `<b>` haengt kein zweiter Tooltip mehr.
+
+`dev/sim.js` 458/458 · `dev/uitest.js` **110/110** · `dev/silhouetten.js`
+201/201. Kein Eingriff am Kampf.
+
+Worktree `/home/viktor/tensura/worktree/phase-74-hudtip`, Branch
+`phase-74-hudtip`.
+
+### Phase 75 (2026-08-04): Der Boss zeigt sich erst nach dem ersten Kampf
+
+Rueckmeldung: der Akt-Boss stand auf dem Startbildschirm — also bevor die erste
+Einheit gedraftet war. Damit liess sich der ganze Trupp gegen genau ihn bauen,
+und ein Run war ein Konter, der vor dem ersten Zug feststand statt einer
+Antwort auf das, was kommt.
+
+Er zeigt sich jetzt nach dem ersten Kampf. Bedingung ist `run.step > 0`, und
+das braucht **kein neues Feld**: der erste Knoten ist seit Phase 66 immer ein
+Kampf, und `step` liegt im Speicherstand — der Boss bleibt also auch nach einem
+Neuladen verdeckt. Ab Akt 2 ist ohnehin gekaempft worden.
+
+**Er stand an drei Stellen, nicht an einer.** Die Sperre sitzt deshalb zentral
+in `bossVorschau`, nicht an den Aufrufstellen:
+
+1. Startbildschirm — dort ist die Vorschau ersatzlos weg, auch der Platzhalter.
+2. Kartenansicht — dort steht jetzt „wer wartet, zeigt sich nach dem ersten
+   Kampf", damit die Zeile nicht kommentarlos verschwindet.
+3. **Die Wegleiste unter der Kopfzeile**, und die haette ich fast uebersehen:
+   sie nennt den Namen am Ende der Knotenreihe und war waehrend des Drafts
+   sichtbar. Der Boss-KNOTEN bleibt als Krone stehen — verdeckt ist nur, wer
+   dort steht.
+
+Ein Test forderte ausdruecklich das alte Verhalten („der Boss ist sichtbar,
+bevor man dort ankommt") und schlug korrekt fehl. Er prueft jetzt beide
+Zustaende: Knoten sichtbar und Name verdeckt vor dem ersten Kampf, Name da
+danach.
+
+`dev/sim.js` 458/458 · `dev/uitest.js` **112/112** · `dev/silhouetten.js`
+201/201. Nur `ui.js` angefasst — `dev/balance.js` laeuft ohne die Oberflaeche,
+eine Balance-Messung entfaellt.
+
+Worktree `/home/viktor/tensura/worktree/phase-75-boss`, Branch `phase-75-boss`.
+
+### Phase 76 (2026-08-05): Antichaos ist sichtbar, die Art sperrt nichts mehr
+
+Zwei Rueckmeldungen aus `TODO.md`, beide an derselben Stelle: was das Spiel
+tut, stand nicht dort, wo man es sieht.
+
+**1. Antichaos war eine unsichtbare Mechanik.** Es hat einen Glossareintrag,
+eine Farbe an der Kampfkarte und rund 40 Faehigkeiten — aber kein einziges
+`keywords`-Eintrag. Damit tauchte es nirgends als Tag auf: nicht an Shion,
+nicht an Rimuru, nicht am Marktposten. Wer `Realitaetswarp` nahm, sah dem Trupp
+nicht an, dass er jetzt eine zweite Mechanik fuehrt.
+
+- `antichaos` steht jetzt an den Faehigkeiten, die es LEGEN (`keywords`), und an
+  denen, die die Stapel LESEN (`amplifies` — Ordnungsteufel, Ordnungspanzer,
+  Angepasst, Azathoth, Herr der Monster). Beide Seiten braucht es: der Test
+  „jedes Schluesselwort mit Quellen hat auch Verstaerker" schlug sonst zu Recht
+  an.
+- **Fuer die Resonanz zaehlt es weiter als `chaos`** (`Abilities.FOLGT`). Als
+  eigene Linie gefuehrt wuerde es Shion und Rimuru spalten: zwei halbe Themen
+  statt eines ganzen, und die Resonanzschwelle waere seltener erreicht.
+  `Combat.RESONANZ.chaos` sagt woertlich, dass beide dasselbe Rad sind.
+- Sichtbar ist es trotzdem an drei Stellen: Tag an Einheit und Marktposten
+  (eigene Farbe, nicht mehr die von Chaos), Marke auf dem 2.5D-Brett, und
+  Glossareintrag unter den Schluesselwoertern statt nur unter den Zustaenden.
+- Die Brettmarken haben nur drei Plaetze, aber jetzt fuenf Kandidaten. Vergeben
+  werden sie nach STAPELZAHL statt nach Reihenfolge in der Liste — sonst haette
+  ein Brandstapel von 1 einen Antichaos-Stapel von 20 verdeckt.
+
+**2. Die Artsperre ist weg.** „Warum kann ich Shion und Souei nicht gleichzeitig
+haben?" — weil beide Oger sind und der Trupp bis hierher genau eine Einheit je
+Art zuliess. Als Vielfaltsregel gedacht, im Spiel als Verlust angekommen: der
+Markt bot den zweiten Oger als „Aufwertung" an und raeumte den ersten weg.
+
+Gesperrt ist jetzt nur noch dieselbe EINHEIT (`belegteIds`/`freieEinheit` statt
+`belegteArten`/`freieArt`). Die Art ordnet weiter ein, woher jemand kommt, und
+traegt ihre Eigenheiten (Goblins am Rang, Echsenmenschen an der Kampfdauer,
+Insektoiden an der Haeutung) — den Trupp schraenkt sie nicht mehr ein.
+
+**Das hat den Rangaufstieg mitgerissen, und das war der eigentliche Aufwand.**
+Seit Phase 51 werden Raenge nicht gekauft, sondern ueber den Markt: eine bessere
+Fassung ersetzt die alte. Solange die Art sperrte, war fast jedes Angebot einer
+belegten Art automatisch so eine Aufwertung — bei 6 belegten von 12 Arten also
+etwa jedes zweite. Ueber die Einheit gerechnet trifft der Wurf die eigenen sechs
+von 39 kaum noch: gemessen fielen die Rangstufen von 14,4 auf 10,5 und die
+Siegquote von 53 auf **27 %**.
+
+Deshalb ist im Markt ein Platz reserviert statt dem Zufall ueberlassen: alle
+Einheiten-Posten bis auf einen gehen an eigene Einheiten, die noch Rang holen
+koennen. Der eine freie Platz ist nicht Kosmetik — mit allen Plaetzen als
+Aufwertung (kein Zugang mehr) fiel die Quote wieder auf 33 %, mit der Haelfte
+auf 35 %.
+
+`GRUNDHAERTE` 1.13 → **1.03**, gemessen 50 % Siege (frisch, n=300). Die Differenz
+ist der Preis der Regel: eine schwache Einheit auszutauschen kostet jetzt den
+Umweg ueber das Entlassen (ein Viertel zurueck) statt der vollen Anrechnung beim
+Artentausch.
+
+Der Trupp-Kopf sagt „jede Einheit nur einmal", die Zeile „Freie Arten: …" ist
+ersatzlos weg — bei 39 Einheiten waere sie eine Liste ohne Aussage. Glossar,
+`README.md` und `GAMEGUIDE.md` sagen dasselbe wie der Code.
+
+`dev/sim.js` **459/459** · `dev/uitest.js` 112/112 · `dev/silhouetten.js`
+201/201. Sechs Tests hingen an der Artregel und pruefen jetzt die Einheitenregel
+— darunter einer, der ausdruecklich „eine zweite Goblin-Einheit wird abgelehnt"
+verlangte, und ein neuer, der Shion und Souei zusammen in den Trupp stellt.
+
+Worktree `/home/viktor/tensura/worktree/phase-76-antichaos`, Branch
+`phase-76-antichaos`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr

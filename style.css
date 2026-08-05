@@ -299,13 +299,15 @@ dialog::backdrop { background: rgba(0,0,0,.65); }
 .kw-flaeche { color: #b8a1ff; } .kw-exekution { color: var(--rot); }
 .kw-chaos { color: #c88ae0; } .kw-verwundbar { color: #ff9db0; }
 .kw-blutung { color: #e05b6b; }
+/* Antichaos ist die Kehrseite von Chaos, also bewusst die Gegenfarbe zum
+   Lila — auf dem Brett steht dieselbe Farbe an der Marke. */
+.kw-antichaos { color: #3fd2ad; }
 .typ-signatur { color: var(--gold); } .typ-aktiv { color: var(--lila); }
 .typ-passiv { color: #7fb3d5; } .typ-relikt { color: var(--gold); }
 .typ-item { color: #c9b48a; }
 
 [data-tip] { cursor: help; }
 button[data-tip], .karte[data-tip] { cursor: pointer; }
-.frei-art { text-decoration: underline dotted; text-underline-offset: 2px; }
 
 .glossar { margin: 0 0 .8rem; font-size: .82rem; }
 /* Spalten, nicht eine Zeile über den ganzen Bildschirm. Das ist der Punkt, an
@@ -492,11 +494,14 @@ table.dbg i.ab { color: #e77; }
 }
 .signatur-block .titel { display: block; font-weight: 700; }
 .signatur-block .unter { display: block; color: var(--grau); line-height: 1.4; }
-.signatur-block .kws { display: flex; flex-wrap: wrap; gap: .2rem; margin-top: .25rem; }
-.kw-chip {
-  font-size: .66rem; padding: .05rem .3rem; border-radius: 4px;
-  background: var(--bg3); border: 1px solid var(--rand); color: var(--grau);
-}
+.signatur-block .kws { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .3rem; }
+/* In der Linienliste stehen die Marken mitten im Fliesstext, nicht als Leiste. */
+.linien-stufe .kws { display: inline-flex; flex-wrap: wrap; gap: .25rem;
+                     vertical-align: middle; }
+.linien-kopf .kws { display: inline-flex; flex-wrap: wrap; gap: .25rem; margin-top: .3rem; }
+/* `.kw-chip` ist ersatzlos weg: die graue Zweitform der Schluesselwort-Marke
+   hatte keine Kundschaft mehr, seit die Entwicklungslinien dieselbe farbige
+   `.kw-tag` benutzen wie Markt und Kaempfer. */
 .tag-preis {
   font-size: .64rem; padding: .05rem .28rem; border-radius: 4px;
   background: #2e1a1a; border: 1px solid #7a3a34; color: #ffb0a8;
@@ -559,3 +564,17 @@ table.dbg i.ab { color: #e77; }
   text-anchor: middle; dominant-baseline: middle; pointer-events: none;
 }
 .feld-einheit.tot { opacity: .25; }
+
+/* Kumulierte Bedrohungs-Mali (Phase 72): Liste statt Fliesstext. */
+ul.mali { margin: .4rem 0 0; padding-left: 1.1rem; list-style: none; }
+ul.mali li { position: relative; font-size: .82rem; opacity: .8; line-height: 1.5; }
+ul.mali li::before { content: '−'; position: absolute; left: -.9rem; opacity: .7; }
+.unter.gut { color: #7fd08a; }
+
+/* Kampfbilanz nach dem Sieg (Phase 72). */
+.kampfbilanz { display: flex; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; }
+.bilanz-zeile { display: flex; flex-direction: column; align-items: flex-start;
+  padding: .4rem .6rem; border-radius: .4rem; background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.09); min-width: 8.5rem; }
+.bilanz-zeile i { font-style: normal; opacity: .8; }
+.bilanz-zeile b { font-size: .95rem; }

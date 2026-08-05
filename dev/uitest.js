@@ -89,8 +89,17 @@ head('Wegleiste und Aufstellung');
 ok($$('#pfad .pfad-knoten').length === win.Run.STEPS.length,
    'die Wegleiste zeigt jeden Knoten des Akts');
 ok($$('#pfad .pfad-knoten.jetzt').length === 1, 'genau ein Knoten ist als aktueller markiert');
-ok(!!$('#pfad .pfad-knoten.boss') && !!$('#pfad .pfad-boss'),
-   'der Boss am Ende des Akts ist sichtbar, bevor man dort ankommt');
+/* Phase 75: der Boss zeigt sich erst NACH dem ersten Kampf. Vorher liess sich
+   der ganze Startdraft gegen genau ihn bauen. Der Knoten am Ende bleibt als
+   Krone sichtbar — verdeckt ist nur, WER dort steht. */
+ok(!!$('#pfad .pfad-knoten.boss'), 'der Boss-Knoten steht von Anfang an in der Wegleiste');
+ok(!$('#pfad .pfad-boss'), 'sein NAME steht vor dem ersten Kampf noch nicht da');
+var vorherStep = run.step;
+run.step = 1;
+win.UI.render();
+ok(!!$('#pfad .pfad-boss'), 'nach dem ersten Kampf nennt die Wegleiste ihn');
+run.step = vorherStep;
+win.UI.render();
 
 /* Aufstellung: zwei Klicks tauschen zwei Plätze. */
 var vorherOrder = run.team.map(function (m) { return m.uid; });
@@ -360,9 +369,32 @@ var linienSel = $('#linien-einheit');
 linienSel.value = 'zegion';
 linienSel.dispatchEvent(new win.Event('change', { bubbles: true }));
 /* Es gibt keine generierten Einheiten mehr — der Kopf zeigt jetzt die
-   Schlüsselwörter der Einheit statt eines Generator-Etiketts. */
-ok($$('#menu-linien .linien-kopf .kw-chip').length > 0,
+   Schlüsselwörter der Einheit statt eines Generator-Etiketts.
+   `.kw-tag` und nicht `.kw-chip`: seit Phase 73 tragen die Linien dieselbe
+   farbige Marke wie Markt und Kaempfer — eine Schreibweise fuer alle. */
+ok($$('#menu-linien .linien-kopf .kw-tag').length > 0,
    'die Übersicht nennt die Schlüsselwörter der Einheit');
+/* Und jede einzelne Passive traegt ihre eigenen Marken, nicht nur der Kopf:
+   das war der Punkt, an dem man sechzehn Tooltips einzeln anfahren musste. */
+ok($$('#menu-linien .linien-stufe .kw-tag').length > 0,
+   'auch die einzelnen Passiven tragen farbige Schlüsselwort-Marken');
+/* Die graue Zweitform ist ersatzlos weg. */
+ok($$('#menu-linien .kw-chip').length === 0,
+   'keine grauen kw-chips mehr in der Übersicht');
+
+/* Phase 74: die Bedrohungsanzeige oben rechts traegt GENAU EINEN Tooltip, und
+   zwar die kumulierten Mali — Titel und Rumpf getrennt. Vorher hingen dort
+   zwei: der alte Langtext am umschliessenden <span> (also am Warnzeichen) und
+   die Mali am <b> darin, letztere ganz im Titel. */
+var stufeSpan = $('#hud-stufe').parentNode;
+ok(!!stufeSpan.dataset.tipText,
+   'die Bedrohungsanzeige hat einen Tooltip-Rumpf, nicht nur eine Überschrift');
+ok(/^Stufe \d+ · /.test(stufeSpan.dataset.tip || ''),
+   'der Titel nennt Stufe und Namen');
+ok(!/GEWINNST/.test(stufeSpan.dataset.tipText || ''),
+   'der alte Langtext am Warnzeichen ist weg');
+ok(!$('#hud-stufe').getAttribute('data-tip'),
+   'am inneren <b> haengt kein zweiter Tooltip mehr');
 ok(!!$('#menu-linien .signatur-block'), 'die Übersicht zeigt auch die Signatur-Aktive');
 ok($('#menu-linien .signatur-block .unter').textContent.length > 15,
    'samt ihrer Beschreibung');
@@ -395,10 +427,7 @@ ok(gespeichert.team[0].rank === run.team[0].rank, 'der Rang überlebt das Speich
    Passive (keine Karten-Auswahl mehr). Shion wird angeworben, damit der Fall
    auch dann greift, wenn der Startdraft sie nicht angeboten hat. */
 head('Wählbare Passive');
-if (win.Run.freieArt(run, 'oger')) win.Run.addUnit(run, 'shion');
-else { win.Run.entlassen(run, run.team.filter(function (m) {
-  return win.GameData.unit(m.id).art === 'oger'; })[0].uid);
-  win.Run.addUnit(run, 'shion'); }
+if (win.Run.freieEinheit(run, 'shion')) win.Run.addUnit(run, 'shion');
 win.UI.render();
 var pkarten = $$('#wahl .karte');
 ok(pkarten.length === 0, 'beim Anwerben gibt es keine Passive-Auswahl mehr');

@@ -750,13 +750,32 @@
     return [alle.reduce(function (a, b) { return b.cd > a.cd ? b : a; })];
   }
 
+  /* Die Resonanz gilt ausdrücklich für beide Seiten, aber gegnerseitig war sie
+     tot: `spawn` liest `def.keywords`, und `build` hat das Feld nie gesetzt —
+     kein Gegnertrupp hat je eine Schwelle erreicht. Die Wörter werden NICHT
+     zusätzlich von Hand gepflegt: sie stehen längst an den Passiven und an der
+     Aktiven jedes Gegners, und `run.js` sammelt sie beim Spieler aus genau
+     denselben zwei Quellen (Signatur/Aktive plus Passive). Abgeleitet statt
+     abgeschrieben — eine zweite Liste würde beim ersten Umbau einer Fähigkeit
+     lügen, und erfundene Wörter würden behaupten, der Gegner täte etwas, was er
+     nicht tut. Nicht entdoppelt: wer Gift anlegt UND Gift wirft, ist zwei Teile
+     einer Giftlinie, genau wie beim Spieler. */
+  function schluesselwoerter(d, actives) {
+    var ks = [];
+    (d.effects || []).forEach(function (ef) { ks = ks.concat(ef.keywords || []); });
+    actives.forEach(function (a) { ks = ks.concat(a.keywords || []); });
+    return ks;
+  }
+
   /* Begegnung -> fertige Kampfdefinitionen, mit mult skaliert. */
   function build(e, zusatz) {
     return e.units.map(function (id) {
       var d = byId(enemies, id);
       var m = (e.mult || 1) * (zusatz || 1);
+      var akt = aktiveVon(id);
       return {
-        id: d.id, name: d.name, tags: d.tags, effects: d.effects, actives: aktiveVon(id),
+        id: d.id, name: d.name, tags: d.tags, effects: d.effects, actives: akt,
+        keywords: schluesselwoerter(d, akt),
         resistenz: d.resistenz || 0, enrage: d.boss ? (e.enrage || 0.06) : 0,
         hp: Math.round(d.hp * m * (e.hpMult || 1) * (d.boss ? BOSS_HAERTE : 1)),
         atk: Math.round(d.atk * m * (d.boss ? BOSS_HAERTE : 1)),

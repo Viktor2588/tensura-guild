@@ -146,7 +146,8 @@ ok(EN.bosses.every(function (b) { return b.units.length === 1; }), 'Bosse treten
 ok(STUFEN.every(function (a) { return EN.events.filter(function (e) { return e.act === a; }).length >= 3; }),
    'jede Inhaltsstufe hat eigene Story-Ereignisse');
 
-/* Jede Art muss auch spielbar sein, sonst blockiert die Regel "eine je Art". */
+/* Jede Art braucht mindestens eine Einheit — sonst ist ein Glossareintrag da,
+   zu dem es nichts zu spielen gibt. */
 var proArt = {};
 GD.units.forEach(function (u) { proArt[u.art] = (proArt[u.art] || 0) + 1; });
 ok(GD.ARTEN.every(function (a) { return proArt[a] >= 1; }), 'zu jeder Art existiert mindestens eine Einheit');
@@ -428,12 +429,12 @@ ok(R.rangPreis(GD.unit(kEinheiten[0].id), 3) > R.rangPreis(GD.unit(kEinheiten[0]
 
 /* Kaufen: Rang und Passive landen an der Einheit, und danach steht keine Wahl
    offen — entschieden wurde am Posten. */
-/* Eine Einheit nehmen, deren ART noch frei ist — dann ist der Kauf ein Zugang
-   und keine Aufwertung, und die Zahlen sind einfach zu pruefen. Die Aufwertung
-   hat ihren eigenen Test darunter. */
-var belegteArten = kRun.team.concat(kRun.bank).map(function (m) { return GD.unit(m.id).art; });
+/* Eine Einheit nehmen, die noch NICHT im Trupp steht — dann ist der Kauf ein
+   Zugang und keine Aufwertung, und die Zahlen sind einfach zu pruefen. Die
+   Aufwertung hat ihren eigenen Test darunter. */
+var belegteIds = kRun.team.concat(kRun.bank).map(function (m) { return m.id; });
 var teuer = kEinheiten.filter(function (o) {
-  return belegteArten.indexOf(GD.unit(o.id).art) < 0;
+  return belegteIds.indexOf(o.id) < 0;
 }).reduce(function (a, b) { return (!a || b.rang > a.rang) ? b : a; }, null) || kEinheiten[0];
 kRun.pending = { markt: [teuer] }; kRun.phase = 'markt';
 var vorMag = kRun.magicules, vorTeam = kRun.team.length + kRun.bank.length;
@@ -932,6 +933,12 @@ ok(setztEin('heilwelle', EN.get('kreuzritter'), 4), 'sobald Schaden ankommt, wir
 /* Das Todesurteil darf erst fallen, wenn das Ziel angeschlagen ist. */
 var zaeherTroll = JSON.parse(JSON.stringify(EN.get('hoehlentroll')));
 zaeherTroll.effects = [];                      // ohne Trollhaut endet der Kampf überhaupt
+/* Und ohne Zuschlagen ueberlebt der Pruefling lange genug. Bis Phase 65 hat
+   Gobwa sich in diesem Duell selbst geheilt — ueber den Rollenzweig, den es
+   nicht mehr gibt —, und nur deshalb hielt sie durch, bis der Troll unter die
+   Haelfte fiel. Der Test will die Wartebedingung des Todesurteils messen, nicht
+   Gobwas Zaehigkeit; ein harmloser Gegner trennt die beiden Fragen. */
+zaeherTroll.atk = 0;
 var hRun = C.simulate([(function () { var d = def('gobwa', 1); d.actives = [AB.get('hinrichtung')]; return d; })()],
   [zaeherTroll], 6);
 var anteil = 1, frueh = 0, spaet = 0;
@@ -1885,8 +1892,8 @@ ok(Object.keys(AB.linien.shion).every(function (l) {
   return AB.linien.shion[l][3] !== shionM.passives[0];
 }), 'und nie eine mit Preis — der Startzustand drängt keinen Nachteil auf');
 ok(Object.keys(AB.linien).length >= 6, 'sechs Einheiten haben eigene Linien: ' + Object.keys(AB.linien).join(', '));
-/* Die Oger sind vollständig — damit ist „eine Einheit je Art" bei ihnen eine
-   echte Wahl zwischen sechs verschiedenen Spielweisen. */
+/* Die Oger sind vollständig — sechs Einheiten mit eigenen Linien, die seit
+   Phase 76 auch nebeneinander im Trupp stehen dürfen. */
 ['oger', 'goblin', 'direwolf', 'echsenmensch'].forEach(function (art) {
   ok(GD.units.filter(function (u) { return u.art === art; })
      .every(function (u) { return !!AB.linien[u.id]; }),
@@ -2061,22 +2068,23 @@ var run = fertigerRun(777);
 ok(run.team.length === 3 && run.team.every(function (m) { return GD.unit(m.id); }),
    'Run startet mit drei gedrafteten Einheiten');
 ok(run.phase === 'karte' && run.options.length >= 1, 'Karte bietet Knoten an');
-var arten = R.belegteArten(run);
-ok(new Set(arten).size === arten.length, 'der Starttrupp hat keine Art doppelt');
+var ids = R.belegteIds(run);
+ok(new Set(ids).size === ids.length, 'der Starttrupp hat keine Einheit doppelt');
 
 var r2 = fertigerRun(777);
 ok(JSON.stringify(run.options.map(function (o) { return o.name; })) ===
    JSON.stringify(r2.options.map(function (o) { return o.name; })), 'gleicher Seed -> gleiche Karte');
 
-/* Eine Einheit je Art */
+/* Eine Einheit nur einmal — die Art sperrt seit Phase 76 nichts mehr. */
 var aRun = fertigerRun(5);
 aRun.team = [R.member('rimuru'), R.member('gobta')];
 aRun.bank = [];
-ok(!R.addUnit(aRun, 'gobkyu'), 'eine zweite Goblin-Einheit wird abgelehnt');
+ok(R.addUnit(aRun, 'gobkyu'), 'eine zweite Goblin-Einheit ist erlaubt');
 ok(R.addUnit(aRun, 'shion'), 'eine andere Art wird aufgenommen');
-ok(!R.addUnit(aRun, 'gobta'), 'auch dieselbe Einheit kein zweites Mal');
-ok(R.unitPool(aRun).every(function (u) { return ['slime', 'goblin', 'oger'].indexOf(u.art) < 0; }),
-   'der Angebotspool enthält keine belegten Arten');
+ok(R.addUnit(aRun, 'souei'), 'und Souei neben Shion — beide Oger (die Rückmeldung)');
+ok(!R.addUnit(aRun, 'gobta'), 'nur dieselbe Einheit kein zweites Mal');
+ok(R.unitPool(aRun).every(function (u) { return ['rimuru', 'gobta', 'gobkyu', 'shion', 'souei'].indexOf(u.id) < 0; }),
+   'der Angebotspool enthält keine Einheit, die schon dabei ist');
 /* Entlassen: nur außerhalb des Kampfes, und es gibt ein Viertel zurück. */
 var eRun = fertigerRun(555);
 eRun.magicules = 0;
@@ -2101,7 +2109,7 @@ ok(!R.entlassen(solo, solo.team[0].uid), 'die letzte Einheit lässt sich nicht e
 
 /* Nicht über den Platz suchen: Frontlinie rückt beim Anwerben nach vorn. */
 R.entlassen(aRun, aRun.team.filter(function (m) { return m.id === 'gobta'; })[0].uid);
-ok(R.addUnit(aRun, 'gobkyu'), 'nach dem Entlassen ist die Art wieder frei');
+ok(R.addUnit(aRun, 'gobta'), 'nach dem Entlassen ist dieselbe Einheit wieder frei');
 ok(R.addUnit(aRun, 'zegion') && aRun.team[0].id === 'zegion',
    'eine angeworbene Frontlinien-Einheit steht sofort auf Platz 1');
 
@@ -2351,6 +2359,66 @@ if (beute2) {
 }
 
 /* Kompletter Run */
+head('Aufwertung und Passiv-Erbe');
+/* Phase 72: die Marktkarte fragte `freieArt`, der Motor kann laengst aufwerten.
+   Der Widerspruch hat das Hochbringen der eigenen Einheiten komplett gesperrt. */
+(function () {
+  var run = R.create(7, R.newMeta());
+  run.team = [];
+  R.addUnit(run, 'shion', null, 1, R.abilities ? null : null);
+  var shion = run.team[0];
+  ok(!R.freieEinheit(run, 'shion'), 'Shion ist nach dem Anwerben belegt');
+  ok(!R.kaufbar(run, 'shion', 1), 'gleicher Rang ist keine Aufwertung — nicht kaufbar');
+  ok(R.kaufbar(run, 'shion', 2), 'HOEHERER Rang derselben Einheit ist kaufbar (war der Bug)');
+  ok(R.kaufbar(run, 'benimaru', 0), 'eine andere Einheit derselben Art ist ohne Rangbedingung kaufbar');
+  ok(R.kaufbar(run, 'gobta', 0), 'eine freie Einheit bleibt ohne Rangbedingung kaufbar');
+
+  /* Das Erbe: eine Aufwertung derselben Einheit behaelt ihre Passiven. */
+  var alle = AB.linienAngebot('shion').filter(function (o) { return !o.preis; });
+  var hatte = [alle[0].id, alle[1].id];
+  var rng = globalThis.RNG(9);
+  var geerbt = R.linienPassiveTest('shion', 4, rng, hatte);
+  hatte.forEach(function (pid) {
+    ok(geerbt.indexOf(pid) >= 0, 'Aufwertung erbt ' + pid + ' statt neu zu wuerfeln');
+  });
+  ok(geerbt.length === 4, 'und fuellt auf den neuen Rang auf (4 Passive)');
+  ok(new Set(geerbt).size === 4, 'ohne Dubletten');
+
+  /* Fremde IDs faellt heraus: eine Passive von Souei gehoert nicht in Shion. */
+  var fremd = R.linienPassiveTest('shion', 2, globalThis.RNG(3),
+                                  AB.linienAngebot('souei')[0].id ? [AB.linienAngebot('souei')[0].id] : []);
+  ok(fremd.every(function (pid) {
+    return alle.concat(AB.linienAngebot('shion')).some(function (o) { return o.id === pid; });
+  }), 'eine fremde Passive wird nicht vererbt');
+})();
+
+head('Kampfbilanz');
+/* Phase 72: die Uebersicht nach dem Kampf. Sie wird beim Kampf gerechnet, nicht
+   in der UI — das Log steht nach einem Neuladen nicht mehr zur Verfuegung. */
+(function () {
+  var run = R.create(11, R.newMeta());
+  var versuche = 0, b = null;
+  while (versuche++ < 40 && !b) {
+    if (run.phase === 'karte' || run.startwahl) {
+      if (run.startwahl) { R.chooseStart(run, 0); continue; }
+    }
+    try { R.choose(run, 0); } catch (e) { break; }
+    if (run.pending && run.pending.bilanz && run.pending.result &&
+        run.pending.result.winner === 'player') { b = run.pending.bilanz; break; }
+    try { R.advance(run); } catch (e) { break; }
+  }
+  ok(!!b, 'ein gewonnener Kampf legt eine Bilanz an');
+  if (b) {
+    ok(typeof b.ticks === 'number', 'Bilanz traegt die Zuege');
+    ok(b.austeiler && b.austeiler.wert > 0,
+       'Bilanz nennt die Einheit mit dem meisten ausgeteilten Schaden');
+    /* Ein gewonnener Kampf ohne einen einzigen eingesteckten Treffer ist
+       moeglich — deshalb nur pruefen, dass das Feld wohlgeformt ist. */
+    ok(!b.einstecker || b.einstecker.wert > 0, 'Einstecker ist entweder leer oder positiv');
+    ok(!b.heiler || b.heiler.wert > 0, 'Heiler ist entweder leer oder positiv');
+  }
+})();
+
 head('Durchspiel');
 var d = fertigerRun(2024);
 var schritte = 0;
@@ -2368,8 +2436,8 @@ while (!d.over && schritte < 400) {
 ok(d.over, 'ein Run erreicht ein Ende (' + schritte + ' Schritte)');
 ok(d.meta.runs === 1, 'der Run wird in der Meta gezählt');
 ok(d.unlocked && d.unlocked.length > 0, 'nach dem Run wird etwas freigeschaltet');
-var artenEnde = R.belegteArten(d);
-ok(new Set(artenEnde).size === artenEnde.length, 'am Ende steht immer noch keine Art doppelt im Trupp');
+var idsEnde = R.belegteIds(d);
+ok(new Set(idsEnde).size === idsEnde.length, 'am Ende steht immer noch keine Einheit doppelt im Trupp');
 
 console.log('\n' + pass + '/' + (pass + fail) + ' ok');
 process.exit(fail ? 1 : 0);

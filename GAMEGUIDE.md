@@ -214,14 +214,17 @@ sie, bleibt es bei der gewöhnlichen Belohnung — verloren ist nichts außer de
 Risiko, das der härtere Kampf mitbringt. Gemessen werden rund 62 % der
 angenommenen Auflagen gehalten.
 
-## Eine Einheit je Art
+## Jede Einheit nur einmal
 
-Von jeder Art steht genau eine Einheit im Trupp: Slime, Goblin, Oger, Sturmwolf,
-Echsenmensch, Insektoid, Dämon, Drache, Untot. Nimmst du Gobta, ist der
-Goblin-Platz belegt — Rigurd bekommst du erst, wenn du Gobta entlässt.
+Gesperrt ist nur dieselbe Einheit zweimal — die **Art sperrt nichts**. Gobta und
+Rigurd dürfen nebeneinander stehen, Shion und Souei auch. Bis Phase 76 war das
+anders, und die Regel kam im Spiel als Verlust an: der Markt bot die zweite
+Einheit derselben Art als „Aufwertung" an und räumte die erste weg.
 
 Es gibt **keine Völker-Boni**. Ein Trupp ist nicht stark, weil er aus Goblins
-besteht, sondern weil seine Fähigkeiten zusammenpassen.
+besteht, sondern weil seine Fähigkeiten zusammenpassen. Ein paar Art-Eigenheiten
+hängen trotzdem an ihr: Goblins skalieren mit dem Rang, Echsenmenschen mit der
+Kampfdauer, Insektoiden häuten sich.
 
 ## Ränge
 
@@ -644,8 +647,9 @@ schwächste — das ist Absicht. Wer Souei nimmt, baut einen Trupp um ihn herum:
 lassen den ganzen Trupp Blutung oder Gift anlegen, *Jagdbefehl* schickt alle auf
 dasselbe markierte Ziel.
 
-Shion und Souei sind beide Oger — und es darf nur **eine Einheit je Art** im
-Trupp stehen. Die Wahl zwischen ihnen ist also eine echte Weggabelung.
+Shion und Souei sind beide Oger — seit Phase 76 ist das kein Ausschluss mehr:
+sie dürfen zusammen im Trupp stehen, und Soueis Marken-Unterstützung passt zu
+Shions Chaos genauso wie zu jedem anderen Trupp.
 
 Alle anderen Einheiten behalten vorerst ihre drei festen Passiven, die mit dem
 Rang aufschalten.

@@ -202,6 +202,7 @@
       chaos: null, enrage: def.enrage || 0, wut: 1, verschlungen: def.verschlungen || 0,
       schattenPlus: 0, dunkelPlus: 0, lichtPlus: 0,
       itemZahl: def.itemZahl || 0,
+      passivZahl: def.passivZahl || 0,
       dmgTaken: 0, dmgDealt: 0
     };
   }
@@ -233,6 +234,18 @@
     function gegen(u, k) { return !!res[other(u.side)][k]; }
 
     /* ---- Grundoperationen ------------------------------------------------ */
+
+    /* Ein Konter antwortet auf einen ANGRIFF, nicht auf einen Konter. Ohne
+       diese Sperre schlagen zwei Trupps, die beide `onDamaged` austeilen,
+       einander in derselben Aufrufkette endlos zurück: A trifft B, B kontert A,
+       A kontert B … Das endete bisher nur durch Sterben — und wo eine
+       `onDamaged`-Heilung (Blutgolem: 18 Leben je erlittenem Treffer) den
+       Konterschaden aufwiegt, stirbt niemand. Gefunden hat das erst die
+       Gegner-Resonanz dieser Phase: „Elite: Steinerne Wacht" (zwei Gargoyles,
+       zwei Blutgolems) erreicht Konter-Resonanz, und der Kampf lief in
+       „Maximum call stack size exceeded". Der Fehler ist älter als die
+       Resonanz, nur unerreichbar gewesen. */
+    var imKonter = false;
 
     function deal(target, amount, source, opt) {
       if (!target || !alive(target)) return 0;
@@ -288,8 +301,12 @@
       log.push({ t: t, type: 'hit', key: target.key, target: target.name, side: target.side,
                  dmg: amount, source: source, hp: target.hp, maxHp: target.maxHp,
                  von: (opt.von || opt.anzeigeVon || {}).key || null });
-      if (alive(target)) fire(target, 'onDamaged', ctx(target, { amount: amount }));
-      else die(target);
+      if (!alive(target)) die(target);
+      else if (!imKonter) {
+        imKonter = true;
+        fire(target, 'onDamaged', ctx(target, { amount: amount }));
+        imKonter = false;
+      }
       return amount;
     }
 
@@ -557,6 +574,13 @@
       /* Resonanz vor onStart: Schild- und Heilfaktor müssen stehen, bevor die
          erste Barriere gelegt wird. */
       var r = res[side];
+      /* Seit die Gegner eigene Schlüsselwörter tragen, kann auch die andere
+         Seite resonieren — und ein Trupp, der ohne sichtbaren Grund 15 % mehr
+         heilt, ist ein unerklärter Kampf. Die eigene Resonanz steht auf dem
+         Truppschirm, die gegnerische stand nirgends. Also ins Log, für beide. */
+      Object.keys(r).forEach(function (k) {
+        log.push({ t: 0, type: 'resonanz', side: side, kw: k, teile: r[k] });
+      });
       mine.forEach(function (u) {
         if (r.donner) u.donnerFrueh = 2;
         if (r.schatten) u.schattenPlus = 0.02;
@@ -786,15 +810,17 @@
       }
       var aktive = waehleAktive(u, target);
 
-      /* Unterstützer heilen, wenn gerade keine Fähigkeit bereit ist. */
-      if (u.role === 'unterstuetzer' && !aktive) {
-        var hurt = living(u.side).filter(function (a) { return a.hp < a.maxHp; });
-        if (hurt.length) {
-          var worst = hurt.reduce(function (a, b) { return (b.hp / b.maxHp) < (a.hp / a.maxHp) ? b : a; });
-          heal(worst, u.atk * 1.5, u.name);
-          return;
-        }
-      }
+      /* Hier stand bis Phase 65 der Rollenzweig „Unterstützer heilen, wenn
+         gerade keine Fähigkeit bereit ist". Gemessen (150 Runs): 31.776
+         Unterstützer-Züge, davon 24.641 ohne bereite Fähigkeit — aber in 20.251
+         davon stand der ganze Trupp auf vollem Leben, der Zweig tat also
+         nichts. Und kein einziges Mal fiel er ein, während jemand WIRKLICH
+         verwundet war: unter 85 % greift die `wenn`-Bedingung der Signatur, und
+         die heilt um ein Vielfaches mehr. Übrig blieben 4.390 Heilungen im
+         Band zwischen 85 und 100 % Leben, die zusammen 48.829 fehlende
+         Lebenspunkte auffüllten — 11 je Auslösung, der Rest war Überheilung.
+         Ohne den Zweig schlägt der Unterstützer stattdessen zu; die Siegquote
+         bewegte sich von 51 auf 50 %. */
 
       /* Chaos lässt das Wirken misslingen: der Zug ist weg, die Abklingzeit läuft. */
       if (aktive && u.chaos && u.chaos.stapel &&
@@ -839,11 +865,19 @@
     log.push({ t: t, type: 'end', winner: winner });
     return {
       winner: winner, ticks: t, log: log, roster: roster,
+      /* `dmgDealt`/`dmgTaken` gehoeren mit in die Projektion: die Kampfbilanz
+         nach dem Sieg (Phase 72) braucht sie, und die vollen Einheitenobjekte
+         verlassen `simulate` bewusst nicht. Auch die Gefallenen tragen sie —
+         wer viel eingesteckt hat, ist oft genau der, der nicht mehr steht. */
       survivors: units.filter(alive).map(function (u) {
-        return { id: u.id, name: u.name, hp: u.hp, maxHp: u.maxHp, side: u.side };
+        return { id: u.id, name: u.name, hp: u.hp, maxHp: u.maxHp, side: u.side,
+                 dmgDealt: u.dmgDealt, dmgTaken: u.dmgTaken };
       }),
       fallen: units.filter(function (u) { return !alive(u); })
-        .map(function (u) { return { id: u.id, name: u.name, side: u.side }; })
+        .map(function (u) {
+          return { id: u.id, name: u.name, side: u.side,
+                   dmgDealt: u.dmgDealt, dmgTaken: u.dmgTaken };
+        })
     };
   }
 

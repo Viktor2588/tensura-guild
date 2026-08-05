@@ -1,3 +1,17 @@
+Abgearbeitet in Phase 76:
+
+- [x] "Antichaos" fehlte als Status im Spiel und als Tag an Shion, sobald sie
+      Realitätswarp trägt. Es steht jetzt als Schlüsselwort an den Fähigkeiten,
+      die es LEGEN und die es LESEN — Tag an Einheit und Marktposten in eigener
+      Farbe, eigene Marke auf dem Brett, Eintrag unter den Schlüsselwörtern.
+      Für die Resonanz zählt es weiter als Chaos (`Abilities.FOLGT`): dieselbe
+      Linie, andere Seite des Rades.
+- [x] Shion und Souei dürfen zusammen im Trupp stehen. Die Artsperre ist raus,
+      gesperrt ist nur noch dieselbe EINHEIT. Der Rangaufstieg hing daran (er
+      lief über "Angebot einer belegten Art") und hat einen reservierten
+      Marktplatz als Ersatz bekommen — ohne den fiel die Siegquote von 53 auf
+      27 %. `GRUNDHAERTE` 1.13 → 1.03, gemessen 50 % Siege (frisch).
+
 Abgearbeitet in Phase 7 — Details in PLAN.md:
 
 - [x] Frontlinie rückt beim Anwerben direkt auf Platz 1 (Testabkürzung, `Run.addUnit`)
@@ -374,9 +388,12 @@ Abgearbeitet in Phase 39:
       nachgereicht — diese Kombination kann nur durch den Bug entstanden sein.
 - [x] Geld heißt Gerudo.
 
-- Die Stärke von Items & relikten ist nicht sauber gebalanced. Manche items fühlen sich viel zu stark an dafür das sie ungewühnlich sind & mache legendary items fühlen sich zu schwach an.
-- Erste begegnung sollte immer ein kampf sein.
-- Relikt freischalten sollte schneller gehen
+- ~~Die Stärke von Items & Relikten ist nicht sauber gebalanced.~~ — bestätigt
+  und angegangen in Phase 66 (`dev/beute.js`): die Kurve war flach,
+  „ungewöhnlich" schlug „selten". Acht Stücke umgestuft. Alte Notiz: Manche items fühlen sich viel zu stark an dafür das sie ungewühnlich sind & mache legendary items fühlen sich zu schwach an.
+- ~~Erste begegnung sollte immer ein kampf sein.~~ — erledigt in Phase 66.
+- ~~Relikt freischalten sollte schneller gehen~~ — erledigt in Phase 66: zwei
+  Relikte je Run statt einem.
 - ~~Ich brauche eine Möglichkeit alle Fähigkeiten jeder Einheit einzusehen~~ —
   erledigt: **Menü → Entwicklungslinien** zeigt je Einheit die Signatur samt
   Beschreibung und alle sechzehn Passiven in vier Linien, mit Tooltips und
@@ -399,9 +416,10 @@ Abgearbeitet in Phase 40:
 
 Offen aus der Recherche (Ideen 1, 2, 3, 5):
 
-- **1. Gegnergruppen bekommen eigene Schlüsselwörter.** Die Resonanz-Maschinerie
-  läuft schon für beide Seiten, aber alle 72 Gegner haben `keywords: []`. Reine
-  Datenarbeit, größter Gewinn.
+- ~~**1. Gegnergruppen bekommen eigene Schlüsselwörter.**~~ — erledigt in
+  Phase 62. Nicht als Datenarbeit: die Wörter werden aus Aktive und Passiven
+  abgeleitet, so wie `Run.buildTeile` es beim Spieler tut. Nebenbei fiel ein
+  Konter-Rekursionsfehler auf, den erst ein resonierender Gegnertrupp erreicht.
 - **2. Bedrohung statt fester Zielwahl** — ein Panzer kann heute keine Treffer
   auf sich ziehen.
 - **3. Zwei Reihen statt einer Liste.**
@@ -522,7 +540,8 @@ Balance und Werkzeug:
 - ~~Unbezahlbare Marktangebote~~ — erledigt: 1,2 vor Phase 51, 8,0 danach, 5,7
   mit dem Rangfenster (Phase 52) und **2,0 seit Phase 53**, weil vor dem Endspiel
   kein S mehr im Markt haengt.
-- **Verstärker ist die schwächste Rolle, und es sind die Kits.** Phase 49 hat ihm
+- ~~**Verstärker ist die schwächste Rolle, und es sind die Kits.**~~ — in
+  Phase 63 widerlegt: es ist die Preiskurve, nicht das Kit. Alte Notiz: Phase 49 hat ihm
   Reichweite 2 und 3 Schritte gegeben — genau das, was Unterstützer hat. Der
   steht bei 60 %, Verstärker bei **46 %** (n=756). Damit ist die Lage als Ursache
   ausgeschlossen; es liegt an dem, was die acht Verstärker-Einheiten tun. Das ist
@@ -532,20 +551,23 @@ Balance und Werkzeug:
   herausgerechnet: die alte Rangfolge korrelierte mit r = 0,67 zur mittleren
   Reichweite der Träger). Donner hat nur 2 Träger — der Ausreißer ist also auch
   einer, an den kaum jemand herankommt.
-- **Der Heilungs-BUILD bleibt bei 69 %**, obwohl der Vorsprung auf
+- ~~**Der Heilungs-BUILD bleibt bei 69 %**~~ — Phase 65: die Eimer-Zuordnung
+  war ein argmax über ungenormte Zählerstände. Heilung +8, Konter −12. Alt:, obwohl der Vorsprung auf
   Einheitenebene von +8 auf +3 gefallen ist. Die Festlegung (zwei Quellen plus
   ein Verstärker) zahlt sich also weiter aus, ohne dass eine einzelne Mechanik
   dahintersteckt — fünf Phasen haben zusammen 5 von 25 Punkten erklärt. Vor
   weiteren Eingriffen die Eimer-Zuordnung selbst prüfen: was unterscheidet einen
   festgelegten Heilungstrupp von einem festgelegten Schildtrupp AUSSER dem
   Schlüsselwort?
-- **Ein Rollenzweig feuert 33.735 Mal und entscheidet nichts.** Die Regel
+- ~~**Ein Rollenzweig feuert 33.735 Mal und entscheidet nichts.**~~ — Phase 65:
+  totes Gewicht, gelöscht. Alt: Die Regel
   „Unterstützer heilen, wenn gerade keine Fähigkeit bereit ist" nimmt 81 % aller
   Unterstützer-Züge (41.432 in 150 Runs) — sie ist also kein Sonderfall, sondern
   das Normalverhalten der Rolle. Komplett abgeschaltet ändert sich an keiner
   Siegquote etwas. Entweder soll die Rolle etwas anderes tun, oder die
   Signaturen der vier Unterstützer brauchen `wenn`-Bedingungen, die auch greifen.
-- **14 Einheiten werden nie gekauft, auch bei voller Freischaltung** — Benimaru,
+- ~~**14 Einheiten werden nie gekauft**~~ — erledigt in Phase 64: doppelte
+  Kostenzählung im Bot, nicht die Preiskurve. Jetzt 2 statt 14. Alte Notiz: — Benimaru,
   Hakuro, Echsenfürst, Zegion, Apito, Diablo, Testarossa, Ultima, Carrera,
   Veldora, Milim, Windrache, Gerudo, Adalmann. Alle haben **Kosten 4-5**. Der
   Bot bewertet Marktposten nach Wert je Magicule (`sc / price`), und das
@@ -553,7 +575,9 @@ Balance und Werkzeug:
   enthält. Entweder ist die Heuristik zu geizig oder die Preiskurve zu steil —
   beides ist messbar, aber es sind zwei verschiedene Eingriffe. Solange das
   offen ist, messen alle Build-Zahlen nur die günstige Hälfte der Besetzung.
-- **Der Rang ist keine Entscheidung, sondern ein Meilenstein.** Die alte Zahl
+- **Der Rang ist keine Entscheidung, sondern ein Meilenstein.** (Phase 64: ein
+  Reserve-Regler erzeugt keine Spitzenstrategie — beide Stile enden bei 6,0
+  Einheiten. Braucht eine eigene Regel.) Die alte Zahl
   („Rang A gewinnt nie") war eine Tautologie: `dev/balance.js` las den Rang am
   Run-Ende, und ein früh gestorbener Run hatte nie Geld für S. Phase 47 misst
   jetzt an fester Stelle, bei Akt-2-Beginn — und dort gibt es nur eine Zeile:
@@ -563,16 +587,17 @@ Balance und Werkzeug:
   sondern nicht existent.
 
 
-- Der Konter-Eimer meldet 82 %, aber bei n=28 und der größten Lauftiefe aller
-  Eimer. Zwei Runden Trimmen bewegten ihn um null Punkte — vor dem nächsten
-  Eingriff gezielt nachmessen (wie bei Frost), statt weiter an Zahlen zu drehen.
+- ~~Der Konter-Eimer meldet 82 %~~ — Phase 65: er hat den Eimer der Trupps
+  geerbt, die weit kamen. Nach der Korrektur liegt Konter bei −12 und ist der
+  SCHWÄCHSTE Build. Dass zwei Runden Trimmen ihn um null Punkte bewegten, war
+  der Hinweis.
 
-- `dev/linien.js` braucht seit Phase 23 über zehn Minuten statt drei — die
-  Binärsuche läuft öfter, weil zähere Einheiten den Bruchpunkt weiter oben
-  suchen. Obergrenze oder gröbere Schritte einziehen.
-- `dev/linien.js` misst eine Einheit allein und bewertet die
-  Unterstützungslinie deshalb strukturell zu schlecht. Mit Trupp messen.
+- ~~`dev/linien.js` braucht über zehn Minuten~~ — erledigt in Phase 63: fünf
+  statt sieben Halbierungen, die letzten beiden maßen nur Rauschen.
+- ~~`dev/linien.js` misst eine Einheit allein~~ — Notiz war veraltet, `trupp()`
+  stellt längst drei Begleiter dazu.
 
 - Anfänger/Veteran-Abstand bei 12 Punkten (50 gegen 62 % Siege).
-- Der Bot in `balance.js` steigt stur die vorderste Einheit auf; ob „vier auf B"
-  oder „eine auf S" besser ist, misst er damit nicht.
+- Der Bot in `balance.js` misst „vier auf B" gegen „eine auf S" weiterhin
+  nicht — Phase 64 hat es mit `--kaufstil spitze` versucht und gezeigt, dass ein
+  Sparfaktor dafuer nicht reicht.

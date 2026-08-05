@@ -18,7 +18,12 @@
   /* Kein Händler-Knoten mehr: nach JEDEM gewonnenen Kampf geht der Markt auf,
      ein eigener Knoten dafür wäre doppelt. Die drei Slots sind Kämpfe geworden. */
   var STEPS = [
-    ['kampf', 'kampf', 'event'],
+    /* Der erste Knoten ist immer ein Kampf — alle drei Wahlmoeglichkeiten sind
+       einer. Vorher konnte ein Run mit einem Ereignis beginnen, und der
+       Einstieg (das 1-gegen-1-Duell aus Phase 11) fiel damit ganz aus. Eine
+       Wahl bleibt es trotzdem: welcher Kampf, sagt der Knoten seit Phase 12
+       ohnehin nicht. */
+    ['kampf', 'kampf', 'kampf'],
     ['kampf', 'event', 'pruefung'],
     ['kampf', 'pruefung', 'elite'],
     ['kampf', 'elite', 'lager'],
@@ -120,14 +125,39 @@
             'Wer nur exekutiert, räumt nicht mehr ab; Gift, Brand und Blutung tragen weiter.' },
     { stufe: 3, name: 'Kriegsrecht', regel: 'kriegsrecht',
       text: 'Der Händler bietet nur noch EINE Einheit an statt drei, und Rangaufstiege kosten ' +
-            '15 % mehr Magicule. Du gewinnst weitgehend mit dem Trupp, den du gedraftet hast.' },
+            '30 % mehr Magicule.' },
     { stufe: 4, name: 'Belagerung', regel: 'belagerung',
       text: 'Im zweiten Akt steht auf jedem zweiten Kampfknoten eine Elite — zur Beute ' +
             'eines normalen Kampfes. Dazu gibt das Lager 15 % weniger.' },
     { stufe: 5, name: 'Sturmgott', regel: 'sturmgott',
-      text: 'Nur drei Leben statt fünf, und Bosse eskalieren doppelt so schnell. Jetzt zählt Tempo.' }
+      text: 'Ein Drittel weniger Magicule aus jedem Kampf und jedem Lager. Dazu nur drei ' +
+            'Leben statt fünf und doppelt eskalierende Bosse. Die Gegner sind kaum härter ' +
+            'als auf Stufe 4.' }
   ];
   function bedrohung(i) { return BEDROHUNG[Math.max(0, Math.min(BEDROHUNG.length - 1, i || 0))]; }
+
+  /* Die kumulierten Mali als Liste — aus den ECHTEN Konstanten gerechnet, nicht
+     aus den Regeltexten abgeschrieben. Diese Sitzung hat dreimal gezeigt, wohin
+     handgepflegte Beschreibungen fuehren: Stufe 1 versprach „ein Gegner mehr"
+     bei halben Werten (Phase 69), Kriegsrecht versprach teurere Raenge und
+     multiplizierte eine tote Funktion (Phase 71), und zwei Art-Identitaeten
+     standen im Glossar, ohne zu existieren (Phase 36). Was hier steht, kann
+     nicht von dem abweichen, was das Spiel tut. */
+  function mali(t) {
+    t = Math.max(0, Math.min(5, t || 0));
+    var out = [];
+    if (!t) return out;
+    out.push('Gegnerwerte +' + Math.round(0.022 * t / GRUNDHAERTE * 100) + ' %');
+    if (t >= 1) out.push('Ein Gegner mehr je Begegnung (' +
+      Math.round(NACHZUEGLER * 100) + ' % der Werte)');
+    if (t >= 2) out.push('Jeder Gegner steht einmal mit ' +
+      Math.round(NACHSCHUB_LEBEN * 100) + ' % Leben wieder auf');
+    if (t >= 3) out.push('Nur 2 statt 4 Marktposten, Einheiten +30 % teurer');
+    if (t >= 4) out.push('Akt 2: Elite zu normaler Beute, Lager −15 %');
+    if (t >= 5) out.push('−' + Math.round((1 - STURM_BEUTE) * 100) +
+      ' % Magicule, 3 Leben statt 5, Bosse eskalieren doppelt');
+    return out;
+  }
   /* Gilt die Regel auf der Stufe dieses Runs? Kumulativ: Stufe 4 hat auch 1–3. */
   function regel(run, name) {
     var t = run.threat || 0;
@@ -140,7 +170,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.01;   // S bleibt auch im Endspiel selten (Phase 53); gemessen 51 %
+  var GRUNDHAERTE = 1.03;   // Phase 76: die Artsperre ist weg, gemessen 50 % (frisch)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -167,13 +197,38 @@
   var START_MAX_RARITAET = 2;
   function ertrag(x) { return Math.round(x * WACHSTUM); }
 
+  /* Weniger Beute je Bedrohungsstufe. Phase 69 hat die Leiter steiler gemacht,
+     aber nur auf der KAMPFEBENE — mehr Gegner, schneller, zaeher. Das verlangt
+     einen staerkeren Trupp, nicht bessere Entscheidungen. Ein knapperer Beutel
+     verlangt beides: bei 35 % weniger Einkommen ist jeder Kauf ein verzichteter
+     anderer Kauf, und genau da liegt die Tiefe dieses Spiels (siehe Phase 11,
+     als das Zusammenlegen der Waehrungen dieselbe Wirkung hatte).
+     Greift nur auf EINKOMMEN — Kampfbeute und Lager. Verkaufserloese sind
+     Rueckerstattungen; sie zu kuerzen wuerde denselben Magicule zweimal
+     besteuern und das Umbauen des Trupps bestrafen statt das Ausgeben. */
+  /* Kein gleichmaessiger Abzug ueber die Leiter, sondern EIN Sprung ganz oben:
+     Sturmgott nimmt 30 % des Einkommens, alle anderen Stufen nichts. Die
+     verteilte Fassung aus Phase 70 (4,5 % je Stufe) war spuerbar richtig, aber
+     nirgends ein Ereignis — 4,5 % merkt man in keinem einzelnen Kauf. Ein
+     Drittel weniger merkt man in jedem, und der Schritt von 4 auf 5 bekommt
+     damit eine eigene Handschrift statt nur „dasselbe, etwas mehr". */
+  var STURM_BEUTE = 0.70;
+  function beuteFaktor(run) {
+    return regel(run, 'sturmgott') ? STURM_BEUTE : 1;
+  }
+
   /* Gegnerhärte je Stufe — greift auf denselben mult wie die Begegnung selbst. */
   function bedrohungsFaktor(run, node) {
     var t = run.threat || 0;
     /* Klein halten: die Kurve ist steil, 20 % mehr Gegnerwerte kippen fast jeden
        Run. Gemessen mit `node dev/balance.js 500 --stufe N`. */
-    /* Nur noch ein leiser Anstieg: die Regeln oben tragen die Härte. */
-    var f = GRUNDHAERTE + 0.012 * Math.min(t, 5);
+    /* Phase 69: 0.012 war zu leise. Ueber die ganze Leiter stieg der
+       Gegnerfaktor damit von 0.435 auf 0.458 — fuenf Prozent von Stufe 0 bis 5.
+       Die Regeln sollten die Haerte tragen, aber sie waren Abnutzungssteuern:
+       ein halbstarker Nachzuegler, ein Gegner der einmal aufsteht, zwei Leben
+       weniger. Wer die Kaempfe gewinnt, merkt von keiner davon etwas — und
+       genau das war die Rueckmeldung. Jetzt 0.045, also +22 % auf Stufe 5. */
+    var f = GRUNDHAERTE + 0.022 * Math.min(t, 5);
     if (node && node.type === 'pruefung') f *= PRUEFUNG_HAERTE;
     if (run.act === 1 && node && node.type !== 'boss' && EINSTIEG_HAERTE[run.step]) {
       f *= EINSTIEG_HAERTE[run.step];
@@ -202,7 +257,15 @@
     var lockedU = GD.units.filter(function (u) { return !u.hero && meta.unlockedUnits.indexOf(u.id) < 0; });
     var lockedR = GD.relics.filter(function (r) { return meta.unlockedRelics.indexOf(r.id) < 0; });
     if (lockedU.length) { var u = root.RNG.pick(rng, lockedU); meta.unlockedUnits.push(u.id); out.push(u.name); }
-    if (lockedR.length) { var r = root.RNG.pick(rng, lockedR); meta.unlockedRelics.push(r.id); out.push(r.name); }
+    /* Zwei Relikte je Run, nur eine Einheit. Es gibt mehr Relikte als
+       Einheiten, und ein Relikt ist der kleinere Zugewinn — bei je einem
+       dauerte der Relikt-Bestand doppelt so lange, und genau das stand als
+       „Relikt freischalten sollte schneller gehen" in TODO.md. */
+    for (var i = 0; i < 2 && lockedR.length; i++) {
+      var r = root.RNG.pick(rng, lockedR);
+      meta.unlockedRelics.push(r.id); out.push(r.name);
+      lockedR = lockedR.filter(function (x) { return x.id !== r.id; });
+    }
     return out;
   }
 
@@ -240,6 +303,10 @@
   function rankCost(m, run) {
     if (m.rank >= 3) return 0;
     var k = RANK_COST[m.rank];
+    /* Bleibt bei 1.15. Diese Funktion zaehlt seit Phase 51 kaum noch: Raenge
+       werden nicht gekauft, sie kommen mit der Einheit aus dem Markt. Sie greift
+       nur noch beim Gratisaufstieg aus Ereignissen und in der Anzeige. Der
+       eigentliche Druck von Kriegsrecht sitzt darum in `rangPreis`. */
     if (run && regel(run, 'kriegsrecht')) k = Math.round(k * 1.15);
     return k;
   }
@@ -282,6 +349,14 @@
     });
 
     d.itemZahl = m.items.length;              // Kurobes Linie rechnet damit
+    /* Die Zwillingsklinge zaehlte bisher `c.self.effects` mit `art === 'passiv'`
+       durch — ein Feld, das an einer gebauten Einheit gar nicht existiert
+       (`art` traegt nur die Bibliothek in `abilities.js`, und `resolve` legt
+       nur die Wirkfunktionen ab). Sie gab deshalb seit jeher +0, gemessen mit
+       `dev/beute.js`. Dieselbe Sorte toter Zugriff wie `zaeherBrand` in
+       Phase 25, nur lesend statt schreibend — und darum vom Waechter-Test aus
+       Phase 27 nicht erfasst. */
+    d.passivZahl = passivIds(m).length;
     if (m.devoured.slice(0, PRAEDATOR_SLOTS[r]).length) d.verschlungen = 1;
     m.devoured.slice(0, PRAEDATOR_SLOTS[r]).forEach(function (eid) {
       var e = EN.get(eid);
@@ -530,9 +605,25 @@
      Passive MIT Preis (die Keystones, die eine Regel gegen einen Nachteil
      tauschen) bleiben draussen: sie sind eine Entscheidung, und aufgedraengt
      bekommt man sie schon beim Startzustand bewusst nicht. */
-  function wuerfleLinienPassive(unitId, anzahl, rng) {
-    var topf = AB.linienAngebot(unitId).filter(function (o) { return !o.preis; });
-    var out = [];
+  /* `erbe` sind die Passiven, die eine BEREITS BESITZENE Einheit derselben Art
+     schon hat. Sie bleiben und werden nur aufgefuellt.
+
+     Vorher wurde jedes Marktangebot frei gewuerfelt — auch das Angebot, das die
+     Aufwertung der eigenen Einheit ist. Wer eine Shion mit drei Chaos-Passiven
+     aufwertete, bekam eine Shion mit drei ANDEREN Passiven zurueck: die
+     Entwicklung war kein Aufbau, sondern ein Neuwurf, und ein Build ueber
+     mehrere Raenge war schlicht nicht spielbar. Das ist der Kern der
+     Rueckmeldung „so kann man keinen Evolution-Build fahren".
+
+     Geerbt wird nur, was die Einheit auch tragen kann: eine ID aus einer
+     anderen Einheit (nach einer Aufwertung ueber die ART, nicht ueber dieselbe
+     Einheit) faellt heraus. */
+  function wuerfleLinienPassive(unitId, anzahl, rng, erbe) {
+    var angebot = AB.linienAngebot(unitId).filter(function (o) { return !o.preis; });
+    var eigen = {};
+    angebot.forEach(function (o) { eigen[o.id] = 1; });
+    var out = (erbe || []).filter(function (pid) { return eigen[pid]; }).slice(0, anzahl);
+    var topf = angebot.filter(function (o) { return out.indexOf(o.id) < 0; });
     while (out.length < anzahl && topf.length) {
       out.push(topf.splice(Math.floor(rng() * topf.length), 1)[0].id);
     }
@@ -542,9 +633,17 @@
   /* Was eine fertige Einheit kostet: der Anwerbepreis plus genau die Aufstiege,
      die man sonst bezahlt haette. Kein Rabatt und kein Zuschlag — der Markt
      nimmt einem die Arbeit ab, nicht das Geld. */
-  function rangPreis(u, rang) {
+  function rangPreis(u, rang, run) {
     var p = PREIS_EINHEIT + u.cost * 45;
     for (var r = 0; r < rang; r++) p += RANK_COST[r];
+    /* Kriegsrecht greift HIER, nicht mehr an `rankCost`. Seit Phase 51 kauft
+       niemand mehr einen Aufstieg — der Rang kommt mit der Einheit aus dem
+       Markt —, und damit lief die Klausel „Raenge kosten 15 % mehr" seit
+       zwoelf Phasen ins Leere. Gemessen: Stufe 3 lag gleichauf mit Stufe 2
+       (22 % gegen 22 %), und die Verteuerung auf 32 % bewegte davon exakt
+       nichts. Ein Zuschlag auf den Marktpreis ist dieselbe Absicht an der
+       Stelle, an der heute wirklich bezahlt wird. */
+    if (run && regel(run, 'kriegsrecht')) p = Math.round(p * 1.30);
     return p;
   }
 
@@ -596,12 +695,18 @@
     return waehle(rng, passend.length >= n ? passend : pool, akt, n);
   }
 
-  /* ---- Eine Einheit je Art ------------------------------------------------ */
+  /* ---- Eine Einheit nur einmal -------------------------------------------- */
 
-  function belegteArten(run) {
-    return run.team.concat(run.bank).map(function (m) { return GD.unit(m.id).art; });
+  /* Bis Phase 76 hing die Sperre an der ART: zwei Oger gingen nicht, also
+     schlossen Shion und Souei einander aus. Das war als Vielfaltsregel gedacht,
+     kam im Spiel aber als Verlust an — der Markt bot die zweite Einheit als
+     „Aufwertung" an und raeumte die erste weg. Gesperrt ist jetzt nur noch
+     dieselbe EINHEIT; der Aufwertungsweg (bessere Fassung ersetzt die alte)
+     laeuft damit ueber die Einheit statt ueber ihr Volk. */
+  function belegteIds(run) {
+    return run.team.concat(run.bank).map(function (m) { return m.id; });
   }
-  function freieArt(run, art) { return belegteArten(run).indexOf(art) < 0; }
+  function freieEinheit(run, id) { return belegteIds(run).indexOf(id) < 0; }
 
   /* Der Boss dieses Akts — feststehend, nicht je Aufruf neu gewürfelt. */
   function bossOf(run, akt) {
@@ -671,8 +776,21 @@
   /* Nachschub: normale Gegner stehen einmal wieder auf. Als Effekt an der
      Kampfdefinition, nicht als Sonderfall in combat.js — die Engine soll von
      Bedrohungsstufen nichts wissen. */
-  var NACHZUEGLER = 0.5;
+  /* Phase 9 hatte den Nachzuegler auf halbe Werte gesetzt, weil ein voller
+     Extragegner die Siegquote des BOTS von 46 auf 14 % drueckte. Phase 69 dreht
+     das zurueck auf 0.85: der Bot ist ein schwaecherer Spieler als der Mensch,
+     und gegen den Menschen war eine Halbfigur keine Ueberzahl, sondern ein
+     Ziel mehr im Log. */
+  var NACHZUEGLER = 0.75;
   var NACHSCHUB_LEBEN = 0.3;
+  /* Phase 69 hatte Sturmgott zusaetzlich Tempo gegeben, weil die Stufe sonst
+     auf 14 von 16 Knoten identisch mit Stufe 4 war. Seit die Beutekuerzung
+     diese Stufe traegt, ist der Aufschlag Ballast: mit ihm mass der Bot 0 %,
+     also gar nichts mehr. Sturmgott ist jetzt die OEKONOMIE-Stufe — ein
+     Drittel weniger Einkommen, drei Leben, doppelt eskalierende Bosse —, und
+     das unterscheidet sie deutlicher von 1 bis 4 als noch ein Werteaufschlag,
+     von denen die unteren Stufen schon vier haben. */
+  var STURM_TEMPO = 1.0;
 
   var NACHSCHUB = { hook: 'onDeath', name: 'Nachschub',
     text: 'Steht einmal mit 30 % Leben wieder auf.', keywords: ['heilung'],
@@ -711,22 +829,28 @@
       foes = foes.concat([nach]);
     }
     if (regel(run, 'nachschub') && node.type !== 'boss') {
-      /* Nur der vorderste Gegner kommt zurück. Auf alle angewandt kostete die
-         Regel gemessen 17 Punkte Siegquote statt der gewollten 7 — die Zahl der
-         zusätzlichen Körper wiegt schwerer als deren Leben. */
-      foes = foes.map(function (f, i) {
-        if (i) return f;
+      /* Jetzt steht JEDER Gegner einmal auf, nicht nur der vorderste. Phase 9
+         hatte das zurueckgenommen, weil es den Bot 17 statt 7 Punkte kostete —
+         aber die Regel soll das Spiel aendern, nicht die Quote schonen: wer
+         Schaden nur verteilt, raeumt jetzt zweimal ab. Das ist die Stufe, auf
+         der Exekution und Ballung zaehlen statt Nadelstiche. */
+      foes = foes.map(function (f) {
         var k = {};
         for (var x in f) k[x] = f[x];
         k.effects = (f.effects || []).concat([NACHSCHUB]);
         return k;
       });
     }
-    if (regel(run, 'sturmgott') && node.type === 'boss') {
+    if (regel(run, 'sturmgott')) {
+      /* Der Regeltext verspricht „jetzt zaehlt Tempo", aber die Regel fasste
+         nur Bosse an — auf 14 von 16 Knoten war Stufe 5 identisch mit Stufe 4
+         plus zwei Leben weniger. Jetzt schlagen ALLE Gegner schneller zu, und
+         die Boss-Eskalation kommt beim Boss obendrauf. */
       foes = foes.map(function (f) {
         var k = {};
         for (var x in f) k[x] = f[x];
-        k.enrage = (f.enrage || 0) * 2;
+        k.spd = Math.round((f.spd || 0) * STURM_TEMPO);
+        if (node.type === 'boss') k.enrage = (f.enrage || 0) * 2;
         return k;
       });
     }
@@ -748,18 +872,52 @@
     var meine = function (l) { return l.filter(function (u) { return u.side === 'player'; }); };
     run.pending = {
       result: res, node: node, devour: null,
-      bilanz: {
-        ticks: res.ticks,
-        lebend: meine(res.survivors).length,
-        gefallen: meine(res.fallen).map(function (u) { return u.name; })
-      }
+      bilanz: (function () {
+        /* Die Uebersicht nach dem Kampf. Wird HIER gerechnet, nicht in der UI:
+           das Kampflog wandert bewusst nicht in den Speicherstand (Phase 13),
+           die fertigen Zahlen dagegen schon. Sonst steht nach einem Neuladen
+           ein leerer Bildschirm da. */
+        var alle = meine(res.survivors.concat(res.fallen));
+        function spitze(feld) {
+          var best = null;
+          alle.forEach(function (u) {
+            if ((u[feld] || 0) > 0 && (!best || u[feld] > best.wert)) {
+              best = { name: u.name, wert: Math.round(u[feld]) };
+            }
+          });
+          return best;
+        }
+        /* Heilung haengt am Empfaenger, nicht am Heiler — `heal()` kennt nur
+           einen `source`-Namen. Statt die Engine dafuer umzubauen, wird das Log
+           an dieser einen Stelle ausgezaehlt. */
+        var proQuelle = {};
+        (res.log || []).forEach(function (l) {
+          if (l.type === 'heal' && l.side === 'player' && l.source) {
+            proQuelle[l.source] = (proQuelle[l.source] || 0) + (l.amount || 0);
+          }
+        });
+        var heilBest = null;
+        Object.keys(proQuelle).forEach(function (k) {
+          if (!heilBest || proQuelle[k] > heilBest.wert) {
+            heilBest = { name: k, wert: Math.round(proQuelle[k]) };
+          }
+        });
+        return {
+          ticks: res.ticks,
+          lebend: meine(res.survivors).length,
+          gefallen: meine(res.fallen).map(function (u) { return u.name; }),
+          austeiler: spitze('dmgDealt'),
+          einstecker: spitze('dmgTaken'),
+          heiler: heilBest
+        };
+      })()
     };
 
     if (res.winner === 'player') {
       /* Eine Währung. Gold und Magicule waren dieselbe Zahl in zwei Beuteln:
          beide kamen aus Kämpfen, beide gingen in Truppstärke. */
-      var beute = ertrag(node.encounter.beute * (node.belagert ? 0.75 : 1)) +
-        ertrag(MAG_JE_KAMPF + inhaltsStufe(run) * 15);
+      var beute = Math.round((ertrag(node.encounter.beute * (node.belagert ? 0.75 : 1)) +
+        ertrag(MAG_JE_KAMPF + inhaltsStufe(run) * 15)) * beuteFaktor(run));
       run.magicules += beute;
       /* Auflage erfüllt: mehr Magicule und ein Posten mehr im Markt. */
       if (p) {
@@ -793,26 +951,24 @@
 
   /* ---- Belohnungen -------------------------------------------------------- */
 
-  /* Belegte Arten waren hier ausgeschlossen — richtig, solange eine Einheit
-     nur EINMAL in den Trupp konnte. Seit Phase 51 ist der Markt aber der
-     Aufwertungsweg: eine belegte Art darf angeboten werden, wenn der Rang des
-     Angebots ueber dem liegt, was schon da steht. Ohne diese Ausnahme erschien
-     nie ein Aufstieg, und der Trupp blieb auf seinen Startraengen sitzen —
-     gemessen 2 % Siege und 3,3 Rangstufen statt 14. */
+  /* Wer schon im Trupp steht, war hier ausgeschlossen — richtig, solange eine
+     Einheit nur EINMAL in den Trupp konnte. Seit Phase 51 ist der Markt aber der
+     Aufwertungsweg: eine belegte Einheit darf angeboten werden, wenn der Rang
+     des Angebots ueber dem liegt, was schon da steht. Ohne diese Ausnahme
+     erschien nie ein Aufstieg, und der Trupp blieb auf seinen Startraengen
+     sitzen — gemessen 2 % Siege und 3,3 Rangstufen statt 14. */
   function unitPool(run, hoechsterRang) {
     var st = inhaltsStufe(run);
     var maxCost = st <= 2 ? 3 : st === 3 ? 4 : 5;
-    var belegt = belegteArten(run);
     var raenge = {};
     run.team.concat(run.bank).forEach(function (m) {
-      var a = GD.unit(m.id).art;
-      if (raenge[a] === undefined || m.rank < raenge[a]) raenge[a] = m.rank;
+      if (raenge[m.id] === undefined || m.rank < raenge[m.id]) raenge[m.id] = m.rank;
     });
     return run.meta.unlockedUnits.map(GD.unit).filter(function (u) {
       if (!u || u.cost > maxCost) return false;
-      if (belegt.indexOf(u.art) < 0) return true;
+      if (raenge[u.id] === undefined) return true;
       /* Belegt: nur, wenn ueberhaupt ein besserer Rang gezogen werden KANN. */
-      return (hoechsterRang || 0) > raenge[u.art];
+      return (hoechsterRang || 0) > raenge[u.id];
     });
   }
   function relicPool(run) {
@@ -832,26 +988,38 @@
 
   /* Wen ersetzt dieses Angebot? Seit Phase 51 ist der Markt der Aufwertungsweg:
      Raenge werden nicht mehr einzeln gekauft, also muss eine bessere Fassung
-     derselben Art die alte ERSETZEN koennen. Ohne das war der Rang bei vollem
-     Trupp fuer immer eingefroren — gemessen fiel die Siegquote damit auf 2 %,
-     weil `addUnit` an der belegten Art scheiterte und niemand je aufstieg.
+     derselben EINHEIT die alte ERSETZEN koennen. Ohne das war der Rang bei
+     vollem Trupp fuer immer eingefroren — gemessen fiel die Siegquote damit auf
+     2 %, weil `addUnit` am belegten Platz scheiterte und niemand je aufstieg.
 
      Nur nach oben: eine schwaechere Fassung zu kaufen ist kein Aufstieg, sondern
      ein Versehen. Der Einsatz der alten Einheit kommt als Anrechnung zurueck,
      wie beim Entlassen — sonst zahlt man denselben Weg zweimal. */
   function ersetzbar(run, u, rang) {
-    if (freieArt(run, u.art)) return null;
+    if (freieEinheit(run, u.id)) return null;
     var alt = run.team.concat(run.bank).filter(function (m) {
-      return GD.unit(m.id).art === u.art;
+      return m.id === u.id;
     })[0];
     return (alt && rang > alt.rank) ? alt : null;
+  }
+
+  /* Was die UI fragen muss, statt `freieEinheit`: liesse sich dieser Posten
+     ueberhaupt kaufen? `addUnit` kann laengst aufwerten — die Marktkarte war
+     trotzdem gesperrt, und damit war der einzige Weg,
+     eine eigene Einheit hochzubringen, zugenagelt. Eine zweite Regel an einer
+     zweiten Stelle, die von der ersten abwich; jetzt gibt es nur noch diese. */
+  function kaufbar(run, id, rang) {
+    var u = GD.unit(id);
+    if (!u) return false;
+    if (freieEinheit(run, u.id)) return true;
+    return !!ersetzbar(run, u, rang || 0);
   }
 
   function addUnit(run, id, startPassiveId, rang, passiveListe) {
     var u = GD.unit(id);
     if (!u) return false;
-    if (!freieArt(run, u.art)) {
-      /* Aufwertung derselben Art: die alte Einheit macht Platz und ihr Einsatz
+    if (!freieEinheit(run, u.id)) {
+      /* Aufwertung derselben Einheit: die alte Einheit macht Platz und ihr Einsatz
          wird angerechnet. Die Ausruestung wandert zurueck in den Beutel. */
       var weg = ersetzbar(run, u, rang || 0);
       if (!weg) return false;
@@ -1109,20 +1277,42 @@
     /* Der Pool kennt dieselbe Obergrenze wie der Wurf — sonst stehen Arten im
        Angebot, deren Aufwertung das Fenster gar nicht hergibt. */
     var obergrenze = rangObergrenze(st);
-    themenWahl(run, rng, unitPool(run, obergrenze), st,
-               (regel(run, 'kriegsrecht') ? 2 : 4) + (extra || 0))
-      .forEach(function (u) {
+    var wahl = themenWahl(run, rng, unitPool(run, obergrenze), st,
+                          (regel(run, 'kriegsrecht') ? 2 : 4) + (extra || 0));
+    /* EIN Platz gehoert der Aufwertung. Solange die Art den Trupp sperrte, war
+       fast jedes Angebot einer belegten Art automatisch eine Aufwertung — mit
+       der Sperre fiel auch dieser Weg weg: bei 39 Einheiten trifft der Wurf die
+       eigenen sechs kaum noch. Gemessen sackten die Rangstufen von 14,4 auf
+       10,5 und die Siegquote von 53 auf 27 %. Also wird der Platz reserviert,
+       statt auf den Zufall zu hoffen. */
+    var eigene = run.team.concat(run.bank).filter(function (m) { return m.rank < obergrenze; });
+    var soll = Math.min(wahl.length - 1, eigene.length);
+    for (var iA = 0; iA < soll; iA++) {
+      var drin = wahl.filter(function (u) {
+        return eigene.some(function (m) { return m.id === u.id; });
+      }).length;
+      if (drin > iA) continue;                       // der Wurf hat den Platz selbst gefuellt
+      var kand = eigene.filter(function (m) {
+        return !wahl.some(function (u) { return u.id === m.id; });
+      });
+      if (!kand.length) break;
+      wahl[wahl.length - 1 - iA] = GD.unit(kand[Math.floor(rng() * kand.length)].id);
+    }
+    wahl.forEach(function (u) {
         var rang = wuerfleRang(rng, st);
-        /* Steht die Art schon im Trupp, ist das Angebot eine Aufwertung — dann
-           muss der Rang darueber liegen, sonst waere der Posten unkaufbar. */
+        /* Steht die EINHEIT schon im Trupp, ist das Angebot eine Aufwertung —
+           dann muss der Rang darueber liegen, sonst waere der Posten unkaufbar.
+           Seit Phase 76 haengt das an der Einheit, nicht mehr an ihrer Art: ein
+           zweiter Oger ist ein Zugang, keine Verdraengung. */
         var vorhanden = run.team.concat(run.bank).filter(function (m) {
-          return GD.unit(m.id).art === u.art;
+          return m.id === u.id;
         })[0];
         if (vorhanden) rang = Math.max(rang, Math.min(obergrenze, vorhanden.rank + 1));
-        var pas = wuerfleLinienPassive(u.id, rang + 1, rng);
+        var erbe = vorhanden ? passivIds(vorhanden) : null;
+        var pas = wuerfleLinienPassive(u.id, rang + 1, rng, erbe);
         offers.push({ kind: 'unit', id: u.id, name: u.name,
                       rang: rang, rangName: RANK_NAME[rang],
-                      price: rangPreis(u, rang),
+                      price: rangPreis(u, rang, run),
                       text: unitText(u), rarity: u.rarity,
                       passive: pas[0] || null,
                       passives: pas,
@@ -1225,7 +1415,7 @@
     var f = regel(run, 'belagerung') ? 0.85 : 1;
     /* Drei verschiedene Antworten, nicht dreimal dieselbe Währung: Magicule
        jetzt, ein Ausrüstungsstück, oder dauerhafte Werte. */
-    if (i === 0) run.magicules += Math.round(ertrag(140) * f);
+    if (i === 0) run.magicules += Math.round(ertrag(140) * f * beuteFaktor(run));
     else if (i === 1) api.grantItem(run);
     else api.buffRandom(run, { hp: Math.round(30 * f), atk: Math.round(4 * f) });
     run.pending.done = true;
@@ -1484,6 +1674,8 @@
     chooseStart: chooseStart,
     rankName: rankName, rankCost: rankCost,
     BEDROHUNG: BEDROHUNG, bedrohung: bedrohung, bedrohungsFaktor: bedrohungsFaktor, regel: regel,
+    beuteFaktor: beuteFaktor, kaufbar: kaufbar, ersetzbar: ersetzbar, mali: mali,
+    shopTest: shopOffers, linienPassiveTest: wuerfleLinienPassive,
     regelnTest: regeln, rollTest: roll, EINSTIEG: EINSTIEG, EINSTIEG_HAERTE: EINSTIEG_HAERTE,
     START_MAX_RARITAET: START_MAX_RARITAET,
     itemSlots: itemSlots, aktivSlots: aktivSlots, passivSlots: passivSlots, praedatorSlots: praedatorSlots,
@@ -1493,7 +1685,7 @@
     entlassenWert: entlassenWert, darfEntlassen: darfEntlassen,
     verkaufeItem: verkaufeItem, verkaufeRelikt: verkaufeRelikt,
     itemWert: itemWert, reliktWert: reliktWert,
-    belegteArten: belegteArten, freieArt: freieArt, waehle: waehle, gewicht: gewicht,
+    belegteIds: belegteIds, freieEinheit: freieEinheit, waehle: waehle, gewicht: gewicht,
     inhaltsStufe: inhaltsStufe, boss: bossOf, STUFEN: STUFEN, ertrag: ertrag,
     PRUEFUNGEN: PRUEFUNGEN, pruefung: pruefung, TYP_NAME: TYP_NAME,
     RANK_COST: RANK_COST, wuerfleRang: wuerfleRang, rangPreis: rangPreis,

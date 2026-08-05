@@ -332,7 +332,7 @@
        überhaupt erst erreicht — zehn Chaos auf dem Ziel bekommt nur, wer
        stapelt, und zehn Antichaos auf sich selbst nur, wer den Realitätswarp
        trägt. Deshalb kostet sie nichts: die Bedingung IST der Preis. */
-    passiv('shion_ang5', 'Ordnungsteufel', 'onHit', ['chaos'], ['chaos'],
+    passiv('shion_ang5', 'Ordnungsteufel', 'onHit', ['chaos'], ['chaos', 'antichaos'],
       'Ab 10 Antichaos auf dir selbst wirst du zum Ordnungsteufel: je Stapel ' +
       '+3 % Angriff, +1,5 % Tempo und +1,8 % Leben — höchstens +90 %. Deine Signatur ' +
       'wird zur Klinge der Ordnung, die den ganzen Trupp mit Antichaos versorgt. Einmal je Kampf.',
@@ -343,7 +343,7 @@
         c.self._ordnung = 1;
         verwandle(c, 'Ordnungsteufel', 'sig_shion_ordnung', anti, 10, 0.03, 0.9);
       }),
-    passiv('shion_ang6', 'Verdorbener Teufel', 'onHit', ['chaos'], ['chaos'],
+    passiv('shion_ang6', 'Verdorbener Teufel', 'onHit', ['chaos', 'antichaos'], ['chaos'],
       'Liegen zusammen 20 Chaos auf den Gegnern, wirst du zum Verdorbenen Teufel: ' +
       'je Stapel +2 % Angriff, +1 % Tempo und +1,2 % Leben — höchstens +90 %. Deine Signatur ' +
       'wird zur Chaosklinge des Verdorbenen (230 % Schaden, doppeltes Chaos). Einmal je Kampf.',
@@ -359,7 +359,7 @@
     /* Chaos und Antichaos sind dasselbe Rad, einmal nach unten und einmal nach
        oben. Diese drei Passiven drehen daran, statt Zahlen zu erhöhen:
        ernten, umleiten, verbrauchen. */
-    passiv('shion_mec5', 'Chaosernte', 'onKill', ['chaos'], ['chaos'],
+    passiv('shion_mec5', 'Chaosernte', 'onKill', ['chaos', 'antichaos'], ['chaos'],
       'Fällt ein Ziel mit mindestens 5 Chaos, erntet Shion die Ladung: je Stapel +2 % Angriff dauerhaft, und der ganze Trupp bekommt ein Drittel davon als Antichaos',
       function (c) {
         var geerntet = Math.floor(c.getoetet.status.chaos || 0);
@@ -368,7 +368,7 @@
         var anti = Math.max(1, Math.round(geerntet / 3));
         c.allies().forEach(function (u) { c.applyStatus(u, 'antichaos', anti); });
       }),
-    passiv('shion_unt5', 'Umkehr der Ordnung', 'onTurnStart', ['chaos'], ['chaos'],
+    passiv('shion_unt5', 'Umkehr der Ordnung', 'onTurnStart', ['chaos', 'antichaos'], ['chaos'],
       'Zu Beginn jedes Zuges zieht Shion 2 Chaos vom am stärksten belasteten Gegner ab und gibt sie dem schwächsten Verbündeten als Antichaos — Unordnung wird zu Ordnung',
       function (c) {
         var quelle = c.foes().reduce(function (a, b) {
@@ -379,7 +379,7 @@
         var ziel = schwaechstes(c.allies(), function (u) { return u.hp / u.maxHp; });
         if (ziel) c.applyStatus(ziel, 'antichaos', 2);
       }),
-    passiv('shion_def5', 'Ordnungspanzer', 'onDamaged', ['chaos'], ['chaos'],
+    passiv('shion_def5', 'Ordnungspanzer', 'onDamaged', ['chaos'], ['chaos', 'antichaos'],
       'Je Antichaos-Stapel erleidet Shion 3 % weniger Schaden — höchstens 45 %. Jeder abgefangene Treffer verbraucht dafür einen Stapel',
       function (c) {
         var anti = Math.floor(c.self.status.antichaos || 0);
@@ -411,16 +411,16 @@
       'Chaos, das Shion anlegt, baut sich nicht mehr ab — es bleibt bis zum Ende des Kampfes liegen',
       function (c) { c.self.gesetzlos = 1; }),
 
-    passiv('shion_unt1', 'Realitätswarp', 'onStart', ['chaos'], [],
+    passiv('shion_unt1', 'Realitätswarp', 'onStart', ['chaos', 'antichaos'], [],
       'Jeder von Shion angelegte Chaos-Stapel legt dem eigenen Trupp ebenso viel Antichaos an — dieselbe Streuung, aber nur nach oben',
       function (c) { c.self.antichaosWarp = Math.max(c.self.antichaosWarp || 0, 1); }),
     passiv('shion_unt2', 'Ordnung aus Unordnung', 'onChaos', ['chaos', 'heilung'], [],
       'Jeder angelegte Stapel gibt allen Verbündeten +1 Regeneration',
       function (c) { c.allies().forEach(function (u) { u.regen += Math.max(1, Math.round(c.stapel)); }); }),
-    passiv('shion_unt3', 'Geteilte Wut', 'onStart', ['chaos'], [],
+    passiv('shion_unt3', 'Geteilte Wut', 'onStart', ['chaos', 'antichaos'], [],
       'Der Realitätswarp legt 50 % mehr Antichaos an',
       function (c) { c.self.antichaosWarp = (c.self.antichaosWarp || 0) + 0.5; }),
-    passiv('shion_unt4', 'Wille der Herrin', 'onStart', ['chaos', 'schild'], [],
+    passiv('shion_unt4', 'Wille der Herrin', 'onStart', ['chaos', 'schild', 'antichaos'], [],
       'Der ganze Trupp startet mit 3 Antichaos und Schild 30',
       function (c) {
         c.allies().forEach(function (u) {
@@ -2870,7 +2870,7 @@
         c.dmg *= 2.4;
         c.self.pierce = Math.max(c.self.pierce || 0, 1);
       }),
-    passiv('rimuru_ang2', 'Große Weisheit', 'onHit', ['chaos'], [],
+    passiv('rimuru_ang2', 'Große Weisheit', 'onHit', ['chaos', 'antichaos'], [],
       'Jeder dritte Schlag wertet aus: +20 % Schaden je verschiedenem Zustand auf dem Ziel, und Rimuru legt sich ebenso viel Antichaos an',
       function (c) {
         if (!zaehler(c.self, 'rimuru_ang2', 3)) return;
@@ -2879,13 +2879,13 @@
         c.dmg *= 1 + 0.2 * n;
         c.applyStatus(c.self, 'antichaos', n);
       }),
-    passiv('rimuru_ang3', 'Angepasst', 'onHit', [], ['chaos'],
+    passiv('rimuru_ang3', 'Angepasst', 'onHit', [], ['chaos', 'antichaos'],
       'Führt ein Verbündeter Chaos, schlägt Rimuru 3 % härter je eigenem Antichaos-Stapel — sonst 1 %',
       function (c) {
         var f = truppFuehrt(c, 'chaos') ? 0.03 : 0.01;
         c.dmg *= 1 + Math.min(0.6, f * (c.self.status.antichaos || 0));
       }),
-    passiv('rimuru_ang4', 'Azathoth', 'onStart', ['chaos'], [],
+    passiv('rimuru_ang4', 'Azathoth', 'onStart', ['chaos'], ['antichaos'],
       'Rimurus Antichaos zählt doppelt für alles, was daran hängt — dafür verliert er in jedem Zug einen Stapel obendrein',
       function (c) {
         c.self.antichaosDoppelt = 1;
@@ -2894,14 +2894,14 @@
         } });
       }),
 
-    passiv('rimuru_mec1', 'Prädator', 'onStart', ['chaos'], [],
+    passiv('rimuru_mec1', 'Prädator', 'onStart', ['chaos', 'antichaos'], [],
       'Verschlingt zu Kampfbeginn das Wissen über das Feld: je verschiedenem Zustand auf allen Gegnern 1 Antichaos für Rimuru',
       function (c) {
         var n = 0;
         c.foes().forEach(function (f) { n += gelesen(f); });
         if (n) c.applyStatus(c.self, 'antichaos', Math.min(8, n));
       }),
-    passiv('rimuru_mec2', 'Magen der Unendlichkeit', 'onHit', ['chaos'], [],
+    passiv('rimuru_mec2', 'Magen der Unendlichkeit', 'onHit', ['chaos', 'antichaos'], [],
       'Jeder dritte Schlag verschlingt einen Stapel jedes Zustands auf dem Ziel — und macht daraus je 2 Antichaos für Rimuru',
       function (c) {
         var geerntet = 0;
@@ -2916,7 +2916,7 @@
         }
         c.applyStatus(c.self, 'antichaos', geerntet * 2);
       }),
-    passiv('rimuru_mec3', 'Analyse teilen', 'onTurnStart', ['chaos'], ['chaos'],
+    passiv('rimuru_mec3', 'Analyse teilen', 'onTurnStart', ['chaos', 'antichaos'], ['chaos'],
       'Führt ein Verbündeter Chaos, gibt Rimuru jeden Zug 2 seiner Antichaos-Stapel an den ganzen Trupp weiter — sonst 1',
       function (c) {
         var n = truppFuehrt(c, 'chaos') ? 2 : 1;
@@ -2935,16 +2935,16 @@
         } });
       }),
 
-    passiv('rimuru_unt1', 'Bund der Monster', 'onStart', ['chaos'], [],
+    passiv('rimuru_unt1', 'Bund der Monster', 'onStart', ['chaos', 'antichaos'], [],
       'Zu Kampfbeginn 4 Antichaos für den ganzen Trupp',
       function (c) { c.allies().forEach(function (u) { c.applyStatus(u, 'antichaos', 4); }); }),
-    passiv('rimuru_unt2', 'Namensgebung', 'onDamaged', ['chaos'], [],
+    passiv('rimuru_unt2', 'Namensgebung', 'onDamaged', ['chaos', 'antichaos'], [],
       'Jeder vierte Treffer auf den Trupp gibt allen 2 Antichaos und dauerhaft +4 Angriff',
       function (c) {
         if (!zaehler(c.self, 'rimuru_unt2', 4)) return;
         c.allies().forEach(function (u) { c.applyStatus(u, 'antichaos', 2); u.atk += 4; });
       }),
-    passiv('rimuru_unt3', 'Ordnung aus Analyse', 'onStart', ['chaos'], ['chaos'],
+    passiv('rimuru_unt3', 'Ordnung aus Analyse', 'onStart', ['chaos', 'antichaos'], ['chaos'],
       'Führt ein Verbündeter Chaos, legt jeder Treffer des Trupps dem Schlagenden 1 Antichaos an — sonst nur Rimuru selbst',
       function (c) {
         var alle = truppFuehrt(c, 'chaos');
@@ -2954,7 +2954,7 @@
           } });
         });
       }),
-    passiv('rimuru_unt4', 'Herr der Monster', 'onStart', ['chaos'], [],
+    passiv('rimuru_unt4', 'Herr der Monster', 'onStart', ['chaos'], ['antichaos'],
       'Antichaos des Trupps wirkt doppelt — Rimuru selbst greift nur noch mit einem Viertel an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
@@ -2978,7 +2978,7 @@
         var d = truppFuehrt(c, 'chaos') ? 0.14 : 0.2;
         c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
       }),
-    passiv('rimuru_def4', 'Ultimative Fähigkeit', 'onDeath', ['chaos'], [],
+    passiv('rimuru_def4', 'Ultimative Fähigkeit', 'onDeath', ['chaos', 'antichaos'], [],
       'Steht einmal je Kampf mit 40 % Leben wieder auf und verschlingt dabei das ganze Feld: 1 Antichaos je Zustand auf jedem Gegner — danach heilt ihn nichts mehr',
       function (c) {
         if (c.self._auf) return;
@@ -5793,7 +5793,7 @@
        VERSCHIEDENE Zustand auf dem Ziel ist ein Datenpunkt und wird zu Antichaos.
        Damit hängt seine Stärke daran, was der Rest des Trupps anrichtet, und er
        ist die Gegenfigur zu Shion: sie sät Chaos, er erntet Ordnung. */
-    aktiv('sig_rimuru', 'Prädator', 3, ['chaos'],
+    aktiv('sig_rimuru', 'Prädator', 3, ['chaos', 'antichaos'],
       '170 % Schaden und ignoriert Rüstung vollständig. Für jeden VERSCHIEDENEN ' +
       'Zustand auf dem Ziel legt Rimuru sich 1 Antichaos an — und je Antichaos-Stapel ' +
       'trifft er 2 % härter. Tötet der Schlag, wächst sein Angriff dauerhaft um 12 %.',
@@ -6249,14 +6249,25 @@
     rarName: function (r) { return RARITAET_NAME[r] || ''; },
     aktiv: aktiv, passiv: passiv, chance: chance,
     /* Keyword-Übersicht für die UI: was erzeugt das Team, was verstärkt es? */
+    /* `antichaos` zaehlt als `chaos`. Es ist keine eigene Build-Linie, sondern
+       die Kehrseite derselben — `Combat.RESONANZ.chaos` sagt das woertlich
+       („Chaos UND Antichaos streuen die Werte um ein Viertel weiter"). Als
+       eigenes Wort gefuehrt wuerde es die Linie spalten: Shion und Rimuru
+       traegen dann zwei halbe Themen statt eines ganzen und erreichten die
+       Resonanzschwelle seltener. Sichtbar ist es trotzdem — die Marke am
+       Kaempfer und der Tag an der Faehigkeit lesen `keywords` direkt. */
+    FOLGT: { antichaos: 'chaos' },
     keywords: function (abilities) {
       var out = {};
+      var folgt = root.Abilities.FOLGT;
       abilities.forEach(function (a) {
-        (a.keywords || []).forEach(function (k) {
+        (a.keywords || []).forEach(function (k0) {
+          var k = folgt[k0] || k0;
           out[k] = out[k] || { quellen: 0, verstaerker: 0 };
           out[k].quellen++;
         });
-        (a.amplifies || []).forEach(function (k) {
+        (a.amplifies || []).forEach(function (k0) {
+          var k = folgt[k0] || k0;
           out[k] = out[k] || { quellen: 0, verstaerker: 0 };
           out[k].verstaerker++;
         });
