@@ -1652,10 +1652,11 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
-    /* Jeder Klick loest den AudioContext — Browser sperren ihn, bis eine
-       Nutzergeste kommt. Der leise Klick selbst ist reine UI-Rueckmeldung,
-       kein Ersatz fuer die Kampftoene aus `klingt()`. */
-    Klang.wecken();
+    /* `spiele()` weckt den AudioContext bei Bedarf selbst — Browser sperren
+       ihn, bis eine Nutzergeste kommt, und dieser Klick ist eine. Ist Ton
+       gerade aus, bleibt es beim stillen No-Op, statt trotzdem einen Kontext
+       anzulegen. Der leise Klick selbst ist reine UI-Rueckmeldung, kein
+       Ersatz fuer die Kampftoene aus `klingt()`. */
     Klang.spiele('ui');
     a(el.dataset);
   }

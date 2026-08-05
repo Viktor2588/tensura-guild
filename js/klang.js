@@ -48,8 +48,14 @@
   function setzeAn(wert) {
     an = !!wert;
     try { localStorage.setItem('tensura-klang', an ? 'an' : 'aus'); } catch (e) {}
+    /* Stummschalten legt keinen Kontext an — sonst weckt jedes Muten einen
+       AudioContext, nur um ihn sofort auf 0 zu drehen. */
+    if (!an) {
+      if (master) master.gain.value = 0;
+      return an;
+    }
     wecken();
-    if (master) master.gain.value = an ? 0.35 : 0;
+    if (master) master.gain.value = 0.35;
     return an;
   }
 
@@ -149,7 +155,7 @@
      `Regie.zeitplan` — dieselbe Vorausschau, die dem Brett schon sagt, wann
      ein Treffer toedlich wird, sagt hier, wann er lauter werden soll. */
   function spiele(typ, kw, staerke, beat) {
-    if (!verfuegbar()) return;
+    if (!an || !verfuegbar()) return;
     wecken();
     if (!ctx || !master) return;
     var t0 = ctx.currentTime;
