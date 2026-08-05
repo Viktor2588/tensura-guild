@@ -3826,6 +3826,72 @@ verlangte, und ein neuer, der Shion und Souei zusammen in den Trupp stellt.
 Worktree `/home/viktor/tensura/worktree/phase-76-antichaos`, Branch
 `phase-76-antichaos`.
 
+### Phase 77 (2026-08-05): Der Weg zu echten Figurenbildern
+
+`dev/asset-recherche.md` beantwortet seit dem 04.08. jede Wissensfrage: welches
+Modell, welcher Prompt, welche Rechtslage. Fehlten drei praktische Dinge — ein
+Umfang, ein Rechner und eine Abnahme. Diese Phase liefert die Abnahme und
+verwirft zwei der alten Annahmen.
+
+**Der Umfang war ueberholt.** Die Recherche rechnet mit „~50 Figuren"; der
+Bestand ist inzwischen **39 Einheiten + 72 Gegner = 111**. Bei 4–6 Kandidaten je
+Figur sind das ueber 500 Bilder, und der Teil, den kein Skript abnimmt, ist das
+Sichten von Hand. Deshalb erst **sechs Pilotfiguren**, dann neu entscheiden.
+
+Die sechs sind bewusst sechs verschiedene ARTEN (Rimuru, Shion, Ranga, Gobta,
+Gabiru, Orkkrieger) statt der sechs meistgespielten: ein Slime hat keine Fuesse,
+ein Wolf steht auf vieren, und „Fuesse am unteren Bildrand" ist die Vorgabe, an
+der ein Bild als Erstes scheitert.
+
+**Der Rechner faellt weg.** Statt lokaler oder gemieteter GPU ein
+**Browser-Generator** (Civitai/SeaArt/tensor.art) — dieselben
+Illustrious-Checkpoints, um die es in der Recherche geht, im kostenlosen
+Tagesbudget, ohne Einrichtung. Nebenbefund, der den lokalen Weg ohnehin teuer
+gemacht haette: dieser Rechner hat Python 3.14 und kein `pip`, und fuer 3.14
+gibt es noch keine Torch-Wheels — vor dem ersten Bild stuende also ein zweites
+Python.
+
+**`dev/prompts.js`** haelt den Prompt-Rumpf an einer Stelle; nur das erste Feld
+wechselt je Figur. Die Herkunftszeile, die `ASSETS.md` fuer jedes Bild verlangt
+(ohne sie gilt ein Bild als nicht verwendbar), faellt gleich mit ab — von Hand
+waere sie bei jedem Bild dieselbe Abschreibuebung mit einem wechselnden Wort.
+Fuer die Figuren ohne Danbooru-Tag (die eigenen Erfindungen des Spiels) baut es
+eine Beschreibung aus Art und Rolle, denselben zwei Achsen, die auch
+`platzhalter()` zeichnet.
+
+**`dev/bildcheck.js`** ist die Abnahme. `ASSETS.md` stellt acht Anforderungen;
+vier davon sind Geschmack und gehoeren ans Brett, vier sind Pixelarbeit und
+werden hier gemessen: Format 512 × 1024 mit Alphakanal, unterste Bildzeile
+deckend, Scheitel bei 0,85–0,95 der Hoehe, hoechstens 1,5 % der Figurenflaeche
+ueber Luminanz 0,86 (darueber laesst `js/fx.js` alles gluehen). Der Deckel
+zaehlt den ANTEIL statt des Vorkommens — ein glaenzendes Auge ist gewollt, eine
+weisse Ruestung nicht.
+
+Ohne neue Abhaengigkeit: `zlib` liegt in Node, und ein PNG-Dekoder fuer den
+einen Fall, der zaehlt (8 Bit, RGBA, nicht interlaced), sind sechzig Zeilen —
+weniger Aufwand, als Pillow auf diesem Rechner lauffaehig zu machen. Ein
+fehlender Alphakanal ist die haeufigste Lieferung eines Browser-Generators und
+bekommt deshalb eine eigene Meldung statt eines Dekoderfehlers.
+
+`node dev/bildcheck.js --selftest` baut sechs Testbilder im Speicher (eines
+regelkonform, fuenf absichtlich kaputt) und prueft damit den Pruefer. Der
+Dekoder ist die Stelle, die still falsch sein kann; ein PNG von Hand zu
+schreiben ist billiger, als Testbilder im Repo zu pflegen. Der Selbsttest
+haengt an `npm test`.
+
+Die Nachbearbeitung aus der Recherche (Pillow-Skript: zuschneiden, einpassen,
+Luminanz deckeln, Rim-Light anlegen) ist **bewusst nicht gebaut**. Sechs Bilder
+von Hand einzupassen dauert kuerzer als das Skript zu schreiben, und
+`dev/bildcheck.js` sagt, ob es gesessen hat. Ab etwa zwanzig Bildern dreht sich
+das — dann ist es die naechste Phase, nicht diese.
+
+Kein Eingriff am Spiel: `js/brett3d.js` nimmt eine Datei unter
+`assets/einheiten/<id>.png` seit Phase 55 von selbst. `dev/sim.js` 459/459 ·
+`dev/uitest.js` 112/112 · `dev/bildcheck.js --selftest` 6/6.
+
+Worktree `/home/viktor/tensura/worktree/phase-77-assets`, Branch
+`phase-77-assets`.
+
 ## 5. Risiken
 
 - **Content ist der Job, nicht die Engine.** 40 einzigartige Signaturen sind mehr
