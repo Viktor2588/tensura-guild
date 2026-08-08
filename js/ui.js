@@ -1741,7 +1741,12 @@
       });
     });
     var btnKlang = $('btn-klang');
-    function zeichneKlangKnopf() { btnKlang.textContent = Klang.istStumm() ? '🔇' : '🔊'; }
+    function zeichneKlangKnopf() {
+      var istStumm = Klang.istStumm();
+      btnKlang.textContent = istStumm ? '🔇' : '🔊';
+      btnKlang.setAttribute('aria-pressed', String(!istStumm));
+      btnKlang.setAttribute('aria-label', istStumm ? 'Klang einschalten' : 'Klang ausschalten');
+    }
     if (btnKlang) {
       zeichneKlangKnopf();
       btnKlang.addEventListener('click', function () {
