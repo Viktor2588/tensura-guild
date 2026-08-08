@@ -358,7 +358,7 @@
      gewuenschte Lautstaerke vorgemerkt. */
   var ton = 'voll';
   try { ton = localStorage.getItem('tensura-ton') || 'voll'; } catch (e) {}
-  Klang.stufe(ton);
+  ton = Klang.stufe(ton);
 
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
@@ -1450,7 +1450,8 @@
     kaufen: function (d) {
       var offers = run.pending && (run.pending.markt || run.pending.offers);
       var o = offers && offers[+d.i];
-      var aufstieg = o && o.kind === 'unit' && !!R.ersetzbar(run, GD.unit(o.id), o.rang);
+      var aufstieg = o && (o.kind === 'rang' ||
+        (o.kind === 'unit' && !!R.ersetzbar(run, GD.unit(o.id), o.rang)));
       if (R.buy(run, +d.i)) Klang[aufstieg ? 'rang' : 'kauf']();
       render(); speichern();
     },
