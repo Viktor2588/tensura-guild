@@ -361,6 +361,18 @@
     });
   }
 
+  var tonAn = true;
+  try { tonAn = localStorage.getItem('tensura-audio') !== 'aus'; } catch (e) {}
+  Klang.schalte(tonAn);
+
+  function zeigeAudiowahl() {
+    var reihe = $('menu-audio');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=audio]'), function (b) {
+      b.classList.toggle('an', (b.dataset.v === 'an') === tonAn);
+    });
+  }
+
   function pumpe(nun) {
     if (!replay || replay.fertig) return;
     replay.raf = requestAnimationFrame(pumpe);
@@ -398,6 +410,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    Klang.spiele(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -785,6 +798,7 @@
     if (replay.raf) cancelAnimationFrame(replay.raf);
     replay.raf = null;
     replay.fertig = true;
+    Klang.ergebnis(replay.res.winner === 'player');
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -1385,6 +1399,12 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    audio: function (d) {
+      tonAn = d.v !== 'aus';
+      Klang.schalte(tonAn);
+      try { localStorage.setItem('tensura-audio', tonAn ? 'an' : 'aus'); } catch (e) {}
+      zeigeAudiowahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1743,6 +1763,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeAudiowahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
