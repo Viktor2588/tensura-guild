@@ -16,6 +16,17 @@ bleiben. Bewusst r149 statt neuer: das ist die letzte Fassung mit einem
 UMD-Build, der sich per `<script>` einbinden lässt — der Rest des Projekts hat
 keinen Bauschritt und soll keinen bekommen.
 
+## Klang
+
+**Keine Audiodatei im Repo, und keine ist geplant.** `js/audio.js`
+synthetisiert jeden Ton zur Laufzeit über die Web-Audio-API (Oszillatoren
+plus Hüllkurve, gefiltertes Rauschen für Brand und Donner) statt fertige
+Sounddateien einzubinden — damit stellt sich die Provenienzfrage dieser
+Datei für Klang gar nicht erst: es gibt nichts, das von irgendwoher stammt.
+Sollten doch einmal echte Audiodateien dazukommen (Musik, Sprachausgabe),
+gehören sie unter `assets/audio/` und eine Herkunftszeile hierhin, nach
+demselben Muster wie bei den Figuren unten.
+
 ## Figuren
 
 **Stand: es gibt noch keine Bilddateien.** Die Ansicht zeichnet Platzhalter zur

@@ -398,6 +398,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    Klang.ereignis(l);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -785,6 +786,7 @@
     if (replay.raf) cancelAnimationFrame(replay.raf);
     replay.raf = null;
     replay.fertig = true;
+    if (replay.res.winner === 'player') Klang.sieg(); else Klang.niederlage();
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -1413,10 +1415,10 @@
       render(); speichern();
     },
     start: function (d) { R.chooseStart(run, +d.i); render(); speichern(); },
-    kaufen: function (d) { R.buy(run, +d.i); render(); speichern(); },
+    kaufen: function (d) { R.buy(run, +d.i); Klang.kauf(); render(); speichern(); },
     event: function (d) { R.eventChoose(run, +d.i); render(); speichern(); },
     lager: function (d) { R.camp(run, +d.i); render(); speichern(); },
-    pwahl: function (d) { R.choosePassive(run, +d.i); render(); speichern(); },
+    pwahl: function (d) { R.choosePassive(run, +d.i); Klang.entwicklung(); render(); speichern(); },
     platz: function (d) {
       if (!tauschUid || tauschUid === d.uid) tauschUid = tauschUid === d.uid ? null : d.uid;
       else { R.swap(run, tauschUid, d.uid); tauschUid = null; speichern(); }
@@ -1704,6 +1706,7 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    Klang.klick();
     a(el.dataset);
   }
 
@@ -1737,6 +1740,21 @@
         s.hidden = s.dataset.blatt !== b.dataset.reiter;
       });
     });
+    var btnKlang = $('btn-klang');
+    function zeichneKlangKnopf() {
+      var istStumm = Klang.istStumm();
+      btnKlang.textContent = istStumm ? '🔇' : '🔊';
+      btnKlang.setAttribute('aria-pressed', String(!istStumm));
+      btnKlang.setAttribute('aria-label', istStumm ? 'Klang einschalten' : 'Klang ausschalten');
+    }
+    if (btnKlang) {
+      zeichneKlangKnopf();
+      btnKlang.addEventListener('click', function () {
+        Klang.stelleStumm(!Klang.istStumm());
+        Klang.wecke();
+        zeichneKlangKnopf();
+      });
+    }
     $('btn-menu').addEventListener('click', function () {
       $('menu-info').textContent = 'Runs: ' + run.meta.runs + ' · Siege: ' + run.meta.wins +
         ' · freigeschaltet: ' + run.meta.unlockedUnits.length + ' Einheiten, ' +
