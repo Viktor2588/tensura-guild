@@ -16,6 +16,15 @@ bleiben. Bewusst r149 statt neuer: das ist die letzte Fassung mit einem
 UMD-Build, der sich per `<script>` einbinden lässt — der Rest des Projekts hat
 keinen Bauschritt und soll keinen bekommen.
 
+## Ton
+
+**Keine Audiodateien.** `js/klang.js` erzeugt jeden Ton zur Laufzeit aus
+Oszillatoren und einem einzigen Rauschpuffer (Web-Audio-API, seit 2026-08-08).
+Damit gibt es hier nichts mit Herkunft zu klären — synthetischer Ton entsteht
+im Code, nicht aus einer Quelle, die eine Lizenz bräuchte. Sollte das Spiel
+später echte Musik oder aufgenommene Effekte bekommen, gehört deren Herkunft
+in eine eigene Tabelle hier, nach demselben Muster wie die Figuren unten.
+
 ## Figuren
 
 **Stand: es gibt noch keine Bilddateien.** Die Ansicht zeichnet Platzhalter zur

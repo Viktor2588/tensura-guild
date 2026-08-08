@@ -353,11 +353,26 @@
   try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
   Brett3D.stufe(effekte);
 
+  /* Wie `effekte`: im Browser gemerkt, nicht im Run. Der Kontext selbst
+     entsteht in Klang.js erst beim ersten Klick — hier wird nur die
+     gewuenschte Lautstaerke vorgemerkt. */
+  var ton = 'voll';
+  try { ton = localStorage.getItem('tensura-ton') || 'voll'; } catch (e) {}
+  ton = Klang.stufe(ton);
+
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
     if (!reihe) return;
     Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=effekte]'), function (b) {
       b.classList.toggle('an', b.dataset.v === effekte);
+    });
+  }
+
+  function zeigeTonwahl() {
+    var reihe = $('menu-ton');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=ton]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === ton);
     });
   }
 
@@ -398,6 +413,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    toene(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -455,6 +471,15 @@
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
     else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
     else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
+  }
+
+  /* Wie `zeige`, aber unabhaengig vom Brett: die SVG-Lagekarte (ohne WebGL)
+     soll genauso zu hoeren sein wie die 2.5D-Ansicht. */
+  function toene(l, beat) {
+    if (l.type === 'aktiv') Klang.aktiv(beat);
+    else if (l.type === 'hit') Klang.treffer(l.dmg / (l.maxHp || 1));
+    else if (l.type === 'heal') Klang.heilung();
+    else if (l.type === 'death') Klang.tod();
   }
 
   function zeile(l) {
@@ -785,6 +810,7 @@
     if (replay.raf) cancelAnimationFrame(replay.raf);
     replay.raf = null;
     replay.fertig = true;
+    if (replay.res.winner === 'player') Klang.sieg(); else Klang.niederlage();
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -1385,6 +1411,11 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    ton: function (d) {
+      ton = Klang.stufe(d.v);
+      try { localStorage.setItem('tensura-ton', ton); } catch (e) {}
+      zeigeTonwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1413,7 +1444,17 @@
       render(); speichern();
     },
     start: function (d) { R.chooseStart(run, +d.i); render(); speichern(); },
-    kaufen: function (d) { R.buy(run, +d.i); render(); speichern(); },
+    /* Rangaufstieg klingt anders als ein gewoehnlicher Einkauf — derselbe
+       Unterschied, den `ersetzbar` schon fuer die Kaufbarkeits-Pruefung
+       braucht: loest der Posten eine eigene, schwaechere Einheit ab? */
+    kaufen: function (d) {
+      var offers = run.pending && (run.pending.markt || run.pending.offers);
+      var o = offers && offers[+d.i];
+      var aufstieg = o && (o.kind === 'rang' ||
+        (o.kind === 'unit' && !!R.ersetzbar(run, GD.unit(o.id), o.rang)));
+      if (R.buy(run, +d.i)) Klang[aufstieg ? 'rang' : 'kauf']();
+      render(); speichern();
+    },
     event: function (d) { R.eventChoose(run, +d.i); render(); speichern(); },
     lager: function (d) { R.camp(run, +d.i); render(); speichern(); },
     pwahl: function (d) { R.choosePassive(run, +d.i); render(); speichern(); },
@@ -1698,12 +1739,17 @@
     if (ok) { render(); speichern(); }
   }
 
+  /* Kein eigener Ton fuer 'kaufen' und 'ton' selbst: die einen spielen ihren
+     eigenen (Kauf-/Rangklang), der andere waere ein Klick auf dem Weg, den
+     Klick abzustellen. */
+  var OHNE_KLICKTON = { kaufen: 1, ton: 1 };
   function klick(ev) {
     var el = ev.target.closest('[data-a]');
     if (!el) return;
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    if (!OHNE_KLICKTON[el.dataset.a]) Klang.klick();
     a(el.dataset);
   }
 
@@ -1743,6 +1789,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeTonwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
