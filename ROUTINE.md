@@ -1,0 +1,7 @@
+# Routine: AAA-Politur
+
+Wird von einer automatisierten Routine gepflegt (siehe `ROUTINE.md` in den
+Anweisungen der Session). Pro Lauf kommt **eine** neue Idee ans Ende, danach
+werden alle offenen Punkte umgesetzt oder mit Begründung offen gelassen.
+
+- [x] Synthetisches Audio-Feedback (SFX) für Kampf, Menü und Markt - `js/klang.js` (neu) erzeugt Treffer-, Heil-, Todes-, Fähigkeits-, Sieg-/Niederlage-, Rangaufstiegs-, Kauf- und Klick-Töne rein aus der Web-Audio-API (Oszillatoren + ein Rauschpuffer), ohne Audiodateien oder neue Abhängigkeit. Eingehängt in `js/ui.js` (`toene()` parallel zu `zeige()`, `endeReplay()`, `aktionen.kaufen`, `klick()`) und `index.html`/`dev/uitest.js` als neues Skript; ein "Ton"-Umschalter (Voll/Sparsam/Aus) steht neben "Effekte" im Menü und merkt sich die Wahl in `localStorage`. Bisher hatte das Spiel laut `README.md` ("Keine Grafik — Textkarten und Balken", inzwischen durch die 2.5D-Ansicht überholt) und `js/fx.js`/`js/brett3d.js` jede Menge visuelle Politur (Bloom, Zeitlupe, Hitstop, Kamera), aber keinen einzigen Ton — der auffälligste fehlende Baustein für ein AAA-Spielgefühl. `node dev/sim.js` 459/459, `node dev/uitest.js` 112/112, `node dev/bildcheck.js --selftest` 6/6; manuell in Chromium (Playwright) geprüft: Menü-Umschalter, alle `Klang.*`-Funktionen einzeln aufgerufen — keine Fehler, jsdom (ohne `AudioContext`) bleibt über `Klang.verfuegbar()` stumm.
