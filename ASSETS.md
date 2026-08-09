@@ -16,6 +16,13 @@ bleiben. Bewusst r149 statt neuer: das ist die letzte Fassung mit einem
 UMD-Build, der sich per `<script>` einbinden lässt — der Rest des Projekts hat
 keinen Bauschritt und soll keinen bekommen.
 
+## Ton
+
+`js/klang.js` (Routine vom 2026-08-09) erzeugt jeden Ton zur Laufzeit per Web
+Audio API — Oszillatoren und ein Rauschpuffer, keine Audiodatei. Damit gibt es
+hier **nichts mit eigener Herkunftszeile**: keine Lizenzfrage, kein Download,
+kein Eintrag nötig. Das ist bewusst so und keine Lücke in dieser Liste.
+
 ## Figuren
 
 **Stand: es gibt noch keine Bilddateien.** Die Ansicht zeichnet Platzhalter zur

@@ -361,6 +361,20 @@
     });
   }
 
+  /* Gleiches Muster wie die Effektstufe, eine Zeile darunter im Menü: im
+     Browser gemerkt, nicht im Spielstand. */
+  var ton = 'an';
+  try { ton = localStorage.getItem('tensura-ton') || 'an'; } catch (e) {}
+  Klang.stufe(ton);
+
+  function zeigeTonwahl() {
+    var reihe = $('menu-ton');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=ton]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === ton);
+    });
+  }
+
   function pumpe(nun) {
     if (!replay || replay.fertig) return;
     replay.raf = requestAnimationFrame(pumpe);
@@ -398,6 +412,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    hoerbar(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -455,6 +470,23 @@
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
     else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
     else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
+  }
+
+  /* Ton ist absichtlich UNABHÄNGIG von `Brett3D.verfuegbar()`: auch im
+     SVG-Rückfall ohne WebGL soll ein Treffer sich wie einer anhören. Deshalb
+     eine eigene vierte Stufe neben anwenden/zeile/zeige statt eines weiteren
+     Zweigs darin. */
+  function hoerbar(l, beat) {
+    if (l.type === 'aktiv') Klang.aktiv(l.kw);
+    else if (l.type === 'hit') Klang.treffer(l.dmg / (l.maxHp || 1), beat);
+    else if (l.type === 'heal') Klang.heilung();
+    else if (l.type === 'death') Klang.tod();
+    else if (l.type === 'resonanz') Klang.resonanz();
+    else if (l.type === 'kombi') Klang.kombi();
+    else if (l.type === 'verwandlung') Klang.verwandlung();
+    else if (l.type === 'entladung') Klang.entladung();
+    else if (l.type === 'ausweichen') Klang.ausweichen();
+    else if (l.type === 'fehlschlag') Klang.fehlschlag();
   }
 
   function zeile(l) {
@@ -949,7 +981,16 @@
 
   /* --------------------------------------------------------------- Ende */
 
+  /* Schlüssel statt Bool: `render()` zeichnet den Endbildschirm bei jedem
+     erneuten Aufruf neu (z. B. nach dem Menü), die Fanfare soll aber nur
+     einmal je Run laufen. */
+  var endeTonSchluessel = null;
   function zeichneEnde() {
+    var schluessel = run.meta.runs + ':' + (run.won ? 'sieg' : 'niederlage');
+    if (schluessel !== endeTonSchluessel) {
+      endeTonSchluessel = schluessel;
+      if (run.won) Klang.sieg(); else Klang.niederlage();
+    }
     var html = run.won
       ? '<h2 class="gut">Milim ist bezwungen — der Run ist gewonnen.</h2>'
       : '<h2 class="schlecht">Der Trupp ist gefallen.</h2>';
@@ -1385,6 +1426,11 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    ton: function (d) {
+      ton = Klang.stufe(d.v);
+      try { localStorage.setItem('tensura-ton', ton); } catch (e) {}
+      zeigeTonwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1704,12 +1750,17 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    Klang.klick();
     a(el.dataset);
   }
 
   function start() {
     run = R.load();
     if (!run) run = R.create(Math.floor(Math.random() * 0xffffffff), R.loadMeta());
+    /* Browser verweigern Ton ohne eine echte Nutzergeste — der erste Klick,
+       Touch oder Tastendruck irgendwo auf der Seite reicht. */
+    document.addEventListener('pointerdown', Klang.init, { once: true });
+    document.addEventListener('keydown', Klang.init, { once: true });
     document.addEventListener('click', klick);
     document.addEventListener('pointerdown', zieheStart);
     document.addEventListener('pointermove', bewege);
@@ -1743,6 +1794,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeTonwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');

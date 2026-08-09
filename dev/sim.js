@@ -9,12 +9,33 @@ require('../js/combat.js');
 require('../js/enemies.js');
 require('../js/regie.js');
 require('../js/run.js');
+require('../js/klang.js');
 var GD = globalThis.GameData, EN = globalThis.Enemies, C = globalThis.Combat,
-    R = globalThis.Run, AB = globalThis.Abilities, RG = globalThis.Regie;
+    R = globalThis.Run, AB = globalThis.Abilities, RG = globalThis.Regie, KL = globalThis.Klang;
 
 var pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) pass++; else { fail++; console.log('  ✗ ' + msg); } }
 function head(s) { console.log('--- ' + s + ' ---'); }
+
+/* Node hat kein AudioContext — genau der Fall, den `js/klang.js` abfangen
+   muss, statt zu werfen. Jede Funktion hier ohne echten Ton aufzurufen ist
+   der einzige Weg, das ohne Browser zu prüfen. */
+head('Klang (Ton)');
+ok(typeof KL === 'object', 'Klang ist geladen');
+['verfuegbar', 'init', 'stufe', 'klick', 'aktiv', 'treffer', 'heilung', 'tod',
+ 'resonanz', 'kombi', 'verwandlung', 'entladung', 'ausweichen', 'fehlschlag',
+ 'sieg', 'niederlage'].forEach(function (k) {
+  ok(typeof KL[k] === 'function', 'Klang.' + k + ' ist eine Funktion');
+});
+ok(KL.verfuegbar() === false, 'ohne AudioContext meldet Klang sich als nicht verfügbar');
+try {
+  KL.init(); KL.klick(); KL.aktiv('gift'); KL.treffer(0.4, 'toedlich'); KL.heilung();
+  KL.tod(); KL.resonanz(); KL.kombi(); KL.verwandlung(); KL.entladung();
+  KL.ausweichen(); KL.fehlschlag(); KL.sieg(); KL.niederlage();
+  ok(KL.stufe('aus') === 'aus' && KL.stufe('an') === 'an', 'stufe() schaltet um und meldet den Stand zurück');
+  ok(true, 'jede Funktion laeuft ohne AudioContext ins Leere statt zu werfen');
+} catch (e) { ok(false, 'Klang wirft ohne AudioContext: ' + e.message); }
+
 function mit(id, rank) {
   var m = R.member(id);
   m.rank = rank || 0;

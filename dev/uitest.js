@@ -36,7 +36,7 @@ win.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open
    sagt deshalb nein, und geprüft wird die SVG-Lagekarte — die Rückfallebene,
    die es genau für diesen Fall gibt. */
 ['js/rng.js', 'js/hex.js', 'js/brett3d.js', 'js/abilities.js', 'js/data.js', 'js/combat.js', 'js/enemies.js',
- 'js/fx.js', 'js/regie.js', 'js/run.js', 'js/ui.js'].forEach(function (f) {
+ 'js/fx.js', 'js/klang.js', 'js/regie.js', 'js/run.js', 'js/ui.js'].forEach(function (f) {
   win.eval(fs.readFileSync(path.join(wurzel, f), 'utf8'));
 });
 
@@ -54,6 +54,14 @@ win.UI.start();
 var run = win.UI.aktueller();
 
 /* ---------------------------------------------------------------- Start */
+head('Ton');
+/* jsdom kennt keinen AudioContext — Klang.verfuegbar() muss dann `false`
+   sagen statt zu werfen, und jeder Klick (der Klang.klick() aufruft) muss
+   trotzdem glatt durchlaufen. Genau das prüft der Rest dieser Datei schon
+   mit, weil jeder klick() unten durch Klang.klick() geht. */
+ok(typeof win.Klang === 'object', 'Klang ist geladen');
+ok(win.Klang.verfuegbar() === false, 'ohne AudioContext meldet Klang sich als nicht verfügbar, statt zu werfen');
+
 head('Startdraft');
 ok(/Womit fängst du an/.test(text('main h2')), 'der Startbildschirm fragt nach dem Anfang');
 ok(karten().length === 4, 'vier Anfänge stehen zur Wahl');
