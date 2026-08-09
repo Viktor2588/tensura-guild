@@ -1428,6 +1428,11 @@
     },
     ton: function (d) {
       ton = Klang.stufe(d.v);
+      /* War der allererste Klick der Seite schon dieser hier (Ton stand auf
+         "aus"), sind die einmaligen Gesten-Listener aus `start()` bereits
+         verbraucht — ohne diesen Aufruf entstuende der AudioContext dann nie,
+         und "An" bliebe bis zum Neuladen stumm. */
+      if (ton === 'an') Klang.init();
       try { localStorage.setItem('tensura-ton', ton); } catch (e) {}
       zeigeTonwahl();
     },

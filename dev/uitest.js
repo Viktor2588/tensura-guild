@@ -62,6 +62,38 @@ head('Ton');
 ok(typeof win.Klang === 'object', 'Klang ist geladen');
 ok(win.Klang.verfuegbar() === false, 'ohne AudioContext meldet Klang sich als nicht verfügbar, statt zu werfen');
 
+/* CodeRabbit-Fund an PR #16: der Menü-Schalter setzte nur die "an"-Fahne,
+   ohne den AudioContext nachzuholen. War der allererste Klick der Seite
+   schon der auf "Aus" (die einmaligen Gesten-Listener aus start() sind dann
+   verbraucht), blieb Ton bis zum Neuladen stumm — genau der Fall, den ein
+   echter Browser beim Start mit "Aus" hätte. Ein Mock-AudioContext deckt das
+   hier ohne echte Audiohardware ab. */
+function AudioNodeMock() {
+  this.connect = function () {};
+  this.gain = { value: 0, setValueAtTime: function () {}, exponentialRampToValueAtTime: function () {} };
+  this.frequency = { value: 0, setValueAtTime: function () {}, exponentialRampToValueAtTime: function () {} };
+  this.start = function () {};
+  this.stop = function () {};
+}
+win.AudioContext = function () {
+  this.currentTime = 0;
+  this.sampleRate = 44100;
+  this.destination = {};
+  this.createGain = function () { return new AudioNodeMock(); };
+  this.createOscillator = function () { return new AudioNodeMock(); };
+  this.createBufferSource = function () { return new AudioNodeMock(); };
+  this.createBiquadFilter = function () { return new AudioNodeMock(); };
+  this.createBuffer = function (ch, len) { return { getChannelData: function () { return new Array(len); } }; };
+  this.resume = function () { return { catch: function () {} }; };
+  this.suspend = function () { return { catch: function () {} }; };
+};
+klick($('#menu-ton [data-v="aus"]'));
+ok(win.Klang.verfuegbar() === false, '"Aus" legt trotz vorhandenem AudioContext keinen Ton an');
+klick($('#menu-ton [data-v="an"]'));
+ok(win.Klang.verfuegbar() === true, '"Aus" dann "An" holt den AudioContext nachträglich nach');
+try { win.Klang.klick(); ok(true, 'ein Klang-Aufruf mit echtem AudioContext wirft nicht'); }
+catch (e) { ok(false, 'Klang wirft mit AudioContext: ' + e.message); }
+
 head('Startdraft');
 ok(/Womit fängst du an/.test(text('main h2')), 'der Startbildschirm fragt nach dem Anfang');
 ok(karten().length === 4, 'vier Anfänge stehen zur Wahl');
