@@ -800,7 +800,7 @@
     if (replay.raf) cancelAnimationFrame(replay.raf);
     replay.raf = null;
     replay.fertig = true;
-    if (replay.res.winner === 'player') Ton.sieg(); else if (replay.res.winner === 'enemy') Ton.niederlage();
+    if (replay.res.winner === 'player') Ton.sieg(); else Ton.niederlage();
     zeichneKampf();
     zeichneUnten();
     speichern();
