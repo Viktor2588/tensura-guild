@@ -361,6 +361,20 @@
     });
   }
 
+  /* Ton-Schalter, gleiches Muster wie die Effektstufe: im Browser gemerkt,
+     nicht im Run. `Ton.verfuegbar()` faellt in jsdom (dev/uitest.js) still
+     auf false, deshalb braucht es hier keine eigene Absicherung. */
+  var ton = 'an';
+  try { ton = localStorage.getItem('tensura-ton') || 'an'; } catch (e) {}
+
+  function zeigeTonwahl() {
+    var reihe = $('menu-ton');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=ton]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === ton);
+    });
+  }
+
   function pumpe(nun) {
     if (!replay || replay.fertig) return;
     replay.raf = requestAnimationFrame(pumpe);
@@ -398,6 +412,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    Ton.kampf(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -785,6 +800,7 @@
     if (replay.raf) cancelAnimationFrame(replay.raf);
     replay.raf = null;
     replay.fertig = true;
+    if (replay.res.winner === 'player') Ton.sieg(); else if (replay.res.winner === 'enemy') Ton.niederlage();
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -1385,6 +1401,10 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    ton: function (d) {
+      ton = Ton.stufe(d.v);
+      zeigeTonwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1704,6 +1724,10 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    /* Erster Klick entsperrt den AudioContext (Browserpflicht: erst nach
+       einer Nutzeraktion) — jeder Klick auf eine Aktion ist genau das. */
+    Ton.entsperren();
+    Ton.klick();
     a(el.dataset);
   }
 
@@ -1743,6 +1767,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeTonwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
