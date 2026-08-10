@@ -168,3 +168,12 @@ Die Fragen aus `dev/asset-recherche.md` sind beantwortet:
 | Datei | Werkzeug / Quelle | Prompt | Datum | Lizenz |
 |---|---|---|---|---|
 | — | noch keine | — | — | — |
+
+## Ton
+
+**Keine Audiodatei im Repo.** `js/ton.js` synthetisiert jeden Kampfton zur
+Laufzeit über die Web Audio API (Oszillatoren und gefiltertes Rauschen,
+eigene Hüllkurven) — dieselbe Haltung wie bei den Silhouetten
+(`platzhalter()`) und dem Bloom (`js/fx.js`): kein Fremdcode, keine Lizenz zu
+prüfen, kein Bauschritt. Provenienz ist damit der Quellcode selbst, es gibt
+keine externe Herkunft zu dokumentieren.

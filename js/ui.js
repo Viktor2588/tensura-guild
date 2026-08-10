@@ -353,11 +353,24 @@
   try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
   Brett3D.stufe(effekte);
 
+  /* Wie die Effektstufe: im Browser gemerkt, nicht im Run. */
+  var ton = 'an';
+  try { ton = localStorage.getItem('tensura-ton') || 'an'; } catch (e) {}
+  Ton.stufe(ton);
+
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
     if (!reihe) return;
     Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=effekte]'), function (b) {
       b.classList.toggle('an', b.dataset.v === effekte);
+    });
+  }
+
+  function zeigeTonwahl() {
+    var reihe = $('menu-ton');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=ton]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === ton);
     });
   }
 
@@ -398,6 +411,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    hoere(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -455,6 +469,16 @@
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
     else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
     else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
+  }
+
+  /* Was der Ton aus einem Logeintrag macht — unabhaengig von `zeige()`, denn
+     `Brett3D.verfuegbar()` ist `false` ohne WebGL (Rueckfall auf die
+     SVG-Lagekarte), und Ton hat mit WebGL nichts zu tun. */
+  function hoere(l, beat) {
+    if (l.type === 'aktiv') Ton.aktiv(l.kw, beat);
+    else if (l.type === 'hit') Ton.treffer(l.dmg / (l.maxHp || 1), beat);
+    else if (l.type === 'heal') Ton.heilung();
+    else if (l.type === 'death') Ton.tod(beat);
   }
 
   function zeile(l) {
@@ -1385,6 +1409,11 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    ton: function (d) {
+      ton = Ton.stufe(d.v);
+      try { localStorage.setItem('tensura-ton', ton); } catch (e) {}
+      zeigeTonwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1743,6 +1772,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeTonwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
