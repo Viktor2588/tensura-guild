@@ -355,7 +355,7 @@
 
   var klang = 'voll';
   try { klang = localStorage.getItem('tensura-klang') || 'voll'; } catch (e) {}
-  if (KL) KL.stufe(klang);
+  if (KL) klang = KL.stufe(klang);
 
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
