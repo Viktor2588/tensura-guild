@@ -16,6 +16,21 @@ bleiben. Bewusst r149 statt neuer: das ist die letzte Fassung mit einem
 UMD-Build, der sich per `<script>` einbinden lässt — der Rest des Projekts hat
 keinen Bauschritt und soll keinen bekommen.
 
+## Audio
+
+**Keine Audiodateien.** `js/audio.js` (`root.Klang`) erzeugt jeden Ton zur
+Laufzeit per WebAudio-API — Oszillatoren, gefiltertes Rauschen, Hüllkurven.
+Kein Assettyp, keine Lizenzfrage, keine Herkunftszeile: es gibt keine Datei,
+die von irgendwoher stammen könnte. Eingehängt in `js/ui.js` (`schritt()` für
+Kampfereignisse aus dem Log, `klick()` für erkannte UI-Aktionen), Stufenwahl
+„Voll/Sparsam/Aus" im Menü wie bei den Bildeffekten, gemerkt unter
+`tensura-klang` in `localStorage`. Ohne `AudioContext` (z. B. in jsdom, dem
+UI-Test) bleibt es still — dieselbe Rückfall-Regel wie `Brett3D.verfuegbar()`.
+
+Sollte das Spiel später doch mit eingekauften oder generierten Audiodateien
+arbeiten (Musik, gesprochene Zeilen), gehört deren Herkunft hierher, nach
+demselben Muster wie die Figuren unten.
+
 ## Figuren
 
 **Stand: es gibt noch keine Bilddateien.** Die Ansicht zeichnet Platzhalter zur

@@ -2,7 +2,7 @@
    alles, was den Zustand ändert, geht durch Run.*                            */
 'use strict';
 (function (root) {
-  var R = root.Run, GD = root.GameData, EN = root.Enemies, C = root.Combat, AB = root.Abilities;
+  var R = root.Run, GD = root.GameData, EN = root.Enemies, C = root.Combat, AB = root.Abilities, KL = root.Klang;
 
   var run = null;
   var replay = null;             // { res, i, u:{key->Anzeige}, zeilen, timer, fertig }
@@ -353,11 +353,23 @@
   try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
   Brett3D.stufe(effekte);
 
+  var klang = 'voll';
+  try { klang = localStorage.getItem('tensura-klang') || 'voll'; } catch (e) {}
+  if (KL) KL.stufe(klang);
+
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
     if (!reihe) return;
     Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=effekte]'), function (b) {
       b.classList.toggle('an', b.dataset.v === effekte);
+    });
+  }
+
+  function zeigeKlangwahl() {
+    var reihe = $('menu-klang');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=klang]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === klang);
     });
   }
 
@@ -398,6 +410,9 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    /* Unabhaengig von Brett3D.verfuegbar(): der Ton soll auch auf der
+       SVG-Lagekarte spielen, nicht nur auf dem 2.5D-Brett. */
+    if (KL) KL.ereignis(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -1385,6 +1400,11 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    klang: function (d) {
+      klang = KL ? KL.stufe(d.v) : d.v;
+      try { localStorage.setItem('tensura-klang', klang); } catch (e) {}
+      zeigeKlangwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1704,6 +1724,7 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    if (KL) KL.klick();
     a(el.dataset);
   }
 
@@ -1743,6 +1764,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeKlangwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
