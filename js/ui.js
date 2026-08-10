@@ -388,6 +388,10 @@
   }
 
   function starteReplay(res) {
+    /* Synchron aus dem Klick heraus, nicht erst wenn der erste Logeintrag im
+       rAF-Takt ankommt — sonst laesst der Browser den AudioContext im
+       `suspended`-Zustand haengen (siehe `wecken()` in js/ton.js). */
+    Ton.wecken();
     replay = { res: res, i: 0, u: {}, zeilen: [], fertig: false, raf: null,
                plan: Regie.zeitplan(res.log), konto: 0, zeit: 0, beat: null, stopp: 0 };
     res.roster.forEach(function (r) {

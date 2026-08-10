@@ -34,18 +34,38 @@
   var rauschPuffer = null;     // eine Sekunde weisses Rauschen, wiederverwendet
 
   /* AudioContext-Konstruktoren gibt es unter zwei Namen (Safari alt), und
-     Autoplay-Regeln verbieten Ton VOR einer Nutzergeste. Ein Kampf startet
-     aber immer aus einem Klick heraus — bis der erste Logeintrag ankommt, ist
-     die Geste schon passiert, `resume()` ist also nur eine Formalitaet. */
+     Autoplay-Regeln verbieten Ton VOR einer Nutzergeste — genauer: der
+     Browser will `resume()` INNERHALB desselben synchronen Aufrufstapels wie
+     die Geste sehen, nicht irgendwann danach. Ein `requestAnimationFrame`
+     zaehlt nicht mehr dazu, auch wenn es aus einem Klick heraus geplant
+     wurde. Deshalb reicht es nicht, hier einfach zu warten, bis der erste
+     Logeintrag ankommt (der laeuft laengst im rAF-Takt) — `wecken()` muss
+     synchron aus dem Klick heraus gerufen werden, siehe `starteReplay` in
+     `js/ui.js`. */
   function kontext() {
-    if (ac) { if (ac.state === 'suspended') ac.resume(); return ac; }
+    if (ac) { if (ac.state === 'suspended') sicherResume(ac); return ac; }
     var K = root.AudioContext || root.webkitAudioContext;
     if (!K) return null;
     ac = new K();
     meister = ac.createGain();
     meister.gain.value = 0.34;
     meister.connect(ac.destination);
+    if (ac.state === 'suspended') sicherResume(ac);
     return ac;
+  }
+
+  /* `resume()` liefert ein Promise. Ohne Abfangen wuerde ein abgelehntes
+     Promise (etwa: Geste war doch nicht "echt" genug) als unbehandelte
+     Ablehnung in der Konsole auftauchen — harmlos fuers Spiel, aber Laerm. */
+  function sicherResume(c) {
+    try { var p = c.resume(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+  }
+
+  /* Oeffentlich, damit `js/ui.js` sie SYNCHRON aus einem Klick-Handler rufen
+     kann — noch bevor der erste Logeintrag im rAF-Takt ankommt. */
+  function wecken() {
+    if (!verfuegbar()) return;
+    try { kontext(); } catch (e) {}
   }
 
   function verfuegbar() {
@@ -177,7 +197,7 @@
     }
   });
 
-  root.Ton = { stufe: setzeStufe, verfuegbar: verfuegbar,
+  root.Ton = { stufe: setzeStufe, verfuegbar: verfuegbar, wecken: wecken,
                treffer: treffer, heilung: heilung, tod: tod, aktiv: aktiv };
 
 })(typeof globalThis !== 'undefined' ? globalThis : this);
