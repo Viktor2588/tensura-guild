@@ -16,6 +16,24 @@ bleiben. Bewusst r149 statt neuer: das ist die letzte Fassung mit einem
 UMD-Build, der sich per `<script>` einbinden lässt — der Rest des Projekts hat
 keinen Bauschritt und soll keinen bekommen.
 
+## Audio
+
+**Es gibt keine einzige Audiodatei und soll auch keine geben.** Seit der
+ROUTINE-Phase vom 2026-08-11 erzeugt `js/audio.js` (Modul `Klang`) jeden Ton
+zur Laufzeit per Web Audio API — Oszillatoren, ein einmalig erzeugter
+Rauschpuffer, Hüllkurven. Kampf- und UI-Ereignisse (Treffer, Tod, Heilung,
+Signaturen, Sieg/Niederlage, Kauf, Klicks) bekommen ihren Klang aus Code,
+nicht aus einer Datei.
+
+Damit entfällt für Audio genau das, was diese Datei sonst für jedes Bild
+verlangt — Werkzeug, Prompt, Lizenz —, weil nichts davon existiert: kein
+Download, keine Lizenzfrage, kein Eintrag in einer Herkunftstabelle. Diese
+Zeile hier *ist* die Provenienz: "synthetisiert in `js/audio.js`, keine
+externe Quelle." Sollte das Projekt doch einmal aufgenommene oder
+lizenzierte Audiodateien bekommen (Musik, Sprachausgabe), gehören sie unter
+`assets/audio/` und brauchen dann dieselbe Herkunftstabelle wie die Figuren
+unten.
+
 ## Figuren
 
 **Stand: es gibt noch keine Bilddateien.** Die Ansicht zeichnet Platzhalter zur

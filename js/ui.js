@@ -353,6 +353,19 @@
   try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
   Brett3D.stufe(effekte);
 
+  /* Genauso Geraetesache wie die Effektstufe — nicht Teil des Spielstands. */
+  var audioStufe = 'voll';
+  try { audioStufe = localStorage.getItem('tensura-audio') || 'voll'; } catch (e) {}
+  Klang.stufe(audioStufe);
+
+  function zeigeAudioWahl() {
+    var reihe = $('menu-audio');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=audio]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === audioStufe);
+    });
+  }
+
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
     if (!reihe) return;
@@ -398,6 +411,10 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    /* Unabhaengig von `zeige()`: Klang braucht kein WebGL und soll auch mit
+       der SVG-Rueckfallebene spielen — deshalb ein eigener Aufruf statt ihn
+       in die Brett3D-gebundene Funktion zu haengen. */
+    Klang.spiele(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -785,6 +802,7 @@
     if (replay.raf) cancelAnimationFrame(replay.raf);
     replay.raf = null;
     replay.fertig = true;
+    Klang.ui(replay.res.winner === 'player' ? 'sieg' : 'niederlage');
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -1385,6 +1403,11 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    audio: function (d) {
+      audioStufe = Klang.stufe(d.v);
+      try { localStorage.setItem('tensura-audio', audioStufe); } catch (e) {}
+      zeigeAudioWahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1413,7 +1436,7 @@
       render(); speichern();
     },
     start: function (d) { R.chooseStart(run, +d.i); render(); speichern(); },
-    kaufen: function (d) { R.buy(run, +d.i); render(); speichern(); },
+    kaufen: function (d) { R.buy(run, +d.i); Klang.ui('kaufen'); render(); speichern(); },
     event: function (d) { R.eventChoose(run, +d.i); render(); speichern(); },
     lager: function (d) { R.camp(run, +d.i); render(); speichern(); },
     pwahl: function (d) { R.choosePassive(run, +d.i); render(); speichern(); },
@@ -1704,6 +1727,9 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    /* 'kaufen' spielt seinen eigenen, deutlicheren Klang — ein zweiter,
+       generischer Klick obendrauf waere nur Laerm. */
+    if (el.dataset.a !== 'kaufen') Klang.ui('klick');
     a(el.dataset);
   }
 
@@ -1711,6 +1737,9 @@
     run = R.load();
     if (!run) run = R.create(Math.floor(Math.random() * 0xffffffff), R.loadMeta());
     document.addEventListener('click', klick);
+    /* Browser verweigern Audio ohne Nutzergeste — die allererste Beruehrung
+       des Fensters, egal wo, gibt den Kontext frei. */
+    document.addEventListener('pointerdown', function () { Klang.entsperren(); }, { once: true });
     document.addEventListener('pointerdown', zieheStart);
     document.addEventListener('pointermove', bewege);
     document.addEventListener('pointerup', zieheEnde);
@@ -1743,6 +1772,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeAudioWahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
