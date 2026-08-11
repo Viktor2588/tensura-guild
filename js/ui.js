@@ -356,7 +356,7 @@
   /* Genauso Geraetesache wie die Effektstufe — nicht Teil des Spielstands. */
   var audioStufe = 'voll';
   try { audioStufe = localStorage.getItem('tensura-audio') || 'voll'; } catch (e) {}
-  Klang.stufe(audioStufe);
+  audioStufe = Klang.stufe(audioStufe);
 
   function zeigeAudioWahl() {
     var reihe = $('menu-audio');
@@ -1436,7 +1436,7 @@
       render(); speichern();
     },
     start: function (d) { R.chooseStart(run, +d.i); render(); speichern(); },
-    kaufen: function (d) { R.buy(run, +d.i); Klang.ui('kaufen'); render(); speichern(); },
+    kaufen: function (d) { if (R.buy(run, +d.i)) Klang.ui('kaufen'); render(); speichern(); },
     event: function (d) { R.eventChoose(run, +d.i); render(); speichern(); },
     lager: function (d) { R.camp(run, +d.i); render(); speichern(); },
     pwahl: function (d) { R.choosePassive(run, +d.i); render(); speichern(); },
@@ -1727,6 +1727,10 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    /* Tastatur-Aktivierung (Enter/Leertaste auf einem fokussierten Button)
+       loest 'click' ohne vorheriges 'pointerdown' aus — der Kontext bliebe
+       fuer rein tastaturbediente Sitzungen sonst dauerhaft gesperrt. */
+    Klang.entsperren();
     /* 'kaufen' spielt seinen eigenen, deutlicheren Klang — ein zweiter,
        generischer Klick obendrauf waere nur Laerm. */
     if (el.dataset.a !== 'kaufen') Klang.ui('klick');

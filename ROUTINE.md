@@ -17,7 +17,7 @@ passen (`js/brett3d.js`, `js/fx.js`, `js/regie.js`, `js/ui.js`, `style.css`).
       (`Klang.spiele(l, p.beat)`, unabhaengig von `Brett3D.verfuegbar()`, laeuft also auch mit der
       SVG-Rueckfallebene), Sieg/Niederlage-Stinger in `endeReplay()`, Kauf-Klang und ein genereller
       UI-Klick im zentralen `klick()`-Dispatcher, Freigabe des AudioContext bei der ersten Nutzergeste.
-      Menue-Reihe „Ton: Voll/Leise/Aus" in `index.html` neben „Effekte", Zustand in `localStorage`
+      Menue-Reihe „Ton: Voll/Leise/Aus“ in `index.html` neben „Effekte“, Zustand in `localStorage`
       (`tensura-audio`) wie beim Effekte-Schalter. `dev/uitest.js` laedt `js/audio.js` mit (jsdom kennt
       kein `AudioContext`, `Klang.verfuegbar()` ist dort false, jeder Aufruf ein No-Op). Getestet mit
       `npm test` (459/459 · 112/112 · 6/6) und zusaetzlich per Playwright/Chromium durch einen echten,
