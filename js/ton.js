@@ -58,7 +58,11 @@
   function setzeStufe(s) {
     if (s !== 'an' && s !== 'aus') return stufe;
     stufe = s;
-    if (stufe === 'an') wecken();
+    /* Nur aufwecken, wenn der Kontext schon existiert (ein Klang lief also
+       schon einmal an) — sonst legte schon das Setzen der Stufe bei der
+       UI-Initialisierung einen AudioContext an, und zwar vor jeder
+       Nutzergeste. */
+    if (stufe === 'an' && ctx) wecken();
     return stufe;
   }
 
@@ -118,7 +122,9 @@
      brauchen. `verzoegerung` ist relativ zum Aufruf von `folge`. */
   function folge(schritte) {
     schritte.forEach(function (s) {
-      root.setTimeout ? root.setTimeout(function () { ton(s.opt); }, s.verzoegerung * 1000)
+      /* Ohne die Pruefung im verzoegerten Schritt spielt eine bereits
+         laufende Melodie weiter, selbst wenn "Ton: Aus" dazwischenkommt. */
+      root.setTimeout ? root.setTimeout(function () { if (verfuegbar()) ton(s.opt); }, s.verzoegerung * 1000)
                        : ton(s.opt);
     });
   }
