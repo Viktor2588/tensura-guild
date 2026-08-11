@@ -16,6 +16,17 @@ bleiben. Bewusst r149 statt neuer: das ist die letzte Fassung mit einem
 UMD-Build, der sich per `<script>` einbinden lässt — der Rest des Projekts hat
 keinen Bauschritt und soll keinen bekommen.
 
+## Klang
+
+**Keine Audiodatei im Projekt, keine wird gebraucht.** `js/klang.js`
+synthetisiert jeden Ton zur Laufzeit aus Oszillatoren und einem
+Rauschpuffer der Web Audio API — Treffer, Heilung, Tod, Wiederbelebung,
+Signatur-Einsätze (nach der Bogen/Sofort/Steigt-Einteilung aus
+`GAMEGUIDE.md`) sowie Sieg- und Niederlage-Fanfaren. Herkunft ist damit
+immer derselbe eine Satz: **eigener Code, kein Fremdmaterial, keine
+Lizenzfrage.** Ohne Web Audio API (jsdom im Test) werden alle Funktionen
+zu No-Ops, dieselbe Rückfallebene wie `Brett3D.verfuegbar()` für three.js.
+
 ## Figuren
 
 **Stand: es gibt noch keine Bilddateien.** Die Ansicht zeichnet Platzhalter zur

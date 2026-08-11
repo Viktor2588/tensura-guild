@@ -3,6 +3,7 @@
 'use strict';
 (function (root) {
   var R = root.Run, GD = root.GameData, EN = root.Enemies, C = root.Combat, AB = root.Abilities;
+  var KL = root.Klang;
 
   var run = null;
   var replay = null;             // { res, i, u:{key->Anzeige}, zeilen, timer, fertig }
@@ -361,6 +362,13 @@
     });
   }
 
+  function zeigeKlangwahl() {
+    var regler = $('lautstaerke-regler');
+    if (regler) regler.value = String(Math.round(KL.lautstaerke() * 100));
+    var btn = $('menu-lautstaerke').querySelector('[data-a=stumm]');
+    if (btn) btn.classList.toggle('an', KL.istStumm());
+  }
+
   function pumpe(nun) {
     if (!replay || replay.fertig) return;
     replay.raf = requestAnimationFrame(pumpe);
@@ -398,6 +406,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    klinge(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -455,6 +464,17 @@
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
     else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
     else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
+  }
+
+  /* Derselbe Logeintrag, den `zeige` ans Brett gibt, geht auch an den Klang —
+     eine zweite, unabhaengige Auswertung desselben Ereignisses statt einer
+     Kopplung an die 2.5D-Ansicht. Laeuft deshalb auch ohne three.js/WebGL. */
+  function klinge(l, beat) {
+    if (l.type === 'aktiv') KL.aktiv(l.kw, beat);
+    else if (l.type === 'hit') KL.treffer(l.dmg / (l.maxHp || 1), beat, l.dmg);
+    else if (l.type === 'heal') KL.heilung();
+    else if (l.type === 'death') KL.tod(beat);
+    else if (l.type === 'revive') KL.wiederbelebung();
   }
 
   function zeile(l) {
@@ -785,6 +805,7 @@
     if (replay.raf) cancelAnimationFrame(replay.raf);
     replay.raf = null;
     replay.fertig = true;
+    if (replay.res.winner === 'player') KL.sieg(); else KL.niederlage();
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -1385,6 +1406,7 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    stumm: function () { KL.setzeStumm(!KL.istStumm()); zeigeKlangwahl(); },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1704,6 +1726,9 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    /* Erster Klick ueberhaupt: hier entsteht der AudioContext, weil Browser
+       ihn ohne eine Nutzergeste verweigern. Alles Weitere hoert dann sofort. */
+    KL.entsperren();
     a(el.dataset);
   }
 
@@ -1728,6 +1753,11 @@
     hudTips();
     var linienSel = $('linien-einheit');
     if (linienSel) linienSel.addEventListener('change', function () { zeichneLinienUebersicht(linienSel.value); });
+    var regler = $('lautstaerke-regler');
+    if (regler) regler.addEventListener('input', function () {
+      KL.entsperren();
+      KL.setzeLautstaerke(+regler.value / 100);
+    });
     var reiter = $('menu-reiter');
     if (reiter) reiter.addEventListener('click', function (e) {
       var b = e.target.closest('[data-reiter]');
@@ -1743,6 +1773,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeKlangwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
