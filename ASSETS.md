@@ -16,6 +16,18 @@ bleiben. Bewusst r149 statt neuer: das ist die letzte Fassung mit einem
 UMD-Build, der sich per `<script>` einbinden lässt — der Rest des Projekts hat
 keinen Bauschritt und soll keinen bekommen.
 
+## Ton
+
+**Es gibt keine Audiodateien und soll auch keine geben.** `js/ton.js`
+synthetisiert jeden Klang (Treffer, Heilung, Tod, Sieg-Jingle, Klick, …) zur
+Laufzeit aus Oszillatoren und gefiltertem Rauschen (Web Audio API). Das ist
+keine Verlegenheitslösung, sondern dieselbe Abwägung wie bei den
+Platzhalter-Silhouetten: kein Sample, keine Lizenzfrage, keine Datei, für die
+diese Tabelle eine Herkunftszeile bräuchte — und das Spiel bleibt ohne Netz
+und ohne Bauschritt spielbar. Sollte das Spiel später doch aufgenommene
+Musik oder Sprachausgabe bekommen, gehört das hierhin, mit eigener
+Herkunftszeile wie bei den Figurenbildern unten.
+
 ## Figuren
 
 **Stand: es gibt noch keine Bilddateien.** Die Ansicht zeichnet Platzhalter zur
