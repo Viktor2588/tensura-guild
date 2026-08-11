@@ -11,6 +11,6 @@ offen mit kurzer Begruendung, warum (noch) nicht machbar.
       Heil-, Tod-, Wiederbelebungs- und Signatur-Cast-Sounds (nach der
       GAMEGUIDE-Einteilung Bogen/Sofort/Steigt) sowie Sieg-/Niederlage-Fanfaren
       direkt aus Oszillatoren und Rauschpuffern — keine Binärdateien, keine
-      neue Abhaengigkeit. Eingehaengt in `js/ui.js` (`zeige()`, `endeReplay()`,
+      neue Abhaengigkeit. Eingehaengt in `js/ui.js` (`klinge()`, `endeReplay()`,
       `klick()`), mit Lautstaerkeregler und Stumm-Schalter im Menü neben
       „Effekte", persistiert wie `tensura-effekte` in `localStorage`.

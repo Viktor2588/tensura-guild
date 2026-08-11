@@ -366,7 +366,11 @@
     var regler = $('lautstaerke-regler');
     if (regler) regler.value = String(Math.round(KL.lautstaerke() * 100));
     var btn = $('menu-lautstaerke').querySelector('[data-a=stumm]');
-    if (btn) btn.classList.toggle('an', KL.istStumm());
+    if (btn) {
+      var istStumm = KL.istStumm();
+      btn.classList.toggle('an', istStumm);
+      btn.setAttribute('aria-pressed', String(istStumm));
+    }
   }
 
   function pumpe(nun) {
