@@ -3907,24 +3907,33 @@ Worktree `/home/viktor/tensura/worktree/phase-77-assets`, Branch
 Bewusst nicht drin: Story-Modus, Basisbau, manuelle Kampfsteuerung, Mehrspieler,
 Online-Ranglisten. Alles davon konkurriert mit dem Kern-Loop um dieselbe Zeit.
 
-### Kein Audio
+### Audio: genau ein Modul, und das ist fertig
 
-**Das Spiel braucht keinen Ton — weder Audiodateien noch prozedural
-synthetisierten Klang.** Das ist eine Entscheidung, keine offene Lücke:
+Der Abschnitt stand bis hierher auf **kein Ton, auch kein prozeduraler**. Die
+Entscheidung ist gekippt, bewusst und einmalig: das Spiel hat jetzt `js/ton.js`
+und einen Ein/Aus-Schalter im Menü. Was gilt:
 
-- **Keine Musik**, weder als Datei (`.mp3`, `.ogg`, `.wav`) noch generiert.
-- **Keine Soundeffekte**, auch nicht per Web Audio API aus Oszillatoren und
-  Rauschen. Dass eine prozedurale Lösung ohne Binärdateien auskommt, macht sie
-  nicht erwünschter — der Einwand ist nicht das Dateigewicht, sondern der Ton
-  selbst.
-- **Kein `js/audio.js`**, kein Ton-Schalter im Menü, kein
-  `localStorage`-Eintrag dafür.
+- **Ein Modul**, `js/ton.js`. Keine zweite Ton-Datei daneben.
+- **Keine Audiodateien**, weder Musik noch Samples. Jeder Klang entsteht zur
+  Laufzeit aus Oszillatoren und gefiltertem Rauschen — dieselbe Linie, die
+  `ASSETS.md` für Silhouetten und Himmel zieht: prozedural erzeugtes Material
+  hat keine Herkunftsfrage.
+- **Abschaltbar**, `#menu-ton`, gemerkt in `localStorage` unter `tensura-ton`.
+  Ton ist ein Geräte-Schalter wie die Effektstufe, kein Run-Zustand.
+- **Ohne Web Audio ein No-Op.** `Ton.verfuegbar()` sagt nein, jeder Aufruf
+  verpufft — dasselbe Muster, das `js/brett3d.js` für fehlendes WebGL fährt,
+  damit `dev/uitest.js` in jsdom nicht daran scheitert.
 
-Der Grund ist derselbe wie oben: das Spiel ist ein Auto-Battler, in dem die
-ganze Entscheidung **vor** dem Kampf fällt. Ton wäre Untermalung eines Ablaufs,
-den niemand steuert — er trägt nichts zu Roster, Synergie oder Ausrüstung bei
-und kostet dieselbe Zeit wie Content, der es tut.
+Der alte Einwand bleibt der Maßstab für alles Weitere: das Spiel ist ein
+Auto-Battler, in dem die ganze Entscheidung **vor** dem Kampf fällt. Ton
+untermalt einen Ablauf, den niemand steuert. Als einmalige Politur ist das
+den Aufwand wert gewesen, als laufende Baustelle nicht — Musik, Ambient-Betten,
+Mixer, Lautstärkeregler pro Kategorie sind damit **nicht** eröffnet.
 
-Ein `grep -i audio` über `js/`, das nichts liefert, ist **kein Befund**. Es ist
-der Sollzustand. Wer Audio als Idee vorschlägt, streicht sie unter Verweis auf
-diesen Abschnitt.
+Wie es dazu kam: eine geplante Routine hat das Thema zwischen dem 2. und dem
+15.8.2026 einundzwanzig Mal vorgeschlagen (PRs #1–#9, #12–#23), jedes Mal mit
+demselben Befund. Statt weiter abzulehnen, sind alle 21 auf
+`test/audio-varianten` nebeneinandergelegt und angehört worden; PR #3 hat
+gewonnen, der Rest ist verworfen. Ein `grep -i audio`, das jetzt `js/ton.js`
+findet, ist **kein Befund und keine Einladung** — siehe `CLAUDE.md`,
+Abschnitt Nicht-Ziele.
