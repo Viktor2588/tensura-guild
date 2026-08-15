@@ -55,6 +55,14 @@ Jeder Effekt entsteht zur Laufzeit aus Oszillatoren und gefiltertem Rauschen
 `js/brett3d.js`. Keine Provenienz-Zeile nötig, weil nichts generiert oder
 heruntergeladen wurde — es ist Code, kein Asset. Bleibt das so (kein Musikbett
 aus fremder Quelle, keine Sample-Bibliothek), bleibt diese Sektion leer.
+## Ton
+
+**Keine Audiodateien.** `js/klang.js` erzeugt jeden Ton zur Laufzeit aus
+Oszillatoren und einem einzigen Rauschpuffer (Web-Audio-API, seit 2026-08-08).
+Damit gibt es hier nichts mit Herkunft zu klären — synthetischer Ton entsteht
+im Code, nicht aus einer Quelle, die eine Lizenz bräuchte. Sollte das Spiel
+später echte Musik oder aufgenommene Effekte bekommen, gehört deren Herkunft
+in eine eigene Tabelle hier, nach demselben Muster wie die Figuren unten.
 
 ## Figuren
 

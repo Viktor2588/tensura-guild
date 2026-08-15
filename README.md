@@ -53,6 +53,7 @@ js/abilities.js  40 Signaturen, 16 Pool-Aktive, 34 Passive
 js/data.js       39 Einheiten, 52 Relikte, 32 Ausrüstungen, GLOSSAR (Tooltip-Texte)
 js/combat.js     simulate(teamA, teamB, seed, opts) — reine Funktion, kein DOM
 js/enemies.js    48 Gegner (mit eigenen Aktiven), 3 Bosse, 50 Begegnungen, 26 Ereignisse
+js/klang.js      Kampf-/Menü-Töne, synthetisch aus der Web-Audio-API, keine Dateien
 js/run.js        Karte, Ränge, Belohnungen, Shop, Prädator, Speicherstand
 js/ui.js         Darstellung; ändert Zustand nur über Run.*
 js/main.js       Start
