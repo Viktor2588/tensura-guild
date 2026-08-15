@@ -1016,6 +1016,57 @@ ok(runs.every(function (r) {
 }), 'Heilung geht nie über das Maximum');
 ok(runs.every(function (r) { return r.survivors.every(function (u) { return u.hp > 0; }); }), 'Überlebende haben HP > 0');
 
+/* ------------------------------------------------------------ Aufstellung */
+/* Die Aufstellung ist keine Liste, sondern ein Raster — und `c.allies()` reicht
+   nur einen Umkreis weit. Diese Tabelle steht im Glossar, in der Trupp-Ansicht
+   und seit der dritten Schicht in neun Passiven; sie darf nicht still
+   verrutschen, wenn jemand `startfeld` anfasst. */
+head('Aufstellung und Umkreis');
+(function () {
+  var H = globalThis.Hex;
+  function reichweite(n) {
+    var out = [];
+    for (var i = 0; i < n; i++) {
+      var k = 0;
+      for (var j = 0; j < n; j++) {
+        if (j !== i && H.distanz(C.startfeld('player', i), C.startfeld('player', j)) <= C.FASSUNG) k++;
+      }
+      out.push(k);
+    }
+    return out;
+  }
+  var voll = reichweite(6);
+  ok(voll.join(',') === '3,4,2,2,4,3',
+     'im vollen Trupp erreicht die Mitte vier, der Rand zwei (' + voll.join(',') + ')');
+  /* Genau daran haengt die Schwelle `RANDPLATZ`: „kein Nachbar" waere im vollen
+     Trupp unerfuellbar, „hoechstens zwei" ist der Randplatz. */
+  ok(Math.min.apply(null, voll) === 2,
+     'kein Platz im vollen Trupp steht allein — Bedingungen auf 0 Nachbarn waeren tot');
+  ok(reichweite(2).join(',') === '1,1' && reichweite(4).join(',') === '2,2,1,1',
+     'kleinere Truppen stehen enger beieinander');
+})();
+
+/* Die dritte Schicht: neun Lage-Passive in der geteilten Bibliothek. */
+head('Lage-Passive');
+(function () {
+  var neu = ['flankenschlag', 'einzelgaenger', 'kettenreaktion', 'zangengriff',
+             'schulterschluss', 'stellungsbefehl', 'deckungssucher', 'freies_feld', 'ankerpunkt'];
+  ok(neu.every(function (id) { return AB.get(id); }), 'alle neun stehen in der Bibliothek');
+  ok(neu.every(function (id) { return !AB.linien_ids[id]; }),
+     'und zwar geteilt, nicht in der Linie einer einzelnen Einheit');
+  /* Ohne Kategorie taucht eine Bibliotheks-Passive nie im Angebot auf, ohne
+     Stufe faellt sie aus der Gewichtung — beides waere lautlos. */
+  ok(neu.every(function (id) { return AB.kategorie(id); }), 'jede traegt eine Kategorie');
+  ok(neu.every(function (id) { return STUFEN.indexOf(AB.get(id).rarity) >= 0; }),
+     'jede traegt eine Stufe 1-5');
+  /* Die Lage wird bei Kampfbeginn gelesen, nicht im Getuemmel: gemessen stehen
+     mitten im Kampf nur noch 0,28 Verbuendete im Umkreis. Genau eine liest
+     absichtlich live — die, die Zusammenbleiben belohnt. */
+  var live = neu.filter(function (id) { return AB.get(id).hook !== 'onStart'; });
+  ok(live.join(',') === 'kettenreaktion',
+     'nur Kettenreaktion liest den Umkreis waehrend des Kampfes (' + (live.join(',') || 'keine') + ')');
+})();
+
 /* --------------------------------------------------- Aktive Fähigkeiten */
 head('Aktive Fähigkeiten');
 var res = C.simulate([def('rimuru')], [EN.get('felsgolem')], 3);

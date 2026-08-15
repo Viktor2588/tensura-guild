@@ -217,7 +217,7 @@
 
     /* -- Unterstützung -- */
     passiv('schlachtplan', 'Schlachtplan', 'onStart', [], [],
-      'Der ganze Trupp schlägt 6 % härter je Mitglied — eine volle Reihe lohnt sich',
+      'Jeder im Umkreis schlägt 6 % härter je Kopf im Umkreis — eng stellen lohnt sich',
       function (c) {
         var n = c.allies().length;
         c.allies().forEach(function (u) { u.atk = Math.round(u.atk * (1 + 0.06 * n)); });
@@ -244,7 +244,11 @@
     passiv('letztes_aufgebot', 'Letztes Aufgebot', 'onTurnStart', [], [],
       'Steht die Einheit als letzte, schlägt sie 55 % härter und ist 30 % schneller',
       function (c) {
-        if (c.allies().length > 1 || c.self._aufgebot) return;
+        /* `trupp()` statt `allies()`: mit dem raumgefilterten `allies()` hiess
+           die Bedingung nicht „als letzte", sondern „gerade steht niemand
+           daneben" — und das trifft mitten im Gefecht auf drei von vier Zuegen
+           zu. Die Passive war damit ein fast bedingungsloser Doppelbonus. */
+        if (c.trupp().length > 1 || c.self._aufgebot) return;
         c.self._aufgebot = 1;
         c.self.atk = Math.round(c.self.atk * 1.55);
         c.self.spd = Math.round(c.self.spd * 1.3);
@@ -294,6 +298,111 @@
       function (c) {
         c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.11);
         c.self.spd = Math.max(1, Math.round(c.self.spd * 0.5));
+      }),
+
+    /* ---- Dritte Schicht: wer neben wem steht --------------------------------
+       Das Brett ist raeumlich, die Faehigkeiten waren es nicht. Von 691 Passiven
+       lasen vier den Listenplatz (`vorhut`, `hinterhalt` und zwei Linien-
+       Passive), drei die Zahl der Umstehenden — und keine einzige mehr als das.
+
+       Dabei entscheidet die Lage laengst mit, nur unsichtbar: `c.allies()`
+       liefert nicht den Trupp, sondern den UMKREIS von 1 Feld (`Combat.FASSUNG`,
+       mit `flaeche` 2). Jede Truppwirkung im Spiel haengt also schon heute an
+       der Aufstellung. Gerechnet auf den Startfeldern erreicht Platz 2 und 5
+       fuenf der sechs Plaetze, Platz 3 und 4 nur drei — `dev/sim.js` sichert
+       diese Tabelle ab, damit sie nicht still verrutscht.
+
+       Diese neun machen aus der stillen Regel eine Entscheidung: eng stellen
+       oder weit, vorne oder hinten. Sie stehen in der geteilten Bibliothek und
+       nicht in einer Linie — die Aufstellung gehoert jeder Einheit, nicht einer.
+
+       Gelesen wird die Lage bei KAMPFBEGINN, gemessen mit einer Sonde ueber
+       67.564 Treffer: zu Beginn stehen im Mittel 1,5 Verbuendete im Umkreis,
+       waehrend des Gefechts nur noch 0,28 — die Aufstellung loest sich auf,
+       sobald alle auf ihr Ziel zulaufen. Eine Passive, die im `onHit` nach
+       Nachbarn sucht, findet in 76 % der Treffer keinen. Deshalb schnappt die
+       Lage bei `onStart` ein und haengt ihre Wirkung als Effekt an — dasselbe
+       Muster wie `rueckendeckung`. Die einzige Ausnahme ist `kettenreaktion`:
+       sie belohnt ausdruecklich, ZUSAMMEN zu bleiben, und misst mit +13
+       Punkten das staerkste Stueck der Bibliothek.
+
+       `RANDPLATZ` ist keine Zierzahl: auf sechs besetzten Plaetzen hat der
+       einsamste Platz zwei Nachbarn und der Mittelplatz vier. „Kein Nachbar"
+       waere eine Bedingung, die im vollen Trupp NIE zutrifft — genau so stand
+       es hier zuerst, und die Messung hat es aufgedeckt.
+
+       `umstehende(c)` ist dabei bewusst „ohne mich selbst": `c.allies()`
+       enthaelt die eigene Einheit immer mit, und „je Verbuendetem neben dir"
+       darf nicht bei eins anfangen, wenn niemand da steht.                    */
+
+    passiv('flankenschlag', 'Flankenschlag', 'onStart', [], [],
+      '+9 % Schaden je Verbündetem, der bei Kampfbeginn im Umkreis steht — aus der Mitte +36 %, vom Rand +18 %',
+      function (c) {
+        var n = Math.min(4, umstehende(c));
+        if (n) c.addEffect(c.self, { hook: 'onHit', name: 'Flankenschlag', fn: function (k) {
+          k.dmg *= 1 + 0.09 * n;
+        } });
+      }),
+    passiv('einzelgaenger', 'Freiläufer', 'onStart', [], [],
+      '+22 % Schaden, solange die Einheit am Rand der Aufstellung steht (höchstens zwei im Umkreis)',
+      function (c) {
+        if (umstehende(c) > RANDPLATZ) return;
+        c.addEffect(c.self, { hook: 'onHit', name: 'Freiläufer', fn: function (k) { k.dmg *= 1.22; } });
+      }),
+
+    passiv('kettenreaktion', 'Kettenreaktion', 'onHit', ['flaeche'], [],
+      'Je Verbündetem im Umkreis 12 % Chance, ein zweites Ziel für 40 % zu treffen',
+      function (c) {
+        if (c.rng() >= 0.12 * umstehende(c)) return;
+        var f = c.foes().filter(function (x) { return x !== c.target; })[0];
+        if (f) c.deal(f, c.self.atk * 0.4, 'Kettenreaktion');
+      }),
+    passiv('zangengriff', 'Zangengriff', 'onStart', ['verwundbar'], [],
+      'Steht bei Kampfbeginn ein Verbündeter im Umkreis, macht jeder Treffer das Ziel um 1 verwundbar',
+      function (c) {
+        if (!umstehende(c)) return;
+        c.addEffect(c.self, { hook: 'onHit', name: 'Zangengriff', fn: function (k) {
+          k.markiere(k.target, 1);
+        } });
+      }),
+
+    passiv('schulterschluss', 'Schulterschluss', 'onStart', ['schild'], [],
+      'Jeder im Umkreis — die Einheit selbst eingeschlossen — bekommt Schild 12 je Umstehendem',
+      function (c) {
+        var n = umstehende(c);
+        if (n) c.allies().forEach(function (u) { c.applyStatus(u, 'schild', 12 * n); });
+      }),
+    passiv('stellungsbefehl', 'Stellungsbefehl', 'onStart', [], [],
+      'Aus dem vorderen Glied (Plätze 1-3) gibt sie dem Umkreis +9 % Angriff, aus dem hinteren +9 % Tempo',
+      function (c) {
+        var vorn = !hintereReihe(c);
+        c.allies().forEach(function (u) {
+          if (vorn) u.atk = Math.round(u.atk * 1.09);
+          else u.spd = Math.round(u.spd * 1.09);
+        });
+      }),
+
+    passiv('deckungssucher', 'Deckungssucher', 'onStart', [], [],
+      'Je Verbündetem, der bei Kampfbeginn im Umkreis steht, 5 % weniger Schaden — höchstens 20 %',
+      function (c) {
+        var m = Math.min(0.2, 0.05 * umstehende(c));
+        if (m) c.addEffect(c.self, { hook: 'onDamaged', name: 'Deckungssucher', fn: function (k) {
+          k.self.minderung = Math.max(k.self.minderung || 0, m);
+        } });
+      }),
+    passiv('freies_feld', 'Freies Feld', 'onStart', ['schatten'], [],
+      'Am Rand der Aufstellung (höchstens zwei im Umkreis): +20 % Tempo und 2 Schatten',
+      function (c) {
+        if (umstehende(c) > RANDPLATZ) return;
+        c.self.spd = Math.round(c.self.spd * 1.2);
+        c.applyStatus(c.self, 'schatten', 2);
+      }),
+    passiv('ankerpunkt', 'Ankerpunkt', 'onStart', [], [],
+      'Im vorderen Glied +18 % maximales Leben, im hinteren +4 Rüstung',
+      function (c) {
+        if (hintereReihe(c)) { c.self.def += 4; return; }
+        var add = Math.round(c.self.maxHp * 0.18);
+        c.self.maxHp += add; c.self.hp += add;
       }),
 
     /* ---- Shions Linien ----------------------------------------------------
@@ -5219,6 +5328,25 @@
      vier Helfer sind geblieben, weil die handgeschriebenen Linien sie
      weiterbenutzen.                                                            */
 
+  /* Wie viele Verbündete stehen im eigenen Umkreis — OHNE die Einheit selbst.
+     `c.allies()` ist bereits raumgefiltert (Combat.FASSUNG) und enthält einen
+     selbst immer mit; „je Verbündetem neben dir" darf aber nicht bei eins
+     anfangen, wenn niemand dort steht. */
+  function umstehende(c) {
+    return Math.max(0, c.allies().length - 1);
+  }
+
+  /* Ein Randplatz im vollen Trupp: die Plaetze 3 und 4 erreichen zwei Kameraden,
+     die Mitte (2 und 5) vier. Siehe die Tabelle in `dev/sim.js`. */
+  var RANDPLATZ = 2;
+
+  /* Vorderes Glied sind die Plätze 1-3, hinteres 4-6 — dieselbe Teilung, die
+     `Combat.startfeld` auf die Reihe q abbildet (`i < 3`). Steht kein Platz
+     fest (Prüfstände, alte Speicherstände), gilt vorne. */
+  function hintereReihe(c) {
+    return (c.self.pos || 0) >= 3;
+  }
+
   /* Feat-Chain: das Schlüsselwort muss vom TRUPP kommen, nicht von der Einheit
      selbst — sonst wäre es ein verkappter Eigenbonus statt einer Bedingung. */
   function truppFuehrt(c, kw) {
@@ -5598,6 +5726,12 @@
     schildwall: 'defensive', bollwerkmeister: 'defensive', regenerator: 'defensive',
     lebensraub: 'defensive', zaeh: 'defensive', wiederkehr: 'defensive',
     dornenhaut: 'defensive', konterstoss: 'defensive', windschritt: 'defensive',
+
+    /* Dritte Schicht: wer neben wem steht. */
+    flankenschlag: 'angriff', einzelgaenger: 'angriff',
+    kettenreaktion: 'mechanik', zangengriff: 'mechanik',
+    schulterschluss: 'unterstuetzung', stellungsbefehl: 'unterstuetzung',
+    deckungssucher: 'defensive', freies_feld: 'defensive', ankerpunkt: 'defensive',
 
     /* Zweite Schicht: Lage statt Prozent. */
     vorhut: 'angriff', hinterhalt: 'angriff', duellant: 'angriff', anlauf: 'angriff',
@@ -6209,6 +6343,20 @@
     letztes_aufgebot: 4, opfergang: 4,
     standfest: 2, todesverachtung: 3, trotz: 2, rueckendeckung: 3,
     zaehe_haut: 3, festgewachsen: 4,
+
+    /* Dritte Schicht, eingestuft nach `node dev/beute.js passive` (Punkte
+       Siegquote gegenueber demselben Trupp ohne die Passive):
+         Kettenreaktion +13, Freies Feld +13 — beide ueber dem Mittel von
+         episch (+5); Stellungsbefehl und Freilaeufer +5, Flankenschlag +3,
+         Schulterschluss und Ankerpunkt +2, Deckungssucher +1.
+       Zangengriff misst +0, steht aber trotzdem auf 2 und nicht auf 1: beide
+       Pruefstaende lesen `verwundbar` gar nicht (der bestehende `markierer`
+       misst dort ebenso +0). Das ist eine Luecke im Stand, kein Befund ueber
+       die Passive — vermerkt, statt sie blind hochzudrehen. */
+    flankenschlag: 2, einzelgaenger: 3,
+    kettenreaktion: 4, zangengriff: 2,
+    schulterschluss: 2, stellungsbefehl: 3,
+    deckungssucher: 2, freies_feld: 4, ankerpunkt: 2,
 
     /* Shions Linien: die Stufe ist die Raritaet — Stufe 1 ungewoehnlich, Stufe 4 legendaer. */
     shion_ang1: 2, shion_mec1: 2, shion_unt1: 2, shion_def1: 2,

@@ -485,6 +485,13 @@
         allies: function () {
           return umkreis(self, living(self.side), fassung(self, extra));
         },
+        /* Der GANZE Trupp, ohne Umkreis. `allies()` ist raumgefiltert, und das
+           ist fast immer richtig — aber nicht fuer Bedingungen ueber die
+           Truppstaerke: „steht sie als letzte" ist eine Aussage ueber die
+           Ueberlebenden, keine ueber die Nachbarschaft. Gemessen liefert
+           `allies()` mitten im Gefecht in 76 % der Faelle nur die Einheit
+           selbst — als Bedingung gelesen heisst das „fast immer". */
+        trupp: function () { return living(self.side); },
         foes: function () {
           var alle = living(other(self.side));
           if (!alle.length) return alle;
