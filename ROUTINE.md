@@ -239,3 +239,9 @@ gelassen.
       Skriptliste ergänzt werden. `node dev/sim.js` 459/459 ·
       `node dev/uitest.js` 112/112 · `npm test` (inkl. `dev/bildcheck.js
       --selftest`) grün. Kein Eingriff an Kampf-Logik oder Balance.
+Ideen fuer ein poliertes, handcraftedes AAA-Spielgefuehl — Modelle, Assets,
+Sprites, Animationen, UI/UX, Audio, Gamefeel. Jede Ausfuehrung der Routine
+haengt genau eine neue Idee an und arbeitet dann alle offenen Punkte ab.
+
+- [x] Audio-Feedback-System (SFX) einfuehren - Das Spiel hat aktuell ueberhaupt keinen Ton: kein Treffer-, Tod-, Heil-, Sieg/Niederlage- oder UI-Klick-Sound. Fuer ein AAA-Gefuehl fehlt damit eine ganze Sinnesebene. Neues Modul `js/audio.js`, eingebunden in `index.html`, das Klaenge prozedural per Web Audio API synthetisiert (kein Audio-Sample, keine neue Abhaengigkeit — dieselbe Haltung wie `js/fx.js`). Anschluss an die Kampf-Wiedergabe in `js/ui.js` (an der zentralen `schritt()`/`zeige()`-Stelle, die auch die Regie-Hoehepunkte aus `js/regie.js` kennt) sowie an den zentralen Klick-Dispatcher fuer UI-Feedback; ein Ein/Aus-Schalter im Menue analog zum bestehenden "Effekte"-Schalter in `index.html`/`style.css`.
+  Umgesetzt: `js/audio.js` (neues Modul `Klang`, in `index.html` nach `js/regie.js` eingebunden), Anschluss in `js/ui.js` an `schritt()` (`Klang.spiele(l, p.beat)`), `endeReplay()` (`Klang.ende(...)`) und dem zentralen Klick-Dispatcher `klick()` (`Klang.entsperren()` + `Klang.taste()`). Menue-Schalter `#menu-klang` in `index.html`/`style.css` analog zu `#menu-effekte`, Zustand in `localStorage` unter `tensura-klang`. `dev/uitest.js` laedt `js/audio.js` mit (No-Op ohne `AudioContext` in jsdom). Getestet: `npm test` 459/459 + 112/112 + 6/6, sowie ein Playwright-Rauchtest in echtem Chromium (Kampf startet, spielt durch bis zum Ergebnis, keine Konsolenfehler ausser den erwarteten 404 fehlender Portraits).

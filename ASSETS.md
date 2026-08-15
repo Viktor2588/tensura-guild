@@ -136,6 +136,14 @@ diese Tabelle eine Herkunftszeile bräuchte — und das Spiel bleibt ohne Netz
 und ohne Bauschritt spielbar. Sollte das Spiel später doch aufgenommene
 Musik oder Sprachausgabe bekommen, gehört das hierhin, mit eigener
 Herkunftszeile wie bei den Figurenbildern unten.
+## Klang
+
+**Keine Audiodatei im Repo.** `js/audio.js` (Modul `Klang`) synthetisiert jeden
+Ton zur Laufzeit über die Web Audio API — Oszillatoren, Hüllkurven und
+gefiltertes, selbst erzeugtes Rauschen, dieselbe Haltung wie beim Bloom in
+`js/fx.js`: eigener Code statt einer Abhängigkeit oder eines Samples. Damit
+gibt es hier auch keine Herkunftszeile zu führen — der einzige Urheber ist
+dieses Repo selbst, Lizenz wie der Rest des Projekts.
 
 ## Figuren
 
