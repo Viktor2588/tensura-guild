@@ -125,6 +125,17 @@ externe Quelle." Sollte das Projekt doch einmal aufgenommene oder
 lizenzierte Audiodateien bekommen (Musik, Sprachausgabe), gehören sie unter
 `assets/audio/` und brauchen dann dieselbe Herkunftstabelle wie die Figuren
 unten.
+## Ton
+
+**Es gibt keine Audiodateien und soll auch keine geben.** `js/ton.js`
+synthetisiert jeden Klang (Treffer, Heilung, Tod, Sieg-Jingle, Klick, …) zur
+Laufzeit aus Oszillatoren und gefiltertem Rauschen (Web Audio API). Das ist
+keine Verlegenheitslösung, sondern dieselbe Abwägung wie bei den
+Platzhalter-Silhouetten: kein Sample, keine Lizenzfrage, keine Datei, für die
+diese Tabelle eine Herkunftszeile bräuchte — und das Spiel bleibt ohne Netz
+und ohne Bauschritt spielbar. Sollte das Spiel später doch aufgenommene
+Musik oder Sprachausgabe bekommen, gehört das hierhin, mit eigener
+Herkunftszeile wie bei den Figurenbildern unten.
 
 ## Figuren
 
