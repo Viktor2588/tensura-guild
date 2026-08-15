@@ -36,7 +36,7 @@ npm start                         # http://localhost:8080
 (`dev/serve.js`). Nötig ist er nicht — er ist nur bequemer, weil manche Browser
 auf `file://` sparsam mit `localStorage` umgehen.
 
-> **Nicht durch einen Bundler schicken.** Die acht Skripte in `index.html` laufen
+> **Nicht durch einen Bundler schicken.** Die Skripte in `index.html` laufen
 > so, wie sie dastehen: klassische Skripte, die ihre Schnittstelle an `globalThis`
 > hängen. Wer `bun index.html` benutzt, startet Buns Dev-Server mit Hot-Reload,
 > der daraus ES-Module macht — und meldet dann Fehler aus dem Bundler statt aus
@@ -49,6 +49,7 @@ auf `file://` sparsam mit `localStorage` umgehen.
 ```
 index.html  style.css
 js/rng.js        deterministischer RNG (mulberry32), Seed = ganzer Run
+js/ton.js        Sound-Kulisse, rein synthetisch per Web Audio API
 js/abilities.js  40 Signaturen, 16 Pool-Aktive, 34 Passive
 js/data.js       39 Einheiten, 52 Relikte, 32 Ausrüstungen, GLOSSAR (Tooltip-Texte)
 js/combat.js     simulate(teamA, teamB, seed, opts) — reine Funktion, kein DOM

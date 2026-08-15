@@ -5,6 +5,15 @@ Das Spiel kam bis Phase 41 ohne eine einzige Bilddatei aus. Mit der
 Diese Datei sagt, wohin sie gehören und woher sie stammen — Herkunft
 lückenlos, sonst ist später nicht mehr feststellbar, was benutzt werden darf.
 
+## Ton
+
+**Kein Audio-Ordner.** Seit `js/ton.js` (Routine, 2026-08-09) erzeugt das
+Spiel jeden Klang zur Laufzeit per Web Audio API — Oszillatoren und ein
+gefilterter Rauschpuffer, keine Audiodateien. Damit gibt es hier nichts zu
+verorten: keine Lizenzfrage, kein Format, kein Repo-Gewicht. Der Ton-Schalter
+im Menü (`tensura-ton` in `localStorage`) und `Ton.verfuegbar()` folgen
+demselben Muster wie die Effektstufe und `Brett3D.verfuegbar()`.
+
 ## Fremdcode
 
 | Was | Woher | Lizenz |
