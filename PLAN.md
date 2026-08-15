@@ -3906,3 +3906,25 @@ Worktree `/home/viktor/tensura/worktree/phase-77-assets`, Branch
 
 Bewusst nicht drin: Story-Modus, Basisbau, manuelle Kampfsteuerung, Mehrspieler,
 Online-Ranglisten. Alles davon konkurriert mit dem Kern-Loop um dieselbe Zeit.
+
+### Kein Audio
+
+**Das Spiel braucht keinen Ton — weder Audiodateien noch prozedural
+synthetisierten Klang.** Das ist eine Entscheidung, keine offene Lücke:
+
+- **Keine Musik**, weder als Datei (`.mp3`, `.ogg`, `.wav`) noch generiert.
+- **Keine Soundeffekte**, auch nicht per Web Audio API aus Oszillatoren und
+  Rauschen. Dass eine prozedurale Lösung ohne Binärdateien auskommt, macht sie
+  nicht erwünschter — der Einwand ist nicht das Dateigewicht, sondern der Ton
+  selbst.
+- **Kein `js/audio.js`**, kein Ton-Schalter im Menü, kein
+  `localStorage`-Eintrag dafür.
+
+Der Grund ist derselbe wie oben: das Spiel ist ein Auto-Battler, in dem die
+ganze Entscheidung **vor** dem Kampf fällt. Ton wäre Untermalung eines Ablaufs,
+den niemand steuert — er trägt nichts zu Roster, Synergie oder Ausrüstung bei
+und kostet dieselbe Zeit wie Content, der es tut.
+
+Ein `grep -i audio` über `js/`, das nichts liefert, ist **kein Befund**. Es ist
+der Sollzustand. Wer Audio als Idee vorschlägt, streicht sie unter Verweis auf
+diesen Abschnitt.
