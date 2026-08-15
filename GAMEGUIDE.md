@@ -130,14 +130,17 @@ ist ein verzichteter Aufstieg von C auf B plus die Hälfte des nächsten.
 
 | Was | Preis |
 |---|---|
-| Einheit auf Rang C | 130 + 45 je Kostenpunkt |
+| Einheit auf Rang C | 265 — jede Einheit, kein Aufpreis für die starken |
 | dieselbe auf B / A / S | zusätzlich 140 / +300 / +560 |
 | Aufwertung (dieselbe Art, höherer Rang) | der Paketpreis minus dem ganzen Einsatz der alten Einheit |
 | Relikt im Laden | 340 |
 | Ausrüstung | das Dreifache ihres Grundwerts |
 
 Eine Einheit auf S kostet also genau so viel wie dieselbe Einheit auf C plus die
-drei Aufstiege — der Markt nimmt dir die Arbeit ab, nicht das Geld.
+drei Aufstiege — der Markt nimmt dir die Arbeit ab, nicht das Geld. Und der
+Anwerbepreis ist für **alle Einheiten derselbe**: was du im Markt bezahlst, sagt
+nur, auf welchem Rang sie steht, nicht wer sie ist. Ein Goblin und ein
+Primordial kosten gleich, gedraftet wird nach Trupp, nicht nach Preisschild.
 
 Zurück bekommst du etwas nur beim **Entlassen**: ein Viertel dessen, was in der
 Einheit steckt (Anwerbung plus Rangaufstiege), und ihre Ausrüstung wandert in
@@ -374,7 +377,9 @@ Entscheidung, worauf du baust. Gegner spielen nach derselben Regel.
 
 ## Raritätsstufen
 
-Einheiten, Fähigkeiten, Ausrüstung und Relikte tragen eine von fünf Stufen:
+Fähigkeiten, Ausrüstung und Relikte tragen eine von fünf Stufen. **Einheiten
+nicht** — jede Einheit liegt gleich häufig im Markt, was sie kostet und auf
+welchem Rang sie steht, sagt schon genug über sie.
 
 | Stufe | Bedeutung |
 |---|---|
@@ -386,7 +391,8 @@ Einheiten, Fähigkeiten, Ausrüstung und Relikte tragen eine von fünf Stufen:
 
 Die Stufe ist nicht nur Farbe: sie steuert, **wie wahrscheinlich etwas
 angeboten wird**. In Akt 1 dominiert Übliches, in Akt 3 tauchen Episches und
-Legendäres deutlich öfter auf. Elite- und Bosskämpfe würfeln eine Stufe besser
+Legendäres deutlich öfter auf — bei Ausrüstung und Relikten, nicht bei
+Einheiten. Elite- und Bosskämpfe würfeln eine Stufe besser
 als normale Kämpfe, und je höher der Rang einer Einheit, desto besser der Topf,
 aus dem beim Aufstieg die drei Fähigkeiten gezogen werden.
 
@@ -583,7 +589,7 @@ Chaos-Marke zeigt den Wurf der laufenden Runde.
 nach oben und ohne Fehlschlag.
 
 Shions Signatur **Chaosschlag** legt Chaos nach ihrer Entwicklungsstufe an —
-C Oger 1 Stapel, B Teufel 2, A Verdorbener Teufel 3, S Ultimativer Teufel 5.
+C Oger 2 Stapel, B Teufel 3, A Verdorbener Teufel 4, S Ultimativer Teufel 6.
 Sie ist damit die erste Einheit mit **wählbaren Passiven**: vier Linien à vier
 Stufen, insgesamt sechzehn.
 

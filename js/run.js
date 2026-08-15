@@ -467,11 +467,12 @@
     return run;
   }
 
-  /* Vier Anfänge zur Wahl: je eine billige Einheit und ein Relikt, das zu ihr
-     passt. Das Paar ist die erste Build-Ansage des Runs. */
+  /* Vier Anfänge zur Wahl: je eine Einheit und ein Relikt, das zu ihr passt.
+     Das Paar ist die erste Build-Ansage des Runs. Gefiltert wird nicht mehr
+     nach Preis — alle Einheiten kosten gleich, jede darf ein Anfang sein. */
   function startAngebot(run) {
     var rng = rngOf(run);
-    var pool = unitPool(run).filter(function (u) { return u.cost <= 3; });
+    var pool = unitPool(run);
     var relPool = relicPool(run);
     var einheiten = waehle(rng, pool, 1, 4);
     /* Kein Relikt zweimal: zwei Anfänge mit demselben Relikt sind zwei Mal
@@ -958,14 +959,12 @@
      erschien nie ein Aufstieg, und der Trupp blieb auf seinen Startraengen
      sitzen — gemessen 2 % Siege und 3,3 Rangstufen statt 14. */
   function unitPool(run, hoechsterRang) {
-    var st = inhaltsStufe(run);
-    var maxCost = st <= 2 ? 3 : st === 3 ? 4 : 5;
     var raenge = {};
     run.team.concat(run.bank).forEach(function (m) {
       if (raenge[m.id] === undefined || m.rank < raenge[m.id]) raenge[m.id] = m.rank;
     });
     return run.meta.unlockedUnits.map(GD.unit).filter(function (u) {
-      if (!u || u.cost > maxCost) return false;
+      if (!u) return false;
       if (raenge[u.id] === undefined) return true;
       /* Belegt: nur, wenn ueberhaupt ein besserer Rang gezogen werden KANN. */
       return (hoechsterRang || 0) > raenge[u.id];
@@ -1313,7 +1312,7 @@
         offers.push({ kind: 'unit', id: u.id, name: u.name,
                       rang: rang, rangName: RANK_NAME[rang],
                       price: rangPreis(u, rang, run),
-                      text: unitText(u), rarity: u.rarity,
+                      text: unitText(u),
                       passive: pas[0] || null,
                       passives: pas,
                       passiveNamen: pas.map(function (pid) {

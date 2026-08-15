@@ -208,6 +208,8 @@ ok(AB.pool.concat(AB.passives).filter(function (a) { return !AB.istEigen(a.id); 
    'jede Pool-Fähigkeit und Bibliotheks-Passive hat eine Stufe 1–5');
 ok(GD.units.every(function (u) { return !AB.get(u.signature).rarity; }),
    'Signaturen tragen keine Raritätsstufe');
+ok(GD.units.every(function (u) { return !u.rarity; }),
+   'Einheiten tragen keine Raritätsstufe — alle liegen gleich häufig im Markt');
 ok(AB.passives.filter(function (a) { return AB.linien_ids[a.id]; })
    .every(function (a) { return !a.rarity; }),
    'Linien-Passive tragen keine Raritätsstufe');
@@ -241,8 +243,9 @@ rRun2.phase = 'karte';
 ok(!R.STEPS.some(function (t) { return t.indexOf('shop') >= 0; }),
    'kein Händler-Knoten mehr in der Wegleiste');
 var markt = R.marktOffers(rRun2, { type: 'kampf' }, false);
-ok(markt.every(function (o) { return STUFEN.indexOf(o.rarity) >= 0; }),
-   'jeder Marktposten trägt seine Stufe');
+ok(markt.filter(function (o) { return o.kind !== 'unit'; })
+   .every(function (o) { return STUFEN.indexOf(o.rarity) >= 0; }),
+   'jeder Marktposten außer der Einheit trägt seine Stufe');
 ok(!markt.some(function (o) { return o.kind === 'rang'; }),
    'der Markt bietet keinen Aufstieg mehr an — Rang kommt mit der Einheit');
 ok(R.marktOffers(rRun2, { type: 'elite' }, false).length >= markt.length,

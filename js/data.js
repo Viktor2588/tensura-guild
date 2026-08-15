@@ -165,7 +165,7 @@
 
     u('benimaru', 'Benimaru', 'oger', 'verstaerker', 4, 120, 22, 5, 28,
       'sig_benimaru', ['aschehaut', 'glutkern', 'kriegsherz']),
-    u('shion', 'Shion', 'oger', 'front', 3, 130, 18, 6, 16,
+    u('shion', 'Shion', 'oger', 'front', 3, 135, 19, 6, 18,
       'sig_shion', ['rachsucht', 'zaeh', 'konterstoss']),
     u('souei', 'Souei', 'oger', 'fernkampf', 3, 80, 19, 2, 34,
       'sig_souei', ['windschritt', 'erstschlag', 'henkersblick']),
@@ -635,10 +635,14 @@
       })] }
   ];
 
-  /* Die Signatur ist so selten wie ihre Einheit teuer ist — eine Zahl weniger,
-     die auseinanderlaufen kann. Rimuru (Kosten 0) ist der Held: legendär. */
-  var KOSTEN_ZU_RARITAET = { 0: 5, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 };
-  units.forEach(function (unit) { unit.rarity = KOSTEN_ZU_RARITAET[unit.cost]; });
+  /* Einheiten sind untereinander gleichgestellt: KEINE Raritätsstufe und ALLE
+     zum selben Preis. Weder Angebotschance noch Kosten sortieren sie mehr —
+     wer im Markt liegt und was er taugt, entscheidet Rang und Trupp, nicht ein
+     Preisschild. 3 ist der bisherige Durchschnitt (2,95), die Kasse merkt den
+     Umstieg also nicht. Die Zahl bleibt als Feld stehen, weil Marktpreis,
+     Verkaufswert und der Inhaltsstufen-Riegel in run.js darauf lesen. */
+  var EINHEITSKOSTEN = 3;
+  units.forEach(function (unit) { unit.cost = EINHEITSKOSTEN; });
 
   function byId(list, id) {
     for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];

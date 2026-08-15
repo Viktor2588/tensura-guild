@@ -163,7 +163,7 @@ function play(seed, voll) {
       var bs = 0, bw = -1;
       run.startwahl.offers.forEach(function (o, i) {
         var uu = GD.unit(o.unit);
-        var sc = passt(o.unit, kws) + (uu ? uu.cost : 0);   // gratis: teurer ist staerker
+        var sc = passt(o.unit, kws);   // alle Einheiten kosten gleich, es zaehlt nur die Passung
         if (sc > bw) { bw = sc; bs = i; }
       });
       R.chooseStart(run, bs);
@@ -279,7 +279,7 @@ function play(seed, voll) {
 var siege = 0, akte = {}, schritteSum = 0, rangSum = 0, teamSum = 0;
 var pruefGesamt = 0, pruefOk = 0;
 var bossKampf = {}, bossSieg = {};
-var kaeufe = {}, unbezahlbar = 0, kostenSum = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
+var kaeufe = {}, unbezahlbar = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
 var angebote = {}, gekauft = {};                  // je Einheit: im Regal / gekauft
 var ohneFront = 0, ohneStuetze = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
 var proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {}, proResonanz = {};
@@ -320,7 +320,6 @@ for (var s = 0; s < N; s++) {
   if (rollen2.indexOf('unterstuetzer') < 0 && rollen2.indexOf('verstaerker') < 0) ohneStuetze++;
   reliktSum += run.relics.length;
   itemSum += run.team.reduce(function (a2, m) { return a2 + m.items.length; }, 0);
-  kostenSum += run.team.reduce(function (a2, m) { return a2 + GD.unit(m.id).cost; }, 0);
   var werte = run.team.reduce(function (a2, m) { var d = R.resolve(m); return a2 + d.hp + d.atk * 6; }, 0);
   werteSum += werte;
   var abs = R.buildTeile(run);
@@ -414,7 +413,7 @@ console.log('gescheitert je Akt: ' + Object.keys(akte).sort().map(function (a) {
 console.log('nicht bezahlbare Angebote: ' + unbezahlbar + ' (je Run ' + (unbezahlbar / N).toFixed(1) + ')');
 console.log('Trupps ohne Frontlinie: ' + ohneFront + ' · ohne Unterstützung: ' + ohneStuetze);
 console.log('Ø Relikte: ' + (reliktSum / N).toFixed(1) + ' · Ø angelegte Ausrüstung: ' + (itemSum / N).toFixed(1));
-console.log('Ø Truppkosten: ' + (kostenSum / N).toFixed(1) + ' · Ø Truppstärke (hp+6·atk): ' + Math.round(werteSum / N));
+console.log('Ø Truppstärke (hp+6·atk): ' + Math.round(werteSum / N));
 console.log('Käufe im Laden: ' + Object.keys(kaeufe).map(function (k) {
   return k + ' ' + kaeufe[k];
 }).join(' · '));
@@ -507,8 +506,8 @@ relRows.forEach(function (r) {
      ihre Preise. */
   GD.units.forEach(function (u) {
     var r = u.tags[1] || 'front';
-    var e = proRolle[r] = proRolle[r] || { n: 0, w: 0, ges: 0, da: 0, kosten: 0 };
-    e.ges++; e.kosten += u.cost;
+    var e = proRolle[r] = proRolle[r] || { n: 0, w: 0, ges: 0, da: 0 };
+    e.ges++;
     if (proEinheit[u.id]) { e.da++; e.n += proEinheit[u.id].n; e.w += proEinheit[u.id].w; }
   });
   var RW = globalThis.Combat.REICHWEITE, SCH = globalThis.Combat.SCHRITTE_JE_ROLLE;
@@ -519,8 +518,7 @@ relRows.forEach(function (r) {
     var e = proRolle[r];
     console.log('  ' + (r + ' (rw ' + (RW[r] || 1) + ', ' + (SCH[r] || 4) + ' Schritte)').padEnd(34) +
       (e.n ? Math.round(e.w / e.n * 100) + '%' : '  –').padStart(4) + '   (n=' + e.n + ')' +
-      '   ' + e.da + '/' + e.ges + ' Einheiten erreicht, Ø Kosten ' +
-      (e.kosten / e.ges).toFixed(1));
+      '   ' + e.da + '/' + e.ges + ' Einheiten erreicht');
   });
   /* Die Rollen-Rangfolge ist nur dann eine Aussage ueber Rollen, wenn jede mit
      ihrem vollen Bestand antritt. Steht hier eine Rolle mit 5/8, misst ihre
@@ -532,19 +530,17 @@ relRows.forEach(function (r) {
     ' — die Quote gilt nur fuer die erreichten Einheiten, nicht fuer die Rolle');
 })();
 
-/* Die teure Haelfte der Besetzung (Kosten 4-5). Phase 46 hatte 14 Einheiten
-   notiert, die auch bei `--voll` nie gekauft werden, und zwei moegliche
-   Ursachen offen gelassen: geizige Heuristik oder zu steile Preiskurve. Die
-   Tabelle trennt das — eine Einheit, die nie IM REGAL liegt, kann keine von
-   beiden sein. */
+/* Einheiten, die nie gekauft werden. Bis alle Einheiten denselben Preis
+   bekamen, war das die Frage nach der Preiskurve; jetzt ist es die nach der
+   Heuristik — eine Einheit, die nie IM REGAL liegt, ist wieder etwas anderes
+   als eine, die dort liegen bleibt. Deshalb stehen beide Spalten da. */
 (function () {
-  var teuer = GD.units.filter(function (u) { return u.cost >= 4; });
-  var stumm = teuer.filter(function (u) { return !gekauft[u.id]; });
-  console.log('\nTeure Einheiten (Kosten 4-5): ' + teuer.length + ', davon nie gekauft ' + stumm.length);
-  teuer.map(function (u) {
+  var stumm = GD.units.filter(function (u) { return !gekauft[u.id]; });
+  console.log('\nNie gekauft: ' + stumm.length + ' von ' + GD.units.length + ' Einheiten');
+  stumm.map(function (u) {
     return { u: u, a: angebote[u.id] || 0, g: gekauft[u.id] || 0 };
   }).sort(function (a, b) { return a.g - b.g || a.a - b.a; }).forEach(function (r) {
-    console.log('  ' + (r.u.name + ' (' + r.u.cost + ')                    ').slice(0, 26) +
+    console.log('  ' + (r.u.name + '                    ').slice(0, 26) +
       String(r.a).padStart(5) + '× im Regal ' + String(r.g).padStart(5) + '× gekauft' +
       (r.a ? '  (' + Math.round(r.g / r.a * 100) + ' %)' : ''));
   });

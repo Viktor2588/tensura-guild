@@ -39,7 +39,7 @@
 
   /* Entwicklungsstufen: C Oger, B Teufel, A Verdorbener Teufel, S Ultimativer
      Teufel. Die Zahl der Chaos-Stapel ist die eine Stelle, an der das hängt. */
-  var CHAOS_JE_RANG = [1, 2, 3, 5];
+  var CHAOS_JE_RANG = [2, 3, 4, 6];
   var MARKE_JE_RANG = [1, 2, 3, 5];
 
   /* ---- Passive Bibliothek: geteilt, jede Einheit trägt drei davon --------- */
@@ -306,10 +306,10 @@
        Menge NACH der Meisterschaft.                                           */
 
     passiv('shion_ang1', 'Chaosrausch', 'onChaos', ['chaos'], [],
-      'Jeder angelegte Chaos-Stapel gibt Shion für den Rest des Kampfes +1,8 % Angriff und +1,2 % Tempo',
+      'Jeder angelegte Chaos-Stapel gibt Shion für den Rest des Kampfes +2,5 % Angriff und +1,5 % Tempo',
       function (c) {
-        c.self.atk = Math.round(c.self.atk * (1 + 0.018 * c.stapel));
-        c.self.spd = Math.round(c.self.spd * (1 + 0.012 * c.stapel));
+        c.self.atk = Math.round(c.self.atk * (1 + 0.025 * c.stapel));
+        c.self.spd = Math.round(c.self.spd * (1 + 0.015 * c.stapel));
       }),
     passiv('shion_ang2', 'Wutspirale', 'onChaos', ['chaos'], [],
       'Wie Chaosrausch, aber +2,8 % Angriff je Stapel — unter der Hälfte ihres Lebens +5,5 %',
@@ -388,8 +388,8 @@
       }),
 
     passiv('shion_mec1', 'Chaosmeisterschaft', 'onStart', [], ['chaos'],
-      'Shion legt 30 % mehr Chaos-Stapel an, als die Fähigkeit angibt',
-      function (c) { c.self.chaosmeister = Math.max(c.self.chaosmeister || 1, 1.3); }),
+      'Shion legt 50 % mehr Chaos-Stapel an, als die Fähigkeit angibt',
+      function (c) { c.self.chaosmeister = Math.max(c.self.chaosmeister || 1, 1.5); }),
     passiv('shion_mec2', 'Instabile Klinge', 'onChaos', ['chaos'], [],
       'Dieselbe Menge Chaos geht zusätzlich auf einen zweiten Gegner',
       function (c) {
@@ -430,21 +430,21 @@
       }),
 
     passiv('shion_def1', 'Ogerschild', 'onStart', [], [],
-      '+20 % maximales Leben, je Oger im Trupp weitere +2 %',
+      '+30 % maximales Leben, je Oger im Trupp weitere +3 %',
       function (c) {
         var oger = c.allies().filter(function (u) { return u.tags.indexOf('oger') >= 0; }).length;
-        var add = Math.round(c.self.maxHp * (0.2 + 0.02 * oger));
+        var add = Math.round(c.self.maxHp * (0.3 + 0.03 * oger));
         c.self.maxHp += add; c.self.hp += add;
       }),
     passiv('shion_def2', 'Fleisch des Kriegers', 'onStart', ['schild'], [],
-      '+6 Rüstung und Schild 40',
-      function (c) { c.self.def += 6; c.applyStatus(c.self, 'schild', 40); }),
+      '+9 Rüstung und Schild 70',
+      function (c) { c.self.def += 9; c.applyStatus(c.self, 'schild', 70); }),
     passiv('shion_def3', 'Unsterblicher Zorn', 'onDeath', ['chaos', 'heilung'], [],
-      'Shion steht einmal mit 35 % Leben wieder auf und legt allen Gegnern 3 Chaos an',
+      'Shion steht einmal mit 50 % Leben wieder auf und legt allen Gegnern 5 Chaos an',
       function (c) {
         if (c.self._auf) return;
-        c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.35);
-        c.foes().forEach(function (f) { c.applyStatus(f, 'chaos', 3); });
+        c.self._auf = 1; c.self.hp = Math.round(c.self.maxHp * 0.5);
+        c.foes().forEach(function (f) { c.applyStatus(f, 'chaos', 5); });
         c.log.push({ t: 0, type: 'revive', key: c.self.key, unit: c.self.name, side: c.self.side, hp: c.self.hp });
       }),
     passiv('shion_def4', 'Chaosbollwerk', 'onStart', [], [],
@@ -5857,11 +5857,11 @@
     /* Shions Signatur skaliert nicht über eine Zahl, sondern über den Rang:
        Oger → Teufel → Verdorbener Teufel → Ultimativer Teufel. */
     aktiv('sig_shion', 'Chaosschlag', 3, ['chaos'],
-      '160 % Schaden und legt Chaos an — 1 Stapel auf Rang C, 2 auf B, 3 auf A, 5 auf S. ' +
+      '180 % Schaden und legt Chaos an — 2 Stapel auf Rang C, 3 auf B, 4 auf A, 6 auf S. ' +
       'Jeder Stapel würfelt Angriff, Rüstung und Tempo des Ziels in jeder Runde neu aus ' +
       'und lässt seine Fähigkeiten zu 5 % je Stapel verpuffen.',
       function (c) {
-        c.attack(1.6);
+        c.attack(1.8);
         c.chaos(c.target, CHAOS_JE_RANG[c.self.rank || 0]);
       }),
     /* ---- Orks und Bestienkrieger ---------------------------------------- */
