@@ -82,6 +82,12 @@ Datei für Klang gar nicht erst: es gibt nichts, das von irgendwoher stammt.
 Sollten doch einmal echte Audiodateien dazukommen (Musik, Sprachausgabe),
 gehören sie unter `assets/audio/` und eine Herkunftszeile hierhin, nach
 demselben Muster wie bei den Figuren unten.
+## Ton
+
+`js/klang.js` (Routine vom 2026-08-09) erzeugt jeden Ton zur Laufzeit per Web
+Audio API — Oszillatoren und ein Rauschpuffer, keine Audiodatei. Damit gibt es
+hier **nichts mit eigener Herkunftszeile**: keine Lizenzfrage, kein Download,
+kein Eintrag nötig. Das ist bewusst so und keine Lücke in dieser Liste.
 
 ## Figuren
 
