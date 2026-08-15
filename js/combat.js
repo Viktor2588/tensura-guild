@@ -831,8 +831,14 @@
 
       if (aktive) {
         /* `kw` und `ziel` trägt nur die Anzeige: woher, wohin, welches Element. */
+        /* `sig` ist die Fähigkeits-ID. Das Schlüsselwort allein reicht der
+           Anzeige nicht mehr: dreizehn Signaturen teilen sich `saeule`, sechs
+           tragen gar keins. Mit der ID kann das Brett einer einzelnen Fähigkeit
+           eine eigene Handschrift geben — und fällt ohne Eintrag weiterhin auf
+           das Schlüsselwort zurück. */
         log.push({ t: t, type: 'aktiv', key: u.key, unit: u.name, side: u.side,
-                   name: aktive.name, kw: aktive.keywords[0] || null, ziel: target.key });
+                   name: aktive.name, kw: aktive.keywords[0] || null,
+                   sig: aktive.id, ziel: target.key });
         aktive.fn(ctx(u, {
           attacker: u, target: target,
           /* aktive liegt im ctx, damit eine Fähigkeit ihre eigene Abklingzeit

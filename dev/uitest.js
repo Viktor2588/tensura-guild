@@ -436,5 +436,33 @@ ok(shionM.passives.length === 1 && win.Abilities.linienAngebot('shion')
      .some(function (o) { return o.id === shionM.passives[0] && !o.preis; }),
    'Shion startet mit einer vorausgewählten Linien-Passive ohne Preis');
 
+/* ------------------------------------------------- Handschrift der Effekte */
+/* Ohne WebGL zeichnet `Brett3D` nichts — die TABELLE aber, aus der es zeichnet,
+   ist reine Datenpflege und genau hier pruefbar. Sie faellt sonst still auf den
+   grauen Standardschwarm zurueck, und das sieht niemand im Test. */
+head('Handschrift der Signaturen');
+var B3 = win.Brett3D, ABw = win.Abilities, GDw = win.GameData;
+var FORMEN = {};
+Object.keys(B3.FORM).forEach(function (k) { FORMEN[B3.FORM[k]] = 1; });
+var sigIds = Object.keys(B3.SIGNATUR);
+ok(sigIds.every(function (id) { return !!ABw.get(id); }),
+   'jede Handschrift gehört zu einer echten Fähigkeit: ' +
+   sigIds.filter(function (id) { return !ABw.get(id); }).join(', '));
+ok(sigIds.every(function (id) { return FORMEN[B3.SIGNATUR[id].form]; }),
+   'jede Handschrift nennt eine Bewegungsform, die es gibt');
+ok(sigIds.every(function (id) {
+  var w = B3.SIGNATUR[id].wucht;
+  return typeof w === 'number' && w >= 0.6 && w <= 2;
+}), 'jede Wucht liegt zwischen 0,6 und 2 — darüber klemmt `einsatz()` sie ohnehin ab');
+/* Der eigentliche Anlass: Signaturen ohne Schlüsselwort hatten keinen Effekt,
+   der sie von einer beliebigen anderen unterscheidet. Diese Zusicherung hält
+   die Lücke zu, wenn später eine schlüsselwortlose Signatur dazukommt. */
+var stumm = GDw.units.filter(function (u) {
+  var sig = ABw.get(u.signature);
+  return sig && !(sig.keywords || []).length && !B3.SIGNATUR[u.signature];
+});
+ok(!stumm.length, 'keine Signatur bleibt ohne Schlüsselwort UND ohne Handschrift: ' +
+   stumm.map(function (u) { return u.name; }).join(', '));
+
 console.log('\n' + pass + '/' + (pass + fail) + ' ok');
 process.exit(fail ? 1 : 0);

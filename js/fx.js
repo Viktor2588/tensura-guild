@@ -66,19 +66,35 @@
      traegt der Alphakanal der Szene durch, und das Leuchten hebt ihn dort an,
      wo es ueber leeren Grund faellt. Sonst waere ein Funke am Bildrand
      unsichtbar, obwohl er strahlt. */
+  /* `blitz` ist der Todesstoss-Moment: das Bild wird kurz nach innen gerissen
+     und weiss ueberblendet. Beides im Zusammenfuegen, weil hier die einzige
+     Stelle ist, an der das FERTIGE Bild vorliegt — ein Blitz je Figur waere
+     vierzig Blitze, ein Blitz am Bildschirm ist einer.
+
+     Die Verzerrung ist radial und waechst im QUADRAT des Abstands zur Mitte
+     (`m * length(m)`): in der Mitte passiert fast nichts, aussen reisst es.
+     Ein gleichmaessiger Zoom saehe aus, als ruckelte die Kamera. */
   var ZUSAMMEN = [
     'uniform sampler2D tSzene;',
     'uniform sampler2D tLicht;',
     'uniform float staerke;',
     'uniform float vignette;',
+    'uniform float blitz;',
     'varying vec2 vUv;',
     'void main() {',
-    '  vec4 s = texture2D(tSzene, vUv);',
-    '  vec3 b = texture2D(tLicht, vUv).rgb * staerke;',
+    '  vec2 m = vUv - vec2(0.5);',
+    '  vec2 uv = vUv - m * length(m) * blitz * 0.30;',
+    '  vec4 s = texture2D(tSzene, uv);',
+    '  vec3 b = texture2D(tLicht, uv).rgb * staerke;',
     '  vec3 c = s.rgb + b;',
+    /* Weiss legt sich AUF das Bild, verdraengt es aber nie ganz: bei 1.0
+       bliebe ein leerer Rahmen stehen, und der Hoehepunkt waere unsichtbar. */
+    '  c = mix(c, vec3(1.0), blitz * 0.72);',
     '  float d = distance(vUv, vec2(0.5));',
     '  float v = mix(1.0, smoothstep(0.82, 0.30, d), vignette);',
-    '  float a = clamp(s.a + max(max(b.r, b.g), b.b), 0.0, 1.0);',
+    /* Der Blitz haelt den Alphakanal mit hoch, sonst blitzt nur dort, wo schon
+       etwas stand — die Leinwand ist durchsichtig. */
+    '  float a = clamp(s.a + max(max(b.r, b.g), b.b) + blitz * 0.9, 0.0, 1.0);',
     '  gl_FragColor = vec4(c * v, a);',
     '}'
   ].join('\n');
@@ -128,7 +144,8 @@
     var mZusammen = material(ZUSAMMEN, {
       tSzene: { value: rtSzene.texture }, tLicht: { value: rtB.texture },
       staerke: { value: opt.staerke === undefined ? 0.6 : opt.staerke },
-      vignette: { value: opt.vignette === undefined ? 0.55 : opt.vignette }
+      vignette: { value: opt.vignette === undefined ? 0.55 : opt.vignette },
+      blitz: { value: 0 }
     });
 
     function durchgang(mat, nach) {
@@ -171,7 +188,13 @@
       quad.geometry.dispose();
     }
 
-    return { render: render, groesse: groesse, loese: loese };
+    /* Gesetzt wird von aussen, abgebaut in der Bildschleife des Bretts — die
+       Nachbearbeitung hat keine eigene Uhr und soll auch keine bekommen. */
+    function blitz(v) {
+      mZusammen.uniforms.blitz.value = Math.max(0, Math.min(1, v || 0));
+    }
+
+    return { render: render, groesse: groesse, loese: loese, blitz: blitz };
   }
 
   root.FX = { komposition: komposition };

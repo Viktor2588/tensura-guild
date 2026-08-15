@@ -441,6 +441,11 @@
     if (!u) return;
     /* Heranfahren beim Einsatz, Zeitlupe beim Todesstoss — die beiden
        Momente, die die Regie ohnehin schon als Hoehepunkt kennt. */
+    /* Ausholen VOR dem Blick: die Figur zieht sich zurueck, waehrend die
+       Kamera heranfaehrt. Beides zusammen ist die Ansage, dass jetzt etwas
+       kommt — und die Regie hat dem `aktiv`-Beat dafuer die Zeit schon
+       zugeteilt (Gewicht 3.5 gegen 1.0 beim Treffer). */
+    if (l.type === 'aktiv') Brett3D.einsatz(l.key, l.ziel, l.sig);
     if (l.type === 'aktiv') Brett3D.blick([l.key, l.ziel].filter(Boolean), 0.4, 620);
     if (beat === 'toedlich' || beat === 'finale') {
       Brett3D.zeitlupe(beat === 'finale' ? 0.25 : 0.4, beat === 'finale' ? 900 : 420);
@@ -449,7 +454,7 @@
     /* Eine Signatur ist der Höhepunkt eines Zuges — sie soll auch so aussehen.
        Welcher Effekt, entscheidet das Schlüsselwort der Fähigkeit; die Ansicht
        braucht nur zu wissen, von wem nach wem. */
-    if (l.type === 'aktiv') Brett3D.effekt(l.key, l.ziel, l.kw, null, beat);
+    if (l.type === 'aktiv') Brett3D.effekt(l.key, l.ziel, l.kw, null, beat, l.sig);
     /* `von` steht erst seit dieser Phase im Log — ohne den Angreifer waere der
        Rueckstoss richtungslos. Fehlt er (Gift, Brand, Entladung), zuckt die
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */

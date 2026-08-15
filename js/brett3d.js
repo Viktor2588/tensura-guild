@@ -362,6 +362,42 @@
     schatten: 'schleier', verderbnis: 'schleier', chaos: 'schleier'
   };
 
+  /* ---- Handschrift einzelner Signaturen ------------------------------------
+     Der Effekt haengt am SCHLUESSELWORT, und das bleibt die Regel — wer Brand
+     spielt, soll Brand sehen. Nur: gezaehlt ueber alle 39 Signaturen teilen
+     sich dreizehn die `saeule`, und sechs tragen ueberhaupt kein Schluesselwort
+     und fielen damit auf den grauen Standardschwarm zurueck. Das ist keine
+     Zuordnung mehr, das ist ein Loch.
+
+     Diese Tabelle ist die Ausnahme zur Regel, nicht ihr Ersatz: sie steht nur
+     dort, wo das Schluesselwort die Faehigkeit falsch oder gar nicht
+     beschreibt. Ohne Eintrag bleibt alles wie bisher.
+
+     `wucht` skaliert Funkenzahl, Ringgroesse und Erschuetterung in einem — 1.0
+     ist der bisherige Effekt, 1.8 ist ein Kaliber, das das Brett spuert.       */
+  var SIGNATUR = {
+    /* Die sechs ohne Schluesselwort — bis hierher grau und formlos. */
+    sig_gobkyu:      { form: 'geschoss', farbe: 0xc9d4e4, wucht: 0.8 },
+    sig_kurobe:      { form: 'klinge',   farbe: 0xffd9a0, wucht: 1.1 },
+    sig_souka:       { form: 'strahl',   farbe: 0xbfe6ff, wucht: 0.9 },
+    sig_zegion:      { form: 'welle',    farbe: 0x9fb8ff, wucht: 1.5 },
+    sig_daemonengarde: { form: 'klinge', farbe: 0xc44ad8, wucht: 1.0 },
+    sig_orkkrieger:  { form: 'klinge',   farbe: 0xd98a5a, wucht: 1.0 },
+
+    /* Und die, deren Schluesselwort sie kleiner macht, als sie sind. Ein
+       Sturmangriff des Drachen ist keine `saeule` wie ein Heiltrank. */
+    sig_rimuru:      { form: 'schleier', farbe: 0x7fe3ff, wucht: 1.4 },
+    sig_veldora:     { form: 'strahl',   farbe: 0xffe14a, wucht: 1.9 },
+    sig_milim:       { form: 'welle',    farbe: 0xff5f8f, wucht: 1.9 },
+    sig_diablo:      { form: 'schleier', farbe: 0x6c34a8, wucht: 1.6 },
+    sig_shion:       { form: 'klinge',   farbe: 0xff5fbf, wucht: 1.5 },
+    sig_shion_ordnung:   { form: 'saeule', farbe: 0x3fd2ad, wucht: 1.7 },
+    sig_shion_verdorben: { form: 'klinge', farbe: 0xff2f9f, wucht: 1.9 },
+    sig_benimaru:    { form: 'welle',    farbe: 0xff7a2a, wucht: 1.5 },
+    sig_hakuro:      { form: 'klinge',   farbe: 0xfff0b0, wucht: 1.3 },
+    sig_souei:       { form: 'strahl',   farbe: 0xff9a5a, wucht: 1.2 }
+  };
+
   /* Die drei sichtbarsten Zustaende — der Rest bleibt in der Kartenansicht.
      Links der Name im Zustand, rechts die Farbe: `erstarrung` heisst als
      Schluesselwort `frost`, und die Farbtabelle kennt nur das Schluesselwort. */
@@ -394,6 +430,16 @@
     return new T.Mesh(new T.PlaneGeometry(1, 1), m);
   }
 
+  /* Die Sichel des Klingenbogens: ein Ringausschnitt von rund 100 Grad, duenn,
+     senkrecht stehend. `ringMesh` legt sich flach auf den Boden — ein Schnitt
+     gehoert in die Luft, also bleibt die Vorgabe (+z, zur Kamera) stehen. */
+  function sichelMesh(farbe) {
+    var T = root.THREE;
+    var m = new T.MeshBasicMaterial({ color: farbe, transparent: true, side: T.DoubleSide,
+                                      depthWrite: false, blending: T.AdditiveBlending });
+    return new T.Mesh(new T.RingGeometry(0.80, 1, 28, 1, -0.9, 1.8), m);
+  }
+
   var funkeTex = null;
   function funke() {
     if (funkeTex) return funkeTex;
@@ -421,17 +467,27 @@
   /* Ein Effekt ist eine Handvoll Funken mit Startpunkt, Richtung und Laufzeit.
      Gerechnet wird beim Zeichnen, nicht gespeichert — kein Zustand, der
      zwischen zwei Kämpfen hängenbleiben kann. */
-  function effekt(vonKey, nachKey, kw, farbeOpt, beat) {
+  function effekt(vonKey, nachKey, kw, farbeOpt, beat, sig) {
     if (!zustand) return;
     var T = root.THREE;
     var vonF = zustand.figuren[vonKey], nachF = zustand.figuren[nachKey || vonKey];
     if (!vonF) return;
-    var farbe = farbeOpt || FARBE[kw] || 0xdfe6f0;
-    var anSich = AN_SICH[kw] || !nachF || nachF === vonF;
-    var form = FORM[kw] || (anSich ? 'saeule' : 'geschoss');
+    /* Die Handschrift der Signatur schlaegt das Schluesselwort, das
+       Schluesselwort den Standard. Eine ausdrueckliche Farbe (Zerfall) schlaegt
+       beides — sie kommt nicht aus einer Faehigkeit. */
+    var sg = SIGNATUR[sig] || {};
+    var farbe = farbeOpt || sg.farbe || FARBE[kw] || 0xdfe6f0;
+    /* `anSich` heisst: es geht nichts hinueber. Das entscheidet die SAEULE —
+       sie steigt an den eigenen Fuessen auf. Der Schleier nicht: er kreist um
+       das ZIEL (siehe `zeichneEffekt`), und ihm den Einschlagring zu nehmen
+       waere ein Verlust ohne Gegenwert. */
+    var anSich = !nachF || nachF === vonF ||
+                 (sg.form ? sg.form === 'saeule' : !!AN_SICH[kw]);
+    var form = sg.form || FORM[kw] || (anSich ? 'saeule' : 'geschoss');
+    var wucht = sg.wucht || 1;
     var a = vonF.gruppe.position, b = (nachF || vonF).gruppe.position;
-    var zahl = anSich ? 12 : 16;
-    var dauer = anSich ? 620 : 520;
+    var zahl = Math.round((anSich ? 12 : 16) * Math.min(2, wucht));
+    var dauer = Math.round((anSich ? 620 : 520) * (0.85 + wucht * 0.15));
     var flug = SOFORT[kw] ? 0.12 : 0.5;               // Anteil der Zeit bis zum Ziel
     if (form === 'strahl') flug = 0.12;
     if (form === 'klinge' || form === 'welle' || form === 'schleier') flug = 0;
@@ -453,12 +509,12 @@
       if (nachF && nachF.hex) pulsiere(nachF.hex, farbe);
       var e1 = ringMesh(farbe);
       e1.position.set(b.x, KACHEL_H / 2 + 0.02, b.z);
-      extra(e1, 'aufgehen', G * 1.1, flug);
+      extra(e1, 'aufgehen', G * 1.1 * wucht, flug);
     }
     if (form === 'saeule') {
       var e2 = ringMesh(farbe, 0.3);
       e2.position.set(a.x, KACHEL_H / 2 + 0.02, a.z);
-      extra(e2, 'aufsteigen', G * 0.85, 0);
+      extra(e2, 'aufsteigen', G * 0.85 * wucht, 0);
     }
     /* Eine Flaeche kommt nicht aus `combat.js` — sie steht in der Vorausschau
        der Regie (Phase 54): einem Einsatz folgen mehrere Treffer. Der Radius
@@ -468,6 +524,18 @@
       var e3 = ringMesh(farbe, 0.08);
       e3.position.set(b.x, KACHEL_H / 2 + 0.03, b.z);
       extra(e3, 'aufgehen', r, flug);
+    }
+    /* Der Schnitt ist der Grund, warum `klinge` bis hierher nach nichts aussah:
+       eine Reihe Funken auf einem Bogen liest sich als Streuung, nicht als
+       Hieb. Ein Sichelmesh, das MIT der Bewegung waechst und sofort wieder
+       verlischt, liest sich als Schnitt — dieselbe Anzahl Dreiecke wie der
+       Bodenring. Er steht senkrecht und schaut wie alles Flache hier zur
+       Kamera (+z); gedreht wird er in die Angriffsrichtung auf dem Schirm. */
+    if (form === 'klinge') {
+      var sw = sichelMesh(farbe);
+      sw.position.set(b.x, SPRITE_H * 0.45, b.z);
+      sw.rotation.z = Math.atan2(b.z - a.z, (b.x - a.x) || 0.001) + Math.PI / 2;
+      extra(sw, 'schnitt', SPRITE_H * 0.62 * wucht, 0);
     }
     if (form === 'strahl') {
       var dx = b.x - a.x, dz = b.z - a.z;
@@ -483,7 +551,7 @@
     }
 
     for (var i = 0; i < zahl; i++) {
-      var s = teilchen(farbe, 0.5 + Math.random() * 0.5);
+      var s = teilchen(farbe, (0.5 + Math.random() * 0.5) * (0.8 + wucht * 0.25));
       s.renderOrder = 3;
       zustand.scene.add(s);
       funken.push({
@@ -503,6 +571,7 @@
       });
     }
 
+    if (wucht > 1.2) ruettel((wucht - 1.2) * 0.35);
     zustand.effekte.push({
       funken: funken, start: 0, dauer: dauer, flug: flug, anSich: anSich,
       form: form, extras: extras,
@@ -521,6 +590,15 @@
         /* Drei Bilder Licht, dann weg — ein Strahl, der steht, ist ein Balken. */
         m.material.opacity = p < 0.18 ? 1 - p / 0.18 : 0;
         m.visible = p < 0.18;
+      } else if (x.art === 'schnitt') {
+        /* Der Hieb sitzt im ersten Drittel: die Sichel faehrt schnell auf,
+           dreht dabei ein Stueck weiter und verlischt. Wer laenger steht, ist
+           kein Schnitt mehr, sondern ein Reifen. */
+        var sq = Math.min(1, q / 0.34);
+        m.visible = sq < 1;
+        m.scale.setScalar(Math.max(0.001, x.bis * (0.45 + sq * 0.75)));
+        m.rotation.z += 0.05 * (1 - sq);
+        m.material.opacity = Math.sin(sq * Math.PI) * 0.95;
       } else if (x.art === 'aufsteigen') {
         m.scale.setScalar(x.bis * (0.4 + q * 0.6));
         m.position.y = KACHEL_H / 2 + 0.02 + q * SPRITE_H * 0.7;
@@ -635,6 +713,47 @@
     root.setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1000);
   }
 
+  /* ---- Ausholen ------------------------------------------------------------
+     Der Einsatz begann bisher mit dem Effekt: im einen Bild steht die Figur,
+     im naechsten fliegen Funken. Was fehlt, ist die halbe Sekunde davor.
+
+     Anticipation ist die aelteste Regel der Zeichentrickanimation und die
+     billigste hier: die Figur zieht sich ZURUECK, bevor sie vorschnellt. Der
+     Blick folgt der Rueckbewegung und ist deshalb schon dort, wo es gleich
+     knallt. Das kostet kein Bild und keine Textur — es ist dieselbe
+     Sprungfeder wie der Rueckstoss in `treffer()`, nur andersherum.
+
+     Ohne Ziel (eine Staerkung auf sich selbst) bleibt die Richtung leer: dann
+     duckt sich die Figur nur und richtet sich wieder auf.                      */
+  var AUSHOLEN = 420;                // Dauer in ms, Ducken und Ausfall zusammen
+  var KNICK = 0.45;                  // Anteil davon, der aufs Ducken entfaellt
+
+  function einsatz(vonKey, nachKey, sig) {
+    if (!zustand) return;
+    var von = zustand.figuren[vonKey];
+    if (!von) return;
+    var nach = nachKey && zustand.figuren[nachKey];
+    var x = 0, z = 0;
+    if (nach && nach !== von) {
+      var dx = nach.pos.x - von.pos.x, dz = nach.pos.z - von.pos.z;
+      var weit = Math.sqrt(dx * dx + dz * dz) || 1;
+      x = dx / weit; z = dz / weit;
+    }
+    var w = (SIGNATUR[sig] || {}).wucht || 1;
+    von.hol = { x: x, z: z, w: Math.max(0.6, Math.min(2, w)), t: 1 };
+    if (!zustand.raf) zustand.raf = root.requestAnimationFrame(schleife);
+  }
+
+  /* Der Bildschirm-Weissblitz. Er gehoert nicht an die Figur, sondern an die
+     Nachbearbeitung — dort liegt das fertige Bild. Auf Stufe `sparsam` gibt es
+     keine Nachbearbeitung und damit auch keinen Blitz; das ist gewollt, es ist
+     derselbe Schalter, mit dem sich die ganze Schicht wegvergleichen laesst. */
+  function weissblitz(v) {
+    if (!zustand) return;
+    zustand.schirm = Math.min(1, Math.max(zustand.schirm || 0, v || 0));
+    if (!zustand.raf) zustand.raf = root.requestAnimationFrame(schleife);
+  }
+
   /* `anteil` ist der Schaden gemessen an den Lebenspunkten des Ziels — daraus
      kommt jede Staerke hier. Ein negativer Wert ist Heilung: die blitzt und
      zaehlt, aber stoesst niemanden weg. */
@@ -669,6 +788,10 @@
     var wucht = 0.5 + anteil;
     ziel.stoss = { x: rx * STOSS * wucht, z: rz * STOSS * wucht, t: 1 };
     ruettel((0.05 + anteil * 0.5) * (beat === 'toedlich' || beat === 'finale' ? 1.8 : 1));
+    /* Der letzte Tod des Kampfes bekommt den ganzen Blitz, ein gewoehnlicher
+       Todesstoss ein Drittel. Mehr Abstufungen waeren keine Information. */
+    if (beat === 'finale') weissblitz(0.85);
+    else if (beat === 'toedlich') weissblitz(0.3);
   }
 
   /* Tod war bisher `opacity = 0.22` — die Figur wurde blass, und das war
@@ -897,7 +1020,7 @@
                 blickRest: 0, zoom: 1, zoomZiel: 1, lupe: 1, lupeRest: 0,
                 zahlenListe: [], kacheln: mass.karte, pulse: [],
                 motten: motten(scene, mass),
-                ruettel: 0, zeit: 0, halt: 0,
+                ruettel: 0, zeit: 0, halt: 0, schirm: 0,
                 fx: (stufe === 'voll' && root.FX)
                   ? root.FX.komposition(renderer, breite * renderer.getPixelRatio(),
                                                   hoehe * renderer.getPixelRatio())
@@ -1091,6 +1214,21 @@
       if (zustand.lupeRest <= 0) zustand.lupe = 1;
     }
     var f = zustand.figuren, weiter = false;
+
+    /* Der Weissblitz verlischt in rund 180 ms — laenger stehen heisst blenden.
+       Er wird VOR dem Hitstop abgearbeitet, und das ist keine Feinheit: der
+       Hitstop springt aus der Schleife, und der einzige Moment, in dem beide
+       zusammenfallen, ist der Todesstoss — genau der, fuer den es den Blitz
+       gibt. Stand die Abrechnung hinter dem Hitstop, blieb das Uniform auf 0
+       stehen, solange das Bild stand, und der Blitz war unsichtbar.
+       Zusammen ergeben sie den Moment, der gemeint ist: das Bild friert 260 ms,
+       das Weiss darueber laeuft in 180 ms aus. */
+    if (zustand.schirm > 0) {
+      zustand.schirm = Math.max(0, zustand.schirm - dt / 180);
+      weiter = true;
+    }
+    if (zustand.fx) zustand.fx.blitz(zustand.schirm);
+
     /* Hitstop: das Bild steht, die Uhr der Wiedergabe laeuft weiter. Genau
        diese Sekundenbruchteile Stillstand machen aus einem Treffer einen
        Schlag — mehr als jeder Partikel. Nichts wird gerechnet, nur gezeigt. */
@@ -1115,6 +1253,28 @@
         else {
           var s = Math.sin(d.stoss.t * Math.PI);
           vx = d.stoss.x * s; vz = d.stoss.z * s;
+          weiter = true;
+        }
+      }
+      /* Ausholen: erst zurueck (Ducken), dann vor (Ausfall). Ein Bogen aus
+         zwei Sinusstuecken, nicht zwei Timern — ein Timer kann nicht in der
+         falschen Reihenfolge ablaufen. */
+      d.duck = 0; d.ausfall = 0;
+      if (d.hol) {
+        d.hol.t -= dt / AUSHOLEN;
+        if (d.hol.t <= 0) { d.hol = null; }
+        else {
+          var hu = 1 - d.hol.t;
+          var ho;
+          if (hu < KNICK) {
+            d.duck = Math.sin(hu / KNICK * Math.PI);
+            ho = -0.20 * Math.sin(hu / KNICK * (Math.PI / 2));
+          } else {
+            d.ausfall = Math.sin((hu - KNICK) / (1 - KNICK) * Math.PI);
+            ho = 0.42 * d.ausfall;
+          }
+          ho *= d.hol.w;
+          vx += d.hol.x * ho; vz += d.hol.z * ho;
           weiter = true;
         }
       }
@@ -1144,8 +1304,10 @@
       if (d.streck > 0) d.streck = Math.max(0, d.streck - dt / 220);
       /* Stauchen beim Einstecken, Strecken beim Austeilen — dieselbe Sprache
          wie der Rueckstoss, nur an der Figur statt am Standpunkt. */
-      var sx = 1 + d.stauch * 0.22 - d.streck * 0.10;
-      var sy = 1 - d.stauch * 0.20 + d.streck * 0.14;
+      /* Ducken staucht wie ein Treffer, der Ausfall streckt wie ein Schlag —
+         dieselben zwei Zahlen, damit die Figur EINE Formsprache hat. */
+      var sx = 1 + (d.stauch + (d.duck || 0) * 0.7) * 0.22 - (d.streck + (d.ausfall || 0)) * 0.10;
+      var sy = 1 - (d.stauch + (d.duck || 0) * 0.7) * 0.20 + (d.streck + (d.ausfall || 0)) * 0.14;
       d.sprite.scale.set(SPRITE_H * 0.5 * sx, SPRITE_H * sy, 1);
       if (!d.tot) weiter = true;                      // wer atmet, braucht Bilder
       /* Der Schatten schrumpft mit dem Wippen — sonst klebt er als Scheibe. */
@@ -1238,8 +1400,11 @@
 
   root.Brett3D = { verfuegbar: verfuegbar, montiere: montiere, montiert: montiert,
                    aktualisiere: aktualisiere, effekt: effekt, treffer: treffer,
-                   halt: halt, stufe: setzeStufe, blick: blick,
+                   einsatz: einsatz, halt: halt, stufe: setzeStufe, blick: blick,
                    zeitlupe: zeitlupe, loese: loese,
+                   /* nur fuer dev/uitest.js: die Handschriften-Tabelle ist
+                      reine Datenpflege und laesst sich ohne WebGL pruefen. */
+                   SIGNATUR: SIGNATUR, FORM: FORM,
                    /* nur fuer dev/silhouetten.js: der Prueflauf kann das Brett
                       nicht montieren, aber die Figur zeichnen. */
                    platzhalter: platzhalter };

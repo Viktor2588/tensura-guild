@@ -1022,6 +1022,10 @@ var res = C.simulate([def('rimuru')], [EN.get('felsgolem')], 3);
 var aktive = res.log.filter(function (l) { return l.type === 'aktiv'; });
 ok(aktive.length > 0, 'aktive Fähigkeiten werden eingesetzt');
 ok(aktive.every(function (l) { return l.name === 'Prädator'; }), 'auf Rang C nur die Signatur');
+/* `sig` traegt die Anzeige: ohne die ID faellt das Brett auf das Schluesselwort
+   zurueck, und dreizehn Signaturen sehen wieder gleich aus. */
+ok(aktive.every(function (l) { return l.sig && AB.get(l.sig); }),
+   'jeder Einsatz loggt die ID seiner Fähigkeit');
 
 /* Keine Abklingzeit mehr: die Signatur feuert in JEDEM Zug und ersetzt den
    Normalangriff. Messbar an der Quelle der Treffer. */
