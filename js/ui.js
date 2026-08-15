@@ -2,7 +2,7 @@
    alles, was den Zustand ändert, geht durch Run.*                            */
 'use strict';
 (function (root) {
-  var R = root.Run, GD = root.GameData, EN = root.Enemies, C = root.Combat, AB = root.Abilities;
+  var R = root.Run, GD = root.GameData, EN = root.Enemies, C = root.Combat, AB = root.Abilities, AU = root.Sound;
 
   var run = null;
   var replay = null;             // { res, i, u:{key->Anzeige}, zeilen, timer, fertig }
@@ -398,6 +398,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    klang(l);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -411,7 +412,8 @@
      48-Zeilen-Funktion alles drei — die einzige Stelle im Projekt, an der
      Logik und Darstellung sich mischten. `Ueberspringen` braucht nur die
      ersten beiden und ueberspringt so nicht nur die Zeit, sondern auch die
-     Arbeit. */
+     Arbeit. `klang` ist ein vierter, ebenso ausgesparter Schritt — Ton ist
+     dieselbe Art Darstellung wie das Brett, nur ohne WebGL-Voraussetzung. */
   function anwenden(l) {
     var u = l.key && replay.u[l.key];
     if (l.type === 'hit' && u) { u.hp = l.hp; }
@@ -455,6 +457,20 @@
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
     else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
     else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
+  }
+
+  /* Ton, unabhaengig von Brett3D.verfuegbar() — anders als `zeige` braucht er
+     kein WebGL. Eine Signatur soll auch dann klingen, wenn sie nicht zu sehen
+     ist. Die Zuordnung folgt demselben Schluesselwort wie `Brett3D.effekt`. */
+  function klang(l) {
+    var u = l.key && replay.u[l.key];
+    if (!u) return;
+    if (l.type === 'hit') AU.treffer();
+    else if (l.type === 'heal') AU.effekt('heilung');
+    else if (l.type === 'death') AU.tod();
+    else if (l.type === 'revive') AU.wiederbelebung();
+    else if (l.type === 'schild') AU.effekt('schild');
+    else if (l.type === 'aktiv') AU.effekt(l.kw);
   }
 
   function zeile(l) {
@@ -785,6 +801,7 @@
     if (replay.raf) cancelAnimationFrame(replay.raf);
     replay.raf = null;
     replay.fertig = true;
+    if (replay.res.winner === 'player') AU.sieg(); else if (replay.res.winner === 'enemy') AU.niederlage();
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -1413,7 +1430,16 @@
       render(); speichern();
     },
     start: function (d) { R.chooseStart(run, +d.i); render(); speichern(); },
-    kaufen: function (d) { R.buy(run, +d.i); render(); speichern(); },
+    kaufen: function (d) {
+      var liste = run.pending && (run.pending.markt || run.pending.offers);
+      var o = liste && liste[+d.i];
+      if (R.buy(run, +d.i)) {
+        /* Ein A- oder S-Paket ist der seltene Glücksfall aus Phase 53 — das
+           soll auch beim Kauf mehr sein als der übliche Münzklang. */
+        if (o && o.kind === 'unit' && (o.rang === 'A' || o.rang === 'S')) AU.rang(); else AU.kauf();
+      } else AU.fehler();
+      render(); speichern();
+    },
     event: function (d) { R.eventChoose(run, +d.i); render(); speichern(); },
     lager: function (d) { R.camp(run, +d.i); render(); speichern(); },
     pwahl: function (d) { R.choosePassive(run, +d.i); render(); speichern(); },
@@ -1704,6 +1730,7 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    AU.klick();
     a(el.dataset);
   }
 
@@ -1748,6 +1775,19 @@
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
       $('menu').showModal();
     });
+    /* Ton ist an, sobald die Seite läuft — kein eigener „aktivieren"-Schritt,
+       nur ein Schalter zum Abstellen. localStorage merkt sich die Wahl über
+       Kämpfe und Neuladen hinweg, wie beim Debug-Schalter oben. */
+    var btnSound = $('btn-sound');
+    if (btnSound) {
+      var zeichneSound = function () {
+        var an = !AU.stummgeschaltet();
+        btnSound.textContent = an ? '🔊' : '🔇';
+        btnSound.setAttribute('aria-pressed', an ? 'true' : 'false');
+      };
+      zeichneSound();
+      btnSound.addEventListener('click', function () { AU.schalteStumm(); zeichneSound(); });
+    }
     render();
   }
 
