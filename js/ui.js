@@ -1085,21 +1085,49 @@
     return html + '</div>';
   }
 
-  /* Aufstellung in einer Zeile: erste Einheit antippen, zweite antippen,
-     getauscht. Mit ▲▼ allein braucht ein Weg von Platz 5 nach vorn vier Klicks
-     — genau das war umständlich. Die Pfeile bleiben für die Feinkorrektur. */
+  /* Aufstellung: erste Einheit antippen, zweite antippen, getauscht.
+
+     Sie stand als EINE Zeile da, das Schlachtfeld hat aber zwei Glieder — und
+     jede Truppwirkung im Spiel reicht nur einen Umkreis von 1 Feld weit
+     (`Combat.FASSUNG`, siehe `c.allies()`). Wer die Plätze in einer Reihe sieht,
+     kann nicht erkennen, dass Platz 2 fünf Kameraden erreicht und Platz 3 nur
+     drei. Deshalb steht hier jetzt dasselbe 3×2-Raster wie auf dem Brett, und
+     an jedem Platz die Zahl, die zählt: wie viele der BESETZTEN Plätze sein
+     Umkreis erfasst, die Einheit selbst nicht mitgezählt. */
   var tauschUid = null;
+  function umkreisZahl(i, belegt) {
+    var a = C.startfeld('player', i), n = 0;
+    belegt.forEach(function (j) {
+      if (j !== i && Hex.distanz(a, C.startfeld('player', j)) <= C.FASSUNG) n++;
+    });
+    return n;
+  }
   function aufstellungHtml() {
     if (run.team.length < 2) return '';
+    var belegt = run.team.map(function (m, i) { return i; });
     var html = '<div class="aufstellung"' + tip('Aufstellung ändern',
       'Erst die eine Einheit antippen, dann die andere — die beiden tauschen den Platz. ' +
       G.begriffe.aufstellung) + '>';
-    run.team.forEach(function (m, i) {
-      var gewaehlt = m.uid === tauschUid;
-      html += '<button class="platz' + (gewaehlt ? ' gewaehlt' : '') + '" data-a="platz" data-uid="' +
-        m.uid + '"><b>' + (i + 1) + '</b> ' + esc(GD.unit(m.id).name) + '</button>';
-      if (i === 1) html += '<span class="platz-trenner"' + tip('Ab hier greift die Deckung',
-        G.begriffe.deckung) + '>┊</span>';
+    /* Zwei Glieder untereinander, je drei Plätze — wie `Combat.startfeld`. */
+    [0, 3].forEach(function (start) {
+      html += '<div class="glied">';
+      for (var i = start; i < start + 3; i++) {
+        var m = run.team[i];
+        /* Eigene Klasse, nicht `platz leer`: ein leerer Platz ist kein Knopf,
+           und jeder Selektor auf `.platz` meinte bisher genau die Knoepfe. */
+        if (!m) { html += '<span class="platz-leer">·</span>'; continue; }
+        var n = umkreisZahl(i, belegt);
+        html += '<button class="platz' + (m.uid === tauschUid ? ' gewaehlt' : '') +
+          '" data-a="platz" data-uid="' + m.uid + '"' +
+          tip('Platz ' + (i + 1) + ' — Umkreis erreicht ' + n +
+              (n === 1 ? ' Kameradin' : ' Kameraden'),
+              'Truppwirkungen dieser Einheit erfassen von hier aus ' + n + ' von ' +
+              (run.team.length - 1) + ' Mitstreitern. Wer den Trupp stärkt oder heilt, ' +
+              'gehört auf einen Platz mit hoher Zahl.\n\n' + G.begriffe.aufstellung) +
+          '><b>' + (i + 1) + '</b> ' + esc(GD.unit(m.id).name) +
+          '<i class="umkreis">' + n + '</i></button>';
+      }
+      html += '</div>';
     });
     return html + '</div>' +
       (tauschUid ? '<p class="hinweis">Jetzt die Einheit antippen, mit der getauscht werden soll.</p>' : '');

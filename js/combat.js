@@ -909,5 +909,9 @@
                   /* Damit Werkzeuge die Reichweite nicht abschreiben muessen —
                      eine Kopie waere genau die Sorte Zahl, die auseinanderlaeuft. */
                   REICHWEITE: REICHWEITE, SCHRITTE_JE_ROLLE: SCHRITTE_JE_ROLLE,
-                  FASSUNG: FASSUNG, FASSUNG_FLAECHE: FASSUNG_FLAECHE };
+                  FASSUNG: FASSUNG, FASSUNG_FLAECHE: FASSUNG_FLAECHE,
+                  /* Die Aufstellungsansicht zeigt, wen ein Umkreis erfasst.
+                     Sie MUSS dieselbe Abbildung benutzen wie der Kampf, sonst
+                     zeigt sie eine Nachbarschaft, die es im Gefecht nicht gibt. */
+                  startfeld: startfeld };
 })(globalThis);

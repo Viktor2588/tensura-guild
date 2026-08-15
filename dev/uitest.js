@@ -112,6 +112,25 @@ var nachherOrder = run.team.map(function (m) { return m.uid; });
 ok(nachherOrder[0] === vorherOrder[2] && nachherOrder[2] === vorherOrder[0],
    'der zweite Klick tauscht die beiden Plätze');
 
+/* Der Umkreis steht am Platz. Ohne die Zahl ist die Aufstellung eine Regel, die
+   nur im Glossar existiert — und seit der dritten Schicht haengen Faehigkeiten
+   daran. Geprueft wird nicht die Zahl selbst (die haengt an der Truppgroesse),
+   sondern dass jeder Platz eine traegt und dass sie stimmt. */
+ok($$('.aufstellung .glied').length === 2, 'die Aufstellung zeigt zwei Glieder');
+var umk = $$('.aufstellung .platz .umkreis');
+ok(umk.length === run.team.length, 'jeder Platz nennt die Reichweite seines Umkreises');
+(function () {
+  var H = win.Hex, C2 = win.Combat, falsch = 0;
+  run.team.forEach(function (m, i) {
+    var soll = 0;
+    run.team.forEach(function (x, j) {
+      if (j !== i && H.distanz(C2.startfeld('player', i), C2.startfeld('player', j)) <= C2.FASSUNG) soll++;
+    });
+    if (+umk[i].textContent !== soll) falsch++;
+  });
+  ok(!falsch, 'und zwar dieselbe, die der Kampf rechnet');
+})();
+
 /* Debug-Übersicht: aus, bis man sie einschaltet — dann eine Tabelle je Einheit. */
 ok(!$('.debugbox'), 'die Debug-Übersicht ist standardmäßig aus');
 klick($('.dbg-schalter'));

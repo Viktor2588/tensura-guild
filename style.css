@@ -189,10 +189,22 @@ main, #unten { padding: .8rem 1.4rem; }
 .einheit .knoepfe { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .35rem; }
 .einheit .knoepfe button { padding: .2rem .45rem; font-size: .78rem; }
 
-.aufstellung { display: flex; flex-wrap: wrap; gap: .3rem; margin-bottom: .5rem; align-items: center; }
+/* Zwei Glieder untereinander, je drei Plaetze — dasselbe Raster wie auf dem
+   Brett. Das hintere Glied rueckt ein halbes Feld ein, damit die versetzten
+   Sechsecke des Bretts wiedererkennbar sind. */
+.aufstellung { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .5rem; }
+.aufstellung .glied { display: flex; gap: .3rem; align-items: center; }
+.aufstellung .glied:last-child { margin-left: 1.1rem; }
 .aufstellung .platz { padding: .2rem .5rem; font-size: .8rem; border-radius: 6px; }
 .aufstellung .platz b { color: var(--grau); font-variant-numeric: tabular-nums; }
 .aufstellung .platz.gewaehlt { border-color: var(--lila); background: #241d33; }
+.aufstellung .platz-leer { opacity: .35; padding: .2rem .7rem; color: var(--grau); }
+/* Die Reichweite des Umkreises: klein, aber an JEDEM Platz — sonst ist es eine
+   Regel, die man erst im Glossar findet. */
+.aufstellung .umkreis {
+  margin-left: .4rem; font-style: normal; font-size: .72rem;
+  color: var(--gold); font-variant-numeric: tabular-nums;
+}
 .platz-trenner { color: var(--grau); opacity: .7; cursor: help; }
 
 .syn { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .6rem; }
