@@ -16,6 +16,15 @@ bleiben. Bewusst r149 statt neuer: das ist die letzte Fassung mit einem
 UMD-Build, der sich per `<script>` einbinden lässt — der Rest des Projekts hat
 keinen Bauschritt und soll keinen bekommen.
 
+## Klang
+
+**Keine Audiodatei im Repo.** `js/audio.js` (Modul `Klang`) synthetisiert jeden
+Ton zur Laufzeit über die Web Audio API — Oszillatoren, Hüllkurven und
+gefiltertes, selbst erzeugtes Rauschen, dieselbe Haltung wie beim Bloom in
+`js/fx.js`: eigener Code statt einer Abhängigkeit oder eines Samples. Damit
+gibt es hier auch keine Herkunftszeile zu führen — der einzige Urheber ist
+dieses Repo selbst, Lizenz wie der Rest des Projekts.
+
 ## Figuren
 
 **Stand: es gibt noch keine Bilddateien.** Die Ansicht zeichnet Platzhalter zur

@@ -353,11 +353,25 @@
   try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
   Brett3D.stufe(effekte);
 
+  /* Klang wie Effektstufe: im Browser gemerkt, nicht im Run. Der Zustand lebt
+     eigentlich in js/audio.js (`Klang.stufe`) — diese Kopie ist nur fuer den
+     Menue-Schalter, damit zeigeKlangwahl() ohne Rueckfrage weiss, was an ist. */
+  var klang = 'an';
+  try { klang = localStorage.getItem('tensura-klang') || 'an'; } catch (e) {}
+
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
     if (!reihe) return;
     Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=effekte]'), function (b) {
       b.classList.toggle('an', b.dataset.v === effekte);
+    });
+  }
+
+  function zeigeKlangwahl() {
+    var reihe = $('menu-klang');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=klang]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === klang);
     });
   }
 
@@ -398,6 +412,7 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    Klang.spiele(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -785,6 +800,7 @@
     if (replay.raf) cancelAnimationFrame(replay.raf);
     replay.raf = null;
     replay.fertig = true;
+    Klang.ende(replay.res.winner);
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -1385,6 +1401,10 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    klang: function (d) {
+      klang = Klang.stufe(d.v);
+      zeigeKlangwahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1704,6 +1724,11 @@
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
+    /* Erste Geste im Dokument: der AudioContext darf erst jetzt starten,
+       Browser verweigern Ton davor. Auf jeden weiteren Klick ist es ein
+       billiges No-Op (siehe js/audio.js). */
+    Klang.entsperren();
+    Klang.taste();
     a(el.dataset);
   }
 
@@ -1743,6 +1768,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeKlangwahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
