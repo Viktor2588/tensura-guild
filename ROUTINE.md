@@ -158,3 +158,19 @@ Ausführung wird angehängt; offene Punkte (`- [ ]`) werden bei der nächsten
 Gelegenheit umgesetzt oder mit einer kurzen Begründung offen gelassen.
 
 - [x] Prozedurale Kampf- und UI-Klangkulisse - Das Spiel ist bisher komplett stumm: kein `<audio>`, kein Sound-Code, nirgends. Neue Datei `js/audio.js` (`root.Klang`) erzeugt Treffer-, Heil-, Tod-, Wiederbelebungs-, Signatur-, Status- und Schild-Töne per WebAudio-Synthese (Oszillatoren, gefiltertes Rauschen, Hüllkurven) — keine Audiodateien, also kein neuer Assettyp und keine ASSETS.md-Herkunftszeile nötig. Eingehängt in `js/ui.js` (`schritt()` für Kampfereignisse, `klick()` für UI-Klicks) und `index.html` (Script-Tag, neue Menüzeile „Ton: Voll/Sparsam/Aus" analog zur bestehenden Effektstufe).
+# Routine: AAA-Spielgefühl
+
+Ideen fuer poliertes Gamedesign, handcrafted Look, Gamefeel, Audio, UI/UX —
+gesammelt von der automatisierten Recherche-Routine. Format: `- [ ]` offen,
+`- [x]` erledigt (mit kurzer Notiz, falls abgewichen wurde), unveraendert
+offen mit kurzer Begruendung, warum (noch) nicht machbar.
+
+- [x] Prozedurale Kampf-Sound-Effekte statt Stille - das Spiel hat bislang
+      keine einzige Audiozeile (`grep -r Audio js/` findet nichts ausser dem
+      Fremdcode). Neues `js/klang.js` synthetisiert per Web Audio API Treffer-,
+      Heil-, Tod-, Wiederbelebungs- und Signatur-Cast-Sounds (nach der
+      GAMEGUIDE-Einteilung Bogen/Sofort/Steigt) sowie Sieg-/Niederlage-Fanfaren
+      direkt aus Oszillatoren und Rauschpuffern — keine Binärdateien, keine
+      neue Abhaengigkeit. Eingehaengt in `js/ui.js` (`klinge()`, `endeReplay()`,
+      `klick()`), mit Lautstaerkeregler und Stumm-Schalter im Menü neben
+      „Effekte", persistiert wie `tensura-effekte` in `localStorage`.

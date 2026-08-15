@@ -100,6 +100,16 @@ UI-Test) bleibt es still — dieselbe Rückfall-Regel wie `Brett3D.verfuegbar()`
 Sollte das Spiel später doch mit eingekauften oder generierten Audiodateien
 arbeiten (Musik, gesprochene Zeilen), gehört deren Herkunft hierher, nach
 demselben Muster wie die Figuren unten.
+## Klang
+
+**Keine Audiodatei im Projekt, keine wird gebraucht.** `js/klang.js`
+synthetisiert jeden Ton zur Laufzeit aus Oszillatoren und einem
+Rauschpuffer der Web Audio API — Treffer, Heilung, Tod, Wiederbelebung,
+Signatur-Einsätze (nach der Bogen/Sofort/Steigt-Einteilung aus
+`GAMEGUIDE.md`) sowie Sieg- und Niederlage-Fanfaren. Herkunft ist damit
+immer derselbe eine Satz: **eigener Code, kein Fremdmaterial, keine
+Lizenzfrage.** Ohne Web Audio API (jsdom im Test) werden alle Funktionen
+zu No-Ops, dieselbe Rückfallebene wie `Brett3D.verfuegbar()` für three.js.
 
 ## Figuren
 
