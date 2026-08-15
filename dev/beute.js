@@ -1,6 +1,6 @@
 /* dev/beute.js — misst, wie viel jede Ausrüstung und jedes Relikt WIRKLICH
    wert ist, und stellt das der Raritätsstufe gegenüber. NICHT Teil des Spiels.
-   Aufruf:  node dev/beute.js [items|relikte]
+   Aufruf:  node dev/beute.js [items|relikte|passive]
 
    Gemessen wird wie in `dev/linien.js` der BRUCHPUNKT: die Gegnerstärke, bei
    der die Siegquote durch 50 % geht. Schadenssummen taugen dafür nicht —
@@ -46,7 +46,7 @@ var SONDERSTAND = {
    Passiven der Traegerin und mass in diesem Stand darum stur +0, auch nachdem
    ihr toter Feldzugriff repariert war. Genommen werden die ersten je Linie,
    soviele wie der Rang traegt — dieselbe Konstruktion wie in dev/linien.js. */
-function bau(id, rang, items) {
+function bau(id, rang, items, extraPassiv) {
   var m = R.member(id);
   m.rank = rang;
   /* `hatLinien` erwartet das MEMBER, nicht die Id — mit einem String liest es
@@ -61,15 +61,20 @@ function bau(id, rang, items) {
     });
     m.passives = reihe.slice(0, rang + 1);
   }
+  if (extraPassiv) m.passives = (m.passives || []).concat(extraPassiv);
   m.items = items.slice(0, R.itemSlots(m));
   return R.resolve(m);
 }
-function trupp(stand, extraItem) {
+/* Der Pruefling sitzt vorn, wie die Fixtur. Bei lageabhaengigen Passiven ist
+   das nicht neutral — vorn heisst Platz 1, also vorderes Glied und ein Umkreis
+   von zwei Kameraden im Viererstand. Die Zahl gilt fuer diese Lage, nicht als
+   Mittel ueber alle sechs Plaetze. */
+function trupp(stand, extraItem, extraPassiv) {
   var rang = stand.rang === undefined ? RANG : stand.rang;
   return stand.team.map(function (id, i) {
     var items = stand.fix.slice(i === 0 ? 0 : stand.fix.length);   // Fixtur nur vorn
     if (extraItem) items = items.concat(extraItem);
-    return bau(id, rang, items);
+    return bau(id, rang, items, i === 0 ? extraPassiv : null);
   });
 }
 
@@ -85,11 +90,11 @@ function gewonnen(r) {
   return meine > ihre;
 }
 
-function quote(stand, item, relikt, haerte) {
+function quote(stand, item, relikt, haerte, passiv) {
   var enc = EN.forAct(4), w = 0;
   var opts = relikt ? { relics: [relikt] } : undefined;
   for (var s = 0; s < PROBEN; s++) {
-    if (gewonnen(C.simulate(trupp(stand, item), EN.build(enc[s % enc.length], haerte), s, opts))) w++;
+    if (gewonnen(C.simulate(trupp(stand, item, passiv), EN.build(enc[s % enc.length], haerte), s, opts))) w++;
   }
   return w / PROBEN;
 }
@@ -119,14 +124,14 @@ Object.keys(STAENDE).forEach(function (k) {
   nullquote[k] = quote(STAENDE[k], null, null, basis[k]);
 });
 
-function messe(item, relikt, sonder) {
+function messe(item, relikt, sonder, passiv) {
   if (sonder) {
     var h = bruchpunkt(sonder, null, null);
-    return quote(sonder, item, relikt, h) - quote(sonder, null, null, h);
+    return quote(sonder, item, relikt, h, passiv) - quote(sonder, null, null, h);
   }
   var best = -9;
   Object.keys(STAENDE).forEach(function (k) {
-    var d = quote(STAENDE[k], item, relikt, basis[k]) - nullquote[k];
+    var d = quote(STAENDE[k], item, relikt, basis[k], passiv) - nullquote[k];
     if (d > best) best = d;
   });
   return best;
@@ -157,7 +162,18 @@ var was = process.argv[2] || 'alles';
 console.log('Grundbruchpunkte: ' + Object.keys(basis).map(function (k) {
   return k + ' ' + basis[k].toFixed(2);
 }).join(' · '));
-if (was !== 'relikte') tabelle('AUSRÜSTUNG', GD.items, function (it) { return messe(it.id, null, null); });
-if (was !== 'items') tabelle('RELIKTE', GD.relics, function (rl) {
-  return messe(null, rl, SONDERSTAND[rl.id]);
-});
+if (was === 'items' || was === 'alles') {
+  tabelle('AUSRÜSTUNG', GD.items, function (it) { return messe(it.id, null, null); });
+}
+if (was === 'relikte' || was === 'alles') {
+  tabelle('RELIKTE', GD.relics, function (rl) { return messe(null, rl, SONDERSTAND[rl.id]); });
+}
+/* Die geteilte Bibliothek war bis hierher ungemessen — es gab schlicht kein
+   Werkzeug dafuer, waehrend Ausruestung und Relikte seit Phase 66 eines haben.
+   Damit ist auch die dritte Schicht (Lage-Passive) pruefbar, statt nach Gefuehl
+   eingestuft zu werden. */
+if (was === 'passive') {
+  var AB = globalThis.Abilities;
+  var bib = AB.passives.filter(function (p) { return !AB.linien_ids[p.id]; });
+  tabelle('BIBLIOTHEKS-PASSIVE', bib, function (p) { return messe(null, null, null, p.id); });
+}
