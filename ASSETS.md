@@ -318,3 +318,9 @@ nötig** — der Code selbst ist die Quelle, nachlesbar und ohne Lizenzfrage.
 Sobald echte Musik oder aufgenommene Effekte dazukommen (Ambient-Loops je
 Akt, Bosskampf-Themes), gehören sie hierhin und brauchen dann wie jedes Bild
 einen Herkunftseintrag — Werkzeug/Quelle, Lizenz, Datum.
+**Keine Audiodatei im Repo.** `js/ton.js` synthetisiert jeden Kampfton zur
+Laufzeit über die Web Audio API (Oszillatoren und gefiltertes Rauschen,
+eigene Hüllkurven) — dieselbe Haltung wie bei den Silhouetten
+(`platzhalter()`) und dem Bloom (`js/fx.js`): kein Fremdcode, keine Lizenz zu
+prüfen, kein Bauschritt. Provenienz ist damit der Quellcode selbst, es gibt
+keine externe Herkunft zu dokumentieren.
