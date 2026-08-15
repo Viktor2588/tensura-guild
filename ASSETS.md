@@ -47,6 +47,14 @@ ohnehin schon jeden Logeintrag samt Beat kennt (`schritt()` und
 `endeReplay()`). Ein Ton-Ein/Aus-Schalter sitzt im Menü, gemerkt in
 `localStorage` unter `tensura-audio` — dasselbe Muster wie Tempo und
 Effektstufe.
+## Klang
+
+Seit `js/audio.js` (siehe ROUTINE.md) gibt es Ton — **keine einzige Audiodatei**.
+Jeder Effekt entsteht zur Laufzeit aus Oszillatoren und gefiltertem Rauschen
+(Web Audio API), an denselben sechs Formen orientiert wie `FORM` in
+`js/brett3d.js`. Keine Provenienz-Zeile nötig, weil nichts generiert oder
+heruntergeladen wurde — es ist Code, kein Asset. Bleibt das so (kein Musikbett
+aus fremder Quelle, keine Sample-Bibliothek), bleibt diese Sektion leer.
 
 ## Figuren
 
