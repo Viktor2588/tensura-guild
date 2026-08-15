@@ -220,3 +220,18 @@ Sollte doch einmal echtes Audiomaterial dazukommen (Musik lässt sich schwer
 synthetisieren, ein Soundtrack wäre der naheliegende erste Kandidat), gehört
 es nach `assets/audio/` und in eine Tabelle wie die der Figuren oben —
 Werkzeug/Quelle, Datum, Lizenz, ohne Eintrag nicht verwendbar.
+## Klang
+
+**Es gibt keine einzige Ton-Datei, und das ist Absicht.** `js/audio.js`
+(Phase 62) erzeugt jeden Ton zur Laufzeit aus Oszillatoren und einem
+geteilten Rauschpuffer der Web Audio API — dieselbe Entscheidung wie bei den
+Figuren-Platzhaltern und dem Aktverlauf: kein Sample, keine Lizenzfrage,
+keine neue Datei im Repo. Fällt die Web Audio API weg (etwa in `jsdom`),
+bleibt das Spiel stumm statt zu einem Fehler zu führen — `Klang.verfuegbar()`
+prüft das selbst.
+
+Sollten künftig doch aufgenommene oder generierte Audiodateien dazukommen
+(Musik, Sprachausgabe, Umgebungsgeräusche), gehören sie unter
+`assets/audio/<name>.<ext>` und bekommen hier dieselbe Herkunftszeile wie ein
+Bild: Werkzeug/Quelle, vollständiger Prompt bzw. Aufnahmehinweis, Datum,
+Lizenz.
