@@ -2,7 +2,7 @@
    alles, was den Zustand ändert, geht durch Run.*                            */
 'use strict';
 (function (root) {
-  var R = root.Run, GD = root.GameData, EN = root.Enemies, C = root.Combat, AB = root.Abilities, AU = root.Sound;
+  var R = root.Run, GD = root.GameData, EN = root.Enemies, C = root.Combat, AB = root.Abilities;
 
   var run = null;
   var replay = null;             // { res, i, u:{key->Anzeige}, zeilen, timer, fertig }
@@ -353,13 +353,6 @@
   try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
   Brett3D.stufe(effekte);
 
-  /* Ton wie Effekte: im Browser gemerkt, nicht im Run — auch das gehoert zum
-     Geraet, nicht zum Spielstand. */
-  var audio = 'an';
-  try { audio = localStorage.getItem('tensura-audio') || 'an'; } catch (e) {}
-  if (audio !== 'an' && audio !== 'aus') audio = 'an';
-  Klang.stufe(audio);
-
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
     if (!reihe) return;
@@ -368,12 +361,44 @@
     });
   }
 
-  function zeigeAudioWahl() {
-    var reihe = $('menu-audio');
-    if (!reihe) return;
-    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=audio]'), function (b) {
-      b.classList.toggle('an', b.dataset.v === audio);
+  /* ------------------------------------------------- Varianten-Labor (Test)
+
+     Nur auf diesem Branch. Die Wahl gehoert wie Effekte und Tempo zum Geraet,
+     nicht zum Spielstand — sie ueberlebt einen neuen Run, aber nicht den
+     Wechsel an einen anderen Rechner. Voreinstellung ist `aus`: wer den Branch
+     auscheckt, bekommt zuerst dasselbe stumme Spiel wie in `main` und schaltet
+     bewusst dazu. */
+  var audioVariante = 'aus';
+  try { audioVariante = localStorage.getItem('tensura-audio-variante') || 'aus'; } catch (e) {}
+
+  function fuelleVariantenwahl() {
+    var sel = $('audio-variante');
+    if (!sel || !root.AudioLabor) return;
+    var html = '<option value="aus">— aus (wie main) —</option>';
+    AudioLabor.liste().forEach(function (v) {
+      html += '<option value="' + v.id + '"' + (v.bereit ? '' : ' disabled') + '>' +
+        'PR #' + v.pr + ' — ' + esc(v.titel) + (v.bereit ? '' : ' (nicht geladen)') + '</option>';
     });
+    sel.innerHTML = html;
+    sel.value = audioVariante;
+    zeigeVariantenInfo();
+  }
+
+  function zeigeVariantenInfo() {
+    var p = $('audio-labor-info');
+    if (!p || !root.AudioLabor) return;
+    var offen = AudioLabor.liste().filter(function (v) { return !v.bereit; }).length;
+    p.textContent = audioVariante === 'aus'
+      ? '21 Varianten geladen, keine aktiv. Test-Branch — in main bleibt das Spiel stumm.'
+      : 'Aktiv: ' + audioVariante + '. Immer nur eine — die anderen sind stumm geschaltet.';
+    if (offen) p.textContent += ' ' + offen + ' Variante(n) nicht geladen.';
+  }
+
+  function waehleVariante(id) {
+    if (!root.AudioLabor) return;
+    audioVariante = AudioLabor.waehle(id);
+    try { localStorage.setItem('tensura-audio-variante', audioVariante); } catch (e) {}
+    zeigeVariantenInfo();
   }
 
   function pumpe(nun) {
@@ -385,7 +410,10 @@
     if (dt > 250) dt = 250;
     replay.konto -= dt * tempo;
     var schutz = 0;
-    while (replay.konto <= 0 && !replay.fertig && schutz++ < 500) schritt();
+    /* Nur der erste Schritt eines Bildes bekommt Ton. Beim Aufholen nach einem
+       Tabwechsel laeuft `schritt()` bis zu 500 Mal in derselben Sekunde — mit
+       Ton waeren das 500 uebereinanderliegende Klaenge auf einmal. */
+    while (replay.konto <= 0 && !replay.fertig && schutz++ < 500) schritt(schutz > 1);
     if (!replay.fertig) aktualisiereFeld();
   }
 
@@ -403,7 +431,7 @@
     replay.raf = requestAnimationFrame(pumpe);
   }
 
-  function schritt() {
+  function schritt(stumm) {
     var log = replay.res.log;
     /* `setup` wird seit Phase 59 nicht mehr uebersprungen: es traegt die Zeit
        fuer den Eroeffnungsschwenk. Zustand und Log ignorieren es weiterhin. */
@@ -413,7 +441,11 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
-    klang(l);
+    /* Ton unabhaengig vom Brett: `zeige` steigt ohne WebGL sofort wieder aus,
+       eine Variante soll aber auch dann zu hoeren sein. Die eine Anbindung
+       fuer alle 21 Kandidaten — welcher davon klingt, entscheidet die Auswahl
+       im Menue (`js/audio-labor/labor.js`). */
+    if (!stumm && root.AudioLabor) AudioLabor.spiele(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -427,8 +459,7 @@
      48-Zeilen-Funktion alles drei — die einzige Stelle im Projekt, an der
      Logik und Darstellung sich mischten. `Ueberspringen` braucht nur die
      ersten beiden und ueberspringt so nicht nur die Zeit, sondern auch die
-     Arbeit. `klang` ist ein vierter, ebenso ausgesparter Schritt — Ton ist
-     dieselbe Art Darstellung wie das Brett, nur ohne WebGL-Voraussetzung. */
+     Arbeit. */
   function anwenden(l) {
     var u = l.key && replay.u[l.key];
     if (l.type === 'hit' && u) { u.hp = l.hp; }
@@ -446,7 +477,6 @@
   /* Was das Brett aus einem Logeintrag macht. `beat` kommt aus der Regie und
      sagt, ob dieser Eintrag ein Hoehepunkt ist. */
   function zeige(l, beat) {
-    Klang.spiele(l, beat);
     if (!Brett3D.verfuegbar()) return;
     /* Auftakt: ein Schwenk ueber die Gegnerreihe, bevor der erste Zug faellt.
        Er kostet keine Extrazeit — der setup-Eintrag traegt sie. */
@@ -473,20 +503,6 @@
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
     else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
     else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
-  }
-
-  /* Ton, unabhaengig von Brett3D.verfuegbar() — anders als `zeige` braucht er
-     kein WebGL. Eine Signatur soll auch dann klingen, wenn sie nicht zu sehen
-     ist. Die Zuordnung folgt demselben Schluesselwort wie `Brett3D.effekt`. */
-  function klang(l) {
-    var u = l.key && replay.u[l.key];
-    if (!u) return;
-    if (l.type === 'hit') AU.treffer();
-    else if (l.type === 'heal') AU.effekt('heilung');
-    else if (l.type === 'death') AU.tod();
-    else if (l.type === 'revive') AU.wiederbelebung();
-    else if (l.type === 'schild') AU.effekt('schild');
-    else if (l.type === 'aktiv') AU.effekt(l.kw);
   }
 
   function zeile(l) {
@@ -817,7 +833,6 @@
     if (replay.raf) cancelAnimationFrame(replay.raf);
     replay.raf = null;
     replay.fertig = true;
-    if (replay.res.winner === 'player') AU.sieg(); else if (replay.res.winner === 'enemy') AU.niederlage();
     zeichneKampf();
     zeichneUnten();
     speichern();
@@ -1418,11 +1433,6 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
-    audio: function (d) {
-      audio = Klang.stufe(d.v);
-      try { localStorage.setItem('tensura-audio', audio); } catch (e) {}
-      zeigeAudioWahl();
-    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1451,16 +1461,7 @@
       render(); speichern();
     },
     start: function (d) { R.chooseStart(run, +d.i); render(); speichern(); },
-    kaufen: function (d) {
-      var liste = run.pending && (run.pending.markt || run.pending.offers);
-      var o = liste && liste[+d.i];
-      if (R.buy(run, +d.i)) {
-        /* Ein A- oder S-Paket ist der seltene Glücksfall aus Phase 53 — das
-           soll auch beim Kauf mehr sein als der übliche Münzklang. */
-        if (o && o.kind === 'unit' && (o.rang === 'A' || o.rang === 'S')) AU.rang(); else AU.kauf();
-      } else AU.fehler();
-      render(); speichern();
-    },
+    kaufen: function (d) { R.buy(run, +d.i); render(); speichern(); },
     event: function (d) { R.eventChoose(run, +d.i); render(); speichern(); },
     lager: function (d) { R.camp(run, +d.i); render(); speichern(); },
     pwahl: function (d) { R.choosePassive(run, +d.i); render(); speichern(); },
@@ -1746,15 +1747,11 @@
   }
 
   function klick(ev) {
-    /* Browser sperren AudioContext bis zur ersten Nutzeraktion — jeder Klick
-       im Spiel ist eine, deshalb hier statt an jeder einzelnen Stelle. */
-    Klang.entsperren();
     var el = ev.target.closest('[data-a]');
     if (!el) return;
     var a = aktionen[el.dataset.a];
     if (!a) return;
     ev.preventDefault();
-    AU.klick();
     a(el.dataset);
   }
 
@@ -1762,6 +1759,12 @@
     run = R.load();
     if (!run) run = R.create(Math.floor(Math.random() * 0xffffffff), R.loadMeta());
     document.addEventListener('click', klick);
+    /* Die Autoplay-Sperre der Browser: ein AudioContext darf erst nach einer
+       Nutzergeste klingen. Ein Lauscher fuer alle 21 Varianten, weil immer nur
+       die aktive ueberhaupt gebaut ist. */
+    document.addEventListener('click', function () {
+      if (root.AudioLabor) AudioLabor.entsperren();
+    });
     document.addEventListener('pointerdown', zieheStart);
     document.addEventListener('pointermove', bewege);
     document.addEventListener('pointerup', zieheEnde);
@@ -1779,6 +1782,12 @@
     hudTips();
     var linienSel = $('linien-einheit');
     if (linienSel) linienSel.addEventListener('change', function () { zeichneLinienUebersicht(linienSel.value); });
+    var variantenSel = $('audio-variante');
+    if (variantenSel) {
+      fuelleVariantenwahl();
+      waehleVariante(audioVariante);
+      variantenSel.addEventListener('change', function () { waehleVariante(variantenSel.value); });
+    }
     var reiter = $('menu-reiter');
     if (reiter) reiter.addEventListener('click', function (e) {
       var b = e.target.closest('[data-reiter]');
@@ -1794,25 +1803,11 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
-      zeigeAudioWahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
       $('menu').showModal();
     });
-    /* Ton ist an, sobald die Seite läuft — kein eigener „aktivieren"-Schritt,
-       nur ein Schalter zum Abstellen. localStorage merkt sich die Wahl über
-       Kämpfe und Neuladen hinweg, wie beim Debug-Schalter oben. */
-    var btnSound = $('btn-sound');
-    if (btnSound) {
-      var zeichneSound = function () {
-        var an = !AU.stummgeschaltet();
-        btnSound.textContent = an ? '🔊' : '🔇';
-        btnSound.setAttribute('aria-pressed', an ? 'true' : 'false');
-      };
-      zeichneSound();
-      btnSound.addEventListener('click', function () { AU.schalteStumm(); zeichneSound(); });
-    }
     render();
   }
 

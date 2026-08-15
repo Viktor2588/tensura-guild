@@ -1,3 +1,15 @@
+/* Variante aus PR #7 — Kampf bekommt Ton: prozedurale Sound-Engine ohne Audiodateien
+   Quelle: Branch `routine/2026-08-04-audio-feedback`, Datei `js/audio.js`.
+   Der Inhalt darunter ist unveraendert; neu ist nur diese Klammer.
+
+   Warum die Klammer: alle 21 Varianten schreiben ihre Schnittstelle unter
+   demselben Handvoll Namen (`Klang`, `Ton`, `Sound`, `SFX`) an das globale
+   Objekt. Nebeneinander geladen ueberschriebe die letzte alle vorherigen.
+   Statt des echten `globalThis` bekommt jede Variante deshalb einen eigenen
+   Schirm gereicht (`js/audio-labor/labor.js`): Lesen faellt auf das echte
+   globale Objekt durch, Schreiben landet im Schirm. So bleiben 21 `Klang`
+   nebeneinander stehen, ohne voneinander zu wissen. */
+AudioLabor.registriere('pr-07', function (globalThis) {
 /* js/audio.js — Prozedurale Sound-Engine fuer Kampf-Feedback.
 
    Keine Audiodateien: jeder Ton entsteht zur Laufzeit aus Oszillatoren und
@@ -211,3 +223,5 @@
   root.Klang = { schalte: schalte, aktiv: aktiv, spiele: spiele, ergebnis: ergebnis };
 
 })(typeof globalThis !== 'undefined' ? globalThis : this);
+
+});

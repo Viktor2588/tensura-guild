@@ -1,3 +1,15 @@
+/* Variante aus PR #12 — Kampf bekommt Ton: prozedurale Soundeffekte ueber Web Audio
+   Quelle: Branch `routine/2026-08-05-klang`, Datei `js/klang.js`.
+   Der Inhalt darunter ist unveraendert; neu ist nur diese Klammer.
+
+   Warum die Klammer: alle 21 Varianten schreiben ihre Schnittstelle unter
+   demselben Handvoll Namen (`Klang`, `Ton`, `Sound`, `SFX`) an das globale
+   Objekt. Nebeneinander geladen ueberschriebe die letzte alle vorherigen.
+   Statt des echten `globalThis` bekommt jede Variante deshalb einen eigenen
+   Schirm gereicht (`js/audio-labor/labor.js`): Lesen faellt auf das echte
+   globale Objekt durch, Schreiben landet im Schirm. So bleiben 21 `Klang`
+   nebeneinander stehen, ohne voneinander zu wissen. */
+AudioLabor.registriere('pr-12', function (globalThis) {
 /* js/klang.js — Klang: prozedurale Soundeffekte über die Web Audio API.
 
    Kein Audiofile im Repo, aus demselben Grund wie js/fx.js keinen Fremdcode
@@ -269,3 +281,5 @@
   };
 
 })(typeof globalThis !== 'undefined' ? globalThis : this);
+
+});

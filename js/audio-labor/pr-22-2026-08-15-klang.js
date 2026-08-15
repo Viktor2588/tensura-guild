@@ -1,3 +1,15 @@
+/* Variante aus PR #22 — Prozedurale Kampf-Audio: das Spiel hat jetzt einen Ton
+   Quelle: Branch `routine/2026-08-15-klang`, Datei `js/audio.js`.
+   Der Inhalt darunter ist unveraendert; neu ist nur diese Klammer.
+
+   Warum die Klammer: alle 21 Varianten schreiben ihre Schnittstelle unter
+   demselben Handvoll Namen (`Klang`, `Ton`, `Sound`, `SFX`) an das globale
+   Objekt. Nebeneinander geladen ueberschriebe die letzte alle vorherigen.
+   Statt des echten `globalThis` bekommt jede Variante deshalb einen eigenen
+   Schirm gereicht (`js/audio-labor/labor.js`): Lesen faellt auf das echte
+   globale Objekt durch, Schreiben landet im Schirm. So bleiben 21 `Klang`
+   nebeneinander stehen, ohne voneinander zu wissen. */
+AudioLabor.registriere('pr-22', function (globalThis) {
 /* js/audio.js — Klang: Kampfgeraeusche ohne eine einzige Audiodatei.
 
    Bis hierher war das Spiel stumm. Ein echtes Sample-Set fuer knapp zwanzig
@@ -260,3 +272,5 @@
   root.Klang = { verfuegbar: verfuegbar, stufe: setzeStufe, entsperren: entsperren, spiele: spiele };
 
 })(typeof globalThis !== 'undefined' ? globalThis : this);
+
+});

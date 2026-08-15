@@ -1,3 +1,15 @@
+/* Variante aus PR #16 — Erster Ton im Spiel: synthetisierte Kampf- und UI-Sounds
+   Quelle: Branch `routine/2026-08-09-audio-sfx`, Datei `js/klang.js`.
+   Der Inhalt darunter ist unveraendert; neu ist nur diese Klammer.
+
+   Warum die Klammer: alle 21 Varianten schreiben ihre Schnittstelle unter
+   demselben Handvoll Namen (`Klang`, `Ton`, `Sound`, `SFX`) an das globale
+   Objekt. Nebeneinander geladen ueberschriebe die letzte alle vorherigen.
+   Statt des echten `globalThis` bekommt jede Variante deshalb einen eigenen
+   Schirm gereicht (`js/audio-labor/labor.js`): Lesen faellt auf das echte
+   globale Objekt durch, Schreiben landet im Schirm. So bleiben 21 `Klang`
+   nebeneinander stehen, ohne voneinander zu wissen. */
+AudioLabor.registriere('pr-16', function (globalThis) {
 /* js/klang.js — Ton: kurze synthetisierte Effekte per Web Audio API.
 
    Warum synthetisiert statt Audiodateien: das Spiel hat keinen Bauschritt und
@@ -169,3 +181,5 @@
   };
 
 })(globalThis);
+
+});

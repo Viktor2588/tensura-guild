@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  Tensura Guild braucht KEINEN Build. Die Skripte unten sind klassische
+  Tensura Guild braucht KEINEN Build. Die acht Skripte unten sind klassische
   Skripte: sie haengen ihre Schnittstelle an globalThis und verlassen sich auf
   ihre Reihenfolge. Ein Bundler macht daraus ES-Module und bricht damit.
 
@@ -31,7 +31,6 @@
     <span>⚠ <b id="hud-stufe">0</b></span>
     <span title="Magicule">✦ <b id="hud-mag">0</b></span>
     <span title="Verbleibende Niederlagen">❤ <b id="hud-leben">3</b></span>
-    <button id="btn-sound" type="button" aria-pressed="true" title="Sound ein/aus">🔊</button>
     <button id="btn-menu" type="button">Menü</button>
   </div>
 </header>
@@ -56,11 +55,13 @@
     <button type="button" data-a="effekte" data-v="sparsam">Sparsam</button>
     <button type="button" data-a="effekte" data-v="aus">Aus</button>
   </div>
-  <div class="reihe" id="menu-ton">
-    <span>Ton:</span>
-    <button type="button" data-a="ton" data-v="an">An</button>
-    <button type="button" data-a="ton" data-v="aus">Aus</button>
+  <!-- Nur auf diesem Test-Branch: die 21 Audio-Varianten aus den offenen PRs
+       zum Durchhoeren. Gehoert nicht nach main — siehe PLAN.md, Abschnitt 6. -->
+  <div class="reihe" id="menu-audio-labor">
+    <label for="audio-variante">Audio-Variante:</label>
+    <select id="audio-variante"></select>
   </div>
+  <p class="hinweis" id="audio-labor-info"></p>
   <div class="reihe">
     <button type="button" data-a="speichern">Speichern</button>
     <button type="button" data-a="neu">Neuer Run</button>
@@ -93,19 +94,39 @@
 
 <script src="js/vendor/three.min.js"></script>
 <script src="js/rng.js"></script>
-<script src="js/audio.js"></script>
 <script src="js/hex.js"></script>
 <script src="js/fx.js"></script>
-<script src="js/ton.js"></script>
 <script src="js/brett3d.js"></script>
-<script src="js/audio.js"></script>
 <script src="js/abilities.js"></script>
 <script src="js/data.js"></script>
 <script src="js/combat.js"></script>
 <script src="js/enemies.js"></script>
 <script src="js/regie.js"></script>
-<script src="js/ton.js"></script>
 <script src="js/run.js"></script>
+<!-- Varianten-Labor (nur auf diesem Test-Branch). `labor.js` muss vor den
+     `pr-*.js` stehen: die rufen beim Laden `AudioLabor.registriere` auf. -->
+<script src="js/audio-labor/labor.js"></script>
+<script src="js/audio-labor/pr-01-2026-08-02-sound-fx.js"></script>
+<script src="js/audio-labor/pr-02-2026-08-02-sfx.js"></script>
+<script src="js/audio-labor/pr-03-2026-08-03-ton.js"></script>
+<script src="js/audio-labor/pr-04-2026-08-03-klang.js"></script>
+<script src="js/audio-labor/pr-05-2026-08-04-audio-gamefeel.js"></script>
+<script src="js/audio-labor/pr-06-2026-08-04-sound-design.js"></script>
+<script src="js/audio-labor/pr-07-2026-08-04-audio-feedback.js"></script>
+<script src="js/audio-labor/pr-08-2026-08-05-kampfton.js"></script>
+<script src="js/audio-labor/pr-09-2026-08-05-sounddesign.js"></script>
+<script src="js/audio-labor/pr-12-2026-08-05-klang.js"></script>
+<script src="js/audio-labor/pr-13-2026-08-08-audio-sfx.js"></script>
+<script src="js/audio-labor/pr-14-2026-08-08-klangkulisse.js"></script>
+<script src="js/audio-labor/pr-15-2026-08-09-audio-gamefeel.js"></script>
+<script src="js/audio-labor/pr-16-2026-08-09-audio-sfx.js"></script>
+<script src="js/audio-labor/pr-17-2026-08-10-kampfton.js"></script>
+<script src="js/audio-labor/pr-18-2026-08-10-klangkulisse.js"></script>
+<script src="js/audio-labor/pr-19-2026-08-11-klanguntermalung.js"></script>
+<script src="js/audio-labor/pr-20-2026-08-11-audio-sfx.js"></script>
+<script src="js/audio-labor/pr-21-2026-08-11-klangfeedback.js"></script>
+<script src="js/audio-labor/pr-22-2026-08-15-klang.js"></script>
+<script src="js/audio-labor/pr-23-2026-08-15-audio.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/main.js"></script>
 </body>

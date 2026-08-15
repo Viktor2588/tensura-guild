@@ -1,3 +1,15 @@
+/* Variante aus PR #18 — Prozedurale Klangkulisse fuer Kampf und Menue
+   Quelle: Branch `routine/2026-08-10-klangkulisse`, Datei `js/audio.js`.
+   Der Inhalt darunter ist unveraendert; neu ist nur diese Klammer.
+
+   Warum die Klammer: alle 21 Varianten schreiben ihre Schnittstelle unter
+   demselben Handvoll Namen (`Klang`, `Ton`, `Sound`, `SFX`) an das globale
+   Objekt. Nebeneinander geladen ueberschriebe die letzte alle vorherigen.
+   Statt des echten `globalThis` bekommt jede Variante deshalb einen eigenen
+   Schirm gereicht (`js/audio-labor/labor.js`): Lesen faellt auf das echte
+   globale Objekt durch, Schreiben landet im Schirm. So bleiben 21 `Klang`
+   nebeneinander stehen, ohne voneinander zu wissen. */
+AudioLabor.registriere('pr-18', function (globalThis) {
 /* js/audio.js — die Klangkulisse. Keine Audiodateien: jeder Ton entsteht aus
    Oszillatoren, gefiltertem Rauschen und Hüllkurven in der WebAudio-API, zur
    Laufzeit im Browser. Das passt zum Rest des Projekts (keine neue
@@ -195,3 +207,5 @@
   root.Klang = { stufe: setzeStufe, ereignis: ereignis, klick: klick };
 
 })(typeof globalThis !== 'undefined' ? globalThis : this);
+
+});

@@ -1,3 +1,15 @@
+/* Variante aus PR #3 — Prozedurales Sound-Design fuer Kampf und UI
+   Quelle: Branch `routine/2026-08-03-ton`, Datei `js/ton.js`.
+   Der Inhalt darunter ist unveraendert; neu ist nur diese Klammer.
+
+   Warum die Klammer: alle 21 Varianten schreiben ihre Schnittstelle unter
+   demselben Handvoll Namen (`Klang`, `Ton`, `Sound`, `SFX`) an das globale
+   Objekt. Nebeneinander geladen ueberschriebe die letzte alle vorherigen.
+   Statt des echten `globalThis` bekommt jede Variante deshalb einen eigenen
+   Schirm gereicht (`js/audio-labor/labor.js`): Lesen faellt auf das echte
+   globale Objekt durch, Schreiben landet im Schirm. So bleiben 21 `Klang`
+   nebeneinander stehen, ohne voneinander zu wissen. */
+AudioLabor.registriere('pr-03', function (globalThis) {
 /* js/ton.js — prozedurales Sound-Design. Keine einzige Sample-Datei: jeder
    Klang entsteht zur Laufzeit aus Oszillatoren und gefiltertem Rauschen über
    die Web Audio API. Das ist dieselbe Linie, die ASSETS.md für das Brett
@@ -224,3 +236,5 @@
   };
 
 })(typeof globalThis !== 'undefined' ? globalThis : this);
+
+});

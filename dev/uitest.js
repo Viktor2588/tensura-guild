@@ -35,8 +35,17 @@ win.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open
 /* three.js fehlt hier bewusst: jsdom hat kein WebGL, `Brett3D.verfuegbar()`
    sagt deshalb nein, und geprüft wird die SVG-Lagekarte — die Rückfallebene,
    die es genau für diesen Fall gibt. */
-['js/rng.js', 'js/hex.js', 'js/fx.js', 'js/brett3d.js', 'js/audio.js', 'js/abilities.js', 'js/data.js',
- 'js/combat.js', 'js/enemies.js', 'js/regie.js', 'js/run.js', 'js/ui.js'].forEach(function (f) {
+/* Das Varianten-Labor kommt mit: `js/ui.js` fragt es an drei Stellen ab, und
+   ohne AudioContext (jsdom hat keinen) muss das folgenlos bleiben — genau das
+   soll der Test mitpruefen. Die Varianten selbst werden nur registriert, nicht
+   gebaut; gebaut wird erst beim Umschalten. */
+var laborDateien = fs.readdirSync(path.join(wurzel, 'js/audio-labor'))
+  .filter(function (f) { return /^pr-\d\d-.*\.js$/.test(f); }).sort()
+  .map(function (f) { return 'js/audio-labor/' + f; });
+
+['js/rng.js', 'js/hex.js', 'js/brett3d.js', 'js/abilities.js', 'js/data.js', 'js/combat.js', 'js/enemies.js',
+ 'js/fx.js', 'js/regie.js', 'js/run.js', 'js/audio-labor/labor.js']
+  .concat(laborDateien).concat(['js/ui.js']).forEach(function (f) {
   win.eval(fs.readFileSync(path.join(wurzel, f), 'utf8'));
 });
 

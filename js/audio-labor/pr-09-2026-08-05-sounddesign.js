@@ -1,3 +1,15 @@
+/* Variante aus PR #9 — Sounddesign per Web Audio API: prozedurale SFX statt Stille
+   Quelle: Branch `routine/2026-08-05-sounddesign`, Datei `js/klang.js`.
+   Der Inhalt darunter ist unveraendert; neu ist nur diese Klammer.
+
+   Warum die Klammer: alle 21 Varianten schreiben ihre Schnittstelle unter
+   demselben Handvoll Namen (`Klang`, `Ton`, `Sound`, `SFX`) an das globale
+   Objekt. Nebeneinander geladen ueberschriebe die letzte alle vorherigen.
+   Statt des echten `globalThis` bekommt jede Variante deshalb einen eigenen
+   Schirm gereicht (`js/audio-labor/labor.js`): Lesen faellt auf das echte
+   globale Objekt durch, Schreiben landet im Schirm. So bleiben 21 `Klang`
+   nebeneinander stehen, ohne voneinander zu wissen. */
+AudioLabor.registriere('pr-09', function (globalThis) {
 /* js/klang.js — prozedurales Sounddesign, Web Audio API, keine Audiodateien.
 
    Bis hierher war jeder Kampf stumm: ein Zeitplan mit Gewicht und
@@ -196,3 +208,5 @@
 
   root.Klang = { verfuegbar: verfuegbar, wecken: wecken, setzeAn: setzeAn, istAn: istAn, spiele: spiele };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
+
+});

@@ -1,3 +1,15 @@
+/* Variante aus PR #14 — Klangkulisse: das Spiel war komplett stumm
+   Quelle: Branch `routine/2026-08-08-klangkulisse`, Datei `js/audio.js`.
+   Der Inhalt darunter ist unveraendert; neu ist nur diese Klammer.
+
+   Warum die Klammer: alle 21 Varianten schreiben ihre Schnittstelle unter
+   demselben Handvoll Namen (`Klang`, `Ton`, `Sound`, `SFX`) an das globale
+   Objekt. Nebeneinander geladen ueberschriebe die letzte alle vorherigen.
+   Statt des echten `globalThis` bekommt jede Variante deshalb einen eigenen
+   Schirm gereicht (`js/audio-labor/labor.js`): Lesen faellt auf das echte
+   globale Objekt durch, Schreiben landet im Schirm. So bleiben 21 `Klang`
+   nebeneinander stehen, ohne voneinander zu wissen. */
+AudioLabor.registriere('pr-14', function (globalThis) {
 /* js/audio.js — Klangkulisse ohne eine einzige Audiodatei.
 
    Das Spiel war bis hierhin komplett stumm: kein <audio>-Tag, keine Datei
@@ -182,3 +194,5 @@
   };
 
 })(globalThis);
+
+});
