@@ -110,6 +110,21 @@ Signatur-Einsätze (nach der Bogen/Sofort/Steigt-Einteilung aus
 immer derselbe eine Satz: **eigener Code, kein Fremdmaterial, keine
 Lizenzfrage.** Ohne Web Audio API (jsdom im Test) werden alle Funktionen
 zu No-Ops, dieselbe Rückfallebene wie `Brett3D.verfuegbar()` für three.js.
+**Es gibt keine einzige Audiodatei und soll auch keine geben.** Seit der
+ROUTINE-Phase vom 2026-08-11 erzeugt `js/audio.js` (Modul `Klang`) jeden Ton
+zur Laufzeit per Web Audio API — Oszillatoren, ein einmalig erzeugter
+Rauschpuffer, Hüllkurven. Kampf- und UI-Ereignisse (Treffer, Tod, Heilung,
+Signaturen, Sieg/Niederlage, Kauf, Klicks) bekommen ihren Klang aus Code,
+nicht aus einer Datei.
+
+Damit entfällt für Audio genau das, was diese Datei sonst für jedes Bild
+verlangt — Werkzeug, Prompt, Lizenz —, weil nichts davon existiert: kein
+Download, keine Lizenzfrage, kein Eintrag in einer Herkunftstabelle. Diese
+Zeile hier *ist* die Provenienz: "synthetisiert in `js/audio.js`, keine
+externe Quelle." Sollte das Projekt doch einmal aufgenommene oder
+lizenzierte Audiodateien bekommen (Musik, Sprachausgabe), gehören sie unter
+`assets/audio/` und brauchen dann dieselbe Herkunftstabelle wie die Figuren
+unten.
 
 ## Figuren
 
