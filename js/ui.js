@@ -667,12 +667,12 @@
       });
       /* Der Rang steht seit `rangMarke()` als große Marke am Posten und nicht
          mehr als Chip: als einer von zwölf ging genau die Angabe unter, die
-         über den Kauf entscheidet. */
-      if (AB.linien[u.id]) {
-        tags.push(tag('tag-linien', 'Vier Linien', 'Eigene Entwicklungslinien',
-          'Diese Einheit hat sechzehn eigene Passive in vier Linien. Welche davon ' +
-          'sie mitbringt, steht am Marktposten — gewürfelt, nach Rang.'));
-      }
+         über den Kauf entscheidet.
+
+         Die Marke „Vier Linien" stand hier, solange nur zwei Einheiten welche
+         hatten. Inzwischen haben es alle 39 — ein Merkmal, das jeder Posten
+         trägt, unterscheidet keinen mehr und kostet nur Platz neben den Marken,
+         die es tun. Was die Linien SIND, steht im Glossar. */
       return tags.join('');
     }
     if (r.kind === 'relic') {
