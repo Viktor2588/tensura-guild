@@ -27,6 +27,13 @@ keinen neuen Ordner unter `assets/`. Sollten später echte Sample-Dateien
 dazukommen (Musik, Sprachausgabe, aufwendigere SFX), gehören sie unter
 `assets/audio/` und in eine eigene Herkunftstabelle nach demselben Muster wie
 bei den Figuren.
+## Ton
+
+**Es gibt keine Audio-Dateien.** Wie das Bloom in `js/fx.js` entstehen alle
+Sound-Effekte zur Laufzeit aus eigenem Code — Oszillatoren und gefiltertes
+Rauschen über die Web Audio API, in `js/ton.js`. Damit fällt für Ton dieselbe
+Provenienz-Frage weg, die diese Datei sonst beantwortet: es gibt nichts
+Fremdes zu benennen und nichts, dessen Lizenz zu klären wäre.
 
 ## Figuren
 
