@@ -25,19 +25,25 @@ Pflichtablauf fuer jede Phase:
 Diese Punkte sind entschieden und werden nicht neu aufgerollt. Sie gelten fuer
 autonome Laeufe und geplante Routinen genauso wie fuer direkte Auftraege.
 
-### Kein Audio, auch kein prozedurales
+### Audio ist erledigt — `js/ton.js` und sonst nichts
 
-**Wir brauchen keine Musik und keine Audio-Dateien — und ebenso wenig
-prozedural generierten Klang.** Nicht bauen, nicht vorschlagen, nicht als
-offenen Punkt fuehren:
+Das Thema ist **abgeschlossen**, nicht offen. Genau ein Modul macht Ton:
+`js/ton.js`, prozedural ueber die Web Audio API, mit Ein/Aus-Schalter im Menue
+(`#menu-ton`). Das reicht, und dabei bleibt es. Nicht bauen, nicht vorschlagen,
+nicht als offenen Punkt fuehren:
 
-- keine Musik und keine Soundeffekte, weder als Datei noch synthetisiert
-- kein `js/audio.js`, kein Web-Audio-Modul, kein Ton-Schalter im Menue
+- keine zweite Ton-Datei — kein `js/audio.js`, `js/klang.js`, `js/sfx.js`
+- keine Musik und keine Audio-Dateien; `js/ton.js` synthetisiert zur Laufzeit,
+  `assets/audio/` gibt es nicht (Begruendung in `ASSETS.md`, Abschnitt Audio)
 - keine Routine-Idee zum Thema Audio/Klang/Sounddesign
 
-Dass eine Loesung "ohne Binaerdateien" auskommt (Oszillatoren, gefiltertes
-Rauschen, Web Audio API), ist **kein** Argument dafuer — abgelehnt ist der Ton,
-nicht das Dateiformat. Begruendung in `PLAN.md`, Abschnitt 6 (Abgrenzung).
+**Vorgeschichte, damit sie sich nicht wiederholt:** zwischen dem 2. und dem
+15.8.2026 hat eine geplante Routine 21 Mal denselben Befund gemeldet ("grep -i
+audio in js/ liefert nichts") und 21 Mal dasselbe Modul vorgeschlagen — PRs
+#1–#9 und #12–#23. Alle 21 wurden auf `test/audio-varianten` nebeneinander
+angehoert; uebernommen wurde PR #3, der Rest verworfen.
 
-Wenn eine Recherche "das Spiel ist komplett stumm" als Luecke meldet: das ist
-der Sollzustand, kein Fund. Punkt streichen, naechste Idee nehmen.
+Wenn eine Recherche "das Spiel hat kaum Ton" oder "die Klangkulisse ist duenn"
+als Luecke meldet: das ist der Sollzustand, kein Fund. Punkt streichen,
+naechste Idee nehmen. Erweiterungen an `js/ton.js` nur auf ausdruecklichen
+Zuruf, nicht aus einem autonomen Lauf heraus.
