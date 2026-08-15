@@ -106,3 +106,26 @@ Anweisungen der Session). Pro Lauf kommt **eine** neue Idee ans Ende, danach
 werden alle offenen Punkte umgesetzt oder mit Begründung offen gelassen.
 
 - [x] Synthetisches Audio-Feedback (SFX) für Kampf, Menü und Markt - `js/klang.js` (neu) erzeugt Treffer-, Heil-, Todes-, Fähigkeits-, Sieg-/Niederlage-, Rangaufstiegs-, Kauf- und Klick-Töne rein aus der Web-Audio-API (Oszillatoren + ein Rauschpuffer), ohne Audiodateien oder neue Abhängigkeit. Eingehängt in `js/ui.js` (`toene()` parallel zu `zeige()`, `endeReplay()`, `aktionen.kaufen`, `klick()`) und `index.html`/`dev/uitest.js` als neues Skript; ein "Ton"-Umschalter (Voll/Sparsam/Aus) steht neben "Effekte" im Menü und merkt sich die Wahl in `localStorage`. Bisher hatte das Spiel laut `README.md` ("Keine Grafik — Textkarten und Balken", inzwischen durch die 2.5D-Ansicht überholt) und `js/fx.js`/`js/brett3d.js` jede Menge visuelle Politur (Bloom, Zeitlupe, Hitstop, Kamera), aber keinen einzigen Ton — der auffälligste fehlende Baustein für ein AAA-Spielgefühl. `node dev/sim.js` 459/459, `node dev/uitest.js` 112/112, `node dev/bildcheck.js --selftest` 6/6; manuell in Chromium (Playwright) geprüft: Menü-Umschalter, alle `Klang.*`-Funktionen einzeln aufgerufen — keine Fehler, jsdom (ohne `AudioContext`) bleibt über `Klang.verfuegbar()` stumm.
+# Tensura Guild — Routine: AAA-Politur
+
+Ideenliste einer wiederkehrenden Routine, die nach mehr Politur sucht — ein
+handcrafted, pixel-perfekter AAA-Look: Modelle, Assets, Sprites, Animationen,
+UI/UX, Audio, Gamefeel. Jede Ausführung hängt genau eine neue Idee an und
+arbeitet danach alle offenen Punkte ab.
+
+- [x] Audio-Feedback-System - Das Spiel war komplett stumm: kein `<audio>`-Tag
+      und keine einzige Sounddatei im ganzen Projekt, obwohl GAMEGUIDE.md dem
+      Kampf schon Farbe, Bloom und Zeitlupe gibt. Umgesetzt als
+      `js/audio.js`: eine Web-Audio-API-Klangkulisse, die jeden Ton zur
+      Laufzeit synthetisiert (Oszillatoren plus Hüllkurve, gefiltertes
+      Rauschen für Brand/Donner) statt Sounddateien einzukaufen — keine neue
+      Abhängigkeit, keine Lizenzfrage, kein Asset-Ordner. Eingehängt in
+      `js/ui.js`: ein Klang je Kampflog-Ereignis (Treffer, Heilung, jedes
+      Schlüsselwort mit eigener Klangfarbe, Tod, Wiederbelebung, Entladung,
+      Verwandlung, Resonanz), ein Sieg-/Niederlage-Jingle am Kampfende, ein
+      leiser Klick auf jeden `[data-a]`-Knopf, ein Kauf-Chime im Markt und ein
+      Aufstiegs-Chime bei der Passivwahl. Dazu ein Stumm-Schalter (🔊/🔇) in
+      der Kopfzeile, Zustand in `localStorage` gemerkt wie Tempo und
+      Effektstufe. `dev/uitest.js` lädt `js/audio.js` jetzt mit; da jsdom
+      keine `AudioContext` kennt, bleiben alle Aufrufe stille No-ops — dieselbe
+      Rückfallregel wie bei `Brett3D.verfuegbar()`.
