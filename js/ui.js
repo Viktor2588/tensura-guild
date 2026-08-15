@@ -353,11 +353,26 @@
   try { effekte = localStorage.getItem('tensura-effekte') || 'voll'; } catch (e) {}
   Brett3D.stufe(effekte);
 
+  /* Ton wie Effekte: im Browser gemerkt, nicht im Run — auch das gehoert zum
+     Geraet, nicht zum Spielstand. */
+  var audio = 'an';
+  try { audio = localStorage.getItem('tensura-audio') || 'an'; } catch (e) {}
+  if (audio !== 'an' && audio !== 'aus') audio = 'an';
+  Klang.stufe(audio);
+
   function zeigeEffektwahl() {
     var reihe = $('menu-effekte');
     if (!reihe) return;
     Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=effekte]'), function (b) {
       b.classList.toggle('an', b.dataset.v === effekte);
+    });
+  }
+
+  function zeigeAudioWahl() {
+    var reihe = $('menu-audio');
+    if (!reihe) return;
+    Array.prototype.forEach.call(reihe.querySelectorAll('[data-a=audio]'), function (b) {
+      b.classList.toggle('an', b.dataset.v === audio);
     });
   }
 
@@ -429,6 +444,7 @@
   /* Was das Brett aus einem Logeintrag macht. `beat` kommt aus der Regie und
      sagt, ob dieser Eintrag ein Hoehepunkt ist. */
   function zeige(l, beat) {
+    Klang.spiele(l, beat);
     if (!Brett3D.verfuegbar()) return;
     /* Auftakt: ein Schwenk ueber die Gegnerreihe, bevor der erste Zug faellt.
        Er kostet keine Extrazeit — der setup-Eintrag traegt sie. */
@@ -1385,6 +1401,11 @@
       Brett3D.loese();
       aktualisiereFeld();
     },
+    audio: function (d) {
+      audio = Klang.stufe(d.v);
+      try { localStorage.setItem('tensura-audio', audio); } catch (e) {}
+      zeigeAudioWahl();
+    },
     /* Nicht neu zeichnen: das haenge die 2.5D-Ansicht mitten im Kampf ab. */
     tempo: function (d) {
       tempo = +d.v || 1;
@@ -1699,6 +1720,9 @@
   }
 
   function klick(ev) {
+    /* Browser sperren AudioContext bis zur ersten Nutzeraktion — jeder Klick
+       im Spiel ist eine, deshalb hier statt an jeder einzelnen Stelle. */
+    Klang.entsperren();
     var el = ev.target.closest('[data-a]');
     if (!el) return;
     var a = aktionen[el.dataset.a];
@@ -1743,6 +1767,7 @@
         run.meta.unlockedRelics.length + ' Relikte.';
       $('menu-meta').innerHTML = metaHtml();
       zeigeEffektwahl();
+      zeigeAudioWahl();
       zeichneLinienUebersicht();
       $('menu-glossar').innerHTML = glossarHtml();
       $('menu-chronik').innerHTML = run.chronik.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join('');
