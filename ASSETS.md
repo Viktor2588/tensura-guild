@@ -34,6 +34,19 @@ Sound-Effekte zur Laufzeit aus eigenem Code — Oszillatoren und gefiltertes
 Rauschen über die Web Audio API, in `js/ton.js`. Damit fällt für Ton dieselbe
 Provenienz-Frage weg, die diese Datei sonst beantwortet: es gibt nichts
 Fremdes zu benennen und nichts, dessen Lizenz zu klären wäre.
+## Ton
+
+**Es gibt keine Audiodateien und soll auch keine geben.** `js/audio.js`
+synthetisiert jeden Ton — Treffer, Heilung, Tod, Signatureinsatz, Schild,
+Status, Ausweichen, Wiederbelebung, Entladung, Kombi, Verwandlung, Wut,
+Fehlschlag, Sieg-/Niederlage-Stinger — zur Laufzeit aus Oszillatoren
+(`OscillatorNode`) und einem einmal gefüllten Rauschpuffer der Web Audio
+API. Kein Fremdcode, keine Lizenzfrage, kein zusätzliches Repo-Gewicht.
+Angebunden ist es in `js/ui.js` an der Stelle, an der `Regie.zeitplan`
+ohnehin schon jeden Logeintrag samt Beat kennt (`schritt()` und
+`endeReplay()`). Ein Ton-Ein/Aus-Schalter sitzt im Menü, gemerkt in
+`localStorage` unter `tensura-audio` — dasselbe Muster wie Tempo und
+Effektstufe.
 
 ## Figuren
 

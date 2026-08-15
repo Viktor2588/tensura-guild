@@ -44,3 +44,9 @@ Automatisch gepflegte Liste. Jede Ausführung hängt genau eine neue Idee an
 und arbeitet danach alle offenen Punkte ab (siehe CLAUDE.md).
 
 - [x] Prozedurales Sound-Design für Kampf und Ergebnis - Neue `js/ton.js` synthetisiert Sound-Effekte zur Laufzeit per Web Audio API (kein Audio-Asset nötig, keine neue Abhängigkeit): Treffer (Lautstärke/Klang nach Schadensanteil), Tod, Heilung, Signatureinsatz (Klangfarbe nach Schlüsselwort-Kategorie: Feuer/Eis/Gift/Schild/Licht/Schatten/Blitz/Standard) sowie Sieg- und Niederlage-Fanfare. Einbindung in `js/ui.js` (`schritt()`/`endeReplay()`), eigener Lautstärke-Regler analog zum Effekte-Schalter in `index.html`/`style.css` (`Ton: Voll/Leise/Aus`, gespeichert unter `tensura-ton`).
+Diese Datei sammelt Ideen fuer ein poliertes, handcrafted Spielgefuehl —
+Modelle, Assets, Sprites, Animationen, UI/UX, Audio, Gamefeel. Eine
+automatisierte Routine haengt hier pro Lauf **genau eine** neue Idee an und
+arbeitet danach alle offenen Punkte ab, so weit sinnvoll machbar.
+
+- [x] Prozedurale Sound-Engine (Web Audio API) fuer Kampf-Feedback - Das Spiel ist bis heute komplett stumm (kein `<audio>`, kein Web-Audio-Code in `js/`). Ein neues `js/audio.js` synthetisiert Toene zur Laufzeit ueber Oszillatoren und einen Rauschpuffer — Treffer, Heilung, Tod, Signatureinsatz, Schild, Status, Ausweichen, Wiederbelebung, Entladung, Kombi, Verwandlung, Wut, Fehlschlag sowie ein Sieg-/Niederlage-Stinger — angebunden in `js/ui.js` an der Stelle, an der `Regie.zeitplan` ohnehin schon Beats kennt. Keine Audiodateien, keine neue Abhaengigkeit, ein Ton-Ein/Aus-Schalter im Menue (`index.html`, mit `localStorage`-Merker wie bei Tempo/Effekte).
