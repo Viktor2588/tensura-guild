@@ -22,8 +22,8 @@ anderen in denselben fünf Dateien, und wer die Konflikte der Reihe nach
 zugunsten des jeweils neueren löst, hat am Ende genau einen PR im Baum — die
 zwanzig älteren wären überschrieben, ohne je geklungen zu haben.
 
-Also liegen hier alle 21 nebeneinander, und ein Umschalter im Menü entscheidet,
-welcher davon spielt.
+Also liegen hier alle 21 nebeneinander, und Kästchen im Menü entscheiden,
+welche davon spielen — einzeln oder mehrere gleichzeitig.
 
 ## Anhören
 
@@ -31,18 +31,30 @@ welcher davon spielt.
 npm start        # http://localhost:3000
 ```
 
-Menü öffnen → Zeile **Audio-Variante** → eine der 21 wählen → einen Kampf
-starten. Umschalten geht auch mitten im Kampf; die vorherige Variante wird dabei
-stummgeschaltet. Voreinstellung ist `aus` — wer den Branch frisch auscheckt,
-bekommt zuerst dasselbe stumme Spiel wie in `main`.
+Menü öffnen → Block **Audio-Varianten** → ankreuzen, was mitlaufen soll → einen
+Kampf starten. Umhaken geht auch mitten im Kampf; eine abgewählte Variante wird
+dabei stummgeschaltet. **Keine** setzt alle Haken auf einmal zurück.
+Voreinstellung ist kein Haken — wer den Branch frisch auscheckt, bekommt zuerst
+dasselbe stumme Spiel wie in `main`.
 
-Die Wahl liegt in `localStorage` unter `tensura-audio-variante` und überlebt
-einen neuen Run, aber nicht den Wechsel an einen anderen Rechner. Sie gehört
-wie Effektstufe und Tempo zum Gerät, nicht zum Spielstand.
+Mehrere Haken gleichzeitig sind Absicht: zwei Kandidaten am selben Kampf
+nebeneinander zu hören ist der schnellste Weg, sie zu unterscheiden. Sie
+klingen dann wirklich übereinander, es wird also keine Variante gedämpft.
+
+> Jede angehakte Variante hält ihren **eigenen `AudioContext`**. Alle 21
+> gleichzeitig hat Chromium hier klaglos gebaut, aber Browser deckeln die Zahl
+> pro Seite, und wo der Deckel liegt, ist nicht zugesagt. Baut eine Variante
+> nicht, nennt die Infozeile unter der Liste sie namentlich — damit das nicht
+> wie eine stille Variante aussieht. Zum Vergleichen reichen ohnehin zwei bis
+> drei; 21 gleichzeitig sind Lärm, kein Test.
+
+Die Wahl liegt in `localStorage` unter `tensura-audio-varianten` (kommagetrennt)
+und überlebt einen neuen Run, aber nicht den Wechsel an einen anderen Rechner.
+Sie gehört wie Effektstufe und Tempo zum Gerät, nicht zum Spielstand.
 
 > Der erste Klick auf die Seite entsperrt den Ton. Browser lassen einen
 > `AudioContext` erst nach einer Nutzergeste laufen — vorher bleibt es still,
-> auch wenn eine Variante gewählt ist.
+> auch wenn Varianten angehakt sind.
 
 ## Wie die Merges gelaufen sind
 
@@ -56,7 +68,8 @@ Konflikte sind nach einer festen Regel aufgelöst:
 | `PLAN.md`, `ROUTINE.md`, `ASSETS.md`, `TODO.md` | beide Seiten behalten (Union) |
 
 Der Verzicht auf die 21 `ui.js`-Fassungen ist der Kern: statt 21 Anbindungen
-gibt es eine (`AudioLabor.spiele`), und die verteilt an die aktive Variante.
+gibt es eine (`AudioLabor.spiele`), und die verteilt an alle angehakten
+Varianten.
 
 ## Wie der Umschalter arbeitet
 

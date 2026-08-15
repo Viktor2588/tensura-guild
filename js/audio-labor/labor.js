@@ -12,8 +12,11 @@
    `Sound`, `SFX`. Nebeneinander geladen wuerde die letzte alle vorherigen
    ueberschreiben; alle gleichzeitig angebunden waeren Laerm statt Sounddesign.
 
-   Also: genau eine Variante ist aktiv, umgeschaltet wird im Menue. `js/ui.js`
-   kennt nur diese eine Anbindung (`AudioLabor.spiele`), nicht 21. */
+   Also: `js/ui.js` kennt nur diese eine Anbindung (`AudioLabor.spiele`), nicht
+   21, und im Menue haekelt man an, welche davon mitlaufen. Mehrere gleichzeitig
+   sind ausdruecklich erlaubt — zum Vergleichen zweier Kandidaten am selben
+   Kampf ist das der ganze Zweck. Wer alle anhaekelt, bekommt Laerm; das ist
+   dann seine Entscheidung und nicht die des Umschalters. */
 (function (root) {
   'use strict';
 
@@ -61,7 +64,16 @@
   var nachId = {};
   KATALOG.forEach(function (e) { nachId[e.id] = e; e.fabrik = null; e.modul = null; });
 
-  var aktiv = 'aus';
+  /* Die angehaekelten Varianten, in Katalogreihenfolge. Leer heisst stumm —
+     es gibt keinen eigenen `aus`-Eintrag mehr, nichts angehaekelt ist `aus`.
+
+     ponytail: jede aktive Variante haelt ihren eigenen AudioContext. Alle 21
+     gleichzeitig baut Chromium klaglos, aber Browser deckeln die Zahl pro
+     Seite. Reisst der Deckel, wirft `new AudioContext()`, der Fehler landet in
+     `e.fehler` und damit sichtbar in `liste()` statt als Stille. Ein
+     gemeinsamer Context waere die Loesung, kostet aber einen Eingriff in alle
+     21 Varianten — erst bauen, wenn der Deckel jemanden wirklich trifft. */
+  var aktive = [];
 
   /* Der Schirm. Lesen faellt auf das echte globale Objekt durch (die Varianten
      brauchen `AudioContext`, `localStorage`, gelegentlich `Abilities`),
@@ -106,10 +118,16 @@
     return e.modul;
   }
 
-  function modul() {
-    if (aktiv === 'aus') return null;
-    var e = nachId[aktiv];
-    return e ? (e.modul || baue(e)) : null;
+  /* Alle angehaekelten Varianten, gebaut. Wer nicht baut, faellt raus statt
+     den Rest mitzureissen. */
+  function module() {
+    var out = [];
+    aktive.forEach(function (id) {
+      var e = nachId[id];
+      var m = e && (e.modul || baue(e));
+      if (m) out.push({ e: e, m: m });
+    });
+    return out;
   }
 
   /* Ein- und Ausschalten quer durch vier Generationen Schnittstelle. Die
@@ -142,11 +160,11 @@
      nach einer Nutzergeste laufen. Jede Variante hat sich einen eigenen Namen
      dafuer ausgedacht. */
   function entsperren() {
-    var m = modul();
-    if (!m) return;
-    versuch(function () {
-      ['entsperren', 'wecken', 'wecke', 'init'].forEach(function (n) {
-        if (typeof m[n] === 'function') m[n]();
+    module().forEach(function (p) {
+      versuch(function () {
+        ['entsperren', 'wecken', 'wecke', 'init'].forEach(function (n) {
+          if (typeof p.m[n] === 'function') p.m[n]();
+        });
       });
     });
   }
@@ -165,9 +183,11 @@
      mit durch — er steht als letzter im Kampflog (`js/combat.js`), also
      braucht es keinen zweiten Weg fuer Sieg und Niederlage. */
   function spiele(l, beat) {
-    var e = aktiv === 'aus' ? null : nachId[aktiv];
-    var m = modul();
-    if (!m || !l || !e) return;
+    if (!l) return;
+    module().forEach(function (p) { einem(p.e, p.m, l, beat); });
+  }
+
+  function einem(e, m, l, beat) {
     switch (e.art) {
       case 'log':      ruf(m, 'spiele', l, beat); break;
       case 'ereignis': ruf(m, 'ereignis', l, beat); break;
@@ -243,27 +263,38 @@
   }
 
   function klick() {
-    var m = modul();
-    if (!m) return;
-    ruf(m, 'klick') || ruf(m, 'taste') || ruf(m, 'ui', 'klick');
+    module().forEach(function (p) {
+      ruf(p.m, 'klick') || ruf(p.m, 'taste') || ruf(p.m, 'ui', 'klick');
+    });
   }
 
-  /* Umschalten: die alte Variante wird stummgeschaltet, bevor die neue
-     hochkommt. Ohne das laeuft ein noch klingender Nachhall der vorherigen
-     Variante in die naechste hinein, und man hoert zwei Kandidaten
-     gleichzeitig — genau das, was dieser Pruefstand vermeiden soll. */
-  function waehle(id) {
-    if (id !== 'aus' && !nachId[id]) id = 'aus';
-    if (aktiv !== 'aus' && nachId[aktiv] && nachId[aktiv].modul) {
-      schalte(nachId[aktiv].modul, false);
-    }
-    aktiv = id;
-    var m = modul();
-    if (m) { schalte(m, true); entsperren(); }
-    return aktiv;
+  /* Auswahl setzen. Abgewaehlte Varianten werden stummgeschaltet, statt sie
+     nur nicht mehr zu beliefern: mehrere haben eigene Schleifen (Ambient-Bett,
+     Nachhall), die sonst weiterlaufen wuerden, obwohl der Haken weg ist.
+
+     Nimmt eine Liste von Ids; ein einzelner String und das alte `'aus'` gehen
+     weiter durch, damit ein Aufruf von Hand in der Konsole nicht ueberrascht. */
+  function waehle(ids) {
+    if (typeof ids === 'string') ids = ids === 'aus' ? [] : [ids];
+    var neu = (ids || []).filter(function (id) { return !!nachId[id]; });
+    /* Katalogreihenfolge, damit `gewaehlt()` unabhaengig von der Klickfolge
+       immer dasselbe liefert (der Test vergleicht darauf). */
+    neu = KATALOG.map(function (e) { return e.id; })
+                 .filter(function (id) { return neu.indexOf(id) >= 0; });
+
+    aktive.forEach(function (id) {
+      if (neu.indexOf(id) < 0 && nachId[id].modul) schalte(nachId[id].modul, false);
+    });
+    var vorher = aktive;
+    aktive = neu;
+    module().forEach(function (p) {
+      if (vorher.indexOf(p.e.id) < 0) schalte(p.m, true);
+    });
+    entsperren();
+    return aktive.slice();
   }
 
-  function gewaehlt() { return aktiv; }
+  function gewaehlt() { return aktive.slice(); }
 
   /* Fuer die Auswahlliste im Menue. `bereit` sagt, ob die Datei ueberhaupt
      geladen wurde — fehlt ein Skript-Tag, faellt das hier auf und nicht erst

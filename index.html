@@ -58,9 +58,13 @@
   <!-- Nur auf diesem Test-Branch: die 21 Audio-Varianten aus den offenen PRs
        zum Durchhoeren. Gehoert nicht nach main — siehe PLAN.md, Abschnitt 6. -->
   <div class="reihe" id="menu-audio-labor">
-    <label for="audio-variante">Audio-Variante:</label>
-    <select id="audio-variante"></select>
+    <span class="label">Audio-Varianten:</span>
+    <button type="button" data-a="audio-keine">Keine</button>
   </div>
+  <!-- Kaestchen statt Auswahlliste: mehrere Varianten duerfen gleichzeitig
+       laufen, und bei 21 Eintraegen wirft ein Fehlklick in einer
+       Mehrfachauswahl die ganze bisherige Wahl weg. -->
+  <div id="audio-varianten" class="varianten"></div>
   <p class="hinweis" id="audio-labor-info"></p>
   <div class="reihe">
     <button type="button" data-a="speichern">Speichern</button>

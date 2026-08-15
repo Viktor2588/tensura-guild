@@ -4,7 +4,7 @@
    Dieser Branch ist ein Prüfstand für die 21 Audio-Varianten aus den offenen
    PRs (siehe `AUDIO-LABOR.md`). Ohne dieses Skript wüsste man von einer
    Variante nur, dass sie nicht kracht — nicht, dass sie tatsächlich Töne
-   erzeugt und dass beim Umschalten wirklich nur eine klingt.
+   erzeugt und dass eine abgewählte wirklich schweigt.
 
    Ein Stub für die Web Audio API schreibt jeden Aufruf mit. Damit sind vier
    Fragen beantwortbar, die im Browser nur mit dem Ohr zu prüfen wären:
@@ -14,8 +14,8 @@
         `KATALOG` in `labor.js` erwartet? (Ein Tippfehler dort führte sonst zu
         einer stummen Auswahl, die aussieht, als klänge die Variante nicht.)
      3. Erzeugt jede auf einen Kampf-Log Oszillatoren — hört man also etwas?
-     4. Schweigt nach dem Umschalten die vorherige Variante wirklich? Das ist
-        der Punkt, wegen dem der Umschalter existiert. */
+     4. Schweigt eine abgewählte Variante wirklich, und klingen zwei
+        angehakte zusammen? Beides ist der Punkt der Mehrfachwahl. */
 'use strict';
 var fs = require('fs');
 var path = require('path');
@@ -160,8 +160,9 @@ console.log('--- Bauen, Klingen, Umschalten ---');
 var stumm = [], abdeckung = [];
 liste.forEach(function (v, i) {
   var vorher = zaehler.osz + zaehler.rausch;
-  var gewaehlt = Labor.waehle(v.id);
-  ok(gewaehlt === v.id, v.id + ': Auswahl greift (zurueck kam "' + gewaehlt + '")');
+  var gewaehlt = Labor.waehle([v.id]);
+  ok(gewaehlt.length === 1 && gewaehlt[0] === v.id,
+     v.id + ': Auswahl greift (zurueck kam "' + gewaehlt.join(',') + '")');
 
   var nachBau = Labor.liste()[i];
   ok(!nachBau.fehler, v.id + ': baut ohne Ausnahme' + (nachBau.fehler ? ' — ' + nachBau.fehler : ''));
@@ -194,25 +195,56 @@ liste.forEach(function (v, i) {
 /* Der eigentliche Zweck des Umschalters: nach dem Wechsel darf die vorherige
    Variante nichts mehr beitragen. Geprüft wird die zuletzt gewählte gegen
    `aus` — bleibt der Zähler stehen, schweigen alle 21. */
-console.log('--- Nur eine klingt ---');
-Labor.waehle('aus');
+console.log('--- Abwaehlen und Mehrfachwahl ---');
+Labor.waehle([]);
 var vorAus = zaehler.osz + zaehler.rausch;
 LOG.forEach(function (l, k) { uhr.t += TAKT; Labor.spiele(l, BEATS[k]); });
 Labor.klick();
 ok((zaehler.osz + zaehler.rausch) === vorAus,
-   'auf "aus" erzeugt kein Modul mehr Klaenge');
-ok(Labor.gewaehlt() === 'aus', '"aus" ist der gemerkte Zustand');
+   'ohne Haken erzeugt kein Modul mehr Klaenge');
+ok(Labor.gewaehlt().length === 0, 'leere Auswahl ist der gemerkte Zustand');
+ok(Labor.waehle('aus').length === 0, 'das alte "aus" heisst weiter leere Auswahl');
 
-/* Zwei Varianten hintereinander: die erste muss beim Wechsel verstummen. Ohne
-   den `schalte(..., false)`-Schritt in `waehle()` liefen beide weiter. */
-Labor.waehle(liste[0].id);
+/* Ein Haken weg heisst still. Ohne den `schalte(..., false)`-Schritt in
+   `waehle()` liefe die abgewaehlte Variante weiter. */
+Labor.waehle([liste[0].id]);
 LOG.forEach(function (l, k) { uhr.t += TAKT; Labor.spiele(l, BEATS[k]); });
-Labor.waehle(liste[1].id);
+Labor.waehle([liste[1].id]);
 var vorZweit = zaehler.osz + zaehler.rausch;
 uhr.t += TAKT;
 Labor.spiele(LOG[1], 'toedlich');
-var nachZweit = zaehler.osz + zaehler.rausch;
-ok(nachZweit > vorZweit, 'nach dem Wechsel klingt die neue Variante');
+ok((zaehler.osz + zaehler.rausch) > vorZweit, 'nach dem Wechsel klingt die neue Variante');
+
+/* Der Punkt der Mehrfachwahl: zwei angehaekelte Varianten muessen auf
+   denselben Logeintrag zusammen mehr Quellen erzeugen als jede allein. */
+function quellenFuer(ids) {
+  Labor.waehle(ids);
+  var v0 = zaehler.osz + zaehler.rausch;
+  LOG.forEach(function (l, k) { uhr.t += TAKT; Labor.spiele(l, BEATS[k]); });
+  return (zaehler.osz + zaehler.rausch) - v0;
+}
+var a = liste[0].id, b = liste[1].id;
+var nurA = quellenFuer([a]), nurB = quellenFuer([b]), beide = quellenFuer([a, b]);
+ok(beide === nurA + nurB,
+   'zwei Haken klingen zusammen (' + nurA + ' + ' + nurB + ' = ' + beide + ')');
+ok(Labor.gewaehlt().length === 2, 'zwei Haken bleiben beide gemerkt');
+
+/* Reihenfolge der Klicks darf die gemerkte Auswahl nicht aendern — das Menue
+   schreibt sie so in `localStorage`. */
+ok(Labor.waehle([b, a]).join(',') === Labor.waehle([a, b]).join(','),
+   'Auswahl kommt in Katalogreihenfolge zurueck, nicht in Klickreihenfolge');
+
+/* Alle 21 gleichzeitig: der Extremfall aus dem Menue. Im Browser stoesst das
+   an das AudioContext-Limit, im Stub nicht — hier zaehlt nur, dass der
+   Verteiler nicht aussteigt und jede angehaekelte Variante beliefert wird. */
+var alle = liste.map(function (v) { return v.id; });
+ok(Labor.waehle(alle).length === 21, 'alle 21 lassen sich gleichzeitig anhaken');
+var vorAlle = zaehler.osz + zaehler.rausch;
+uhr.t += TAKT;
+Labor.spiele(LOG[1], 'toedlich');
+ok((zaehler.osz + zaehler.rausch) - vorAlle >= 10,
+   'mit allen 21 Haken liefert der Verteiler an viele Varianten gleichzeitig');
+Labor.waehle([]);
 
 /* Wie breit deckt eine Variante das Kampflog ab? Das ist kein Bestehen oder
    Durchfallen, sondern die Zahl, nach der man beim Anhoeren sucht: eine

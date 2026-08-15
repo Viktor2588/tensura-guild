@@ -584,6 +584,14 @@ ul.mali li::before { content: '−'; position: absolute; left: -.9rem; opacity: 
    zu erkennen sein, damit niemand sie fuer eine Einstellung des Spiels haelt. */
 #menu-audio-labor { align-items: center; gap: .4rem; margin-top: .6rem;
   padding: .5rem .6rem; border: 1px dashed var(--rand); border-radius: 6px; }
-#menu-audio-labor label { font-size: .82rem; color: var(--grau); }
-#menu-audio-labor select { max-width: min(30rem, 70vw); }
+#menu-audio-labor .label { font-size: .82rem; color: var(--grau); }
 #audio-labor-info { margin: .3rem 0 .2rem; }
+/* 21 Kaestchen: gedeckelte Hoehe mit eigenem Scroll, sonst schiebt die Liste
+   den Rest des Menues aus dem Bild. */
+.varianten { max-height: 14rem; overflow-y: auto; margin-top: .3rem;
+  padding: .3rem .4rem; border: 1px dashed var(--rand); border-radius: 6px; }
+.varianten .variante { display: flex; gap: .45rem; align-items: baseline;
+  font-size: .82rem; padding: .12rem 0; cursor: pointer; }
+.varianten .variante:hover { color: var(--hell, inherit); }
+.varianten .variante.tot { opacity: .45; cursor: default; }
+.varianten .variante input { flex: none; }

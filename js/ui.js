@@ -365,39 +365,56 @@
 
      Nur auf diesem Branch. Die Wahl gehoert wie Effekte und Tempo zum Geraet,
      nicht zum Spielstand — sie ueberlebt einen neuen Run, aber nicht den
-     Wechsel an einen anderen Rechner. Voreinstellung ist `aus`: wer den Branch
-     auscheckt, bekommt zuerst dasselbe stumme Spiel wie in `main` und schaltet
-     bewusst dazu. */
-  var audioVariante = 'aus';
-  try { audioVariante = localStorage.getItem('tensura-audio-variante') || 'aus'; } catch (e) {}
+     Wechsel an einen anderen Rechner. Voreinstellung ist leer: wer den Branch
+     auscheckt, bekommt zuerst dasselbe stumme Spiel wie in `main` und hakt
+     bewusst an. Mehrere Haken sind erlaubt; zum Vergleichen zweier Kandidaten
+     am selben Kampf ist das der Punkt. */
+  var audioVarianten = [];
+  try {
+    audioVarianten = (localStorage.getItem('tensura-audio-varianten') || '')
+      .split(',').filter(function (s) { return s; });
+  } catch (e) {}
 
   function fuelleVariantenwahl() {
-    var sel = $('audio-variante');
-    if (!sel || !root.AudioLabor) return;
-    var html = '<option value="aus">— aus (wie main) —</option>';
+    var box = $('audio-varianten');
+    if (!box || !root.AudioLabor) return;
+    var html = '';
     AudioLabor.liste().forEach(function (v) {
-      html += '<option value="' + v.id + '"' + (v.bereit ? '' : ' disabled') + '>' +
-        'PR #' + v.pr + ' — ' + esc(v.titel) + (v.bereit ? '' : ' (nicht geladen)') + '</option>';
+      html += '<label class="variante' + (v.bereit ? '' : ' tot') + '">' +
+        '<input type="checkbox" value="' + v.id + '"' +
+        (v.bereit ? '' : ' disabled') +
+        (audioVarianten.indexOf(v.id) >= 0 ? ' checked' : '') + '>' +
+        '<span>PR #' + v.pr + ' — ' + esc(v.titel) +
+        (v.bereit ? '' : ' (nicht geladen)') + '</span></label>';
     });
-    sel.innerHTML = html;
-    sel.value = audioVariante;
+    box.innerHTML = html;
     zeigeVariantenInfo();
   }
 
   function zeigeVariantenInfo() {
     var p = $('audio-labor-info');
     if (!p || !root.AudioLabor) return;
-    var offen = AudioLabor.liste().filter(function (v) { return !v.bereit; }).length;
-    p.textContent = audioVariante === 'aus'
-      ? '21 Varianten geladen, keine aktiv. Test-Branch — in main bleibt das Spiel stumm.'
-      : 'Aktiv: ' + audioVariante + '. Immer nur eine — die anderen sind stumm geschaltet.';
+    var liste = AudioLabor.liste();
+    var offen = liste.filter(function (v) { return !v.bereit; }).length;
+    var kaputt = liste.filter(function (v) { return v.fehler; });
+    p.textContent = !audioVarianten.length
+      ? liste.length + ' Varianten geladen, keine aktiv. Test-Branch — in main bleibt das Spiel stumm.'
+      : audioVarianten.length + ' aktiv: ' + audioVarianten.join(', ') +
+        (audioVarianten.length > 1 ? ' — klingen gleichzeitig uebereinander.' : '.');
     if (offen) p.textContent += ' ' + offen + ' Variante(n) nicht geladen.';
+    /* Ab etwa sechs gleichzeitigen AudioContext macht Chrome dicht. Das faellt
+       sonst nur als Stille auf, die wie ein Fehler der Variante aussieht. */
+    if (kaputt.length) {
+      p.textContent += ' Nicht gebaut: ' +
+        kaputt.map(function (v) { return v.id; }).join(', ') +
+        ' (zu viele gleichzeitig?).';
+    }
   }
 
-  function waehleVariante(id) {
+  function setzeVarianten(ids) {
     if (!root.AudioLabor) return;
-    audioVariante = AudioLabor.waehle(id);
-    try { localStorage.setItem('tensura-audio-variante', audioVariante); } catch (e) {}
+    audioVarianten = AudioLabor.waehle(ids);
+    try { localStorage.setItem('tensura-audio-varianten', audioVarianten.join(',')); } catch (e) {}
     zeigeVariantenInfo();
   }
 
@@ -1487,7 +1504,14 @@
     },
     neu: function () { neuerRun(); },
     speichern: function () { speichern(); $('menu').close(); },
-    'menu-zu': function () { $('menu').close(); }
+    'menu-zu': function () { $('menu').close(); },
+    /* Test-Branch: alle Haken auf einmal weg — der Weg zurueck zu `main`. */
+    'audio-keine': function () {
+      setzeVarianten([]);
+      document.querySelectorAll('#audio-varianten input').forEach(function (k) {
+        k.checked = false;
+      });
+    }
   };
 
   /* Alles Erklärbare an einem Ort — im Menü nachschlagbar, ohne Hovern. */
@@ -1760,8 +1784,8 @@
     if (!run) run = R.create(Math.floor(Math.random() * 0xffffffff), R.loadMeta());
     document.addEventListener('click', klick);
     /* Die Autoplay-Sperre der Browser: ein AudioContext darf erst nach einer
-       Nutzergeste klingen. Ein Lauscher fuer alle 21 Varianten, weil immer nur
-       die aktive ueberhaupt gebaut ist. */
+       Nutzergeste klingen. Ein Lauscher fuer alle 21 Varianten; `entsperren`
+       geht an jede angehaekelte. */
     document.addEventListener('click', function () {
       if (root.AudioLabor) AudioLabor.entsperren();
     });
@@ -1782,11 +1806,17 @@
     hudTips();
     var linienSel = $('linien-einheit');
     if (linienSel) linienSel.addEventListener('change', function () { zeichneLinienUebersicht(linienSel.value); });
-    var variantenSel = $('audio-variante');
-    if (variantenSel) {
+    var variantenBox = $('audio-varianten');
+    if (variantenBox) {
       fuelleVariantenwahl();
-      waehleVariante(audioVariante);
-      variantenSel.addEventListener('change', function () { waehleVariante(variantenSel.value); });
+      setzeVarianten(audioVarianten);
+      variantenBox.addEventListener('change', function (ev) {
+        var k = ev.target;
+        if (!k || k.type !== 'checkbox') return;
+        var neu = audioVarianten.filter(function (x) { return x !== k.value; });
+        if (k.checked) neu.push(k.value);
+        setzeVarianten(neu);
+      });
     }
     var reiter = $('menu-reiter');
     if (reiter) reiter.addEventListener('click', function (e) {
