@@ -5,6 +5,15 @@ Das Spiel kam bis Phase 41 ohne eine einzige Bilddatei aus. Mit der
 Diese Datei sagt, wohin sie gehören und woher sie stammen — Herkunft
 lückenlos, sonst ist später nicht mehr feststellbar, was benutzt werden darf.
 
+## Ton
+
+**Kein Audio-Ordner.** Seit `js/ton.js` (Routine, 2026-08-09) erzeugt das
+Spiel jeden Klang zur Laufzeit per Web Audio API — Oszillatoren und ein
+gefilterter Rauschpuffer, keine Audiodateien. Damit gibt es hier nichts zu
+verorten: keine Lizenzfrage, kein Format, kein Repo-Gewicht. Der Ton-Schalter
+im Menü (`tensura-ton` in `localStorage`) und `Ton.verfuegbar()` folgen
+demselben Muster wie die Effektstufe und `Brett3D.verfuegbar()`.
+
 ## Fremdcode
 
 | Was | Woher | Lizenz |
@@ -15,6 +24,126 @@ Bewusst lokal abgelegt statt per CDN: das Spiel läuft offline, und das soll so
 bleiben. Bewusst r149 statt neuer: das ist die letzte Fassung mit einem
 UMD-Build, der sich per `<script>` einbinden lässt — der Rest des Projekts hat
 keinen Bauschritt und soll keinen bekommen.
+
+## Audio
+
+**Es gibt keine Audiodateien und soll vorerst auch keine geben.** `js/audio.js`
+erzeugt jeden Ton zur Laufzeit aus der Web Audio API (Oszillatoren für Töne,
+gefiltertes Rauschen für Einschläge) statt aus Samples. Das umgeht dieselbe
+Lizenzfrage, die die Figuren-Herkunftstabelle unten so ernst nimmt — ein
+synthetischer Ton hat keine Quelle, die belegt werden müsste — und braucht
+keinen neuen Ordner unter `assets/`. Sollten später echte Sample-Dateien
+dazukommen (Musik, Sprachausgabe, aufwendigere SFX), gehören sie unter
+`assets/audio/` und in eine eigene Herkunftstabelle nach demselben Muster wie
+bei den Figuren.
+## Ton
+
+**Es gibt keine Audio-Dateien.** Wie das Bloom in `js/fx.js` entstehen alle
+Sound-Effekte zur Laufzeit aus eigenem Code — Oszillatoren und gefiltertes
+Rauschen über die Web Audio API, in `js/ton.js`. Damit fällt für Ton dieselbe
+Provenienz-Frage weg, die diese Datei sonst beantwortet: es gibt nichts
+Fremdes zu benennen und nichts, dessen Lizenz zu klären wäre.
+## Ton
+
+**Es gibt keine Audiodateien und soll auch keine geben.** `js/audio.js`
+synthetisiert jeden Ton — Treffer, Heilung, Tod, Signatureinsatz, Schild,
+Status, Ausweichen, Wiederbelebung, Entladung, Kombi, Verwandlung, Wut,
+Fehlschlag, Sieg-/Niederlage-Stinger — zur Laufzeit aus Oszillatoren
+(`OscillatorNode`) und einem einmal gefüllten Rauschpuffer der Web Audio
+API. Kein Fremdcode, keine Lizenzfrage, kein zusätzliches Repo-Gewicht.
+Angebunden ist es in `js/ui.js` an der Stelle, an der `Regie.zeitplan`
+ohnehin schon jeden Logeintrag samt Beat kennt (`schritt()` und
+`endeReplay()`). Ein Ton-Ein/Aus-Schalter sitzt im Menü, gemerkt in
+`localStorage` unter `tensura-audio` — dasselbe Muster wie Tempo und
+Effektstufe.
+## Klang
+
+Seit `js/audio.js` (siehe ROUTINE.md) gibt es Ton — **keine einzige Audiodatei**.
+Jeder Effekt entsteht zur Laufzeit aus Oszillatoren und gefiltertem Rauschen
+(Web Audio API), an denselben sechs Formen orientiert wie `FORM` in
+`js/brett3d.js`. Keine Provenienz-Zeile nötig, weil nichts generiert oder
+heruntergeladen wurde — es ist Code, kein Asset. Bleibt das so (kein Musikbett
+aus fremder Quelle, keine Sample-Bibliothek), bleibt diese Sektion leer.
+## Ton
+
+**Keine Audiodateien.** `js/klang.js` erzeugt jeden Ton zur Laufzeit aus
+Oszillatoren und einem einzigen Rauschpuffer (Web-Audio-API, seit 2026-08-08).
+Damit gibt es hier nichts mit Herkunft zu klären — synthetischer Ton entsteht
+im Code, nicht aus einer Quelle, die eine Lizenz bräuchte. Sollte das Spiel
+später echte Musik oder aufgenommene Effekte bekommen, gehört deren Herkunft
+in eine eigene Tabelle hier, nach demselben Muster wie die Figuren unten.
+## Klang
+
+**Keine Audiodatei im Repo, und keine ist geplant.** `js/audio.js`
+synthetisiert jeden Ton zur Laufzeit über die Web-Audio-API (Oszillatoren
+plus Hüllkurve, gefiltertes Rauschen für Brand und Donner) statt fertige
+Sounddateien einzubinden — damit stellt sich die Provenienzfrage dieser
+Datei für Klang gar nicht erst: es gibt nichts, das von irgendwoher stammt.
+Sollten doch einmal echte Audiodateien dazukommen (Musik, Sprachausgabe),
+gehören sie unter `assets/audio/` und eine Herkunftszeile hierhin, nach
+demselben Muster wie bei den Figuren unten.
+## Ton
+
+`js/klang.js` (Routine vom 2026-08-09) erzeugt jeden Ton zur Laufzeit per Web
+Audio API — Oszillatoren und ein Rauschpuffer, keine Audiodatei. Damit gibt es
+hier **nichts mit eigener Herkunftszeile**: keine Lizenzfrage, kein Download,
+kein Eintrag nötig. Das ist bewusst so und keine Lücke in dieser Liste.
+**Keine Audiodateien.** `js/audio.js` (`root.Klang`) erzeugt jeden Ton zur
+Laufzeit per WebAudio-API — Oszillatoren, gefiltertes Rauschen, Hüllkurven.
+Kein Assettyp, keine Lizenzfrage, keine Herkunftszeile: es gibt keine Datei,
+die von irgendwoher stammen könnte. Eingehängt in `js/ui.js` (`schritt()` für
+Kampfereignisse aus dem Log, `klick()` für erkannte UI-Aktionen), Stufenwahl
+„Voll/Sparsam/Aus" im Menü wie bei den Bildeffekten, gemerkt unter
+`tensura-klang` in `localStorage`. Ohne `AudioContext` (z. B. in jsdom, dem
+UI-Test) bleibt es still — dieselbe Rückfall-Regel wie `Brett3D.verfuegbar()`.
+
+Sollte das Spiel später doch mit eingekauften oder generierten Audiodateien
+arbeiten (Musik, gesprochene Zeilen), gehört deren Herkunft hierher, nach
+demselben Muster wie die Figuren unten.
+## Klang
+
+**Keine Audiodatei im Projekt, keine wird gebraucht.** `js/klang.js`
+synthetisiert jeden Ton zur Laufzeit aus Oszillatoren und einem
+Rauschpuffer der Web Audio API — Treffer, Heilung, Tod, Wiederbelebung,
+Signatur-Einsätze (nach der Bogen/Sofort/Steigt-Einteilung aus
+`GAMEGUIDE.md`) sowie Sieg- und Niederlage-Fanfaren. Herkunft ist damit
+immer derselbe eine Satz: **eigener Code, kein Fremdmaterial, keine
+Lizenzfrage.** Ohne Web Audio API (jsdom im Test) werden alle Funktionen
+zu No-Ops, dieselbe Rückfallebene wie `Brett3D.verfuegbar()` für three.js.
+**Es gibt keine einzige Audiodatei und soll auch keine geben.** Seit der
+ROUTINE-Phase vom 2026-08-11 erzeugt `js/audio.js` (Modul `Klang`) jeden Ton
+zur Laufzeit per Web Audio API — Oszillatoren, ein einmalig erzeugter
+Rauschpuffer, Hüllkurven. Kampf- und UI-Ereignisse (Treffer, Tod, Heilung,
+Signaturen, Sieg/Niederlage, Kauf, Klicks) bekommen ihren Klang aus Code,
+nicht aus einer Datei.
+
+Damit entfällt für Audio genau das, was diese Datei sonst für jedes Bild
+verlangt — Werkzeug, Prompt, Lizenz —, weil nichts davon existiert: kein
+Download, keine Lizenzfrage, kein Eintrag in einer Herkunftstabelle. Diese
+Zeile hier *ist* die Provenienz: "synthetisiert in `js/audio.js`, keine
+externe Quelle." Sollte das Projekt doch einmal aufgenommene oder
+lizenzierte Audiodateien bekommen (Musik, Sprachausgabe), gehören sie unter
+`assets/audio/` und brauchen dann dieselbe Herkunftstabelle wie die Figuren
+unten.
+## Ton
+
+**Es gibt keine Audiodateien und soll auch keine geben.** `js/ton.js`
+synthetisiert jeden Klang (Treffer, Heilung, Tod, Sieg-Jingle, Klick, …) zur
+Laufzeit aus Oszillatoren und gefiltertem Rauschen (Web Audio API). Das ist
+keine Verlegenheitslösung, sondern dieselbe Abwägung wie bei den
+Platzhalter-Silhouetten: kein Sample, keine Lizenzfrage, keine Datei, für die
+diese Tabelle eine Herkunftszeile bräuchte — und das Spiel bleibt ohne Netz
+und ohne Bauschritt spielbar. Sollte das Spiel später doch aufgenommene
+Musik oder Sprachausgabe bekommen, gehört das hierhin, mit eigener
+Herkunftszeile wie bei den Figurenbildern unten.
+## Klang
+
+**Keine Audiodatei im Repo.** `js/audio.js` (Modul `Klang`) synthetisiert jeden
+Ton zur Laufzeit über die Web Audio API — Oszillatoren, Hüllkurven und
+gefiltertes, selbst erzeugtes Rauschen, dieselbe Haltung wie beim Bloom in
+`js/fx.js`: eigener Code statt einer Abhängigkeit oder eines Samples. Damit
+gibt es hier auch keine Herkunftszeile zu führen — der einzige Urheber ist
+dieses Repo selbst, Lizenz wie der Rest des Projekts.
 
 ## Figuren
 
@@ -168,3 +297,86 @@ Die Fragen aus `dev/asset-recherche.md` sind beantwortet:
 | Datei | Werkzeug / Quelle | Prompt | Datum | Lizenz |
 |---|---|---|---|---|
 | — | noch keine | — | — | — |
+
+## Ton
+
+**Keine Audiodatei, genau wie bei den Figuren vor Phase 41 keine Bilddatei.**
+`js/audio.js` synthetisiert jeden Klang zur Laufzeit aus Oszillatoren und
+gefiltertem Rauschen (Web Audio API) — kein `<audio>`-Tag, kein Download, keine
+Lizenzfrage. Die Zuordnung folgt demselben Schlüsselwort-Prinzip wie `FARBE`
+in `js/brett3d.js`.
+
+Eigenschaften: Quellcode, komplett selbst geschrieben in dieser Sitzung
+(2026-08-02, Routine `routine/2026-08-02-sound-fx`), keine externe Quelle,
+keine Lizenzangabe nötig. Ohne Web Audio API (z. B. in `dev/uitest.js`, das in
+jsdom läuft) bleibt das Spiel stumm — `Sound.verfuegbar()` sagt dann nein,
+genau wie `Brett3D.verfuegbar()` bei fehlendem WebGL.
+
+Sollte das Projekt später doch aufgenommene oder komponierte Musik/SFX
+bekommen, gehören sie nach `assets/audio/` und hier mit Quelle, Datum und
+Lizenz eingetragen — dieselbe Regel wie bei den Figuren oben.
+| Datei | Herkunft | Datum | Lizenz |
+|---|---|---|---|
+| — | noch keine | — | — |
+
+## Klang
+
+**Keine einzige Audiodatei.** `js/audio.js` (Modul `SFX`) erzeugt jeden Ton zur
+Laufzeit aus Oszillatoren und gefiltertem Rauschen über die Web Audio API —
+dieselbe Haltung wie bei den Figuren: Platzhalter aus Code statt eine fremde
+Datei mit ungeklärter Lizenz. Es gibt daher nichts einzutragen und nichts zu
+lizenzieren; die „Herkunft" ist der Quellcode selbst, eigen geschrieben am
+2026-08-02.
+
+Sollten doch einmal echte Audiodateien dazukommen (Musik, Sprachausgabe,
+aufgenommene SFX), gehören sie unter `assets/audio/` und hier mit Quelle,
+Datum und Lizenz eingetragen — genau wie bei den Figuren oben.
+## Audio
+
+**Es gibt keine einzige Audiodatei und soll auch keine geben**, aus demselben
+Grund wie bei den Platzhalter-Silhouetten und den Himmelverläufen im Brett:
+prozedural erzeugtes Material hat keine Herkunftsfrage, eine Sample-Bibliothek
+hätte eine — Lizenz, Dateigröße, Offline-Fähigkeit.
+
+`js/ton.js` synthetisiert jeden Klang zur Laufzeit über die Web Audio API
+(Oszillatoren mit Frequenzrampen, gefiltertes weißes Rauschen für Einschläge
+und Whoosh). Ein Kompressor am Ausgang statt an jeder Quelle, damit mehrere
+gleichzeitige Treffer sich ducken statt zu übersteuern. Ohne Web Audio
+(jsdom, sehr alte Browser) ist jeder Aufruf ein No-Op — `Ton.verfuegbar()`
+sagt nein, genau das Muster, das `js/brett3d.js` für fehlendes WebGL fährt.
+
+Sollte doch einmal echtes Audiomaterial dazukommen (Musik lässt sich schwer
+synthetisieren, ein Soundtrack wäre der naheliegende erste Kandidat), gehört
+es nach `assets/audio/` und in eine Tabelle wie die der Figuren oben —
+Werkzeug/Quelle, Datum, Lizenz, ohne Eintrag nicht verwendbar.
+## Klang
+
+**Es gibt keine einzige Ton-Datei, und das ist Absicht.** `js/audio.js`
+(Phase 62) erzeugt jeden Ton zur Laufzeit aus Oszillatoren und einem
+geteilten Rauschpuffer der Web Audio API — dieselbe Entscheidung wie bei den
+Figuren-Platzhaltern und dem Aktverlauf: kein Sample, keine Lizenzfrage,
+keine neue Datei im Repo. Fällt die Web Audio API weg (etwa in `jsdom`),
+bleibt das Spiel stumm statt zu einem Fehler zu führen — `Klang.verfuegbar()`
+prüft das selbst.
+
+Sollten künftig doch aufgenommene oder generierte Audiodateien dazukommen
+(Musik, Sprachausgabe, Umgebungsgeräusche), gehören sie unter
+`assets/audio/<name>.<ext>` und bekommen hier dieselbe Herkunftszeile wie ein
+Bild: Werkzeug/Quelle, vollständiger Prompt bzw. Aufnahmehinweis, Datum,
+Lizenz.
+**Es gibt keine Audiodateien und soll vorerst auch keine geben.** Genauso wie
+bei den Figuren fehlt eine Quelle für fertige Sounddateien — anders als bei
+den Figuren braucht ein Ton aber keine: `js/klang.js` erzeugt jeden Effekt
+zur Laufzeit aus Oszillatoren und gefiltertem Rauschen (Web Audio API), ohne
+ein einziges Sample. Es ist deshalb **kein Eintrag in der Herkunftstabelle
+nötig** — der Code selbst ist die Quelle, nachlesbar und ohne Lizenzfrage.
+
+Sobald echte Musik oder aufgenommene Effekte dazukommen (Ambient-Loops je
+Akt, Bosskampf-Themes), gehören sie hierhin und brauchen dann wie jedes Bild
+einen Herkunftseintrag — Werkzeug/Quelle, Lizenz, Datum.
+**Keine Audiodatei im Repo.** `js/ton.js` synthetisiert jeden Kampfton zur
+Laufzeit über die Web Audio API (Oszillatoren und gefiltertes Rauschen,
+eigene Hüllkurven) — dieselbe Haltung wie bei den Silhouetten
+(`platzhalter()`) und dem Bloom (`js/fx.js`): kein Fremdcode, keine Lizenz zu
+prüfen, kein Bauschritt. Provenienz ist damit der Quellcode selbst, es gibt
+keine externe Herkunft zu dokumentieren.

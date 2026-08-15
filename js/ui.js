@@ -361,6 +361,46 @@
     });
   }
 
+  /* ------------------------------------------------- Varianten-Labor (Test)
+
+     Nur auf diesem Branch. Die Wahl gehoert wie Effekte und Tempo zum Geraet,
+     nicht zum Spielstand — sie ueberlebt einen neuen Run, aber nicht den
+     Wechsel an einen anderen Rechner. Voreinstellung ist `aus`: wer den Branch
+     auscheckt, bekommt zuerst dasselbe stumme Spiel wie in `main` und schaltet
+     bewusst dazu. */
+  var audioVariante = 'aus';
+  try { audioVariante = localStorage.getItem('tensura-audio-variante') || 'aus'; } catch (e) {}
+
+  function fuelleVariantenwahl() {
+    var sel = $('audio-variante');
+    if (!sel || !root.AudioLabor) return;
+    var html = '<option value="aus">— aus (wie main) —</option>';
+    AudioLabor.liste().forEach(function (v) {
+      html += '<option value="' + v.id + '"' + (v.bereit ? '' : ' disabled') + '>' +
+        'PR #' + v.pr + ' — ' + esc(v.titel) + (v.bereit ? '' : ' (nicht geladen)') + '</option>';
+    });
+    sel.innerHTML = html;
+    sel.value = audioVariante;
+    zeigeVariantenInfo();
+  }
+
+  function zeigeVariantenInfo() {
+    var p = $('audio-labor-info');
+    if (!p || !root.AudioLabor) return;
+    var offen = AudioLabor.liste().filter(function (v) { return !v.bereit; }).length;
+    p.textContent = audioVariante === 'aus'
+      ? '21 Varianten geladen, keine aktiv. Test-Branch — in main bleibt das Spiel stumm.'
+      : 'Aktiv: ' + audioVariante + '. Immer nur eine — die anderen sind stumm geschaltet.';
+    if (offen) p.textContent += ' ' + offen + ' Variante(n) nicht geladen.';
+  }
+
+  function waehleVariante(id) {
+    if (!root.AudioLabor) return;
+    audioVariante = AudioLabor.waehle(id);
+    try { localStorage.setItem('tensura-audio-variante', audioVariante); } catch (e) {}
+    zeigeVariantenInfo();
+  }
+
   function pumpe(nun) {
     if (!replay || replay.fertig) return;
     replay.raf = requestAnimationFrame(pumpe);
@@ -370,7 +410,10 @@
     if (dt > 250) dt = 250;
     replay.konto -= dt * tempo;
     var schutz = 0;
-    while (replay.konto <= 0 && !replay.fertig && schutz++ < 500) schritt();
+    /* Nur der erste Schritt eines Bildes bekommt Ton. Beim Aufholen nach einem
+       Tabwechsel laeuft `schritt()` bis zu 500 Mal in derselben Sekunde — mit
+       Ton waeren das 500 uebereinanderliegende Klaenge auf einmal. */
+    while (replay.konto <= 0 && !replay.fertig && schutz++ < 500) schritt(schutz > 1);
     if (!replay.fertig) aktualisiereFeld();
   }
 
@@ -388,7 +431,7 @@
     replay.raf = requestAnimationFrame(pumpe);
   }
 
-  function schritt() {
+  function schritt(stumm) {
     var log = replay.res.log;
     /* `setup` wird seit Phase 59 nicht mehr uebersprungen: es traegt die Zeit
        fuer den Eroeffnungsschwenk. Zustand und Log ignorieren es weiterhin. */
@@ -398,6 +441,11 @@
     anwenden(l);
     zeile(l);
     zeige(l, p.beat);
+    /* Ton unabhaengig vom Brett: `zeige` steigt ohne WebGL sofort wieder aus,
+       eine Variante soll aber auch dann zu hoeren sein. Die eine Anbindung
+       fuer alle 21 Kandidaten — welcher davon klingt, entscheidet die Auswahl
+       im Menue (`js/audio-labor/labor.js`). */
+    if (!stumm && root.AudioLabor) AudioLabor.spiele(l, p.beat);
     /* Der Hitstop aus Phase 54 hat jetzt etwas zum Anhalten: das Brett friert
        fuer `stopp` ms ein, waehrend die Standzeit weiterlaeuft. Er liegt
        INNERHALB von `ms` und kostet deshalb keine Zeit. */
@@ -1711,6 +1759,12 @@
     run = R.load();
     if (!run) run = R.create(Math.floor(Math.random() * 0xffffffff), R.loadMeta());
     document.addEventListener('click', klick);
+    /* Die Autoplay-Sperre der Browser: ein AudioContext darf erst nach einer
+       Nutzergeste klingen. Ein Lauscher fuer alle 21 Varianten, weil immer nur
+       die aktive ueberhaupt gebaut ist. */
+    document.addEventListener('click', function () {
+      if (root.AudioLabor) AudioLabor.entsperren();
+    });
     document.addEventListener('pointerdown', zieheStart);
     document.addEventListener('pointermove', bewege);
     document.addEventListener('pointerup', zieheEnde);
@@ -1728,6 +1782,12 @@
     hudTips();
     var linienSel = $('linien-einheit');
     if (linienSel) linienSel.addEventListener('change', function () { zeichneLinienUebersicht(linienSel.value); });
+    var variantenSel = $('audio-variante');
+    if (variantenSel) {
+      fuelleVariantenwahl();
+      waehleVariante(audioVariante);
+      variantenSel.addEventListener('change', function () { waehleVariante(variantenSel.value); });
+    }
     var reiter = $('menu-reiter');
     if (reiter) reiter.addEventListener('click', function (e) {
       var b = e.target.closest('[data-reiter]');

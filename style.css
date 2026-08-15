@@ -578,3 +578,12 @@ ul.mali li::before { content: '−'; position: absolute; left: -.9rem; opacity: 
   border: 1px solid rgba(255,255,255,.09); min-width: 8.5rem; }
 .bilanz-zeile i { font-style: normal; opacity: .8; }
 .bilanz-zeile b { font-size: .95rem; }
+
+/* Varianten-Labor — nur auf dem Test-Branch fuer die offenen Audio-PRs.
+   Bewusst abgesetzt statt eingepasst: die Zeile soll im Menue als Fremdkoerper
+   zu erkennen sein, damit niemand sie fuer eine Einstellung des Spiels haelt. */
+#menu-audio-labor { align-items: center; gap: .4rem; margin-top: .6rem;
+  padding: .5rem .6rem; border: 1px dashed var(--rand); border-radius: 6px; }
+#menu-audio-labor label { font-size: .82rem; color: var(--grau); }
+#menu-audio-labor select { max-width: min(30rem, 70vw); }
+#audio-labor-info { margin: .3rem 0 .2rem; }

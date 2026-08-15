@@ -1,0 +1,247 @@
+# Routine: AAA-Politur
+
+Ideenliste fuer das automatisierte AAA-Politur-Routine (siehe Scheduled Task).
+Jede Ausfuehrung haengt GENAU EINE neue Idee an und arbeitet danach alle noch
+offenen Punkte ab. `[x]` = umgesetzt, `[ ]` = offen (mit Begruendung, falls
+nicht umsetzbar).
+
+- [x] Prozedurale Sound-Effekte per Web Audio API - Das Spiel hat aktuell null Audio (kein `<audio>`, kein Sound-Code in js/). Ein neues `js/audio.js` synthetisiert kurze SFX zur Laufzeit (Oszillatoren/Noise, keine Binaerdateien, passt zum bisherigen Muster "kein Bauschritt, keine Abhaengigkeiten") fuer Treffer, Heilung, Schild, Tod, Sieg/Niederlage und Signaturen - gekoppelt an dieselben Schluesselwoerter wie `FARBE` in `js/brett3d.js`. Dazu ein Stumm-Schalter im HUD (`index.html`), persistiert wie der Debug-Schalter in `js/ui.js` per `localStorage`.
+# Routine: Ideen fürs AAA-Gefühl
+
+Diese Datei sammelt Ideen für Politur — Gamedesign, Assets, Sprites, Animation,
+UI/UX, Audio, Gamefeel. Jede automatische Ausführung hängt **eine** neue Idee an
+und arbeitet dann alle offenen Punkte ab, so gut es geht. Offene Punkte bleiben
+offen mit Begründung; erledigte werden mit `[x]` markiert.
+
+- [x] Prozedurale Klang-Kulisse (SFX) fürs Kampf-Replay - Das Spiel ist komplett stumm; kein `<audio>`, kein Web-Audio-Code. Ein neues `js/audio.js` (Modul `SFX`, wie `RNG`/`Brett3D` per `globalThis` eingehängt) erzeugt Treffer-, Heilungs-, Tod-, Schild- und Signatur-Klänge rein prozedural über die Web Audio API (Oszillatoren/Rauschen, keine Audiodateien, keine neue Abhängigkeit) und ordnet sie wie `FARBE` in `js/brett3d.js` den Schlüsselwörtern zu. Eingehängt wird das in `js/ui.js` (`anwenden()`, `endeReplay()`, `klick()`), dazu ein Stumm-Knopf im HUD (`index.html`, `style.css`).
+# ROUTINE — Ideen für AAA-Spielgefühl
+
+Automatisch geführte Liste (siehe `CLAUDE.md`). Pro Lauf kommt genau eine neue
+Idee ans Ende, danach werden alle offenen Punkte abgearbeitet oder mit
+Begründung offen gelassen.
+
+- [x] Prozedurales Sound-Design für Kampf und UI - Das Spiel ist komplett stumm: keine Audiodatei, kein `js/*.js` erzeugt oder spielt Ton. Neue Datei `js/ton.js` synthetisiert kurze Effekte zur Laufzeit über die Web Audio API (Oszillatoren, gefiltertes Rauschen — keine Sample-Dateien, passt zur bestehenden Linie aus `ASSETS.md`, prozedural statt fremdes Material zu laden) für Treffer, große/tödliche Treffer, Tod, Heilung, Schild, Fähigkeiten-Einsatz, Sieg/Niederlage und UI-Klicks. Eingehängt wird in `js/ui.js` (`schritt()`/`zeige()` für die Kampf-Beats aus `js/regie.js`, der zentrale Klick-Dispatcher `klick()` für UI), dazu ein Ein/Aus-Schalter in `index.html` (`#menu-ton`, analog zu `#menu-effekte`) und passendes CSS in `style.css`.
+  Umgesetzt: `js/ton.js` (neu), eingehängt in `js/ui.js` (`spieleTon()` neben `zeige()`, `Ton.klick()` im zentralen Klick-Dispatcher, Sieg/Niederlage-Fanfare in `endeReplay()`), Schalter `#menu-ton` in `index.html` + CSS in `style.css`, Skriptliste in `dev/uitest.js` ergänzt. Geprüft: `dev/sim.js` 443/443, `dev/uitest.js` 104/104, und ein echter Kampf lief in Chromium (Playwright) durch — alle `Ton.*`-Funktionen laufen ohne Fehler, keine neuen Konsolenfehler.
+Ideen fuer ein poliertes, handcraftetes AAA-Spielgefuehl — Gamedesign, Assets,
+Sprites, Animation, UI/UX, Audio, Gamefeel. Diese Datei wird von einer
+automatisierten Routine gepflegt: **je Ausfuehrung genau ein neuer Punkt am
+Ende**, danach werden alle offenen Punkte abgearbeitet oder mit Begruendung
+offen gelassen.
+
+- [x] Klang: prozedurale Toneffekte fuer Kampf und UI - Das Spiel ist heute vollstaendig stumm (kein `AudioContext`-Aufruf im ganzen Projekt). Neues Modul `js/audio.js` erzeugt Treffer-, Heilungs-, Tod-, Signatur-, Sieg/Niederlage- und Klick-Toene zur Laufzeit aus Oszillatoren und einem Rauschpuffer (Web Audio API, keine Sample-Datei), angehaengt in `js/ui.js` an dieselbe Stelle wie die Brett-Effekte. Betrifft `js/audio.js` (neu), `js/ui.js`, `index.html`, `style.css`, `dev/uitest.js`. Umgesetzt in Phase 62 (siehe `PLAN.md`) inklusive eigenem Menu-Schalter „Ton: Voll/Sparsam/Aus“.
+# Routine-Ideen: AAA-Gamefeel
+
+Diese Datei sammelt Ideen für ein poliertes, handcraftetes Spielgefühl
+(Modelle, Assets, Sprites, Animationen, UI/UX, Audio, Gamefeel). Jede
+Ausführung der Routine hängt **genau eine** neue Idee ans Ende an und
+arbeitet danach alle noch offenen Punkte ab.
+
+- [x] Synthetische Kampf-Sounds für Gamefeel - Das Spiel hat bislang kein einziges Audio-Feedback (kein `Audio`/`AudioContext` irgendwo im Code) — ein Treffer, eine Heilung oder ein Todesstoß laufen komplett stumm ab, obwohl das Brett (`js/brett3d.js`, `js/fx.js`) und die Regie (`js/regie.js`) Höhepunkte längst kennen. Neues `js/audio.js` erzeugt kurze Klänge per Web-Audio-API-Synthese (Oszillatoren, Rauschstoß) statt Sample-Dateien — keine Lizenzfrage, kein neuer Asset-Ordner, kein Netzzugriff. Eingehängt wird es in `schritt()` (`js/ui.js`), das je Log-Eintrag ohnehin schon `zeige(l, p.beat)` aufruft. Ein Ton-An/Aus-Schalter kommt ins Menü (`index.html`), gemerkt wie `tensura-effekte` per `localStorage`.
+  Umgesetzt: `js/audio.js` neu (Oszillator- und Rauschsynthese für hit/heal/death/aktiv/schild/status/chaos/fehlschlag/ausweichen/wut/kombi/entladung/verwandlung/revive, gewichtet nach `beat` aus `js/regie.js`). Eingehängt in `js/ui.js` (`schritt()` ruft `Ton.spiele(l, p.beat)`, `klick()` ruft `Ton.entsperren()` gegen die Autoplay-Sperre, neue Aktion `ton` plus `zeigeTonwahl()`). Menüzeile „Ton: An/Aus" in `index.html`, Stil in `style.css` (`#menu-ton`), Skript in `index.html` und `dev/uitest.js` eingebunden. `dev/sim.js` 443/443, `dev/uitest.js` 104/104 (jsdom kennt `AudioContext` nicht — `Ton` fällt dort auf einen stillen No-Op zurück, geprüft durch die weiterhin grünen Läufe).
+# Routine — Ideen für AAA-Gamefeel
+
+Automatisch gepflegte Liste. Jede Ausführung hängt genau eine neue Idee an
+und arbeitet danach alle offenen Punkte ab (siehe CLAUDE.md).
+
+- [x] Prozedurales Sound-Design für Kampf und Ergebnis - Neue `js/ton.js` synthetisiert Sound-Effekte zur Laufzeit per Web Audio API (kein Audio-Asset nötig, keine neue Abhängigkeit): Treffer (Lautstärke/Klang nach Schadensanteil), Tod, Heilung, Signatureinsatz (Klangfarbe nach Schlüsselwort-Kategorie: Feuer/Eis/Gift/Schild/Licht/Schatten/Blitz/Standard) sowie Sieg- und Niederlage-Fanfare. Einbindung in `js/ui.js` (`schritt()`/`endeReplay()`), eigener Lautstärke-Regler analog zum Effekte-Schalter in `index.html`/`style.css` (`Ton: Voll/Leise/Aus`, gespeichert unter `tensura-ton`).
+Diese Datei sammelt Ideen fuer ein poliertes, handcrafted Spielgefuehl —
+Modelle, Assets, Sprites, Animationen, UI/UX, Audio, Gamefeel. Eine
+automatisierte Routine haengt hier pro Lauf **genau eine** neue Idee an und
+arbeitet danach alle offenen Punkte ab, so weit sinnvoll machbar.
+
+- [x] Prozedurale Sound-Engine (Web Audio API) fuer Kampf-Feedback - Das Spiel ist bis heute komplett stumm (kein `<audio>`, kein Web-Audio-Code in `js/`). Ein neues `js/audio.js` synthetisiert Toene zur Laufzeit ueber Oszillatoren und einen Rauschpuffer — Treffer, Heilung, Tod, Signatureinsatz, Schild, Status, Ausweichen, Wiederbelebung, Entladung, Kombi, Verwandlung, Wut, Fehlschlag sowie ein Sieg-/Niederlage-Stinger — angebunden in `js/ui.js` an der Stelle, an der `Regie.zeitplan` ohnehin schon Beats kennt. Keine Audiodateien, keine neue Abhaengigkeit, ein Ton-Ein/Aus-Schalter im Menue (`index.html`, mit `localStorage`-Merker wie bei Tempo/Effekte).
+# Routine — Ideen für AAA-Gefühl
+
+Automatisch geführte Liste (siehe Aufgabenbeschreibung der Routine). Pro
+Ausführung kommt genau eine neue Idee ans Ende, danach werden alle offenen
+Punkte durchgearbeitet und abgehakt oder mit Begründung offen gelassen.
+
+- [x] Prozedurale Sound-Engine für Kampf-SFX (Web Audio API) - Das Spiel hat
+  keinerlei Ton, obwohl Kampfregie (`js/regie.js`), Bühne (`js/brett3d.js`)
+  und Nachbearbeitung (`js/fx.js`) seit Phase 54-60 spürbar an Filmsprache
+  gearbeitet haben. Neue Datei `js/audio.js` (`Ton`) synthetisiert Treffer,
+  Signaturen (nach Schlüsselwort-Form wie `FORM` in `js/brett3d.js`),
+  Heilung, Schild, Ausweichen, Tod, Wiederbelebung, Verwandlung und
+  Sieg/Niederlage rein aus Oszillatoren und gefiltertem Rauschen — keine
+  Audiodatei, kein Lizenzrisiko, passt zum Offline-Anspruch. Eingehängt in
+  `js/ui.js` (`schritt()`, neben `zeige()`), Menü-Schalter „Ton: An/Aus“ in
+  `index.html`/`style.css`, dokumentiert in `ASSETS.md`.
+  Umgesetzt: `js/audio.js` neu, `js/ui.js` (Wiedergabe-Hook, Klick-Freischaltung,
+  Menü-Schalter), `index.html` (Script-Tag, Menüzeile), `style.css`
+  (`#menu-ton`), `dev/uitest.js` (Skriptliste ergänzt), `ASSETS.md`
+  (Abschnitt „Klang“). Getestet: `dev/sim.js` 443/443, `dev/uitest.js`
+  104/104, sowie ein Playwright-Rundgang (Menü öffnen, Ton umschalten, Lauf
+  starten, Kampf antriggern) ohne neue Konsolenfehler — nur die erwarteten
+  404 der fehlenden Platzhalterbilder.
+# Routine — AAA-Politur
+
+Automatisch geführte Ideenliste für Gamefeel, Polish und handcrafted
+Look&Feel. Regeln siehe die auslösende Routine: pro Lauf genau eine neue
+Idee anhängen, danach alle offenen Punkte abarbeiten oder begründet offen
+lassen.
+
+- [x] Sounddesign per Web Audio API — `js/klang.js` (neu): prozedurale SFX
+  (Oszillatoren + gefiltertes Rauschen, keine Audiodateien) für Treffer,
+  Tod, Signatur-Einsatz, Heilung, Wiederbelebung, Entladung, Verwandlung,
+  Zustandskombination, Ausweichen, Fehlschlag und UI-Klicks. Angebunden in
+  `js/ui.js` (`klingt()`, aufgerufen aus `schritt()` neben `zeige()`; ein
+  `Klang.wecken()`+`Klang.spiele('ui')` im globalen `klick()`-Handler). Die
+  sechs Grundformen (geschoss/strahl/klinge/welle/saeule/schleier) spiegeln
+  die `FORM`-Tabelle aus `js/brett3d.js` (Phase 57), damit ein Blitz genauso
+  klingt wie er blitzt. Ein/Aus-Schalter „Ton" im Menü neben „Effekte",
+  gemerkt in `localStorage` (`tensura-klang`). `index.html` bindet
+  `js/klang.js` ein, `dev/uitest.js` läuft es mit. Umgesetzt — keine neuen
+  Assets, da Ton komplett prozedural erzeugt wird (siehe `ASSETS.md`).
+# Routine: AAA-Gamefeel
+
+Ideen aus der wiederkehrenden Recherche-Routine, wie das Spiel sich mehr wie
+ein poliertes, handcraftedes Produkt anfühlt statt wie ein Prototyp — Modelle,
+Assets, Sprites, Animation, UI/UX, Audio, Gamefeel. Format: siehe CLAUDE.md /
+den Routine-Auftrag. Jeder Durchlauf hängt genau eine neue Idee an und
+arbeitet danach alle offenen ab.
+
+- [x] Prozedurale Kampf-Soundeffekte (Web Audio API) - Das Spiel hat bislang keinerlei Ton: `js/fx.js` gibt dem Kampf Bloom und Zeitlupe, aber jeder Treffer, Tod, Zauber und Sieg bleibt stumm. Ein neues `js/klang.js` synthetisiert alle Effekte zur Laufzeit aus Oszillatoren und gefiltertem Rauschen (keine Audiodateien, kein Lizenzthema, passt zum Offline-Anspruch aus ASSETS.md), gehängt an dieselben Log-Ereignisse und Regie-Beats, die `js/ui.js`/`js/regie.js` schon fürs Brett auswerten. (Umgesetzt: `js/klang.js` neu, Hook in `js/ui.js` `schritt()`, Lautstärke-Umschalter im Menü wie beim Effekte-Regler, Tests in `dev/sim.js`. In einem echten Browser per Playwright geprüft: Ton löst beim Durchklicken von Draft und Kampf tatsächlich aus, `npm test` bleibt grün.)
+Wird von einer automatisierten Routine gepflegt (siehe `ROUTINE.md` in den
+Anweisungen der Session). Pro Lauf kommt **eine** neue Idee ans Ende, danach
+werden alle offenen Punkte umgesetzt oder mit Begründung offen gelassen.
+
+- [x] Synthetisches Audio-Feedback (SFX) für Kampf, Menü und Markt - `js/klang.js` (neu) erzeugt Treffer-, Heil-, Todes-, Fähigkeits-, Sieg-/Niederlage-, Rangaufstiegs-, Kauf- und Klick-Töne rein aus der Web-Audio-API (Oszillatoren + ein Rauschpuffer), ohne Audiodateien oder neue Abhängigkeit. Eingehängt in `js/ui.js` (`toene()` parallel zu `zeige()`, `endeReplay()`, `aktionen.kaufen`, `klick()`) und `index.html`/`dev/uitest.js` als neues Skript; ein "Ton"-Umschalter (Voll/Sparsam/Aus) steht neben "Effekte" im Menü und merkt sich die Wahl in `localStorage`. Bisher hatte das Spiel laut `README.md` ("Keine Grafik — Textkarten und Balken", inzwischen durch die 2.5D-Ansicht überholt) und `js/fx.js`/`js/brett3d.js` jede Menge visuelle Politur (Bloom, Zeitlupe, Hitstop, Kamera), aber keinen einzigen Ton — der auffälligste fehlende Baustein für ein AAA-Spielgefühl. `node dev/sim.js` 459/459, `node dev/uitest.js` 112/112, `node dev/bildcheck.js --selftest` 6/6; manuell in Chromium (Playwright) geprüft: Menü-Umschalter, alle `Klang.*`-Funktionen einzeln aufgerufen — keine Fehler, jsdom (ohne `AudioContext`) bleibt über `Klang.verfuegbar()` stumm.
+# Tensura Guild — Routine: AAA-Politur
+
+Ideenliste einer wiederkehrenden Routine, die nach mehr Politur sucht — ein
+handcrafted, pixel-perfekter AAA-Look: Modelle, Assets, Sprites, Animationen,
+UI/UX, Audio, Gamefeel. Jede Ausführung hängt genau eine neue Idee an und
+arbeitet danach alle offenen Punkte ab.
+
+- [x] Audio-Feedback-System - Das Spiel war komplett stumm: kein `<audio>`-Tag
+      und keine einzige Sounddatei im ganzen Projekt, obwohl GAMEGUIDE.md dem
+      Kampf schon Farbe, Bloom und Zeitlupe gibt. Umgesetzt als
+      `js/audio.js`: eine Web-Audio-API-Klangkulisse, die jeden Ton zur
+      Laufzeit synthetisiert (Oszillatoren plus Hüllkurve, gefiltertes
+      Rauschen für Brand/Donner) statt Sounddateien einzukaufen — keine neue
+      Abhängigkeit, keine Lizenzfrage, kein Asset-Ordner. Eingehängt in
+      `js/ui.js`: ein Klang je Kampflog-Ereignis (Treffer, Heilung, jedes
+      Schlüsselwort mit eigener Klangfarbe, Tod, Wiederbelebung, Entladung,
+      Verwandlung, Resonanz), ein Sieg-/Niederlage-Jingle am Kampfende, ein
+      leiser Klick auf jeden `[data-a]`-Knopf, ein Kauf-Chime im Markt und ein
+      Aufstiegs-Chime bei der Passivwahl. Dazu ein Stumm-Schalter (🔊/🔇) in
+      der Kopfzeile, Zustand in `localStorage` gemerkt wie Tempo und
+      Effektstufe. `dev/uitest.js` lädt `js/audio.js` jetzt mit; da jsdom
+      keine `AudioContext` kennt, bleiben alle Aufrufe stille No-ops — dieselbe
+      Rückfallregel wie bei `Brett3D.verfuegbar()`.
+# Routine-Ideen: AAA-Gamefeel
+
+Diese Datei sammelt Ideen aus der automatisierten Polish-Routine (siehe
+Scheduler-Prompt), eine pro Ausführung. Offene Punkte werden bei jedem Lauf
+abgearbeitet oder mit Begründung offen gelassen.
+
+- [x] Prozedurale Sound-Kulisse für Kampf und UI - `js/ton.js` (neu) erzeugt Trefferschläge, Heilklänge, Sieg-/Niederlage-Fanfaren und einen UI-Klick rein per Web Audio API (Oszillatoren, Rauschpuffer, Hüllkurven) — keine Audiodateien, keine neue Abhängigkeit. Eingehängt in `js/ui.js` an `schritt()` fürs Kampflog, in `endeReplay()` fürs Ergebnis und im zentralen `klick()`-Handler für Buttons; ein Ton-Schalter (An/Aus) kommt ins Menü neben „Effekte" und wird wie `tensura-effekte` in `localStorage` gemerkt.
+      Umgesetzt: `js/ton.js` neu, eingebunden in `index.html`, verdrahtet in `js/ui.js` (`schritt()`, `endeReplay()`, `klick()`, Menü-Reihe „Ton"). `dev/uitest.js` um `js/ton.js` in der Skriptliste ergänzt, `dev/sim.js` 459/459 und `dev/uitest.js` 112/112 grün. In `ASSETS.md` dokumentiert (kein Audio-Ordner nötig, da rein synthetisch).
+Ideen aus der automatischen Recherche-Routine für ein poliertes, handcraftetes
+Spielgefühl — Modelle, Assets, Sprites, Animationen, UI/UX, Audio, Gamefeel.
+Pro Lauf kommt genau ein neuer Punkt dazu; offene Punkte werden beim nächsten
+Lauf nach Möglichkeit umgesetzt.
+
+- [x] Audio-Feedback für Kampf und UI - Das Spiel hat aktuell keinen einzigen Ton (kein `js/*.js` mit Sound, keine Audiodateien im Repo). Ein neues `js/klang.js` soll per Web Audio API kurze synthetisierte Effekte erzeugen (Treffer, Heilung, Tod, Signatur-Zauber je Schlüsselwort, Resonanz/Kombo, Verwandlung, Entladung, Sieg-/Niederlage-Fanfare) und in `js/ui.js` an den Wiedergabe-Schritten der Kampfanimation sowie an Button-Klicks andocken, mit einem Ein/Aus-Schalter im Menü (analog zum bestehenden "Effekte"-Schalter) und Speicherung in `localStorage`. Keine externen Audiodateien nötig, kein Bauschritt, passt zum Muster aus `js/fx.js` (eigener Shader-Code statt Fremdpaket statt fertiges Sound-Paket).
+      Umgesetzt: `js/klang.js` (neu) synthetisiert alle Effekte per Oszillator/Rauschpuffer, ohne Audiodatei. In `js/ui.js` hängt eine neue Funktion `hoerbar(l, beat)` — bewusst unabhängig von `Brett3D.verfuegbar()`, damit Ton auch im SVG-Rückfall läuft — an denselben Wiedergabe-Schritt wie `zeige()`; Button-Klicks lösen `Klang.klick()` aus, Sieg/Niederlage lösen einmalig `Klang.sieg()`/`Klang.niederlage()` aus. Menü hat einen neuen Schalter "Ton: An/Aus" (`index.html`, `tensura-ton` in `localStorage`), AudioContext wird erst bei der ersten Nutzergeste erzeugt. Getestet in `dev/sim.js` (Node ohne AudioContext, alle Funktionen No-Op statt Absturz) und `dev/uitest.js` (jsdom). `npm test`: 479/479 · 114/114 · 6/6.
+Ideenliste einer automatisierten Routine, die das Spielgefühl in Richtung
+"AAA" schärfen soll — Gamedesign, Assets/Sprites, Animation, UI/UX, Audio,
+Gamefeel. Jede Ausführung hängt genau eine neue Idee ans Ende an und arbeitet
+danach alle noch offenen Punkte ab. `- [ ]` = offen, `- [x]` = erledigt (mit
+kurzer Notiz, was gebaut wurde), unmarkiert mit Begründung = bewusst
+zurückgestellt.
+
+- [x] Kampfton (prozedural, keine Audiodatei) - Bis heute ist das Spiel komplett stumm; bei einem so ausgearbeiteten visuellen Beat-System (Kamera, Bloom, Hitstop, Zeitlupe in `js/regie.js`/`js/brett3d.js`) ist Stille die größte verbleibende Lücke zu einem AAA-Gefühl. Neues Modul `js/ton.js` synthetisiert über die Web Audio API (Oszillatoren + gefiltertes Rauschen) Treffer-, Heilungs-, Tod- und Signatur-Töne, angebunden an dieselbe Stelle wie das Brett (`zeige()`/neue `hoere()`-Funktion in `js/ui.js`), inklusive An/Aus-Schalter im Menü (`index.html`, `style.css`). Umgesetzt: `js/ton.js` neu, Verdrahtung in `js/ui.js` (Aufruf `hoere()` in `schritt()`, Menüaktion `ton`, `localStorage`-Persistenz wie bei der Effektstufe), Skript-Einbindung in `index.html` und `dev/uitest.js`, Provenienz in `ASSETS.md` dokumentiert (kein externes Asset — Code ist die Quelle). Getestet: `npm test` (459/459 · 112/112 · 6/6) und ein Playwright-Rauchtest über einen echten Kampf ohne Konsolenfehler.
+Ideen, die den Weg zu einem polierten, handcrafted AAA-Gefühl beschreiben —
+Gamedesign, Assets, Sprites, Animationen, UI/UX, Audio, Gamefeel. Eine Idee je
+Ausführung wird angehängt; offene Punkte (`- [ ]`) werden bei der nächsten
+Gelegenheit umgesetzt oder mit einer kurzen Begründung offen gelassen.
+
+- [x] Prozedurale Kampf- und UI-Klangkulisse - Das Spiel ist bisher komplett stumm: kein `<audio>`, kein Sound-Code, nirgends. Neue Datei `js/audio.js` (`root.Klang`) erzeugt Treffer-, Heil-, Tod-, Wiederbelebungs-, Signatur-, Status- und Schild-Töne per WebAudio-Synthese (Oszillatoren, gefiltertes Rauschen, Hüllkurven) — keine Audiodateien, also kein neuer Assettyp und keine ASSETS.md-Herkunftszeile nötig. Eingehängt in `js/ui.js` (`schritt()` für Kampfereignisse, `klick()` für UI-Klicks) und `index.html` (Script-Tag, neue Menüzeile „Ton: Voll/Sparsam/Aus" analog zur bestehenden Effektstufe).
+# Routine: AAA-Spielgefühl
+
+Ideen fuer poliertes Gamedesign, handcrafted Look, Gamefeel, Audio, UI/UX —
+gesammelt von der automatisierten Recherche-Routine. Format: `- [ ]` offen,
+`- [x]` erledigt (mit kurzer Notiz, falls abgewichen wurde), unveraendert
+offen mit kurzer Begruendung, warum (noch) nicht machbar.
+
+- [x] Prozedurale Kampf-Sound-Effekte statt Stille - das Spiel hat bislang
+      keine einzige Audiozeile (`grep -r Audio js/` findet nichts ausser dem
+      Fremdcode). Neues `js/klang.js` synthetisiert per Web Audio API Treffer-,
+      Heil-, Tod-, Wiederbelebungs- und Signatur-Cast-Sounds (nach der
+      GAMEGUIDE-Einteilung Bogen/Sofort/Steigt) sowie Sieg-/Niederlage-Fanfaren
+      direkt aus Oszillatoren und Rauschpuffern — keine Binärdateien, keine
+      neue Abhaengigkeit. Eingehaengt in `js/ui.js` (`klinge()`, `endeReplay()`,
+      `klick()`), mit Lautstaerkeregler und Stumm-Schalter im Menü neben
+      „Effekte", persistiert wie `tensura-effekte` in `localStorage`.
+# ROUTINE — Ideen fuer AAA-Gamefeel
+
+Diese Datei speist eine wiederkehrende, automatisierte Aufgabe: pro Lauf kommt
+**genau eine** neue Idee ans Ende der Liste, danach werden alle offenen Punkte
+(`- [ ]`) durchgearbeitet und, soweit sinnvoll umsetzbar, erledigt (`- [x]`).
+Nicht umgesetzte Punkte bleiben offen, mit einer kurzen Begruendung dahinter.
+
+Ziel ist ein poliertes, handcraftedes Spielgefuehl: Modelle, Assets, Sprites,
+Animationen, UI/UX, Audio, Gamefeel. Neue Ideen sollen konkret genug sein, um
+in einem einzelnen Lauf umgesetzt zu werden, und zu bestehenden Mustern
+passen (`js/brett3d.js`, `js/fx.js`, `js/regie.js`, `js/ui.js`, `style.css`).
+
+## Ideen
+
+- [x] Ein Sound-System aus synthetisierten Effekten (Web Audio API) fuer Kampf und UI - Das Spiel ist komplett stumm; kein `<audio>`, keine Sounddatei im Repo. Ein neues `js/audio.js` erzeugt Toene und Impact-Sounds zur Laufzeit per Web Audio API (Oszillatoren, Rauschpuffer, Huellkurven) - ohne externe Assets, passend zum Offline-Anspruch des Projekts. Hook in `js/ui.js` an der Stelle, an der `Brett3D.effekt`/`Brett3D.treffer` schon aus dem Kampflog gespeist werden (`zeige(l, beat)`), dazu ein paar UI-Klicks und ein Sieg/Niederlage-Stinger. Eine Lautstaerke-Stufe (Voll/Leise/Aus) gehoert wie „Effekte" ins Menue und nach `localStorage`.
+      Umgesetzt: `js/audio.js` (neues Modul `Klang`, keine neue Abhaengigkeit), Hook in `js/ui.js` `schritt()`
+      (`Klang.spiele(l, p.beat)`, unabhaengig von `Brett3D.verfuegbar()`, laeuft also auch mit der
+      SVG-Rueckfallebene), Sieg/Niederlage-Stinger in `endeReplay()`, Kauf-Klang und ein genereller
+      UI-Klick im zentralen `klick()`-Dispatcher, Freigabe des AudioContext bei der ersten Nutzergeste.
+      Menue-Reihe „Ton: Voll/Leise/Aus“ in `index.html` neben „Effekte“, Zustand in `localStorage`
+      (`tensura-audio`) wie beim Effekte-Schalter. `dev/uitest.js` laedt `js/audio.js` mit (jsdom kennt
+      kein `AudioContext`, `Klang.verfuegbar()` ist dort false, jeder Aufruf ein No-Op). Getestet mit
+      `npm test` (459/459 · 112/112 · 6/6) und zusaetzlich per Playwright/Chromium durch einen echten,
+      nicht uebersprungenen Kampf gefahren — keine Laufzeitfehler, `Klang.verfuegbar()` liefert dort
+      `true`.
+# Routine: Ideen fuer AAA-Gamefeel
+
+Diese Datei sammelt Ideen fuer poliertes Gamedesign, handcrafted Look, Assets,
+Animationen, UI/UX, Audio und Gamefeel — angelehnt an `PLAN.md` und
+`TODO.md`, aber als eigene, kleinteilige Liste fuer wiederkehrende
+Verbesserungsdurchlaeufe.
+
+Jeder Durchlauf haengt genau eine neue Idee an und setzt danach alle noch
+offenen Punkte um, soweit sinnvoll machbar.
+
+## Ideen
+
+- [x] Prozedurales Sounddesign fuer Kampf und UI - Das Spiel hat aktuell keinerlei Audio: kein Treffer-Sound, kein Sieg-Jingle, kein Klick-Feedback, obwohl die Regie (`js/regie.js`) und das 2.5D-Brett (`js/brett3d.js`, `js/fx.js`) Kampf-Hoehepunkte schon als "Beats" kennen. Ein neues Modul `js/ton.js` synthetisiert kurze Klaenge zur Laufzeit per Web Audio API (Oszillatoren, gefiltertes Rauschen) — keine Audiodateien, keine neue Abhaengigkeit, offline lauffaehig. Betroffen: `js/ton.js` (neu), `js/ui.js` (Einbindung an den bestehenden Kampf-Beats in `schritt()`/`endeReplay()` sowie am zentralen Klick-Dispatcher), `index.html` (Skripteinbindung + Menue-Schalter "Ton"), `style.css` (Schalter-Stil), `ASSETS.md` (Dokumentation der Provenienz-Entscheidung).
+# Routine: Ideen fuer AAA-Spielgefuehl
+
+Diese Datei wird von einer geplanten Routine gefuehrt (Recherche zu Polish,
+Gamefeel, Assets, Audio, UI/UX). Pro Lauf kommt genau eine neue Idee ans Ende,
+danach werden alle offenen Punkte abgearbeitet oder mit Begruendung offen
+gelassen.
+
+- [x] Prozedurale Kampf-Audio ohne Audiodateien - Das Spiel hat aktuell
+      ueberhaupt keinen Ton (`grep -i audio/sound` in `js/` liefert nichts).
+      Neues Modul `js/audio.js` synthetisiert alle Kampfgeraeusche direkt mit
+      der Web Audio API (Oszillatoren + gefiltertes Rauschen, keine
+      Binaerdateien, keine neue Abhaengigkeit) und haengt sich an denselben
+      Log-Typ/Beat aus `js/regie.js` (`hit`, `heal`, `death`, `verwandlung`,
+      `end`, …), den `js/ui.js` in `zeige()` schon fuer die 2.5D-Ansicht
+      auswertet. Dazu ein Ein/Aus-Schalter im Menue (`index.html`,
+      `style.css`) nach demselben Muster wie „Effekte", persistiert in
+      `localStorage` als `tensura-audio`.
+
+      Umgesetzt: `js/audio.js` (neu), Skript-Tag in `index.html`, Menü-Zeile
+      „Ton: An/Aus" in `index.html`/`style.css`, Anbindung in `js/ui.js`
+      (`zeige()` ruft `Klang.spiele()`, zentraler Klick-Dispatcher ruft
+      `Klang.entsperren()` gegen die Autoplay-Sperre der Browser). Ohne
+      `AudioContext` (jsdom im UI-Test) bleibt `Klang.verfuegbar()` false und
+      alles no-op — dafür musste `dev/uitest.js` um `js/audio.js` in der
+      Skriptliste ergänzt werden. `node dev/sim.js` 459/459 ·
+      `node dev/uitest.js` 112/112 · `npm test` (inkl. `dev/bildcheck.js
+      --selftest`) grün. Kein Eingriff an Kampf-Logik oder Balance.
+Ideen fuer ein poliertes, handcraftedes AAA-Spielgefuehl — Modelle, Assets,
+Sprites, Animationen, UI/UX, Audio, Gamefeel. Jede Ausfuehrung der Routine
+haengt genau eine neue Idee an und arbeitet dann alle offenen Punkte ab.
+
+- [x] Audio-Feedback-System (SFX) einfuehren - Das Spiel hat aktuell ueberhaupt keinen Ton: kein Treffer-, Tod-, Heil-, Sieg/Niederlage- oder UI-Klick-Sound. Fuer ein AAA-Gefuehl fehlt damit eine ganze Sinnesebene. Neues Modul `js/audio.js`, eingebunden in `index.html`, das Klaenge prozedural per Web Audio API synthetisiert (kein Audio-Sample, keine neue Abhaengigkeit — dieselbe Haltung wie `js/fx.js`). Anschluss an die Kampf-Wiedergabe in `js/ui.js` (an der zentralen `schritt()`/`zeige()`-Stelle, die auch die Regie-Hoehepunkte aus `js/regie.js` kennt) sowie an den zentralen Klick-Dispatcher fuer UI-Feedback; ein Ein/Aus-Schalter im Menue analog zum bestehenden "Effekte"-Schalter in `index.html`/`style.css`.
+  Umgesetzt: `js/audio.js` (neues Modul `Klang`, in `index.html` nach `js/regie.js` eingebunden), Anschluss in `js/ui.js` an `schritt()` (`Klang.spiele(l, p.beat)`), `endeReplay()` (`Klang.ende(...)`) und dem zentralen Klick-Dispatcher `klick()` (`Klang.entsperren()` + `Klang.taste()`). Menue-Schalter `#menu-klang` in `index.html`/`style.css` analog zu `#menu-effekte`, Zustand in `localStorage` unter `tensura-klang`. `dev/uitest.js` laedt `js/audio.js` mit (No-Op ohne `AudioContext` in jsdom). Getestet: `npm test` 459/459 + 112/112 + 6/6, sowie ein Playwright-Rauchtest in echtem Chromium (Kampf startet, spielt durch bis zum Ergebnis, keine Konsolenfehler ausser den erwarteten 404 fehlender Portraits).
