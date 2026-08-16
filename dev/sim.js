@@ -1704,8 +1704,10 @@ ok(!kombiProbe(function (c) {
   R.saveMeta({ unlockedUnits: ['gobta', 'gibtsnicht'], unlockedRelics: ['giftdorn', 'wegdamit'],
                runs: 1, wins: 0, best: 3, threat: 0, threatGewaehlt: 0 });
   var sauber = R.loadMeta();
-  ok(sauber.unlockedUnits.join() === 'gobta' && sauber.unlockedRelics.join() === 'giftdorn',
-     'gestrichene Einheiten und Relikte fallen aus alten Ständen heraus');
+  ok(sauber.unlockedRelics.join() === 'giftdorn',
+     'gestrichene Relikte fallen aus alten Ständen heraus');
+  ok(sauber.unlockedUnits.length === GD.units.length && sauber.unlockedUnits.indexOf('gibtsnicht') < 0,
+     'und ein alter Stand mit Teilliste bekommt alle Einheiten frei');
   ok(sauber.threat === 0, 'ohne Siege bleibt die Stufe unangetastet');
 
   globalThis.localStorage = echt;

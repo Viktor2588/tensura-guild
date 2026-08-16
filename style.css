@@ -183,6 +183,12 @@ main, #unten { padding: .8rem 1.4rem; }
 .einheit .kopf { display: flex; justify-content: space-between; align-items: baseline; gap: .4rem; }
 .einheit .name { font-weight: 700; }
 .einheit .werte { color: var(--grau); font-size: .8rem; font-variant-numeric: tabular-nums; }
+/* Ein Wert, den Relikte/Resonanz/Passive im Kampf anheben, steht heller als
+   der Rest — sonst sieht man dem Trupp nicht an, was der Build bringt. */
+.einheit .werte .wert.gebufft { color: var(--text); }
+.einheit .werte i { font-style: normal; font-size: .72rem; margin-left: .1em; }
+.einheit .werte i.auf { color: #6d6; }
+.einheit .werte i.ab { color: #e77; }
 .tags { display: flex; flex-wrap: wrap; gap: .25rem; margin: .25rem 0; }
 .tag { font-size: .7rem; padding: .05rem .35rem; border-radius: 4px; background: var(--bg3); color: var(--grau); }
 .tag.aktiv { background: #2c3f2e; color: #a8e0b0; }

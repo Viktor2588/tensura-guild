@@ -94,13 +94,11 @@
   var PASSIV_SLOTS = [0, 1, 2, 3];                // schalten automatisch frei
   var PRAEDATOR_SLOTS = [0, 1, 2, 3];             // verschlungene Gegnerfähigkeiten
 
-  var START_UNITS = ['rimuru', 'gobta', 'gobkyu', 'sturmwolf',
-    'rigurd', 'rigur', 'gobwa', 'kurobe', 'souka',
-    'daemonengarde', 'gruftwaechter', 'drachenknecht', 'quellenpriesterin',
-    'ranga', 'shion', 'gabiru', 'wightkoenig',
-    /* Der Orkkrieger ist der billigste Frontkämpfer im Spiel und gehört damit
-       in den Startbestand; Phobio bringt die neue Bestien-Art gleich mit. */
-    'orkkrieger', 'phobio'];
+  /* Jede Einheit ist von Anfang an im Topf. Vorher waren 19 von 38 frei und der
+     Rest tröpfelte über `unlock()` nach — das hat die Startwahl verengt, ohne
+     dass die gesperrten Einheiten stärker gewesen wären. Freigeschaltet werden
+     jetzt nur noch Relikte. */
+  function startUnits() { return GD.units.map(function (u) { return u.id; }); }
   var START_RELICS = ['kern_des_zorns', 'schuppenpanzer', 'lebensquell', 'windschuhe',
     'giftdorn', 'blutkelch', 'rachegeist_relikt', 'erstschlag_relikt', 'turmschild',
     'magiestein', 'heilsegen', 'barriere_stein', 'dornenhaut_relikt', 'schwerer_stand'];
@@ -248,7 +246,7 @@
   /* ---- Meta (überlebt den Tod) ------------------------------------------- */
 
   function newMeta() {
-    return { unlockedUnits: START_UNITS.slice(), unlockedRelics: START_RELICS.slice(),
+    return { unlockedUnits: startUnits(), unlockedRelics: START_RELICS.slice(),
              runs: 0, wins: 0, best: 0, threat: 0, threatGewaehlt: 0 };
   }
 
@@ -1637,7 +1635,9 @@
       /* Gestrichene Einheiten und Relikte aus alten Ständen entfernen — sonst
          zeigt der Fortschritt „40 / 38" und die Freischaltung glaubt, sie sei
          fertig, obwohl noch etwas fehlt. */
-      meta.unlockedUnits = (meta.unlockedUnits || []).filter(function (id) { return !!GD.unit(id); });
+      /* Einheiten sind alle frei — auch in Ständen, die noch mit einer Teilliste
+         gespeichert wurden. Der Filter bliebe hier wirkungslos. */
+      meta.unlockedUnits = startUnits();
       meta.unlockedRelics = (meta.unlockedRelics || []).filter(function (id) { return !!GD.relic(id); });
       /* Und der weiteste Weg kann nicht länger sein, als der Lauf überhaupt ist:
          frühere Fassungen hatten fünf Akte. */

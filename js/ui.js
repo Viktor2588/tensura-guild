@@ -1133,7 +1133,49 @@
       (tauschUid ? '<p class="hinweis">Jetzt die Einheit antippen, mit der getauscht werden soll.</p>' : '');
   }
 
-  function einheitHtml(m, aufBank) {
+  /* Die Werte, mit denen die Einheit den Kampf WIRKLICH beginnt — inklusive
+     Relikten, Resonanz und allen Passiven mit onStart. `R.resolve` kennt nur
+     Basis, Rang und Ausrüstung; damit stand im Trupp eine Zahl, die sich beim
+     Anlegen eines Relikts nie bewegt hat. Einmal je Render, nicht je Karte:
+     `R.analyse` simuliert den Aufbau. Die Bank ist nicht dabei — sie kämpft
+     nicht mit, für sie bleibt es bei `resolve`. */
+  function kampfwerte() {
+    if (!run.team.length) return {};
+    var map = {};
+    R.analyse(run).forEach(function (a) { map[a.m.uid] = a.kampf; });
+    return map;
+  }
+
+  /* Je Wert eine Zahl — die, mit der gekämpft wird — und dahinter der Abstand
+     zum Rohwert aus data.js. */
+  var WERTE_ZEILE = [['hp', 'maxHp', '❤', 'Leben'], ['atk', 'atk', '⚔', 'Angriff'],
+                     ['def', 'def', '🛡', 'Rüstung'], ['spd', 'spd', '⚡', 'Tempo']];
+
+  function werteHtml(m, d, kampf) {
+    var basis = GD.unit(m.id);
+    var teile = [], hilfe = [];
+    WERTE_ZEILE.forEach(function (w) {
+      var roh = d[w[0]];                        // Basis + Rang + Ausrüstung
+      var jetzt = kampf ? Math.round(kampf[w[1]]) : roh;
+      var diff = jetzt - basis[w[0]];
+      teile.push('<span class="wert' + (kampf && jetzt !== roh ? ' gebufft' : '') + '">' +
+        jetzt + w[2] +
+        (diff ? '<i class="' + (diff > 0 ? 'auf' : 'ab') + '">' + (diff > 0 ? '+' : '') +
+          diff + '</i>' : '') + '</span>');
+      hilfe.push(w[3] + ' ' + jetzt + ' — Basis ' + basis[w[0]] + ', mit Rang und Ausrüstung ' +
+        roh + (kampf ? ', im Kampf ' + jetzt : ''));
+    });
+    return '<span class="werte"' + tip('Werte', hilfe.join('\n') +
+      (kampf
+        ? '\n\nGezeigt ist der Zustand, mit dem die erste Runde beginnt: Rang, Ausrüstung, ' +
+          'Relikte, Resonanz und alle Passiven mit Kampfbeginn. Was du an Ausrüstung, ' +
+          'Relikten oder Aufstellung änderst, steht sofort hier.'
+        : '\n\nAuf der Bank: Relikte und Resonanz zählen erst mit, wenn die Einheit im Trupp steht.') +
+      '\n\nRüstung senkt jeden eingehenden Treffer. Tempo bestimmt, wie oft die Einheit am Zug ist.') +
+      '>' + teile.join(' ') + '</span>';
+  }
+
+  function einheitHtml(m, aufBank, kampf) {
     var d = R.resolve(m);
     var basis = GD.unit(m.id);
     var abs = R.abilities(m);
@@ -1147,10 +1189,7 @@
         R.aktivSlots(m) + ' aktive, ' + R.passivSlots(m) + ' passive, ' +
         R.praedatorSlots(m) + ' Prädator-Slots.') + '>' +
       R.rankName(m) + '</span> ' + esc(d.name) + '</span>' +
-      '<span class="werte"' + tip('Werte',
-        'Leben ' + d.hp + ' · Angriff ' + d.atk + ' · Rüstung ' + d.def + ' · Tempo ' + d.spd +
-        '\n\nRüstung senkt jeden eingehenden Treffer. Tempo bestimmt, wie oft die Einheit am Zug ist.') +
-      '>' + d.hp + '❤ ' + d.atk + '⚔ ' + d.def + '🛡 ' + d.spd + '⚡</span></div>' +
+      werteHtml(m, d, kampf) + '</div>' +
       '<div class="tags"><span class="tag"' +
       tip('Art: ' + GD.artName(basis.art), G.arten[basis.art] + '\n\n' + G.begriffe.art) + '>' +
       esc(GD.artName(basis.art)) + '</span>' +
@@ -1371,7 +1410,8 @@
       debugHtml() +
       verkaufsflaeche() + aufstellungHtml() +
       '<div class="einheiten">';
-    run.team.forEach(function (m) { html += einheitHtml(m, false); });
+    var kw = kampfwerte();
+    run.team.forEach(function (m) { html += einheitHtml(m, false, kw[m.uid]); });
     html += '</div>';
     if (run.bank.length) {
       html += '<h3' + tip('Bank', G.begriffe.bank) + '>Bank (' + run.bank.length + '/' + R.BANK_MAX +

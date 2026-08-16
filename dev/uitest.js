@@ -152,6 +152,23 @@ ok($$('.einheit .rang').length === 3, 'jede Karte trägt ein Rangabzeichen');
 ok($$('.einheit .rar').length === 0, 'Einheiten zeigen keine Raritätsstufe');
 ok($$('.einheit .fk.aktiv').length === 3, 'jede Einheit zeigt genau ihre Signatur');
 
+/* Die Werte auf der Karte sind die des Kampfbeginns, nicht die von `resolve`.
+   Geprüft am Relikt: „Schuppenpanzer" gibt dem ganzen Trupp Rüstung — die Zahl
+   muss sich beim Anlegen bewegen, ohne dass der Screen gewechselt wird. */
+(function () {
+  function ruestung() { return +$$('.einheit')[0].querySelectorAll('.werte .wert')[2].textContent.replace(/\D+.*/, ''); }
+  var vorher = ruestung();
+  var hatte = run.relics.indexOf('schuppenpanzer') >= 0;
+  if (!hatte) run.relics.push('schuppenpanzer');
+  win.UI.render();
+  ok(hatte || ruestung() > vorher,
+     'ein neues Relikt hebt die Rüstung auf der Truppkarte sofort an');
+  ok($('.einheit .werte .wert i.auf'),
+     'und die Karte zeigt den Abstand zum Rohwert an');
+  if (!hatte) { run.relics.pop(); win.UI.render(); }
+  ok(ruestung() === vorher, 'nimmt man es wieder weg, steht dort wieder der alte Wert');
+})();
+
 /* ------------------------------------------------------------ Tooltips */
 head('Tooltips');
 var proben = [
