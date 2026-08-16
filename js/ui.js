@@ -1433,7 +1433,9 @@
         return '<span class="chip rar-rand-' + it.rarity + '" data-verkauf="item" data-id="' + id +
           '" data-name="' + esc(it.name) + '"' +
           tip(it.name, rarZeile(it.rarity, 'Ausrüstung') + (it.text || '') +
-            '\n\nZum Verkaufen auf die Verkaufsfläche ziehen: +' + R.itemWert(id) + ' Magicule.') +
+            '\n\nAuf eine Einheitenkarte ziehen legt es an.' +
+            (R.darfEntlassen(run)
+              ? '\nAuf die Verkaufsfläche ziehen: +' + R.itemWert(id) + ' Magicule.' : '')) +
           '>' + esc(it.name) +
           ' <button data-a="anlegen" data-id="' + id + '">anlegen</button></span>';
       }).join('') + '</div>';
@@ -1755,9 +1757,41 @@
 
   var zieht = null;
 
+  function istBeutelItem(q) {
+    return q.dataset.verkauf === 'item' && !!q.closest('#beutel');
+  }
+
   function ziehbar(el) {
     var q = el.closest && el.closest('[data-verkauf]');
-    return q && R.darfEntlassen(run) ? q : null;
+    if (!q) return null;
+    /* Ausrüstung aus dem Beutel geht immer — anlegen ist Truppenpflege und
+       hängt nicht daran, ob gerade verkauft werden darf. Alles andere ist
+       ausschließlich eine Verkaufsbahn. */
+    return (R.darfEntlassen(run) || istBeutelItem(q)) ? q : null;
+  }
+
+  /* Karten, die noch einen freien Ausrüstungs-Slot haben. Volle Karten werden
+     gar nicht erst hervorgehoben — sonst zieht man hin und nichts passiert. */
+  function markiereZiele(an) {
+    Array.prototype.forEach.call(document.querySelectorAll('.einheit'), function (el) {
+      var m = R.find(run, el.dataset.uid);
+      el.classList.toggle('nimmt', !!(an && m && m.items.length < R.itemSlots(m)));
+      if (!an) el.classList.remove('drueber');
+    });
+  }
+
+  /* Welche Einheitenkarte liegt unter dem Zeiger? Trefferprüfung über die
+     Rechtecke wie bei der Verkaufsfläche — `elementFromPoint` sieht nur den
+     Geist, und im jsdom-Test gibt es die Funktion gar nicht. */
+  function zielKarte(ev) {
+    if (!zieht || zieht.daten.verkauf !== 'item') return null;
+    var treffer = null;
+    Array.prototype.forEach.call(document.querySelectorAll('.einheit.nimmt'), function (el) {
+      var r = el.getBoundingClientRect();
+      if (ev.clientX >= r.left && ev.clientX <= r.right &&
+          ev.clientY >= r.top && ev.clientY <= r.bottom) treffer = el;
+    });
+    return treffer;
   }
 
   function verkaufsWert(d) {
@@ -1773,11 +1807,13 @@
     ev.preventDefault();
     var geist = el.cloneNode(true);
     geist.className = 'zieh-geist';
-    geist.textContent = el.dataset.name + '  +' + verkaufsWert(el.dataset) + '✦';
+    geist.textContent = el.dataset.name +
+      (R.darfEntlassen(run) ? '  +' + verkaufsWert(el.dataset) + '✦' : '');
     document.body.appendChild(geist);
     zieht = { el: el, geist: geist, daten: el.dataset };
     el.classList.add('wird-gezogen');
     $('verkauf') && $('verkauf').classList.add('bereit');
+    if (istBeutelItem(el)) markiereZiele(true);
     bewege(ev);
   }
 
@@ -1785,6 +1821,14 @@
     if (!zieht) return;
     zieht.geist.style.left = ev.clientX + 'px';
     zieht.geist.style.top = ev.clientY + 'px';
+
+    var karte = zielKarte(ev);
+    if (karte !== zieht.karte) {
+      if (zieht.karte) zieht.karte.classList.remove('drueber');
+      if (karte) karte.classList.add('drueber');
+      zieht.karte = karte;
+    }
+
     var ziel = $('verkauf');
     if (!ziel) return;
     var r = ziel.getBoundingClientRect();
@@ -1796,12 +1840,19 @@
 
   function zieheEnde() {
     if (!zieht) return;
-    var d = zieht.daten, drin = zieht.drin;
+    var d = zieht.daten, drin = zieht.drin, karte = zieht.karte;
     zieht.geist.remove();
     zieht.el.classList.remove('wird-gezogen');
     var ziel = $('verkauf');
     if (ziel) { ziel.classList.remove('bereit'); ziel.classList.remove('drueber'); }
+    markiereZiele(false);
     zieht = null;
+    /* Die Einheitenkarte gewinnt: sie liegt oben, und wer dorthin zieht, will
+       anlegen, nicht verkaufen. */
+    if (karte) {
+      if (R.equip(run, karte.dataset.uid, d.id)) { Ton.klick(); render(); speichern(); }
+      return;
+    }
     if (!drin) return;
     var ok = d.verkauf === 'item' ? R.verkaufeItem(run, d.id)
       : d.verkauf === 'relikt' ? R.verkaufeRelikt(run, d.id)

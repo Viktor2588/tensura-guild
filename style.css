@@ -476,6 +476,12 @@ table.dbg i.ab { color: #e77; }
               font-size: .78rem; white-space: nowrap; }
 .ziehhinweis { opacity: .5; font-size: .7rem; }
 
+/* Ausrüstung auf eine Einheit ziehen: freie Karten melden sich, die Karte
+   unter dem Zeiger nimmt die Farbe der Verkaufsfläche an — dasselbe Signal,
+   dieselbe Bedeutung („hier loslassen"). */
+.einheit.nimmt { border-style: dashed; border-color: var(--gold); }
+.einheit.nimmt.drueber { background: #ffd88022; box-shadow: 0 0 0 2px var(--gold); }
+
 /* Ergebnisbildschirm: die Ansage steht für sich, bevor die Verwaltung kommt. */
 .ergebnis { text-align: center; padding: 1rem .6rem; }
 .ergebnis h2 { margin: 0 0 .2rem; }

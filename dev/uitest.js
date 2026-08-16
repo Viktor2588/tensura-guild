@@ -342,11 +342,16 @@ function zieh(el, ziel) {
   doc.dispatchEvent(new win.MouseEvent('pointerup',
     { bubbles: true, clientX: r.left + 1, clientY: r.top + 1 }));
 }
-/* jsdom liefert für alles 0-Rechtecke — die Trefferprüfung braucht echte Werte. */
+/* jsdom liefert für alles 0-Rechtecke — die Trefferprüfung braucht echte Werte.
+   Einheitenkarten bekommen jede ihr eigenes, untereinander gestapelt, damit
+   sich das Ziehen auf eine BESTIMMTE Karte prüfen lässt. */
 win.Element.prototype.getBoundingClientRect = function () {
-  return this.id === 'verkauf'
-    ? { left: 0, top: 0, right: 100, bottom: 100, width: 100, height: 100 }
-    : { left: 500, top: 500, right: 520, bottom: 520, width: 20, height: 20 };
+  if (this.id === 'verkauf') return { left: 0, top: 0, right: 100, bottom: 100, width: 100, height: 100 };
+  if (this.classList && this.classList.contains('einheit')) {
+    var i = $$('.einheit').indexOf(this);
+    return { left: 200, top: 200 + i * 50, right: 300, bottom: 240 + i * 50, width: 100, height: 40 };
+  }
+  return { left: 500, top: 500, right: 520, bottom: 520, width: 20, height: 20 };
 };
 
 (run.bag = run.bag || []).push('kurzschwert');
@@ -356,6 +361,38 @@ win.UI.render();
 var itemChip = $('[data-verkauf="item"]');
 ok(!!itemChip, 'Beutel-Gegenstände sind ziehbar markiert');
 ok(!!$('#verkauf'), 'die Verkaufsfläche steht am Trupp, nicht nur im Markt');
+
+/* Anlegen per Ziehen: derselbe Griff, anderes Ziel. */
+(function () {
+  var karte = $$('.einheit')[1];
+  var m = win.Run.find(run, karte.dataset.uid);
+  var vorItems = m.items.length, vorBag = run.bag.length;
+  zieh($('[data-verkauf="item"]'), karte);
+  ok(m.items.length === vorItems + 1 && run.bag.length === vorBag - 1,
+     'ein auf eine Einheitenkarte gezogener Gegenstand wird dort angelegt');
+  ok(!$('.einheit.nimmt'), 'nach dem Loslassen ist keine Karte mehr als Ziel markiert');
+
+  /* Volle Karte: kein Ziel, der Gegenstand bleibt im Beutel. */
+  while (m.items.length < win.Run.itemSlots(m)) m.items.push('kurzschwert');
+  run.bag.push('kurzschwert');
+  win.UI.render();
+  var bagVor = run.bag.length;
+  zieh($('[data-verkauf="item"]'), $$('.einheit')[1]);
+  ok(run.bag.length === bagVor, 'eine Karte ohne freien Slot nimmt nichts an');
+  /* Beim Griff an den Gegenstand melden sich die freien Karten — die volle
+     nicht. Geprüft mitten im Zug, danach ist die Markierung wieder weg. */
+  $('[data-verkauf="item"]').dispatchEvent(
+    new win.MouseEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }));
+  ok(!!$('.einheit.nimmt') && !$$('.einheit')[1].classList.contains('nimmt'),
+     'freie Karten melden sich beim Ziehen als Ziel, die volle nicht');
+  doc.dispatchEvent(new win.MouseEvent('pointerup', { bubbles: true, clientX: 0, clientY: 0 }));
+  ok(!$('.einheit.nimmt'), 'nach dem Loslassen ist die Markierung wieder weg');
+
+  /* Aufgeräumt zurück in den Zustand, den der Verkaufsteil erwartet. */
+  run.bag.length = 0; run.bag.push('kurzschwert');
+  win.UI.render();
+  itemChip = $('[data-verkauf="item"]');
+})();
 var vorMag = run.magicules, vorBag = run.bag.length;
 zieh(itemChip, $('#verkauf'));
 ok(run.bag.length === vorBag - 1 && run.magicules > vorMag,
