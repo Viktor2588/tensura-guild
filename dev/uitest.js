@@ -374,13 +374,21 @@ ok(!!$('#verkauf'), 'die Verkaufsfläche steht am Trupp, nicht nur im Markt');
   ok(run.team[0].uid === vor[2] && run.team[2].uid === vor[0],
      'ein Platz auf einen anderen gezogen tauscht die beiden Einheiten');
 
-  /* Beim Ziehen eines Platzes sind nur Plätze Ziel — keine Einheitenkarte. */
+  /* Ein Platz ist kein Gegenstand: über der Verkaufsfläche losgelassen darf er
+     die Einheit NICHT entlassen. Genau das tat er, solange `zieheEnde` für
+     jedes Nicht-Item auf `entlassen` fiel. */
+  var teamVor = run.team.length;
+  zieh($$('.aufstellung .platz')[0], $('#verkauf'));
+  ok(run.team.length === teamVor && !$('#verkauf').classList.contains('bereit'),
+     'ein Platz auf die Verkaufsfläche gezogen verkauft nichts');
+
   var q = $$('.aufstellung .platz');
-  q[0].dispatchEvent(new win.MouseEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }));
+  q[0].dispatchEvent(new win.MouseEvent('pointerdown', { bubbles: true, clientX: 900, clientY: 900 }));
   ok($$('.aufstellung .platz.nimmt').length === run.team.length - 1,
      'jeder Platz außer dem eigenen meldet sich als Ziel');
-  ok(!$('.einheit.nimmt'), 'Einheitenkarten sind beim Umstellen kein Ziel');
-  doc.dispatchEvent(new win.MouseEvent('pointerup', { bubbles: true, clientX: 0, clientY: 0 }));
+  ok($$('.einheit.nimmt').length === run.team.length - 1,
+     'und ebenso jede Kachel außer der eigenen');
+  doc.dispatchEvent(new win.MouseEvent('pointerup', { bubbles: true, clientX: 900, clientY: 900 }));
 
   /* Der zweite Weg: die Karte selbst auf einen Platz ziehen. */
   var jetzt = run.team.map(function (m) { return m.uid; });
@@ -389,15 +397,27 @@ ok(!!$('#verkauf'), 'die Verkaufsfläche steht am Trupp, nicht nur im Markt');
   ok(run.team[0].uid === jetzt[1] && run.team[1].uid === jetzt[0],
      'eine Einheitenkarte auf einen Platz gezogen stellt sie dorthin');
 
+  /* Und der dritte Griff: die große Kachel auf eine andere große Kachel. */
+  var k = run.team.map(function (m) { return m.uid; });
+  zieh($$('.einheit')[0], $$('.einheit')[2]);
+  ok(run.team[0].uid === k[2] && run.team[2].uid === k[0],
+     'zwei Einheitenkacheln aufeinander gezogen tauschen ihre Stellung');
+  $$('.einheit')[0].dispatchEvent(
+    new win.MouseEvent('pointerdown', { bubbles: true, clientX: 900, clientY: 900 }));
+  ok($$('.einheit.nimmt').length === run.team.length - 1 &&
+     $$('.aufstellung .platz.nimmt').length === run.team.length - 1,
+     'beim Ziehen einer Kachel melden sich Kacheln und Plätze als Ziel');
+  doc.dispatchEvent(new win.MouseEvent('pointerup', { bubbles: true, clientX: 900, clientY: 900 }));
+
   /* Eine Bank-Karte hat keinen Platz zu tauschen — die Plätze dürfen dann gar
      nicht erst leuchten. */
   win.Run.bench(run, run.team[run.team.length - 1].uid);
   win.UI.render();
   var bankKarte = $('.einheit.bank');
   ok(!!bankKarte, 'die Bank zeigt ihre Karte');
-  bankKarte.dispatchEvent(new win.MouseEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }));
-  ok(!$('.platz.nimmt'), 'eine Karte von der Bank markiert keine Plätze');
-  doc.dispatchEvent(new win.MouseEvent('pointerup', { bubbles: true, clientX: 0, clientY: 0 }));
+  bankKarte.dispatchEvent(new win.MouseEvent('pointerdown', { bubbles: true, clientX: 900, clientY: 900 }));
+  ok(!$('.nimmt'), 'eine Karte von der Bank markiert weder Plätze noch Kacheln');
+  doc.dispatchEvent(new win.MouseEvent('pointerup', { bubbles: true, clientX: 900, clientY: 900 }));
   win.Run.deploy(run, bankKarte.dataset.uid);
   win.UI.render();
 })();
@@ -422,10 +442,10 @@ ok(!!$('#verkauf'), 'die Verkaufsfläche steht am Trupp, nicht nur im Markt');
   /* Beim Griff an den Gegenstand melden sich die freien Karten — die volle
      nicht. Geprüft mitten im Zug, danach ist die Markierung wieder weg. */
   $('[data-verkauf="item"]').dispatchEvent(
-    new win.MouseEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }));
+    new win.MouseEvent('pointerdown', { bubbles: true, clientX: 900, clientY: 900 }));
   ok(!!$('.einheit.nimmt') && !$$('.einheit')[1].classList.contains('nimmt'),
      'freie Karten melden sich beim Ziehen als Ziel, die volle nicht');
-  doc.dispatchEvent(new win.MouseEvent('pointerup', { bubbles: true, clientX: 0, clientY: 0 }));
+  doc.dispatchEvent(new win.MouseEvent('pointerup', { bubbles: true, clientX: 900, clientY: 900 }));
   ok(!$('.einheit.nimmt'), 'nach dem Loslassen ist die Markierung wieder weg');
 
   /* Aufgeräumt zurück in den Zustand, den der Verkaufsteil erwartet. */

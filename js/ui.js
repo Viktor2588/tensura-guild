@@ -1404,7 +1404,7 @@
 
     var html = '<h3' + tip('Aufstellung', G.begriffe.aufstellung + '\n\n' + G.begriffe.art) +
       '>Trupp — vorn zuerst getroffen (' + run.team.length + '/' + R.TEAM_MAX + ')' +
-      ' · jede Einheit nur einmal' +
+      ' · jede Einheit nur einmal · Kacheln zum Umsortieren aufeinander ziehen' +
       '<button class="dbg-schalter' + (debugAn ? ' an' : '') + '" data-a="debug"' +
       tip('Debug-Übersicht', 'Zeigt für jede Einheit, woher jeder Punkt kommt: Basis, Rang, ' +
         'Ausrüstung, und was Relikte, Resonanz und Passive im Kampf daraus machen.') +
@@ -1780,10 +1780,6 @@
     return R.darfEntlassen(run) ? q : null;
   }
 
-  /* Was kann das, was gerade am Zeiger hängt, wo abgeladen werden? Nur diese
-     Ziele bekommen `.nimmt` — und nur sie werden beim Ziehen getroffen.
-     Ein Ziel, das nichts annehmen kann (volle Karte, eigener Platz), meldet
-     sich gar nicht erst; sonst zieht man hin und nichts passiert. */
   /* Was hängt am Zeiger? Ausrüstung aus dem Beutel, ein Platz, eine Einheit —
      oder ein Relikt, das nur die Verkaufsfläche kennt. */
   function ziehArt(el) {
@@ -1792,24 +1788,40 @@
     return el.dataset.verkauf;                     // 'einheit' | 'relikt' | 'item'
   }
 
+  /* Was kann das, was gerade am Zeiger hängt, wo abgeladen werden? Nur diese
+     Ziele bekommen `.nimmt` — und nur sie werden beim Ziehen getroffen. Ein
+     Ziel, das nichts annehmen kann (volle Karte, eigene Stellung, Bank), meldet
+     sich gar nicht erst; sonst zieht man hin und nichts passiert. */
   function markiereZiele(el) {
     Array.prototype.forEach.call(document.querySelectorAll('.nimmt'), function (x) {
       x.classList.remove('nimmt', 'drueber');
     });
     var a = el && ziehArt(el);
-    var sel = a === 'item' ? '.einheit' : (a === 'platz' || a === 'einheit') ? '.platz' : null;
-    if (!sel) return;
-    /* Eine Karte von der Bank hat keinen Platz zu tauschen. Ohne diese Sperre
-       leuchten die Plätze auf und das Loslassen tut dann nichts. */
-    if (sel === '.platz' && run.team.indexOf(R.find(run, el.dataset.uid)) < 0) return;
-    Array.prototype.forEach.call(document.querySelectorAll(sel), function (x) {
-      var m = R.find(run, x.dataset.uid);
-      if (!m) return;
-      var passt = sel === '.einheit'
-        ? m.items.length < R.itemSlots(m)          // freier Ausrüstungs-Slot
-        : x.dataset.uid !== el.dataset.uid;        // nicht der eigene Platz
-      if (passt) x.classList.add('nimmt');
-    });
+    if (!a) return;
+
+    function markiere(sel, passt) {
+      Array.prototype.forEach.call(document.querySelectorAll(sel), function (x) {
+        var m = R.find(run, x.dataset.uid);
+        if (m && passt(m, x)) x.classList.add('nimmt');
+      });
+    }
+
+    if (a === 'item') {                            // Ausrüstung sucht freien Slot
+      markiere('.einheit', function (m) { return m.items.length < R.itemSlots(m); });
+      return;
+    }
+    if (a !== 'platz' && a !== 'einheit') return;  // Relikte kennen nur den Verkauf
+
+    /* Eine Karte von der Bank hat keine Stellung zu tauschen. Ohne diese Sperre
+       leuchten die Ziele auf und das Loslassen tut dann nichts. */
+    if (run.team.indexOf(R.find(run, el.dataset.uid)) < 0) return;
+    /* Stellung tauschen geht an beiden Anzeigen: am kleinen Raster UND an den
+       großen Kacheln. Dieselbe Wirkung, zwei Griffe — je nachdem, wo die Hand
+       gerade ist. */
+    var eigen = el.dataset.uid;
+    var tauschbar = function (m) { return m.uid !== eigen && run.team.indexOf(m) >= 0; };
+    markiere('.platz', tauschbar);
+    markiere('.einheit', tauschbar);
   }
 
   /* Welches Ziel liegt unter dem Zeiger? Trefferprüfung über die Rechtecke wie
@@ -1864,7 +1876,9 @@
       zieht.ziel = treffer;
     }
 
-    var ziel = $('verkauf');
+    /* Ein Platz ist kein Gegenstand: er kann gar nicht verkauft werden, also
+       darf die Verkaufsfläche unter ihm auch nicht scharf werden. */
+    var ziel = zieht.art === 'platz' ? null : $('verkauf');
     if (!ziel) return;
     var r = ziel.getBoundingClientRect();
     var drin = ev.clientX >= r.left && ev.clientX <= r.right &&
@@ -1892,7 +1906,7 @@
       if (gut) { tauschUid = null; Ton.klick(); render(); speichern(); }
       return;
     }
-    if (!drin) return;
+    if (!drin || a === 'platz') return;
     var ok = d.verkauf === 'item' ? R.verkaufeItem(run, d.id)
       : d.verkauf === 'relikt' ? R.verkaufeRelikt(run, d.id)
       : R.entlassen(run, d.uid);
