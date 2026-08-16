@@ -479,8 +479,11 @@ table.dbg i.ab { color: #e77; }
 /* Ausrüstung auf eine Einheit ziehen: freie Karten melden sich, die Karte
    unter dem Zeiger nimmt die Farbe der Verkaufsfläche an — dasselbe Signal,
    dieselbe Bedeutung („hier loslassen"). */
-.einheit.nimmt { border-style: dashed; border-color: var(--gold); }
-.einheit.nimmt.drueber { background: #ffd88022; box-shadow: 0 0 0 2px var(--gold); }
+.einheit.nimmt, .aufstellung .platz.nimmt { border-style: dashed; border-color: var(--gold); }
+.einheit.nimmt.drueber,
+.aufstellung .platz.nimmt.drueber { background: #ffd88022; box-shadow: 0 0 0 2px var(--gold); }
+/* Der Platz, der gerade am Zeiger hängt, bleibt sichtbar als Herkunft stehen. */
+.aufstellung .platz.wird-gezogen { opacity: .45; }
 
 /* Ergebnisbildschirm: die Ansage steht für sich, bevor die Verwaltung kommt. */
 .ergebnis { text-align: center; padding: 1rem .6rem; }

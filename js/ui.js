@@ -1106,7 +1106,9 @@
     if (run.team.length < 2) return '';
     var belegt = run.team.map(function (m, i) { return i; });
     var html = '<div class="aufstellung"' + tip('Aufstellung ändern',
-      'Erst die eine Einheit antippen, dann die andere — die beiden tauschen den Platz. ' +
+      'Einen Platz auf einen anderen ziehen — die beiden tauschen. Genauso geht ' +
+      'eine Einheitenkarte von unten direkt auf einen Platz. Ohne Ziehen: erst ' +
+      'die eine Einheit antippen, dann die andere. ' +
       G.begriffe.aufstellung) + '>';
     /* Zwei Glieder untereinander, je drei Plätze — wie `Combat.startfeld`. */
     [0, 3].forEach(function (start) {
@@ -1751,9 +1753,17 @@
     speichern();
   }
 
-  /* ---- Verkaufen per Ziehen -----------------------------------------------
+  /* ---- Ziehen: verkaufen, anlegen, umstellen ------------------------------
      Pointer Events statt HTML5-Drag: Letzteres feuert auf Touch gar nicht, und
-     das Spiel ist mobile-first. Ein Zeiger, eine Bahn — Maus wie Finger.      */
+     das Spiel ist mobile-first. Ein Zeiger, eine Bahn — Maus wie Finger.
+
+     Drei Bahnen teilen sich denselben Mechanismus, unterschieden nur durch
+     das, was am Zeiger hängt:
+       Ausrüstung aus dem Beutel → Einheitenkarte  = anlegen
+       Einheitenkarte oder Platz → anderer Platz   = Plätze tauschen
+       irgendetwas davon         → Verkaufsfläche  = verkaufen
+     Die Verkaufsfläche bleibt ihr eigener Sonderfall, weil sie kein `.nimmt`
+     trägt und auch dann zählt, wenn gar kein anderes Ziel getroffen ist.      */
 
   var zieht = null;
 
@@ -1762,31 +1772,52 @@
   }
 
   function ziehbar(el) {
-    var q = el.closest && el.closest('[data-verkauf]');
+    var q = el.closest && el.closest('[data-verkauf], .platz');
     if (!q) return null;
-    /* Ausrüstung aus dem Beutel geht immer — anlegen ist Truppenpflege und
-       hängt nicht daran, ob gerade verkauft werden darf. Alles andere ist
-       ausschließlich eine Verkaufsbahn. */
-    return (R.darfEntlassen(run) || istBeutelItem(q)) ? q : null;
+    /* Umstellen und Anlegen gehen immer — beides ist Truppenpflege und hängt
+       nicht daran, ob gerade verkauft werden darf. */
+    if (q.classList.contains('platz') || istBeutelItem(q)) return q;
+    return R.darfEntlassen(run) ? q : null;
   }
 
-  /* Karten, die noch einen freien Ausrüstungs-Slot haben. Volle Karten werden
-     gar nicht erst hervorgehoben — sonst zieht man hin und nichts passiert. */
-  function markiereZiele(an) {
-    Array.prototype.forEach.call(document.querySelectorAll('.einheit'), function (el) {
-      var m = R.find(run, el.dataset.uid);
-      el.classList.toggle('nimmt', !!(an && m && m.items.length < R.itemSlots(m)));
-      if (!an) el.classList.remove('drueber');
+  /* Was kann das, was gerade am Zeiger hängt, wo abgeladen werden? Nur diese
+     Ziele bekommen `.nimmt` — und nur sie werden beim Ziehen getroffen.
+     Ein Ziel, das nichts annehmen kann (volle Karte, eigener Platz), meldet
+     sich gar nicht erst; sonst zieht man hin und nichts passiert. */
+  /* Was hängt am Zeiger? Ausrüstung aus dem Beutel, ein Platz, eine Einheit —
+     oder ein Relikt, das nur die Verkaufsfläche kennt. */
+  function ziehArt(el) {
+    if (el.classList.contains('platz')) return 'platz';
+    if (istBeutelItem(el)) return 'item';
+    return el.dataset.verkauf;                     // 'einheit' | 'relikt' | 'item'
+  }
+
+  function markiereZiele(el) {
+    Array.prototype.forEach.call(document.querySelectorAll('.nimmt'), function (x) {
+      x.classList.remove('nimmt', 'drueber');
+    });
+    var a = el && ziehArt(el);
+    var sel = a === 'item' ? '.einheit' : (a === 'platz' || a === 'einheit') ? '.platz' : null;
+    if (!sel) return;
+    /* Eine Karte von der Bank hat keinen Platz zu tauschen. Ohne diese Sperre
+       leuchten die Plätze auf und das Loslassen tut dann nichts. */
+    if (sel === '.platz' && run.team.indexOf(R.find(run, el.dataset.uid)) < 0) return;
+    Array.prototype.forEach.call(document.querySelectorAll(sel), function (x) {
+      var m = R.find(run, x.dataset.uid);
+      if (!m) return;
+      var passt = sel === '.einheit'
+        ? m.items.length < R.itemSlots(m)          // freier Ausrüstungs-Slot
+        : x.dataset.uid !== el.dataset.uid;        // nicht der eigene Platz
+      if (passt) x.classList.add('nimmt');
     });
   }
 
-  /* Welche Einheitenkarte liegt unter dem Zeiger? Trefferprüfung über die
-     Rechtecke wie bei der Verkaufsfläche — `elementFromPoint` sieht nur den
-     Geist, und im jsdom-Test gibt es die Funktion gar nicht. */
-  function zielKarte(ev) {
-    if (!zieht || zieht.daten.verkauf !== 'item') return null;
+  /* Welches Ziel liegt unter dem Zeiger? Trefferprüfung über die Rechtecke wie
+     bei der Verkaufsfläche — `elementFromPoint` sieht nur den Geist, und im
+     jsdom-Test gibt es die Funktion gar nicht. */
+  function zielUnter(ev) {
     var treffer = null;
-    Array.prototype.forEach.call(document.querySelectorAll('.einheit.nimmt'), function (el) {
+    Array.prototype.forEach.call(document.querySelectorAll('.nimmt'), function (el) {
       var r = el.getBoundingClientRect();
       if (ev.clientX >= r.left && ev.clientX <= r.right &&
           ev.clientY >= r.top && ev.clientY <= r.bottom) treffer = el;
@@ -1805,15 +1836,19 @@
     var el = ziehbar(ev.target);
     if (!el) return;
     ev.preventDefault();
+    var a = ziehArt(el);
+    var m = a === 'platz' ? R.find(run, el.dataset.uid) : null;
     var geist = el.cloneNode(true);
     geist.className = 'zieh-geist';
-    geist.textContent = el.dataset.name +
-      (R.darfEntlassen(run) ? '  +' + verkaufsWert(el.dataset) + '✦' : '');
+    geist.textContent = (m ? GD.unit(m.id).name : el.dataset.name) +
+      (a !== 'platz' && R.darfEntlassen(run) ? '  +' + verkaufsWert(el.dataset) + '✦' : '');
     document.body.appendChild(geist);
-    zieht = { el: el, geist: geist, daten: el.dataset };
+    zieht = { el: el, geist: geist, daten: el.dataset, art: a };
     el.classList.add('wird-gezogen');
-    $('verkauf') && $('verkauf').classList.add('bereit');
-    if (istBeutelItem(el)) markiereZiele(true);
+    /* Ein Platz wandert nicht in den Verkauf — die Einheit steht ja weiter im
+       Trupp, gezogen wird nur ihre Stellung. */
+    if (a !== 'platz') { $('verkauf') && $('verkauf').classList.add('bereit'); }
+    markiereZiele(el);
     bewege(ev);
   }
 
@@ -1822,11 +1857,11 @@
     zieht.geist.style.left = ev.clientX + 'px';
     zieht.geist.style.top = ev.clientY + 'px';
 
-    var karte = zielKarte(ev);
-    if (karte !== zieht.karte) {
-      if (zieht.karte) zieht.karte.classList.remove('drueber');
-      if (karte) karte.classList.add('drueber');
-      zieht.karte = karte;
+    var treffer = zielUnter(ev);
+    if (treffer !== zieht.ziel) {
+      if (zieht.ziel) zieht.ziel.classList.remove('drueber');
+      if (treffer) treffer.classList.add('drueber');
+      zieht.ziel = treffer;
     }
 
     var ziel = $('verkauf');
@@ -1840,17 +1875,21 @@
 
   function zieheEnde() {
     if (!zieht) return;
-    var d = zieht.daten, drin = zieht.drin, karte = zieht.karte;
+    var d = zieht.daten, drin = zieht.drin, treffer = zieht.ziel, a = zieht.art;
     zieht.geist.remove();
     zieht.el.classList.remove('wird-gezogen');
     var ziel = $('verkauf');
     if (ziel) { ziel.classList.remove('bereit'); ziel.classList.remove('drueber'); }
-    markiereZiele(false);
+    markiereZiele(null);
     zieht = null;
-    /* Die Einheitenkarte gewinnt: sie liegt oben, und wer dorthin zieht, will
-       anlegen, nicht verkaufen. */
-    if (karte) {
-      if (R.equip(run, karte.dataset.uid, d.id)) { Ton.klick(); render(); speichern(); }
+    /* Karte und Platz gewinnen gegen die Verkaufsfläche: sie liegen oben, und
+       wer dorthin zieht, will anlegen oder umstellen, nicht verkaufen. */
+    if (treffer) {
+      var gut = a === 'item' ? R.equip(run, treffer.dataset.uid, d.id)
+                             : R.swap(run, d.uid, treffer.dataset.uid);
+      /* Eine angefangene Tippauswahl ist nach einem Zug erledigt — sonst
+         tauscht der nächste Tipp gegen eine Einheit, die längst woanders steht. */
+      if (gut) { tauschUid = null; Ton.klick(); render(); speichern(); }
       return;
     }
     if (!drin) return;

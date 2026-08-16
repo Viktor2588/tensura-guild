@@ -351,6 +351,10 @@ win.Element.prototype.getBoundingClientRect = function () {
     var i = $$('.einheit').indexOf(this);
     return { left: 200, top: 200 + i * 50, right: 300, bottom: 240 + i * 50, width: 100, height: 40 };
   }
+  if (this.classList && this.classList.contains('platz')) {
+    var j = $$('.aufstellung .platz').indexOf(this);
+    return { left: 700, top: 200 + j * 50, right: 800, bottom: 240 + j * 50, width: 100, height: 40 };
+  }
   return { left: 500, top: 500, right: 520, bottom: 520, width: 20, height: 20 };
 };
 
@@ -361,6 +365,42 @@ win.UI.render();
 var itemChip = $('[data-verkauf="item"]');
 ok(!!itemChip, 'Beutel-Gegenstände sind ziehbar markiert');
 ok(!!$('#verkauf'), 'die Verkaufsfläche steht am Trupp, nicht nur im Markt');
+
+/* Umstellen per Ziehen: Platz auf Platz, und Karte auf Platz. */
+(function () {
+  var vor = run.team.map(function (m) { return m.uid; });
+  var p = $$('.aufstellung .platz');
+  zieh(p[0], p[2]);
+  ok(run.team[0].uid === vor[2] && run.team[2].uid === vor[0],
+     'ein Platz auf einen anderen gezogen tauscht die beiden Einheiten');
+
+  /* Beim Ziehen eines Platzes sind nur Plätze Ziel — keine Einheitenkarte. */
+  var q = $$('.aufstellung .platz');
+  q[0].dispatchEvent(new win.MouseEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }));
+  ok($$('.aufstellung .platz.nimmt').length === run.team.length - 1,
+     'jeder Platz außer dem eigenen meldet sich als Ziel');
+  ok(!$('.einheit.nimmt'), 'Einheitenkarten sind beim Umstellen kein Ziel');
+  doc.dispatchEvent(new win.MouseEvent('pointerup', { bubbles: true, clientX: 0, clientY: 0 }));
+
+  /* Der zweite Weg: die Karte selbst auf einen Platz ziehen. */
+  var jetzt = run.team.map(function (m) { return m.uid; });
+  var karte = $$('.einheit')[0];
+  zieh(karte, $$('.aufstellung .platz')[1]);
+  ok(run.team[0].uid === jetzt[1] && run.team[1].uid === jetzt[0],
+     'eine Einheitenkarte auf einen Platz gezogen stellt sie dorthin');
+
+  /* Eine Bank-Karte hat keinen Platz zu tauschen — die Plätze dürfen dann gar
+     nicht erst leuchten. */
+  win.Run.bench(run, run.team[run.team.length - 1].uid);
+  win.UI.render();
+  var bankKarte = $('.einheit.bank');
+  ok(!!bankKarte, 'die Bank zeigt ihre Karte');
+  bankKarte.dispatchEvent(new win.MouseEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }));
+  ok(!$('.platz.nimmt'), 'eine Karte von der Bank markiert keine Plätze');
+  doc.dispatchEvent(new win.MouseEvent('pointerup', { bubbles: true, clientX: 0, clientY: 0 }));
+  win.Run.deploy(run, bankKarte.dataset.uid);
+  win.UI.render();
+})();
 
 /* Anlegen per Ziehen: derselbe Griff, anderes Ziel. */
 (function () {
