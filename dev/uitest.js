@@ -569,6 +569,27 @@ ok(shionM.passives.length === 1 && win.Abilities.linienAngebot('shion')
      .some(function (o) { return o.id === shionM.passives[0] && !o.preis; }),
    'Shion startet mit einer vorausgewählten Linien-Passive ohne Preis');
 
+/* Die Wahl muss zeigen, worauf sie weiterbaut — sonst sehen vier Angebote
+   gleich aus, obwohl drei von ihnen wegen der getragenen Wörter dastehen. */
+shionM.passives = ['shion_unt1', 'shion_unt4'];   // Realitätswarp, Wille der Herrin
+run.magicules = 9000;
+win.Run.rankUp(run, shionM.uid, true);
+win.UI.render();
+var pw = win.Run.passivWahl(run);
+ok(!!pw && $$('#wahl .karte').length === pw.offers.length,
+   'die Wahl zeigt für jedes Angebot eine Karte');
+ok(/antichaos/i.test($('#wahl .bau-zeile').textContent),
+   'über den Angeboten steht, was die Einheit schon trägt');
+var imBau = $$('#wahl .karte.im-bau'), neu = $$('#wahl .karte.neuer-weg');
+ok(imBau.length + neu.length === pw.offers.length,
+   'jede Karte sagt, ob sie fortsetzt oder neu anfängt');
+ok(imBau.length >= 1 && imBau.every(function (k) { return !!k.querySelector('.bau-marke'); }),
+   'die fortsetzenden Karten nennen das Wort, an dem sie weiterbauen');
+ok(neu.every(function (k) { return /neuer Weg/.test(k.querySelector('.bau-marke').textContent); }),
+   'und ein Angebot ohne Anschluss sagt genau das');
+win.Run.choosePassive(run, 0);
+win.UI.render();
+
 /* ------------------------------------------------- Handschrift der Effekte */
 /* Ohne WebGL zeichnet `Brett3D` nichts — die TABELLE aber, aus der es zeichnet,
    ist reine Datenpflege und genau hier pruefbar. Sie faellt sonst still auf den

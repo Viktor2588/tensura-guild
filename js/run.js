@@ -1708,6 +1708,7 @@
     choose: choose, advance: advance, devour: devour, zumMarkt: zumMarkt,
     rankUp: rankUp,
     passivWahl: passivWahl, choosePassive: choosePassive,
+    eigeneWorte: eigeneWorte, passung: passung,
     passivIds: passivIds, hatLinien: hatLinien,
     chooseStart: chooseStart,
     rankName: rankName, rankCost: rankCost,

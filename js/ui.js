@@ -14,7 +14,7 @@
   var KEYWORD_NAMEN = {
     gift: 'Gift', brand: 'Brand', frost: 'Frost', verderbnis: 'Verderbnis',
     schild: 'Schild', heilung: 'Heilung', konter: 'Konter', tempo: 'Tempo',
-    exekution: 'Exekution', flaeche: 'Fläche', chaos: 'Chaos',
+    exekution: 'Exekution', flaeche: 'Fläche', chaos: 'Chaos', antichaos: 'Antichaos',
     verwundbar: 'Verwundbar', blutung: 'Blutung',
     schatten: 'Schatten', dunkelheit: 'Dunkelheit', licht: 'Licht', donner: 'Donner'
   };
@@ -1015,11 +1015,30 @@
     var m = R.find(run, w.uid);
     if (!m) return '';
     var hat = (m.passives || []).length;
+
+    /* Was diese Einheit heute trägt — die rohen Schlüsselwörter, nach Gewicht
+       sortiert. Ohne diese Zeile ist an keiner Karte zu erkennen, WORAUF sie
+       weiterbaut; die Angebote sehen alle gleich aus, obwohl drei von ihnen
+       genau wegen dieser Wörter dastehen. */
+    var worte = R.eigeneWorte(m);
+    var traegt = Object.keys(worte).sort(function (a, b) { return worte[b] - worte[a]; });
+
     var html = '<div class="wahlbox"><h3>' + esc(GD.unit(m.id).name) + ' — ' +
-      (hat + 1) + '. Passive (Rang ' + R.rankName(m) + ')</h3>' +
-      '<p class="hinweis">' + (w.offers.some(function (o) { return o.verzicht; })
+      (hat + 1) + '. Passive (Rang ' + R.rankName(m) + ')</h3>';
+    if (traegt.length) {
+      html += '<div class="bau-zeile"><span class="bau-titel"' +
+        tip('Dieser Bau', 'Die Schlüsselwörter, die ' + GD.unit(m.id).name + ' schon trägt — ' +
+          'aus Signatur, gewählten Passiven und Verschlungenem. Die Angebote unten ' +
+          'werden danach ausgesucht: drei bauen darauf weiter, eines ist ein freier Zug.') +
+        '>Dieser Bau:</span><div class="kw-leiste">' +
+        traegt.map(function (k) {
+          return kwTag(k) + (worte[k] > 1 ? '<i class="bau-zahl">×' + worte[k] + '</i>' : '');
+        }).join('') + '</div></div>';
+    }
+    html += '<p class="hinweis">' + (w.offers.some(function (o) { return o.verzicht; })
         ? 'Eine davon ändert eine Regel und kostet dafür etwas. Daneben steht die Bibliothek — schwächer, aber ohne Preis — oder gar nichts.'
-        : 'Vier aus den eigenen Passiven dieser Einheit — frei gezogen, ohne Reihenfolge und ohne Quote je Linie.') + '</p>' +
+        : 'Drei Angebote sind nach dem bisherigen Bau ausgesucht, das vierte ist frei gezogen — ' +
+          'damit ein Umbau möglich bleibt. Was woran anschließt, steht an der Karte.') + '</p>' +
       '<div class="karten">';
     w.offers.forEach(function (o, i) {
       if (o.verzicht) {
@@ -1032,15 +1051,26 @@
         return;
       }
       var a = AB.get(o.id);
-      html += '<button class="karte" data-a="pwahl" data-i="' + i + '"' +
+      var eigen = (a.keywords || []).concat(a.amplifies || []);
+      /* Welche Wörter DIESES Angebots stehen schon im Bau? Genau die machen es
+         zur Fortsetzung statt zum Neuanfang. */
+      var treffer = eigen.filter(function (k, j) {
+        return worte[k] && eigen.indexOf(k) === j;
+      });
+      html += '<button class="karte' + (treffer.length ? ' im-bau' : ' neuer-weg') +
+        '" data-a="pwahl" data-i="' + i + '"' +
         tip(a.name + ' · ' + o.linieName, rarZeile(a.rarity, 'passive Fähigkeit') +
           G.begriffe.passiv + '\n\nLinie: ' + o.linieName + '\nWirkung: ' + a.text +
-          ((a.keywords || []).concat(a.amplifies || []).length
-            ? '\n\nSchlüsselwörter: ' + (a.keywords || []).concat(a.amplifies || []).map(kwName).join(', ')
-            : '')) + '>' +
+          (eigen.length ? '\n\nSchlüsselwörter: ' + eigen.map(kwName).join(', ') : '') +
+          (treffer.length
+            ? '\n\n✓ Baut weiter an: ' + treffer.map(kwName).join(', ') + '.'
+            : '\n\n○ Trifft nichts, was diese Einheit schon trägt — ein neuer Weg. ' +
+              'Kann richtig sein, kostet aber den Anschluss an das Bisherige.')) + '>' +
         artHtml('skill') + rarHtml(a.rarity) +
         '<span class="titel">◈ ' + esc(a.name) + '</span>' +
-        '<span class="linie">' + esc(o.linieName) + '</span>' +
+        '<span class="linie">' + esc(o.linieName) +
+        '<b class="bau-marke">' + (treffer.length
+          ? '↗ ' + esc(treffer.map(kwName).join(' · ')) : '↷ neuer Weg') + '</b></span>' +
         '<span class="unter">' + esc(a.text) + '</span></button>';
     });
     return html + '</div></div>';
