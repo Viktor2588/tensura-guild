@@ -1190,6 +1190,32 @@
     return offers;
   }
 
+  /* Wie gut passt ein Angebot zu dem, was die Einheit schon trägt? Gezählt wird
+     die Überschneidung der Schlüsselwörter, gewichtet mit der Häufigkeit: was
+     eine Einheit gestapelt hat, kommt eher wieder.
+
+     Bewusst NICHT über `AB.keywords`: das faltet `antichaos` per `FOLGT` auf
+     `chaos` — richtig für die Resonanz, hier fatal. Genau dieses zweite Wort
+     unterscheidet Shions zwei Keystones voneinander, und ohne es zählte jede
+     ihrer Passiven als „passt", weil an fast allen `chaos` steht. */
+  function eigeneWorte(m) {
+    var zahl = {};
+    abilities(m).forEach(function (a) {
+      (a.keywords || []).concat(a.amplifies || []).forEach(function (k) {
+        zahl[k] = (zahl[k] || 0) + 1;
+      });
+    });
+    return zahl;
+  }
+
+  function passung(id, zahl) {
+    var ab = AB.get(id);
+    if (!ab) return 0;
+    var n = 0;
+    (ab.keywords || []).concat(ab.amplifies || []).forEach(function (k) { n += zahl[k] || 0; });
+    return n;
+  }
+
   function passivAngebot(run, m, beiAnwerbung) {
     var hab = m.passives || [];
     var offers;
@@ -1202,10 +1228,23 @@
          wächst der Topf, zieht diese Stelle unverändert weiter. */
       var rng = rngOf(run);
       var topf = AB.linienAngebot(m.id).filter(function (o) { return hab.indexOf(o.id) < 0; });
+      /* Blind gezogen war das Angebot der einzige Ort im Spiel, der den
+         bisherigen Bau ignoriert — Markt (`themenWahl`), Startpaar und
+         Bibliothek ziehen längst nach Thema. Wer Shion auf Antichaos gestellt
+         hatte, bekam trotzdem reines Chaos angeboten und stand vor vier
+         Angeboten, von denen keines zum eigenen Keystone führte.
+         Sortiert wird nach Passung, Gleichstand zufällig. */
+      var zahl = eigeneWorte(m), los = {};
+      topf.forEach(function (o) { los[o.id] = rng(); });
+      topf.sort(function (a, b) {
+        return (passung(b.id, zahl) - passung(a.id, zahl)) || (los[a.id] - los[b.id]);
+      });
       offers = [];
-      while (offers.length < PASSIV_ANGEBOTE && topf.length) {
-        offers.push(topf.splice(Math.floor(rng() * topf.length), 1)[0]);
-      }
+      while (offers.length < PASSIV_ANGEBOTE - 1 && topf.length) offers.push(topf.shift());
+      /* Das letzte Angebot bleibt ein freier Zug aus dem Rest. Ohne das führt
+         die erste Passive den Rest des Runs, und eine Einheit ließe sich nie
+         mehr umbauen — Flexibilität war der Punkt, nur nicht als einzige Regel. */
+      if (topf.length) offers.push(topf.splice(Math.floor(rng() * topf.length), 1)[0]);
       commit(run, rng);
       if (!offers.length) return;
       /* Wer eine Regel ändert, kostet dafür etwas — halbe Rüstung, kein Heilen,

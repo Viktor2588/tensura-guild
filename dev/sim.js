@@ -2030,6 +2030,39 @@ ok(R.passivIds(R.member('wightkoenig')).length === 0 &&
    R.passivIds({ id: 'wightkoenig', rank: 2, passives: ['wightkoenig_mec1', 'wightkoenig_def4'] }).length === 2,
    'Linien-Einheiten tragen nur gewählte Linien-Passiven');
 
+/* Das Angebot muss den bisherigen Bau kennen. Shion hat zwei Keystones, die
+   sich ausschließen: der Ordnungsteufel braucht Antichaos auf ihr selbst, der
+   Verdorbene Teufel Chaos auf den Gegnern. Wer sie auf Antichaos gestellt hat
+   und dann nur reines Chaos angeboten bekommt, kann seinen Bau nicht zu Ende
+   bauen — genau das tat das Angebot, solange es blind zog. */
+(function () {
+  function traegt(id, wort) {
+    var a = AB.get(id);
+    return !!a && (a.keywords || []).concat(a.amplifies || []).indexOf(wort) >= 0;
+  }
+  var ohneTreffer = 0, fremd = 0, laeufe = 120;
+  for (var s = 0; s < laeufe; s++) {
+    var r = fertigerRun(4200 + s * 13);
+    r.team = []; r.bank = []; r.pwahlen = [];
+    R.addUnit(r, 'shion');
+    var m = r.team[0];
+    m.passives = ['shion_unt1', 'shion_unt4'];   // Realitätswarp, Wille der Herrin
+    r.magicules = 9000;
+    R.rankUp(r, m.uid, true);
+    var w = R.passivWahl(r);
+    if (!w) continue;
+    var eigen = w.offers.filter(function (o) { return o.id; });
+    if (!eigen.some(function (o) { return traegt(o.id, 'antichaos'); })) ohneTreffer++;
+    if (eigen.some(function (o) { return !traegt(o.id, 'antichaos'); })) fremd++;
+  }
+  ok(!ohneTreffer, 'ein auf Antichaos gebauter Shion sieht in jedem Angebot ' +
+     'mindestens eine Antichaos-Passive (' + ohneTreffer + ' von ' + laeufe + ' ohne)');
+  /* Die Gegenprobe: das Angebot darf nicht zur Einbahnstraße werden. Der letzte
+     Platz bleibt ein freier Zug, sonst führt die erste Passive den ganzen Run. */
+  ok(fremd > laeufe * 0.3, 'und trotzdem meistens etwas außerhalb des Baus — ' +
+     'der freie Zug bleibt (' + fremd + ' von ' + laeufe + ')');
+})();
+
 /* ------------------------------------------------- Debug-Übersicht */
 head('Debug-Übersicht');
 var dRun = fertigerRun(4242);
