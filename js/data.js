@@ -136,109 +136,110 @@
     }
   };
 
-  function u(id, name, art, rolle, cost, hp, atk, def, spd, sig, passives, extra) {
-    var d = {
+  /* Bis Phase 51 stand hier je Einheit eine feste Passiv-Liste, die mit dem Rang
+     aufschaltete. Seit alle 39 Einheiten vier Linien haben, wird sie nirgends
+     mehr gelesen — `passivIds` kam nie mehr an ihr an. 117 Eintraege, die bei
+     jeder Balance-Aenderung mitgepflegt sein wollten und nichts taten. */
+  function u(id, name, art, rolle, cost, hp, atk, def, spd, sig) {
+    return {
       id: id, name: name, art: art, tags: [art, rolle], cost: cost,
-      hp: hp, atk: atk, def: def, spd: spd,
-      signature: sig, passives: passives
+      hp: hp, atk: atk, def: def, spd: spd, signature: sig
     };
-    if (extra) for (var k in extra) d[k] = extra[k];
-    return d;
   }
 
   /* ---- Einheiten: jede nur einmal im Trupp, also zählt jede für sich ------- */
 
   var units = [
     u('rimuru', 'Rimuru', 'slime', 'magier', 0, 100, 16, 4, 28,
-      'sig_rimuru', ['trophaenjaeger', 'panzerbrecher', 'zaeh']),
+      'sig_rimuru'),
 
     u('gobta', 'Gobta', 'goblin', 'front', 1, 65, 8, 3, 24,
-      'sig_gobta', ['zaeh', 'windschritt', 'konterstoss']),
+      'sig_gobta'),
     u('gobkyu', 'Gobkyu', 'goblin', 'fernkampf', 1, 50, 11, 1, 28,
-      'sig_gobkyu', ['schwungmeister', 'windschritt', 'erstschlag']),
+      'sig_gobkyu'),
     u('rigurd', 'Rigurd', 'goblin', 'front', 2, 100, 10, 5, 18,
-      'sig_rigurd', ['bollwerkmeister', 'schildwall', 'bannerherz']),
+      'sig_rigurd'),
     u('rigur', 'Rigur', 'goblin', 'verstaerker', 2, 75, 13, 3, 26,
-      'sig_rigur', ['rachegeist', 'konterstoss', 'kriegsherz']),
+      'sig_rigur'),
     u('gobwa', 'Gobwa', 'goblin', 'unterstuetzer', 2, 70, 9, 2, 25,
-      'sig_gobwa', ['lebenskraft', 'quelle', 'seelenband']),
+      'sig_gobwa'),
 
     u('benimaru', 'Benimaru', 'oger', 'verstaerker', 4, 120, 22, 5, 28,
-      'sig_benimaru', ['aschehaut', 'glutkern', 'kriegsherz']),
+      'sig_benimaru'),
     u('shion', 'Shion', 'oger', 'front', 3, 135, 19, 6, 18,
-      'sig_shion', ['rachsucht', 'zaeh', 'konterstoss']),
+      'sig_shion'),
     u('souei', 'Souei', 'oger', 'fernkampf', 3, 80, 19, 2, 34,
-      'sig_souei', ['windschritt', 'erstschlag', 'henkersblick']),
+      'sig_souei'),
     u('shuna', 'Shuna', 'oger', 'unterstuetzer', 3, 85, 14, 3, 26,
-      'sig_shuna', ['bollwerkmeister', 'bannerherz', 'quelle']),
+      'sig_shuna'),
     u('hakuro', 'Hakuro', 'oger', 'front', 4, 110, 21, 6, 30,
-      'sig_hakuro', ['scharfrichter', 'blutrausch', 'panzerbrecher']),
+      'sig_hakuro'),
     u('kurobe', 'Kurobe', 'oger', 'verstaerker', 2, 90, 13, 4, 22,
-      'sig_kurobe', ['rachsucht', 'kriegsherz', 'schildwall']),
+      'sig_kurobe'),
 
     u('ranga', 'Ranga', 'direwolf', 'fernkampf', 3, 85, 17, 3, 36,
-      'sig_ranga', ['schwungmeister', 'windschritt', 'jagdruf']),
+      'sig_ranga'),
     u('sturmwolf', 'Sturmwolf', 'direwolf', 'front', 1, 60, 9, 2, 30,
-      'sig_sturmwolf', ['henkersblick', 'blutrausch', 'scharfrichter']),
+      'sig_sturmwolf'),
 
     u('gabiru', 'Gabiru', 'echsenmensch', 'front', 3, 120, 16, 6, 22,
-      'sig_gabiru', ['massenschlaechter', 'kettenschlag', 'zaeh']),
+      'sig_gabiru'),
     u('souka', 'Souka', 'echsenmensch', 'fernkampf', 2, 70, 13, 2, 30,
-      'sig_souka', ['schwungmeister', 'windschritt', 'henkersblick']),
+      'sig_souka'),
     u('echsenfuerst', 'Echsenfürst', 'echsenmensch', 'front', 4, 145, 18, 8, 18,
-      'sig_echsenfuerst', ['regenerator', 'schildwall', 'zaeh']),
+      'sig_echsenfuerst'),
     u('drachenknecht', 'Drachenknecht', 'echsenmensch', 'verstaerker', 2, 85, 12, 4, 24,
-      'sig_drachenknecht', ['rachsucht', 'dornenhaut', 'konterstoss']),
+      'sig_drachenknecht'),
     u('quellenpriesterin', 'Quellenpriesterin', 'echsenmensch', 'unterstuetzer', 2, 75, 11, 3, 26,
-      'sig_quellenpriesterin', ['lebenskraft', 'quelle', 'regenerator']),
+      'sig_quellenpriesterin'),
 
     u('zegion', 'Zegion', 'insektoid', 'front', 5, 150, 26, 8, 30,
-      'sig_zegion', ['rachsucht', 'konterstoss', 'dornenhaut']),
+      'sig_zegion'),
     u('apito', 'Apito', 'insektoid', 'fernkampf', 4, 90, 21, 3, 34,
-      'sig_apito', ['giftzahn', 'giftbrut', 'windschritt']),
+      'sig_apito'),
 
     u('diablo', 'Diablo', 'daemon', 'magier', 5, 110, 30, 4, 32,
-      'sig_diablo', ['fluchweber', 'verderber', 'panzerbrecher']),
+      'sig_diablo'),
     u('testarossa', 'Testarossa', 'daemon', 'magier', 4, 95, 24, 3, 30,
-      'sig_testarossa', ['henkersblick', 'blutrausch', 'scharfrichter']),
+      'sig_testarossa'),
     u('ultima', 'Ultima', 'daemon', 'fernkampf', 4, 90, 23, 3, 32,
-      'sig_ultima', ['fluchweber', 'giftbrut', 'verderber']),
+      'sig_ultima'),
     u('carrera', 'Carrera', 'daemon', 'verstaerker', 4, 105, 22, 4, 28,
-      'sig_carrera', ['aschehaut', 'glutkern', 'kettenschlag']),
+      'sig_carrera'),
     u('daemonengarde', 'Dämonengarde', 'daemon', 'front', 2, 90, 13, 5, 24,
-      'sig_daemonengarde', ['fluchweber', 'verderber', 'panzerbrecher']),
+      'sig_daemonengarde'),
 
     u('veldora', 'Veldora', 'drache', 'magier', 5, 140, 32, 6, 28,
-      'sig_veldora', ['massenschlaechter', 'kettenschlag', 'panzerbrecher']),
+      'sig_veldora'),
     u('milim', 'Milim', 'drache', 'verstaerker', 5, 145, 34, 6, 34,
-      'sig_milim', ['blutrausch', 'erstschlag', 'panzerbrecher']),
+      'sig_milim'),
     u('drachenwelpe', 'Drachenwelpe', 'drache', 'front', 3, 110, 16, 6, 22,
-      'sig_drachenwelpe', ['aschehaut', 'glutkern', 'zaeh']),
+      'sig_drachenwelpe'),
     u('windrache', 'Windrache', 'drache', 'fernkampf', 4, 100, 22, 4, 32,
-      'sig_windrache', ['schwungmeister', 'windschritt', 'kettenschlag']),
+      'sig_windrache'),
 
     /* ---- Orks: Masse ------------------------------------------------------ */
     u('gerudo', 'Gerudo', 'ork', 'front', 4, 165, 13, 8, 16,
-      'sig_gerudo', ['schildwall', 'zaeh', 'dornenhaut']),
+      'sig_gerudo'),
     u('orkkrieger', 'Orkkrieger', 'ork', 'front', 1, 80, 12, 2, 20,
-      'sig_orkkrieger', ['kriegsherz', 'rachsucht', 'erstschlag']),
+      'sig_orkkrieger'),
 
     /* ---- Bestienkrieger: Instinkt ----------------------------------------- */
     u('phobio', 'Phobio', 'bestie', 'front', 3, 105, 18, 3, 32,
-      'sig_phobio', ['rachsucht', 'schwungmeister', 'windschritt']),
+      'sig_phobio'),
     u('albis', 'Albis', 'bestie', 'fernkampf', 3, 90, 17, 3, 27,
-      'sig_albis', ['panzerbrecher', 'henkersblick', 'giftzahn']),
+      'sig_albis'),
     u('suphia', 'Suphia', 'bestie', 'verstaerker', 3, 115, 14, 5, 24,
-      'sig_suphia', ['bannerherz', 'jagdruf', 'zaeh']),
+      'sig_suphia'),
 
     u('adalmann', 'Adalmann', 'untot', 'magier', 4, 100, 22, 4, 26,
-      'sig_adalmann', ['fluchweber', 'verderber', 'wiederkehr']),
+      'sig_adalmann'),
     u('wightkoenig', 'Wight-König', 'untot', 'front', 3, 115, 15, 6, 20,
-      'sig_wightkoenig', ['lebenskraft', 'lebensraub', 'wiederkehr']),
+      'sig_wightkoenig'),
     u('gruftwaechter', 'Gruftwächter', 'untot', 'verstaerker', 2, 85, 12, 4, 22,
-      'sig_gruftwaechter', ['bollwerkmeister', 'schildwall', 'bannerherz']),
+      'sig_gruftwaechter'),
     u('seelenhexe', 'Seelenhexe', 'untot', 'unterstuetzer', 3, 80, 14, 2, 28,
-      'sig_seelenhexe', ['lebenskraft', 'seelenband', 'wiederkehr'])
+      'sig_seelenhexe')
   ];
 
   /* ---- Relikte: greifen an Schlüsselwörtern, Rollen und Rängen an --------- */
@@ -623,6 +624,7 @@
         c.self.chaosmeister = (c.self.chaosmeister || 1) * 1.6;
       })] },
     { id: 'ordnungsreif', rarity: 4, name: 'Ordnungsreif', cost: 95, stats: { def: 4 },
+      keywords: ['antichaos'],
       text: '+4 Rüstung. Zu Kampfbeginn 4 Antichaos für die Trägerin, und jeder eigene Antichaos-Stapel fällt 50 % größer aus.',
       effects: [eff('onStart', 'Ordnungsreif', function (c) {
         c.self.segenmeister = (c.self.segenmeister || 1) * 1.5;

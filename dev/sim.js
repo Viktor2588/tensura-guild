@@ -96,7 +96,6 @@ ok(AB.pool.length >= 12 && AB.passives.length >= 20,
 var fehlend = [];
 GD.units.forEach(function (u) {
   if (!AB.get(u.signature)) fehlend.push(u.id + ' -> ' + u.signature);
-  u.passives.forEach(function (p) { if (!AB.get(p)) fehlend.push(u.id + ' -> ' + p); });
   /* Auch die LINIEN prüfen: sie waren hier nicht dabei, und eine Bearbeitung
      hat einmal drei Passive gelöscht, ohne dass ein Test angeschlagen hat —
      die Einheit bot dann eine Passive an, die es nicht gab. */
@@ -107,7 +106,15 @@ GD.units.forEach(function (u) {
   });
 });
 ok(!fehlend.length, 'jede Fähigkeitsreferenz existiert' + (fehlend.length ? ': ' + fehlend.join(', ') : ''));
-ok(GD.units.every(function (u) { return u.passives.length === 3; }), 'jede Einheit hat drei Passive');
+/* Die feste Passiv-Liste je Einheit ist weg — geprüft wird jetzt, dass jede
+   Einheit stattdessen vier volle Linien hat. */
+ok(GD.units.every(function (u) { return !u.passives; }),
+   'keine Einheit trägt noch eine feste Passiv-Liste aus data.js');
+ok(GD.units.every(function (u) {
+  var L = AB.linien[u.id] || {};
+  var n = Object.keys(L).reduce(function (a, k) { return a + L[k].length; }, 0);
+  return Object.keys(L).length === 4 && n >= 16;
+}), 'jede Einheit hat vier Linien mit je mindestens vier Passiven');
 
 var sigIds = {}, doppelt = [];
 GD.units.forEach(function (u) { if (sigIds[u.signature]) doppelt.push(u.signature); sigIds[u.signature] = 1; });
@@ -582,12 +589,18 @@ ok(teile.some(function (t) { return (t.amplifies || []).indexOf('gift') >= 0; })
 ok(AB.keywords(teile).gift && AB.keywords(teile).gift.verstaerker >= 1,
    'die Synergie-Anzeige sieht den Relikt-Verstärker');
 
-/* Verstärker sollen früh greifen, sonst entsteht der Build nie. */
+/* Verstärker sollen früh greifen, sonst entsteht der Build nie. Seit die feste
+   Passiv-Liste weg ist, hängt das nicht mehr an ihrer Reihenfolge: der ganze
+   Linientopf steht ab Rang B zur Wahl. Geprüft wird deshalb, dass überhaupt
+   Verstärker drinstehen — und dass sie speisbar sind (Rückhalt gegen tote
+   Karten, siehe `speisbar` in run.js). */
 var frueh = ['apito', 'carrera', 'diablo', 'benimaru', 'veldora', 'testarossa'];
 ok(frueh.every(function (id) {
-  var erste = AB.get(GD.unit(id).passives[0]);
-  return (erste.amplifies || []).length > 0;
-}), 'thematische Einheiten schalten ihren Verstärker schon auf Rang B frei');
+  var L = AB.linien[id] || {};
+  return Object.keys(L).some(function (k) {
+    return L[k].some(function (pid) { return ((AB.get(pid) || {}).amplifies || []).length > 0; });
+  });
+}), 'thematische Einheiten haben ihren Verstärker im Linientopf, also ab Rang B wählbar');
 
 /* Bosse widerstehen Erstarrung — sonst gewinnt Frost jeden Einzelkampf. */
 /* Linien-Einheiten tragen ohne ausdrückliche Wahl KEINE Passiven — der
@@ -1987,16 +2000,18 @@ function atkVon(m) {
 ok(atkVon(kMit) > atkVon(kOhne),
    'Kurobes Schmiede rechnet mit der angelegten Ausrüstung (' +
    atkVon(kOhne) + ' → ' + atkVon(kMit) + ' Angriff)');
-/* Milim trägt bewusst keine Defensivlinie — sie ist die einzige Ausnahme, und
-   das soll auffallen, wenn es jemand versehentlich nachmacht. */
+/* Milim trug als einzige keine Defensivlinie. Das war eine bewusste Ausnahme,
+   ist aber auf Zuruf zurückgenommen: wer sie spielte, bekam nie ein defensives
+   Angebot, während alle anderen 38 aus vier Linien wählten. Jetzt gilt für
+   alle dasselbe, und der Test dreht sich um — keine leere Linie mehr. */
 var ohneLinie = [];
 Object.keys(AB.linien).forEach(function (id) {
   Object.keys(AB.linien[id]).forEach(function (l) {
     if (!AB.linien[id][l].length) ohneLinie.push(id + '/' + l);
   });
 });
-ok(ohneLinie.join(',') === 'milim/defensive',
-   'genau eine Einheit verzichtet auf eine ganze Linie: ' + (ohneLinie.join(', ') || 'keine'));
+ok(!ohneLinie.length,
+   'keine Einheit hat eine leere Linie' + (ohneLinie.length ? ': ' + ohneLinie.join(', ') : ''));
 ok(Object.keys(AB.linien).every(function (id) {
   return Object.keys(AB.linien[id]).every(function (l) {
     return AB.linien[id][l].length >= 4 || AB.linien[id][l].length === 0;
@@ -2345,6 +2360,94 @@ if (beute) {
   ok(erwartet.every(function (k) { return kw.indexOf(k) >= 0; }),
      'ihre Schlüsselwörter zählen für die Synergie-Anzeige mit');
 }
+
+/* Aufwertung: erlernt ist nicht gekauft. Verschlungene Gegner und Passive aus
+   der geteilten Bibliothek gingen bei der Aufwertung ersatzlos verloren —
+   `member()` legt eine leere Einheit an, und das Erbe filterte alles heraus,
+   was in keiner Linie DIESER Einheit steht. */
+var upRun = fertigerRun(4242);
+upRun.team = [R.member('shion')]; upRun.bank = []; upRun.magicules = 9000;
+var upBib = AB.passives.filter(function (p) { return !AB.linien_ids[p.id]; })[0].id;
+var upBeute = EN.all[0].id;
+upRun.team[0].rank = 1;
+upRun.team[0].devoured = [upBeute];
+upRun.team[0].passives = ['shion_ang3', upBib];
+ok(R.addUnit(upRun, 'shion', null, 2), 'die bessere Fassung ersetzt die alte');
+var upNeu = upRun.team.filter(function (m) { return m.id === 'shion'; })[0];
+ok(upNeu.rank === 2, 'die aufgewertete Shion steht auf Rang A');
+ok(upNeu.devoured.indexOf(upBeute) >= 0, 'der verschlungene Gegner überlebt die Aufwertung');
+var upErbe = R.linienPassiveTest('shion', 3, function () { return 0.5; },
+  ['shion_ang3', upBib, AB.linien['apito'].angriff[0]]);
+ok(upErbe.indexOf('shion_ang3') >= 0, 'die eigene Linien-Passive wird geerbt');
+ok(upErbe.indexOf(upBib) >= 0, 'die Bibliotheks-Passive ebenfalls');
+ok(upErbe.indexOf(AB.linien['apito'].angriff[0]) < 0, 'eine fremde Linien-Passive nicht');
+ok(upErbe.length === 3, 'und das Erbe belegt Plätze, statt welche dazuzulegen');
+
+/* Verstärker ohne Quelle werden nicht angeboten: Shions Ordnungsteufel liest
+   Antichaos, das ein reiner Chaos-Bau nirgends anlegt. */
+function shionAngebot(passives, seed, item) {
+  var r = fertigerRun(seed);
+  r.team = [R.member('shion')]; r.bank = []; r.relics = []; r.magicules = 9000; r.pwahlen = [];
+  r.team[0].rank = 1;
+  r.team[0].passives = passives.slice();
+  if (item) { r.bag = [item]; R.equip(r, r.team[0].uid, item); }
+  R.rankUp(r, r.team[0].uid);
+  var w = R.passivWahl(r);
+  return w ? w.offers.map(function (o) { return o.id; }) : [];
+}
+/* 40 Seeds, weil die Passung die ersten drei Plaetze festhaelt: eine Quelle,
+   die der Bau noch nicht fuehrt, kommt fast nur ueber den freien vierten Zug —
+   gemessen in 5 von 40 Angeboten. */
+var ohneQuelle = {}, mitQuelle = {};
+for (var sq = 0; sq < 40; sq++) {
+  shionAngebot(['shion_ang3', 'shion_unt2'], 3000 + sq).forEach(function (id) { ohneQuelle[id] = 1; });
+  shionAngebot(['shion_ang3', 'shion_unt1'], 3000 + sq).forEach(function (id) { mitQuelle[id] = 1; });
+}
+ok(!ohneQuelle['shion_ang5'], 'ohne Antichaos-Quelle wird der Ordnungsteufel nie angeboten');
+ok(!ohneQuelle['shion_def5'], 'der Ordnungspanzer genauso wenig');
+ok(ohneQuelle['shion_ang6'], 'der Verdorbene Teufel schon — er liest Chaos, und das legt sie an');
+ok(['shion_unt1', 'shion_unt5', 'shion_mec5'].some(function (id) { return ohneQuelle[id]; }),
+   'Antichaos-QUELLEN stehen weiter im Angebot: der Einstieg ins Thema bleibt offen');
+ok(mitQuelle['shion_ang5'], 'mit dem Realitätswarp im Bau taucht der Ordnungsteufel auf');
+/* Auch Ausrüstung ist eine Quelle: der Ordnungsreif legt Antichaos an. */
+var mitReif = {};
+for (var sr = 0; sr < 40; sr++) {
+  shionAngebot(['shion_ang3', 'shion_unt2'], 3000 + sr, 'ordnungsreif')
+    .forEach(function (id) { mitReif[id] = 1; });
+}
+ok(mitReif['shion_ang5'], 'der angelegte Ordnungsreif macht den Ordnungsteufel wieder anbietbar');
+
+/* Gezählt wird der Trupp: neun Verstärker können ihre eigene Trägerin gar nicht
+   speisen und leben von den Verbündeten. Kurobes „Gehärtet" liest Schild — mit
+   einem Schild-Verbündeten muss es angeboten werden können. */
+function kurobeAngebot(mit, seed) {
+  var r = fertigerRun(seed);
+  r.team = [R.member('kurobe')].concat(mit ? [R.member('rigurd')] : []);
+  /* Ohne Relikte: gehaltene Relikte sind seit dem Ausbau selbst Quellen, und
+     der Startwurf legt gern eines mit Schild dazu — geprüft wird hier der
+     Verbündete. */
+  r.bank = []; r.relics = []; r.magicules = 9000; r.pwahlen = [];
+  r.team[0].rank = 1;
+  r.team[0].passives = [AB.linien['kurobe'].angriff[0]];
+  if (mit) { r.team[1].rank = 2; r.team[1].passives = AB.linien['rigurd'].defensive.slice(0, 2); }
+  R.rankUp(r, r.team[0].uid);
+  var w = R.passivWahl(r);
+  return w ? w.offers.map(function (o) { return o.id; }) : [];
+}
+var kSchild = {}, kAllein = {};
+for (var ks = 0; ks < 40; ks++) {
+  kurobeAngebot(true, 5000 + ks).forEach(function (id) { kSchild[id] = 1; });
+  kurobeAngebot(false, 5000 + ks).forEach(function (id) { kAllein[id] = 1; });
+}
+ok(!Object.keys(kAllein).some(function (id) {
+  return ((AB.get(id) || {}).amplifies || []).indexOf('schild') >= 0;
+}), 'ohne Schild im Trupp bleiben sie draußen');
+ok(AB.linien['rigurd'].defensive.some(function (id) {
+  return ((AB.get(id) || {}).keywords || []).indexOf('schild') >= 0;
+}), 'der Verbündete legt wirklich Schild an (sonst prüft der Test nichts)');
+ok(Object.keys(kSchild).some(function (id) {
+  return ((AB.get(id) || {}).amplifies || []).indexOf('schild') >= 0;
+}), 'Kurobe bekommt Schild-Verstärker angeboten, wenn ein Verbündeter Schild legt');
 
 /* Shop */
 var sRun = fertigerRun(99);

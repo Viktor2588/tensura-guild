@@ -278,18 +278,12 @@
     return { uid: 'm' + (++uidSeq), id: id, rank: 0, items: [], actives: [], devoured: [], passives: [] };
   }
 
-  /* Welche Passiven trägt das Mitglied? Einheiten mit eigenen Linien tragen
-     genau das, was der Spieler gewählt hat; alle anderen weiter die drei festen
-     aus data.js, die mit dem Rang aufschalten. */
+  /* Welche Passiven trägt das Mitglied? Genau die, die der Spieler gewählt hat.
+     Der zweite Weg — die feste Liste aus data.js für Einheiten ohne Linien —
+     ist mit ihr weggefallen: seit alle 39 Linien haben, kam er nie mehr dran. */
   function passivIds(m) {
     var gewaehlt = m.passives || [];
-    if (AB.linien[m.id]) return gewaehlt.slice();
-    /* Wer noch nie vor einer Wahl stand, trägt die feste Liste aus data.js —
-       das hält alte Speicherstände und die Testhelfer am Leben, die einer
-       Einheit einfach einen Rang setzen. Sobald einmal gewählt werden durfte,
-       zählt nur noch die Wahl; sonst wäre Verzichten folgenlos. */
-    if (!m.durfteWaehlen) return GD.unit(m.id).passives.slice(0, PASSIV_SLOTS[m.rank]);
-    return gewaehlt.slice(0, PASSIV_SLOTS[m.rank]);
+    return AB.linien[m.id] ? gewaehlt.slice() : gewaehlt.slice(0, PASSIV_SLOTS[m.rank]);
   }
   function hatLinien(m) { return !!AB.linien[m.id]; }
 
@@ -486,11 +480,6 @@
         if (preset && preset.id) {
           var ab = AB.get(preset.id);
           if (ab) kw = kw.concat(ab.keywords || [], ab.amplifies || []);
-        } else {
-          (u.passives || []).forEach(function (pid) {
-            var ab = AB.get(pid);
-            if (ab) kw = kw.concat(ab.keywords || [], ab.amplifies || []);
-          });
         }
         var offen = relPool.filter(function (r) {
           return !r.bedingung && !vergeben[r.id] && (r.rarity || 1) <= START_MAX_RARITAET;
@@ -616,12 +605,20 @@
 
      Geerbt wird nur, was die Einheit auch tragen kann: eine ID aus einer
      anderen Einheit (nach einer Aufwertung ueber die ART, nicht ueber dieselbe
-     Einheit) faellt heraus. */
+     Einheit) faellt heraus.
+
+     Die Bibliothek gehoert KEINER Linie (`!AB.linien_ids[pid]`) und faellt
+     deshalb frueher mit heraus: wer bei zwei Aufstiegen eine Bibliotheks-
+     Passive gewaehlt hatte, verlor sie bei der naechsten Aufwertung ersatzlos.
+     Tragen kann sie jede Einheit — sie zaehlt jetzt als Erbe und belegt einen
+     der `anzahl` Plaetze, statt einen zusaetzlichen. */
   function wuerfleLinienPassive(unitId, anzahl, rng, erbe) {
     var angebot = AB.linienAngebot(unitId).filter(function (o) { return !o.preis; });
     var eigen = {};
     angebot.forEach(function (o) { eigen[o.id] = 1; });
-    var out = (erbe || []).filter(function (pid) { return eigen[pid]; }).slice(0, anzahl);
+    var out = (erbe || []).filter(function (pid) {
+      return eigen[pid] || !AB.linien_ids[pid];
+    }).slice(0, anzahl);
     var topf = angebot.filter(function (o) { return out.indexOf(o.id) < 0; });
     while (out.length < anzahl && topf.length) {
       out.push(topf.splice(Math.floor(rng() * topf.length), 1)[0].id);
@@ -1015,10 +1012,11 @@
   function addUnit(run, id, startPassiveId, rang, passiveListe) {
     var u = GD.unit(id);
     if (!u) return false;
+    var weg = null;
     if (!freieEinheit(run, u.id)) {
       /* Aufwertung derselben Einheit: die alte Einheit macht Platz und ihr Einsatz
          wird angerechnet. Die Ausruestung wandert zurueck in den Beutel. */
-      var weg = ersetzbar(run, u, rang || 0);
+      weg = ersetzbar(run, u, rang || 0);
       if (!weg) return false;
       var platz = run.team.map(function (x) { return x.uid; }).indexOf(weg.uid);
       weg.items.slice().forEach(function (iid) { unequip(run, weg.uid, iid); });
@@ -1035,6 +1033,12 @@
     }
     var m = member(id);
     if (rang) m.rank = Math.max(0, Math.min(3, rang));
+    /* Verschlungenes ueberlebt die Aufwertung. Es ist im Kampf erbeutet, nicht
+       gekauft: eine Aufwertung, die es wegwirft, bestraft genau das Spiel, das
+       der Praedator belohnen soll. Die Ausruestung wandert in den Beutel und
+       laesst sich neu anlegen — fuer verschlungene Gegner gibt es diesen Weg
+       zurueck nicht. Der hoehere Rang traegt ohnehin mehr Slots. */
+    if (weg) m.devoured = weg.devoured.slice();
     /* ponytail: Frontlinie rückt beim Anwerben direkt auf Platz 1 — Abkürzung
        aus TODO.md, damit man zum Testen nicht jedes Mal von Hand umstellt.
        Wieder auf `push` setzen, sobald die Aufstellung Spielerentscheidung ist. */
@@ -1172,6 +1176,10 @@
     var frei = AB.passives.filter(function (p) {
       return !AB.linien_ids[p.id] && hab.indexOf(p.id) < 0;
     });
+    /* Dieselbe Regel wie im eigenen Topf: Verstärker nur, wenn der Bau sie
+       speisen kann. Hier ist der Vorrat gross genug, dass eine je Kategorie
+       sicher uebrig bleibt. */
+    frei = speisbar(run, frei, m, KATEGORIEN.length);
     var katen = KATEGORIEN.concat();
     if (n < katen.length) katen = waehle(rng, katen.map(function (k) { return { id: k }; }), 1, n)
       .map(function (x) { return x.id; });
@@ -1216,6 +1224,43 @@
     return n;
   }
 
+  /* Ein Verstärker ohne Quelle ist keine unglückliche Wahl, sondern eine tote
+     Karte. `keywords` legt an, `amplifies` liest — Shions Ordnungsteufel liest
+     Antichaos, das ein reiner Chaos-Bau nirgends anlegt, und war damit ein
+     Angebot, das der Spieler gar nicht annehmen KONNTE. Gestrichen wird nur,
+     wofuer im eigenen Bau keine Quelle steht; die 532 der 700 Passiven ohne
+     `amplifies` sind selbst Quellen und bleiben immer im Topf — der Themen-
+     wechsel laeuft ueber sie, ein Hybrid bleibt also moeglich.
+
+     Gezaehlt wird der TRUPP, nicht die Einheit allein — genau wie bei der
+     Resonanz. Neun Verstaerker koennen ihre eigene Traegerin gar nicht speisen
+     (Kurobes „Gehaertet" liest Schild, Albis' „Auf Distanz" liest Tempo): sie
+     leben von den Verbuendeten und waeren bei einer Pruefung nur gegen die
+     eigenen Faehigkeiten fuer immer unanbietbar.
+
+     Angelegte Ausruestung und gehaltene Relikte zaehlen mit: der Ordnungsreif
+     legt Antichaos an, der Verzerrte Spiegel auch, und beide sind im Markt
+     kaufbar, bevor eine Passive dasselbe kann. Nur 9 der 32 Gegenstaende
+     fuehren ueberhaupt `keywords` — die uebrigen sind reine Zahlen und haben
+     nichts zu melden. */
+  function speisbar(run, topf, m, min) {
+    var quellen = {};
+    function ausListe(liste) {
+      (liste || []).forEach(function (k) { quellen[k] = 1; });
+    }
+    (run.relics || []).forEach(function (rid) { ausListe((GD.relic(rid) || {}).keywords); });
+    (run.team || []).concat([m]).forEach(function (u) {
+      abilities(u).forEach(function (a) { ausListe(a.keywords); });
+      (u.items || []).forEach(function (iid) { ausListe((GD.item(iid) || {}).keywords); });
+    });
+    var rest = topf.filter(function (o) {
+      return ((AB.get(o.id) || {}).amplifies || []).every(function (k) { return quellen[k]; });
+    });
+    /* Bleiben zu wenige uebrig, gilt der alte Topf: ein leeres Angebot waere
+       schlimmer als ein totes. */
+    return rest.length >= (min || PASSIV_ANGEBOTE) ? rest : topf;
+  }
+
   function passivAngebot(run, m, beiAnwerbung) {
     var hab = m.passives || [];
     var offers;
@@ -1228,23 +1273,43 @@
          wächst der Topf, zieht diese Stelle unverändert weiter. */
       var rng = rngOf(run);
       var topf = AB.linienAngebot(m.id).filter(function (o) { return hab.indexOf(o.id) < 0; });
+      topf = speisbar(run, topf, m);
       /* Blind gezogen war das Angebot der einzige Ort im Spiel, der den
          bisherigen Bau ignoriert — Markt (`themenWahl`), Startpaar und
          Bibliothek ziehen längst nach Thema. Wer Shion auf Antichaos gestellt
          hatte, bekam trotzdem reines Chaos angeboten und stand vor vier
          Angeboten, von denen keines zum eigenen Keystone führte.
-         Sortiert wird nach Passung, Gleichstand zufällig. */
-      var zahl = eigeneWorte(m), los = {};
-      topf.forEach(function (o) { los[o.id] = rng(); });
-      topf.sort(function (a, b) {
-        return (passung(b.id, zahl) - passung(a.id, zahl)) || (los[a.id] - los[b.id]);
-      });
+
+         Hart sortiert war die Kur schlimmer als die Krankheit: gemessen standen
+         bei gleichem Bau über ALLE 40 Seeds dieselben drei Angebote oben, und
+         nur der vierte Platz zog frei. Ein Bau konnte damit nicht mehr abbiegen
+         — die Passung schrieb ihn fort, statt ihn zu belohnen. Gezogen wird
+         jetzt gewichtet: `1 + Passung`, also ist ein Angebot mit vier
+         gemeinsamen Wörtern fünfmal so wahrscheinlich wie ein fremdes, aber
+         nichts ist gesetzt und nichts ist ausgeschlossen. */
+      var zahl = eigeneWorte(m);
+      function zieh(liste) {
+        var summe = 0, i2 = 0;
+        liste.forEach(function (o) { summe += 1 + passung(o.id, zahl); });
+        for (var w = rng() * summe; i2 < liste.length - 1; i2++) {
+          w -= 1 + passung(liste[i2].id, zahl);
+          if (w <= 0) break;
+        }
+        return liste[i2];
+      }
+      function nimm(o) { offers.push(topf.splice(topf.indexOf(o), 1)[0]); }
       offers = [];
-      while (offers.length < PASSIV_ANGEBOTE - 1 && topf.length) offers.push(topf.shift());
-      /* Das letzte Angebot bleibt ein freier Zug aus dem Rest. Ohne das führt
-         die erste Passive den Rest des Runs, und eine Einheit ließe sich nie
-         mehr umbauen — Flexibilität war der Punkt, nur nicht als einzige Regel. */
-      if (topf.length) offers.push(topf.splice(Math.floor(rng() * topf.length), 1)[0]);
+      /* EIN Platz gehört der besten Passung. Ohne ihn ist die Fortsetzung des
+         Baus nur wahrscheinlich, und in 4 von 120 gemessenen Angeboten sah ein
+         auf Antichaos gebauter Shion kein einziges Antichaos — genau der Fall,
+         den die Sortierung ursprünglich abstellen sollte. Die anderen drei
+         Plätze bleiben gewichtet offen: der Bau kann weiter, muss aber nicht. */
+      var best = 0;
+      topf.forEach(function (o) { best = Math.max(best, passung(o.id, zahl)); });
+      if (best > 0) {
+        nimm(zieh(topf.filter(function (o) { return passung(o.id, zahl) === best; })));
+      }
+      while (offers.length < PASSIV_ANGEBOTE && topf.length) nimm(zieh(topf));
       commit(run, rng);
       if (!offers.length) return;
       /* Wer eine Regel ändert, kostet dafür etwas — halbe Rüstung, kein Heilen,

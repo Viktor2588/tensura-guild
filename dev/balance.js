@@ -57,10 +57,15 @@ function passt(id, kw) {
   if (!u) return 0;
   var score = 0;
   var sig = AB.get(u.signature);
+  /* Die Linien, nicht mehr die feste Passiv-Liste aus data.js — die gibt es
+     nicht mehr, und die Linien sind ohnehin das, was die Einheit im Run lernt. */
   var eigene = (sig ? sig.keywords : []).concat();
-  u.passives.forEach(function (p) {
-    var ab = AB.get(p);
-    if (ab) eigene = eigene.concat(ab.keywords || [], ab.amplifies || []);
+  var L = (AB.linien && AB.linien[u.id]) || {};
+  Object.keys(L).forEach(function (kat) {
+    (L[kat] || []).forEach(function (p) {
+      var ab = AB.get(p);
+      if (ab) eigene = eigene.concat(ab.keywords || [], ab.amplifies || []);
+    });
   });
   eigene.forEach(function (k) {
     if (kw[k]) score += (kw[k].quellen + kw[k].verstaerker) * 2;
@@ -465,7 +470,6 @@ relRows.forEach(function (r) {
     var kws = [];
     function sammel(a) { if (a) kws = kws.concat(a.keywords || [], a.amplifies || []); }
     sammel(AB.get(u.signature));
-    (u.passives || []).forEach(function (p2) { sammel(AB.get(p2)); });
     var L = (AB.linien && AB.linien[u.id]) || {};
     Object.keys(L).forEach(function (kat) {
       (L[kat] || []).forEach(function (id) { sammel(AB.get(id)); });

@@ -3937,3 +3937,89 @@ demselben Befund. Statt weiter abzulehnen, sind alle 21 auf
 gewonnen, der Rest ist verworfen. Ein `grep -i audio`, das jetzt `js/ton.js`
 findet, ist **kein Befund und keine Einladung** — siehe `CLAUDE.md`,
 Abschnitt Nicht-Ziele.
+
+### Phase 78 (2026-08-16): Tote Angebote, tote Passive, tote Daten
+
+Vier Sachen, die alle dasselbe Muster haben: Inhalt, den das Spiel anbietet,
+ohne dass er etwas tun kann.
+
+**Verstärker ohne Quelle werden nicht mehr angeboten.** `keywords` legt an,
+`amplifies` liest. Shions Ordnungsteufel liest Antichaos, das ein reiner
+Chaos-Bau nirgends anlegt — ein Angebot, das der Spieler gar nicht annehmen
+KONNTE. `speisbar()` in `run.js` streicht solche Angebote, für den eigenen Topf
+wie für die Bibliothek. Gezählt wird der **Trupp** samt Ausrüstung und Relikten,
+nicht die Einheit allein: neun Verstärker (Kurobes `Gehärtet`, Albis'
+`Auf Distanz`, Orkkriegers `Schlachtruf` …) können ihre eigene Trägerin gar
+nicht speisen und leben von den Verbündeten. 532 der 700 Passiven haben kein
+`amplifies`, sind also selbst Quellen und bleiben immer im Topf — der Einstieg
+in ein neues Thema läuft über sie, Hybride bleiben möglich.
+
+**Die Passiv-Wahl wird gezogen, nicht sortiert.** Hart nach Passung sortiert
+standen bei gleichem Bau über alle 40 Seeds dieselben drei Angebote oben; nur
+Platz vier zog frei. Die Passung schrieb den Bau fort, statt ihn zu belohnen.
+Jetzt: ein Platz für die beste Passung (sonst kann ein Bau nicht mehr zu Ende
+gebaut werden — in 4 von 120 Angeboten sah ein Antichaos-Shion sonst kein
+einziges Antichaos), die anderen drei gewichtet mit `1 + Passung`.
+
+**Die Aufwertung nimmt mit, was im Kampf erlernt wurde.** `member()` legt eine
+leere Einheit an, und das Passiv-Erbe filterte auf die Linien DIESER Einheit —
+verschlungene Gegner und Passive aus der geteilten Bibliothek gingen bei jeder
+Aufwertung verlustig. Beides bleibt jetzt, und die Marktkarte sagt es auch.
+
+**117 tote Datenzeilen gelöscht.** Die festen `passives`-Listen je Einheit in
+`data.js` wurden seit Phase 51 von niemandem mehr gelesen — alle 39 Einheiten
+haben Linien, `passivIds` kam nie mehr an ihnen an.
+
+**Milim hat jetzt doch eine Defensivlinie** — Phase 38 ist damit auf Zuruf
+zurückgenommen. Die Ansage „sie verteidigt nicht, sie schlägt" hat gestimmt,
+aber sie kostete den Spieler in jedem Aufstieg ein Angebot, das alle anderen 38
+Einheiten haben. `Drachenhaut` (22 % weniger Schaden), `Zorn statt Schmerz`
+(je erlittenem Treffer +7 % Angriff), `Unsterblicher Leib` (Regeneration) und
+`Unzerstörbar` (Schadensdeckel gegen halbe Heilung). Gemessen +0.18 Bruchpunkt
+auf B und +0.35 auf S — deutlich unter ihren Angriffslinien (+1.36), also
+weiterhin nicht ihr Weg, aber kein leerer Platz mehr.
+
+**Fünf Passive waren gemessen negativ.** `dev/linien.js` misst je Linie;
+gebraucht wurde je Passive (Wegwerf-Skript, 150 Proben, Auflösung 0.04). Wer
+eine Passive wählt, darf davon nicht schwächer werden:
+
+| Passive | vorher | nachher | Was falsch war |
+|---|---|---|---|
+| `prie_unt4` Herrin der Quelle | −0.26 | +0.00 | `atk = 1` nimmt einen von vier Kämpfern ganz aus dem Kampf. Der doppelte Ertrag (12 → 25 % Leben, 28 → 60 % Heilung) brachte allein −0.22; erst der Preis auf 40 % Angriff hat es gedreht. |
+| `knecht_mec4` Unbrechbare Reihe | −0.13 | −0.04 | Die Reihe wächst je eigenem ZUG, der Preis war halbes Tempo — er fraß genau das, wofür er bezahlt wurde. Preis steht jetzt auf dem eigenen Stoß (60 %). |
+| `gerudo_unt4` Orkkönig | −0.09 | +0.04 | Dieselbe `atk = 1`-Falle, aber sie ließ sich nicht mit Zahlen lösen: 45 % Leben und 15 % Minderung bewegten exakt nichts. Gerudo ist der schwerste Schläger im Trupp; der Preis steht jetzt auf seiner Ausdauer (heilt nicht mehr). |
+| `gerudo_mec4` Alles auf mich | −0.09 | −0.04 | Viertel Angriff für halbe Deckung. Jetzt halber Angriff. |
+| `milim_unt4` Bezwingerin | −0.09 | +0.09 | Halbes Leben auf der stärksten Einheit im Trupp. Jetzt ein Drittel. |
+| `prie_mec4` Überfluss | −0.09 | −0.04 | Viertel Angriff für halbe Regeneration. Jetzt zwei Drittel Angriff für doppelte. |
+| `knecht_ang4` Drachenspeer | −0.04 | +0.00 | Die Antwort skaliert selbst mit `atk`, der Preis halbierte also den Ertrag mit. Jetzt −30 %. |
+| `milim_def4` Unzerstörbar | −0.26 | +0.31 | Neu gebaut und beim ersten Messen zu teuer: 35 % Angriff für einen Schadensdeckel. Jetzt halbe Heilung. |
+
+**Der wiederkehrende Fehler ist nicht die Höhe des Preises, sondern die Stelle.**
+Dreimal stand er auf genau dem, was die Passive auszahlt — Tempo bei einer, die
+je Zug wächst; Angriff bei einer, deren Konter mit `atk` skaliert; Angriff beim
+schwersten Schläger im Trupp. `atk = 1` gibt es in drei Passiven
+(`prie_unt4`, `shu_unt4`, `gerudo_unt4`); alle drei stehen jetzt auf 40 %.
+
+Fünf Passive bleiben bei −0.04 (`prie_mec4`, `knecht_mec4`, `gerudo_mec4`,
+`shu_mec2`, `shu_def1`). Das ist **ein** Gitterschritt der Messung und damit
+nicht von Null zu unterscheiden — daran weiter zu drehen hieße, Rauschen zu
+tunen. Der Rest von Drachenknecht und Quellenpriesterin liegt flach bei +0.00
+bis +0.04: für Einheiten zu Kosten 2 neben Milims Kosten 5 ist das kein Fehler,
+sondern ihr Preis. Nicht angefasst.
+
+Offen geblieben ist eine Ebene darüber: `dev/linien.js` misst eine Linie mit
+ALLEN vier Passiven zusammen, und dabei stapeln sich die Preise. Gerudos
+Mechaniklinie steht so bei −0.17, obwohl keine ihrer vier Passiven einzeln unter
+−0.04 liegt. Im echten Spiel wählt niemand vier aus einer Linie — vier aus
+sechzehn, über alle Linien. Wer das angeht, sollte zuerst die Messung an das
+Spiel angleichen, nicht die Passiven an die Messung.
+
+`dev/linien.js` kennt jetzt `--proben N`. Der Standard von 70 hat einen
+Standardfehler von rund 6 Punkten; für das Nachmessen einzelner Einheiten
+lohnen 300.
+
+**`onDamaged` feuert NACH dem Treffer.** Wer dort `c.dmg` anfasst, schreibt eine
+Passive, die nichts tut — Schadensminderung gehört auf `self.minderung` oder
+`self.schadensdeckel`. Ein Scan über alle 700 Passiven zeigt keinen weiteren
+Fall; die erste Fassung von `milim_def1` war einer und ist gemessen bei ±0.00
+aufgefallen.

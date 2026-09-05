@@ -846,6 +846,17 @@
   /* Was ein Posten wirklich tut — ausführlich, nicht als Kurzzeile. Der Markt
      ist die Stelle, an der entschieden wird; hier gehört die volle Beschreibung
      hin, nicht in einen Tooltip. */
+  /* Was die Aufwertung mitnimmt. Die Ausrüstung geht in den Beutel und die
+     Passiven stehen ohnehin auf der Karte — verschlungene Gegner nicht, und
+     genau die kann man nirgends zurückholen. Wer sich einen Prädator-Bau
+     aufgebaut hat, muss vor dem Kauf lesen können, dass er ihn behält. */
+  function mitnahme(run, o) {
+    var alt = R.ersetzbar(run, GD.unit(o.id), o.rang);
+    var n = alt ? alt.devoured.length : 0;
+    if (!n) return '';
+    return ' — ' + n + (n === 1 ? ' verschlungene Fähigkeit bleibt' : ' verschlungene Fähigkeiten bleiben');
+  }
+
   function marktText(o) {
     if (o.kind === 'unit') {
       var u = GD.unit(o.id), sig = AB.get(u.signature);
@@ -859,10 +870,6 @@
           var pp = AB.get(pid);
           return '· <b>' + esc(pp ? pp.name : pid) + '</b> — ' + esc(pp ? pp.text : '');
         }).join('<br>'));
-      } else if (!AB.linien[u.id]) {
-        zeilen.push('Erste Passive: ' + (u.passives || []).slice(0, 1).map(function (id) {
-          var pp = AB.get(id); return '<b>' + esc(pp.name) + '</b> — ' + esc(pp.text);
-        }).join(''));
       }
       /* Werte auf DEM Rang, der im Angebot steht — sonst liest man die Zahlen
          einer Einheit, die man so nicht kauft. */
@@ -919,7 +926,7 @@
         (frei ? '' : '<span class="unter">Steht schon im Trupp — Rang zu niedrig zum Aufwerten</span>') +
         (aufwertung ? '<span class="unter gut">Aufwertung: ersetzt ' +
           esc(GD.unit(R.ersetzbar(run, GD.unit(o.id), o.rang).id).name) +
-          ', Einsatz wird angerechnet</span>' : '') +
+          ', Einsatz wird angerechnet' + mitnahme(run, o) + '</span>' : '') +
         (!o.sold && frei && run.magicules < o.price
           ? '<span class="unter">' + (o.price - run.magicules) + ' ✦ fehlen</span>' : '') +
         '</button>';
@@ -1037,8 +1044,9 @@
     }
     html += '<p class="hinweis">' + (w.offers.some(function (o) { return o.verzicht; })
         ? 'Eine davon ändert eine Regel und kostet dafür etwas. Daneben steht die Bibliothek — schwächer, aber ohne Preis — oder gar nichts.'
-        : 'Drei Angebote sind nach dem bisherigen Bau ausgesucht, das vierte ist frei gezogen — ' +
-          'damit ein Umbau möglich bleibt. Was woran anschließt, steht an der Karte.') + '</p>' +
+        : 'Ein Angebot passt zum bisherigen Bau so gut wie möglich, die übrigen sind ' +
+          'gewichtet gezogen: was anschließt, kommt öfter — ausgeschlossen ist nichts. ' +
+          'Was woran anschließt, steht an der Karte.') + '</p>' +
       '<div class="karten">';
     w.offers.forEach(function (o, i) {
       if (o.verzicht) {

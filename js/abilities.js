@@ -1632,11 +1632,13 @@
       'Führt ein Verbündeter Schild, nimmt Gerudo 35 % jedes Treffers ab — sonst 15 %',
       function (c) { koenigsdeckung(c, truppFuehrt(c, 'schild') ? 0.35 : 0.15); }),
     passiv('gerudo_mec4', 'Alles auf mich', 'onStart', ['schild'], [],
-      'Gerudo nimmt jedem Verbündeten die Hälfte jedes Treffers ab — dafür schlägt er nur noch mit einem Viertel',
+      'Gerudo nimmt jedem Verbündeten die Hälfte jedes Treffers ab — dafür schlägt er nur noch halb',
       function (c) {
+        /* Ein Viertel Angriff war gemessen −0.09: Gerudo faengt zwar ab, aber
+           der Trupp verliert dabei mehr Schaden, als die Deckung einbringt. */
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        c.self.atk = Math.round(c.self.atk * 0.25);
+        c.self.atk = Math.round(c.self.atk * 0.5);
         koenigsdeckung(c, 0.5);
       }),
 
@@ -1662,15 +1664,25 @@
         c.allies().forEach(function (u) { if (u !== c.self) u.minderung = Math.max(u.minderung || 0, m); });
       }),
     passiv('gerudo_unt4', 'Orkkönig', 'onStart', [], [],
-      'Der Trupp bekommt +30 % Leben — Gerudo selbst greift nicht mehr an',
+      'Der Trupp bekommt +30 % Leben und erleidet 15 % weniger Schaden — Gerudo selbst heilt nicht mehr',
       function (c) {
+        /* Dreimal gemessen: 30 % Leben −0.09, Preis von „greift nicht mehr an"
+           auf 40 % Angriff gesenkt −0.09, Ertrag auf 45 % Leben erhoeht −0.09.
+           Leben allein bewegt den Bruchpunkt nicht — es verlaengert nur einen
+           Kampf, den der Trupp ohnehin verliert. Auch 15 % Minderung obendrauf
+           haben nichts bewegt: nicht der Ertrag war das Problem, sondern die
+           Stelle, an der bezahlt wird. Gerudo ist der schwerste Schlaeger im
+           Trupp, und ein Keystone, der ihn das Schlagen kostet, kann sich nicht
+           lohnen. Der Preis steht jetzt auf seiner Ausdauer. */
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
         andere.forEach(function (u) {
           var mehr = Math.round(u.maxHp * 0.3);
           u.maxHp += mehr; u.hp += mehr;
+          u.minderung = Math.max(u.minderung || 0, 0.15);
         });
-        c.self.atk = 1;
+        c.self.heilfaktor = -1;
+        c.self.regen = 0;
       }),
 
     passiv('gerudo_def1', 'Fettpanzer', 'onStart', ['schild'], [],
@@ -2820,14 +2832,50 @@
           } });
         });
       }),
+    /* Gemessen −0.09: halbes Leben auf der Einheit mit dem höchsten Schadens-
+       beitrag im Trupp kostet mehr, als 35 % auf die drei anderen einbringen. */
     passiv('milim_unt4', 'Bezwingerin der Drachen', 'onStart', [], [],
-      'Der Trupp schlägt 35 % härter — Milim selbst hält nur noch die Hälfte aus',
+      'Der Trupp schlägt 35 % härter — Milim selbst hält ein Drittel weniger aus',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
         andere.forEach(function (u) { u.atk = Math.round(u.atk * 1.35); });
-        c.self.maxHp = Math.round(c.self.maxHp * 0.5);
+        c.self.maxHp = Math.round(c.self.maxHp * 0.67);
         c.self.hp = Math.min(c.self.hp, c.self.maxHp);
+      }),
+
+    /* Milims Defensivlinie stand leer: als einzige Einheit hatte sie zwölf
+       statt sechzehn Passive, und wer sie spielte, bekam nie ein defensives
+       Angebot. Sie steht auch nicht neben den anderen drei, sondern gegen sie:
+       Angriff und Mechanik zahlen mit Zügen (Erstarrung) oder mit Schaden je
+       Schlag, die Unterstützung mit ihrem eigenen Leben. Diese Linie gibt das
+       Leben zurück, das die drei verpfänden — und macht aus Schaden Zorn statt
+       Deckung, weil eine Demonlord nicht blockt. */
+    /* `minderung` und nicht `c.dmg`: `onDamaged` feuert NACH dem Treffer, dort
+       ist der Schaden längst abgezogen (combat.js, `fire(target, 'onDamaged')`).
+       Wer dort an `c.dmg` dreht, schreibt eine Passive, die nichts tut. */
+    passiv('milim_def1', 'Drachenhaut', 'onStart', [], [],
+      'Jeder Treffer auf Milim fällt 22 % schwächer aus',
+      function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.22); }),
+    passiv('milim_def2', 'Zorn statt Schmerz', 'onDamaged', [], [],
+      'Jeder erlittene Treffer gibt Milim dauerhaft +7 % Angriff — höchstens +70 %',
+      function (c) {
+        c.self._zorn = (c.self._zorn || 0) + 1;
+        if (c.self._zorn <= 10) c.self.atk = Math.round(c.self.atk * 1.07);
+      }),
+    passiv('milim_def3', 'Unsterblicher Leib', 'onStart', ['heilung'], [],
+      'Milim regeneriert in jedem Zug 4 % ihres Lebens — führt ein Verbündeter Heilung, 6 %',
+      function (c) {
+        c.self.regen += Math.round(c.self.maxHp * (truppFuehrt(c, 'heilung') ? 0.06 : 0.04));
+      }),
+    /* Der Preis der Linie, an derselben Stelle wie in ihren anderen dreien:
+       Milim überlebt fast alles — und trifft dafür so weich, dass sie ohne den
+       Trupp nichts mehr abräumt. */
+    passiv('milim_def4', 'Unzerstörbar', 'onStart', ['heilung'], [],
+      'Kein Treffer kostet Milim mehr als 12 % ihres Lebens — dafür heilt sie nur noch halb',
+      function (c) {
+        c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.12);
+        c.self.heilfaktor = Math.min(c.self.heilfaktor, -0.5);
       }),
 
     /* ---- Veldoras Linien: der Sturmdrache -----------------------------------
@@ -3453,7 +3501,7 @@
         c.allies().forEach(function (u) { u.regen += n; });
       }),
     passiv('shu_unt4', 'Göttlicher Segen', 'onStart', ['heilung', 'schild'], [],
-      'Der Trupp bekommt +14 % Leben und 30 % stärkere Heilung — Shuna greift überhaupt nicht mehr an',
+      'Der Trupp bekommt +14 % Leben und 30 % stärkere Heilung — Shuna schlägt nur noch mit 40 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -3462,7 +3510,7 @@
           var add = Math.round(u.maxHp * 0.14);
           u.maxHp += add; u.hp += add;
         });
-        c.self.atk = 1;
+        c.self.atk = Math.max(1, Math.round(c.self.atk * 0.4));
       }),
 
     passiv('shu_def1', 'Gebetsschild', 'onStart', ['schild', 'licht'], [],
@@ -5103,9 +5151,11 @@
       function (c) { c.dmg *= 1 + Math.min(0.6, 0.04 * langerKampf(c)); }),
 
     passiv('knecht_ang4', 'Drachenspeer', 'onStart', ['konter'], [],
-      'Jeder erlittene Treffer wird mit vollem Angriff beantwortet — dafür sticht der Knecht selbst nur noch halb',
+      'Jeder erlittene Treffer wird mit vollem Angriff beantwortet — dafür sticht der Knecht selbst 30 % schwächer',
       function (c) {
-        c.self.atk = Math.round(c.self.atk * 0.5);
+        /* Halber Angriff war −0.04: die Antwort skaliert selbst mit `atk`, der
+           Preis halbierte also auch den Ertrag. */
+        c.self.atk = Math.round(c.self.atk * 0.7);
         c.addEffect(c.self, { hook: 'onDamaged', name: 'Drachenspeer', fn: function (k) {
           var f = k.foes()[0];
           if (f) k.deal(f, k.self.atk * 2, 'Drachenspeer');
@@ -5131,10 +5181,16 @@
       }),
     passiv('knecht_mec4', 'Unbrechbare Reihe', 'onStart', ['konter', 'schild'], [],
       'Die Reihe wächst mit dem Kampf: je eigenem Zug 3 % mehr Konterschaden und ein Schild über 2 % des ' +
-      'eigenen Lebens — dafür ist der Knecht nur noch halb so schnell',
+      'eigenen Lebens — dafür sticht der Knecht selbst nur noch mit 60 %',
       function (c) {
+        /* Tempo als Preis war doppelt gemessen negativ (−0.13 bei halbem, −0.09
+           bei drei Vierteln): die Reihe wächst je eigenem ZUG, ein Tempopreis
+           frisst also genau das, wofür er bezahlt wird. Der Preis steht jetzt
+           auf dem eigenen Stoß — die Passive zahlt ohnehin über Konter aus. */
         langerKampf(c);
-        c.self.spd = Math.max(1, Math.round(c.self.spd * 0.5));
+        c.addEffect(c.self, { hook: 'onHit', name: 'Unbrechbare Reihe', fn: function (k) {
+          k.dmg *= 0.6;
+        } });
         c.addEffect(c.self, { hook: 'onTurnStart', name: 'Unbrechbare Reihe', fn: function (k) {
           k.applyStatus(k.self, 'schild', Math.round(k.self.maxHp * 0.02 * Math.min(10, k.self._runden || 0)));
         } });
@@ -5246,12 +5302,14 @@
           k.allies().forEach(function (u) { u.heilfaktor += 0.04; });
         } });
       }),
+    /* Gemessen −0.09: ein Viertel Angriff war zu teuer für die halbe
+       Regeneration. Halber Angriff, dafür doppelte Regeneration. */
     passiv('prie_mec4', 'Überfluss', 'onStart', ['heilung'], [],
-      'Die Regeneration des Trupps wirkt 50 % stärker — dafür schlägt die Priesterin nur noch mit einem Viertel',
+      'Die Regeneration des Trupps wirkt doppelt — dafür schlägt die Priesterin ein Drittel schwächer',
       function (c) {
-        c.self.atk = Math.round(c.self.atk * 0.25);
+        c.self.atk = Math.round(c.self.atk * 0.65);
         c.addEffect(c.self, { hook: 'onTurnStart', name: 'Überfluss', fn: function (k) {
-          k.allies().forEach(function (u) { k.heal(u, (u.regen || 0) * 0.5, 'Überfluss'); });
+          k.allies().forEach(function (u) { k.heal(u, (u.regen || 0), 'Überfluss'); });
         } });
       }),
 
@@ -5272,17 +5330,23 @@
         var n = truppFuehrt(c, 'heilung') ? 7 : 3;
         c.allies().forEach(function (u) { u.regen += n; });
       }),
+    /* Gemessen war das die schlechteste Passive im Spiel: −0.26 Bruchpunkt, sie
+       machte den Trupp also messbar SCHWÄCHER. Der erste Versuch hat den Ertrag
+       verdoppelt (12 → 25 % Leben, 28 → 60 % Heilung) und brachte gerade −0.22:
+       nicht der Ertrag war zu klein, der PREIS war unbezahlbar. `atk = 1` nimmt
+       einen von vier Kämpfern ganz aus dem Kampf, und das holt keine Zahl auf.
+       Jetzt kämpft sie weiter, nur schwach. */
     passiv('prie_unt4', 'Herrin der Quelle', 'onStart', ['heilung'], [],
-      'Der Trupp bekommt +12 % Leben und 28 % stärkere Heilung — die Priesterin greift nicht mehr an',
+      'Der Trupp bekommt +25 % Leben und 60 % stärkere Heilung — die Priesterin schlägt nur noch mit 40 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
         andere.forEach(function (u) {
-          u.heilfaktor += 0.28;
-          var add = Math.round(u.maxHp * 0.12);
+          u.heilfaktor += 0.6;
+          var add = Math.round(u.maxHp * 0.25);
           u.maxHp += add; u.hp += add;
         });
-        c.self.atk = 1;
+        c.self.atk = Math.max(1, Math.round(c.self.atk * 0.4));
       }),
 
     passiv('prie_def1', 'Flink', 'onStart', ['tempo'], [],
@@ -5580,7 +5644,7 @@
       angriff: ['milim_ang1', 'milim_ang2', 'milim_ang3', 'milim_ang4'],
       mechanik: ['milim_mec1', 'milim_mec2', 'milim_mec3', 'milim_mec4'],
       unterstuetzung: ['milim_unt1', 'milim_unt2', 'milim_unt3', 'milim_unt4'],
-      defensive: []
+      defensive: ['milim_def1', 'milim_def2', 'milim_def3', 'milim_def4']
     },
     veldora: {
       angriff: ['veldora_ang1', 'veldora_ang2', 'veldora_ang3', 'veldora_ang4'],

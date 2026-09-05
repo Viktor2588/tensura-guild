@@ -581,7 +581,10 @@ ok(!!pw && $$('#wahl .karte').length === pw.offers.length,
 ok(/antichaos/i.test($('#wahl .bau-zeile').textContent),
    'über den Angeboten steht, was die Einheit schon trägt');
 var imBau = $$('#wahl .karte.im-bau'), neu = $$('#wahl .karte.neuer-weg');
-ok(imBau.length + neu.length === pw.offers.length,
+/* „Nichts nehmen" ist keine Passive und trägt deshalb keine der beiden Marken —
+   seit die Angebote gewichtet gezogen werden, kann eine Keystone-Karte mit Preis
+   in jedem Angebot auftauchen und die Verzichtskarte mitbringen. */
+ok(imBau.length + neu.length === pw.offers.filter(function (o) { return !o.verzicht; }).length,
    'jede Karte sagt, ob sie fortsetzt oder neu anfängt');
 ok(imBau.length >= 1 && imBau.every(function (k) { return !!k.querySelector('.bau-marke'); }),
    'die fortsetzenden Karten nennen das Wort, an dem sie weiterbauen');

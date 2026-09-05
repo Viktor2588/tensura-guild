@@ -22,7 +22,14 @@ require('../js/run.js');
 var GD = globalThis.GameData, EN = globalThis.Enemies,
     R = globalThis.Run, AB = globalThis.Abilities, C = globalThis.Combat;
 
-var PROBEN = 70;                        // Kämpfe je Härtestufe
+/* Kämpfe je Härtestufe. `--proben N` hebt sie an: bei 70 liegt der Standard-
+   fehler der Quote bei rund 6 Punkten, und ein Unterschied von einem Gitter-
+   schritt (0,09) ist damit nicht von Rauschen zu unterscheiden. Zum Nachmessen
+   einzelner Einheiten lohnen 300; für den Rundumlauf wäre es zu teuer. */
+var PROBEN = 70;
+process.argv.forEach(function (a, i) {
+  if (a === '--proben') PROBEN = parseInt(process.argv[i + 1], 10) || PROBEN;
+});
 var BEGLEITUNG = ['rigurd', 'gobwa', 'souka', 'sturmwolf'];
 
 /* Ein Trupp aus der Prüf-Einheit und drei Begleitern, deren Art nicht kollidiert. */
@@ -87,7 +94,9 @@ function bruchpunkt(id, rank, passives) {
 }
 
 var LINIEN = ['angriff', 'mechanik', 'unterstuetzung', 'defensive'];
-var wen = process.argv.slice(2);
+var wen = process.argv.slice(2).filter(function (a, i, all) {
+  return a.indexOf('--') !== 0 && all[i - 1] !== '--proben';
+});
 if (!wen.length) wen = Object.keys(AB.linien);
 
 console.log('Bruchpunkt = Gegnerstärke, bei der die Siegquote durch 50 % geht.');
