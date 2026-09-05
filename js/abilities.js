@@ -1632,14 +1632,32 @@
       'Führt ein Verbündeter Schild, nimmt Gerudo 35 % jedes Treffers ab — sonst 15 %',
       function (c) { koenigsdeckung(c, truppFuehrt(c, 'schild') ? 0.35 : 0.15); }),
     passiv('gerudo_mec4', 'Alles auf mich', 'onStart', ['schild'], [],
-      'Gerudo nimmt jedem Verbündeten die Hälfte jedes Treffers ab — dafür schlägt er nur noch halb',
+      'Jeder zweite Angriff geht auf Gerudo statt auf sein Ziel, und er nimmt 35 % weniger Schaden — dafür schlägt er nur noch halb',
       function (c) {
-        /* Ein Viertel Angriff war gemessen −0.09: Gerudo faengt zwar ab, aber
-           der Trupp verliert dabei mehr Schaden, als die Deckung einbringt. */
+        /* Der Name stand schief: „Alles auf mich" konnte Schaden nur
+           nachtraeglich ABNEHMEN (koenigsdeckung), nicht die Zielwahl holen.
+           Seit `spott` in combat.js die Zielwahl kennt, tut die Passive, was
+           sie sagt — und die Koenigsdeckung faellt weg.
+
+           Nicht aus Sauberkeit, sondern gemessen (Rang S, 300 Proben,
+           Aufloesung 0.02, Mechaniklinie gegen einen gemischten Bau):
+
+             Koenigsdeckung allein, wie bisher     −0.09
+             Koenigsdeckung UND Spott              −0.09
+             Spott allein                          −0.02
+             Spott und 35 % Minderung              +0.02
+
+           Drei Preise auf einem Koerper waren zu viel: Gerudo zog die halbe
+           Zielwahl auf sich, sog zusaetzlich die Haelfte aller Treffer der
+           anderen und schlug dabei nur halb. Er schmolz, und danach stand der
+           Trupp ungedeckt in einem Kampf, den sein halber Angriff ohnehin
+           verlaengert hatte — die Passive war gemessen negativ, seit es sie
+           gibt. Wer zieht, braucht keine zweite Umleitung, sondern eine Haut. */
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
         c.self.atk = Math.round(c.self.atk * 0.5);
-        koenigsdeckung(c, 0.5);
+        c.self.spott = 0.5;
+        c.self.minderung = Math.max(c.self.minderung || 0, 0.35);
       }),
 
     passiv('gerudo_unt1', 'Königswort', 'onStart', [], [],
@@ -2094,6 +2112,10 @@
     passiv('suphia_mec4', 'Wächterin', 'onStart', [], [],
       'Suphia nimmt jedem Verbündeten 30 % jedes Treffers ab — dafür schlägt sie nur noch halb so hart',
       function (c) {
+        /* Kein Spott. Suphia ist Verstaerkerin, kein Panzer — und die Deckung
+           braucht ihren zweiten Traeger: mit Gerudo allein waere sie eine
+           Mechanik, die in den meisten Runs nicht vorkommt. Gezogen wird bei
+           Gerudo (`gerudo_mec4`) und beim Echsenfuersten (`fuerst_def4`). */
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
         c.self.atk = Math.round(c.self.atk * 0.5);
@@ -5117,10 +5139,15 @@
         c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
       }),
     passiv('fuerst_def4', 'Der letzte Wall', 'onStart', [], [],
-      'Kein Treffer kostet mehr als 13 % seines Lebens — dafür schlägt der Fürst nur noch mit einem Drittel',
+      'Jeder dritte Angriff geht auf den Fürsten statt auf sein Ziel, und kein Treffer kostet ihn mehr als 13 % seines Lebens — dafür schlägt er nur noch mit einem Drittel',
       function (c) {
         c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.125);
         c.self.atk = Math.round(c.self.atk * 0.34);
+        /* Der zweite Spott-Traeger, und der Deckel ist genau die Haut, die
+           einer braucht, der zieht — die Lehre aus Gerudo: der Zug allein war
+           dort gemessen −0.02, erst mit Minderung +0.02. Hier stand die
+           Minderung schon vorher da und hat auf einen Zug gewartet. */
+        c.self.spott = 0.35;
       }),
 
     /* ---- Drachenknecht: der Speerwall --------------------------------------

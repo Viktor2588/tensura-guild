@@ -4023,3 +4023,126 @@ Passive, die nichts tut — Schadensminderung gehört auf `self.minderung` oder
 `self.schadensdeckel`. Ein Scan über alle 700 Passiven zeigt keinen weiteren
 Fall; die erste Fassung von `milim_def1` war einer und ist gemessen bei ±0.00
 aufgefallen.
+
+### Phase 79 (2026-09-05): Ein Panzer, der Treffer holt statt sie abzunehmen
+
+Worktree `/home/viktor/tensura/worktree/phase-79-bedrohung`, Branch
+`phase-79-bedrohung`. Das Schema aus `CLAUDE.md` nennt `/tensura/worktree/…`;
+das Wurzelverzeichnis ist auf dieser Maschine nicht beschreibbar, deshalb
+derselbe Pfad unter `$HOME`.
+
+Idee 2 aus der Recherche in `TODO.md` — „Bedrohung statt fester Zielwahl", die
+älteste offene Zeile der Liste.
+
+**Der Befund war präziser als die Notiz.** Deckung gab es längst, zweimal
+sogar: räumlich in `deal()` (wer dem Angreifer näher steht als das Ziel, fängt
+ein Drittel ab) und als `koenigsdeckung()` in `abilities.js`. Beide greifen
+NACH dem Schlag. Die Zielwahl selbst (`pickTarget`) hing allein an der Rolle
+des Angreifers, und „ich ziehe die Treffer auf mich" war eine Ansage ohne Regel
+dahinter — der Kommentar an `koenigsdeckung` sagt es selbst: „Gebaut aus
+vorhandenen Mitteln."
+
+**`spott` ist eine Chance je Zielwahl, kein Zwang.** Wer sie trägt, zieht den
+Angriff mit dieser Wahrscheinlichkeit auf sich; der Rest geht weiter nach
+Rolle. Ein Spotter, der alles zieht, löscht die halbe Zielwahl: Fernkampf
+träfe nicht mehr die Hinterreihe, der Magier nicht mehr das schwächste Ziel.
+Gilt auch für das Laufziel — wer noch nicht heranreicht, läuft auf den Spotter
+zu, und das ist genau der Sinn.
+
+**Der Zug allein macht einen Panzer schlechter, nicht besser.** Das war die
+Überraschung. Gerudos „Alles auf mich" trug bis hierher drei Preise auf einem
+Körper: halber Angriff, die Hälfte aller Treffer der anderen über
+`koenigsdeckung`, und mit dem Spott nun auch noch die halbe Zielwahl. Er
+schmolz, und danach stand der Trupp ungedeckt in einem Kampf, den sein halber
+Angriff ohnehin verlängert hatte. Gemessen an Rang S, 300 Proben, Auflösung
+0.02, Mechaniklinie gegen einen gemischten Bau:
+
+| Aufbau von `gerudo_mec4` | Bruchpunkt |
+|---|---|
+| Königsdeckung 0.5, wie bisher | −0.09 |
+| Königsdeckung 0.5 **und** Spott 0.5 | −0.09 |
+| Spott 0.5 allein | −0.02 |
+| Spott 0.5 und 35 % Minderung | **+0.02** |
+
+Die Passive war also gemessen negativ, seit es sie gibt — die Krücke war nicht
+nur unschön, sie hat nie funktioniert. Wer zieht, braucht keine zweite
+Umleitung, sondern eine Haut.
+
+**Zweiter Träger: „Der letzte Wall" des Echsenfürsten.** Er deckelt jeden
+Treffer auf 13 % seines Lebens — eine Haut, auf die nie jemand geschossen hat.
+Mit Spott 0.35 geht seine Defensivlinie von **−0.13 auf +0.07**. Suphias
+„Wächterin" bleibt dagegen bei der Königsdeckung: sie ist Verstärkerin, kein
+Panzer, und `koenigsdeckung` braucht ihren zweiten Träger — mit Gerudo allein
+wäre es eine Mechanik, die in den meisten Runs nicht vorkommt (`dev/sim.js`
+prüft das).
+
+**`jagdbefehl` war tot.** `pickTarget` las das Flag, die Debug-Übersicht zeigte
+es an, gesetzt hat es nie jemand — ein Leser ohne Schreiber, dasselbe Muster
+wie die 117 Datenzeilen aus Phase 78. Gelöscht; die Anzeigezeile zeigt jetzt
+den Spott.
+
+#### `dev/linien.js` misst jetzt, was das Spiel anbietet
+
+Der offene Punkt vom Ende der Phase 78. Bisher füllte jede Spalte alle
+`rank + 1` Plätze aus DERSELBEN Linie — ein Bau, den das Spiel nicht kennt:
+der Aufstieg legt vier aus sechzehn vor. Wer vier aus einer Linie nimmt,
+stapelt auch deren vier Preise.
+
+Jetzt: die halben Plätze aus der geprüften Linie — die bezahlte zuerst, denn
+sie ist die Identität der Linie —, der Rest reihum aus den anderen dreien. Und
+verglichen wird gegen einen ebenso gemischten Referenzbau statt gegen die
+nackte Einheit, denn das ist die Frage beim Aufstieg: diese Linie statt einer
+anderen. Die Spalte `ohne` bleibt als Grundwert daneben stehen.
+
+**Das kostet Auflösung, und zwar sichtbar.** „Vier Passive statt keiner"
+bewegt den Bruchpunkt um Zehntel, „diese Linie statt einer anderen" um
+Hundertstel. Auf dem alten 0,09-Gitter steht danach überall `+0.00`. Die Zahl
+der Halbierungen hängt deshalb jetzt an `--proben`: 5 bis 120 Proben, 6 bis
+250, ab 250 sieben Schritte und damit 0,02. Der Rundumlauf bleibt billig, das
+Nachmessen einzelner Einheiten wird teurer — richtig herum, denn der
+Rundumlauf sucht Ausreißer und das Nachmessen entscheidet.
+
+Das erste Ergebnis mit dem neuen Maßstab (300 Proben):
+
+```
+Einheit       Rang   ohne  gem.   Angriff  Mechanik  Unterst.  Defensiv
+Gerudo        B      0.58  0.63  0.65 +0.02  0.65 +0.02  0.65 +0.02  0.63 +0.00
+Gerudo        S      1.09  1.15  1.15 +0.00  1.17 +0.02  1.22 +0.07  1.15 +0.00
+Echsenfürst   B      0.23  0.52  0.58 +0.07  0.50 -0.02  0.21 -0.31  0.23 -0.28
+Echsenfürst   S      0.93  0.98  1.04 +0.07  0.89 -0.09  0.80 -0.18  1.04 +0.07
+```
+
+Die Echsenfürst-Zeile auf B ist kein Messfehler, sondern das, was der neue
+Maßstab sichtbar macht: auf Rang B gibt es zwei Passiv-Plätze, einer davon ist
+in dieser Spalte der bezahlte Keystone. „Der letzte Wall" kostet zwei Drittel
+seines Angriffs — auf S, mit vier Plätzen, trägt der Rest das mit (+0.07), auf
+B nicht (−0.28). **Ein Keystone ist eine Aussage über den Rang, nicht nur über
+die Linie**, und das stand vorher in keiner Spalte. Wer dort weitermacht: die
+Unterstützungslinie des Fürsten steht auf beiden Rängen tief im Minus.
+
+#### Was dabei nebenbei aufgefallen ist
+
+**`dev/balance.js` sieht bezahlte Passiven nie.** Beide 600-Run-Läufe zu dieser
+Phase — vorher und nachher — waren byte-identisch, 81 % Siege. Der Grund:
+über 120 Runs trifft der Bot ganze 6 Passiv-Entscheidungen und davon 0
+bezahlte. Einheiten kommen seit Phase 51 fertig aus dem Markt, und
+`wuerfleLinienPassive` filtert `!o.preis`; eine Wahl entsteht nur beim
+Aufstieg, den der Bot fast nie erlebt. Die vierte Stelle jeder Linie — 156
+Passiven, alle Keystones — ist im 600-Run-Lauf unerreichbar. Steht als eigener
+Punkt in `TODO.md`; wer es beheben will, muss dem Bot Aufstiege verschaffen,
+nicht an der Auswahl drehen.
+
+#### Aufgeräumt in TODO.md
+
+Vier Punkte standen als offen da, die es nicht mehr waren:
+
+- **`GRUNDHAERTE` an der Wurzel prüfen** — Phase 21 hat den Generator-Einheiten
+  echte Linien gegeben, danach musste der globale Knopf nicht mehr nachgezogen
+  werden. Der Wert steht bei 1.03, nicht bei den befürchteten 1.08.
+- **Aufstiegs-Pool bleibt Gegner-Repertoire** — stand selbst schon auf
+  „erledigt, anders als geplant".
+- **Idee 3, zwei Reihen** — hat sich mit dem Hexfeld erledigt (Phasen 41-44),
+  wie der Entwurf im selben Dokument bereits sagt.
+- **Idee 5, Kosten und Aufladung** — halb erledigt, halb entschieden.
+  *Aufladung* ist ein Nicht-Ziel seit Phase 10 (keine Abklingzeiten, die
+  Signatur feuert jede Runde). *Kosten* gibt es seit Phase 51 als `preis`.

@@ -115,20 +115,21 @@ Abgearbeitet in Phase 20:
 - [x] Meta-Progression zeigt jetzt auch verschlossene Einheiten/Relikte namentlich als getrennte Chips.
 - [x] Startzustand ist zufällig vorausgewählt (keine Passive-Auswahl beim Anwerben); der Markt zeigt das konkrete mitgebrachte Start-Passiv.
 
-Offen:
+Erledigt (nachgetragen in Phase 79):
 
-1. **Der Aufstiegs-Pool bleibt Gegner-Repertoire.** *(erledigt, anders als
-   geplant)* Der Plan war, die 34 Aktiven zu Passiven umzuschreiben, damit die
+1. ~~**Der Aufstiegs-Pool bleibt Gegner-Repertoire.**~~ — erledigt, anders als
+   geplant. Der Plan war, die 34 Aktiven zu Passiven umzuschreiben, damit die
    Bibliothek wächst. Gewachsen ist sie in Phase 33 — durch 24 neu geschriebene
    Passive, die die Lage lesen statt ein Thema vorauszusetzen (34 → 58). Die
    Aktiven umzubauen hätte dem nichts hinzugefügt; sie sind als Gegnerinhalt
    sinnvoll und bleiben es.
 
-2. **`GRUNDHAERTE` ist in einer Sitzung von 1.02 auf 1.08 gewandert.** Der
-   globale Knopf hat die Siegquote geradegezogen, aber er trifft auch die 20
-   handgeschriebenen Einheiten, die gar nicht stärker geworden sind. Prüfen, ob
-   die Generator-Linien an der Wurzel zu breit sind, statt weiter am Knopf zu
-   drehen.
+2. ~~**`GRUNDHAERTE` ist in einer Sitzung von 1.02 auf 1.08 gewandert.**~~ —
+   erledigt an der Wurzel. Der Verdacht stimmte: die Generator-Linien waren zu
+   breit. Phase 21 hat den 20 Generator-Einheiten echte Linien statt vier Mal
+   derselben gegeben, und danach musste der globale Knopf nicht mehr
+   nachgezogen werden. `GRUNDHAERTE` steht seit Phase 76 bei **1.03**
+   (`js/run.js`), nicht bei 1.08.
 
 Abgearbeitet in Phase 21:
 
@@ -420,10 +421,21 @@ Offen aus der Recherche (Ideen 1, 2, 3, 5):
   Phase 62. Nicht als Datenarbeit: die Wörter werden aus Aktive und Passiven
   abgeleitet, so wie `Run.buildTeile` es beim Spieler tut. Nebenbei fiel ein
   Konter-Rekursionsfehler auf, den erst ein resonierender Gegnertrupp erreicht.
-- **2. Bedrohung statt fester Zielwahl** — ein Panzer kann heute keine Treffer
-  auf sich ziehen.
-- **3. Zwei Reihen statt einer Liste.**
-- **5. Kosten und Aufladung als System** statt je Passive handgeschnitzt.
+- ~~**2. Bedrohung statt fester Zielwahl**~~ — erledigt in Phase 79. `spott` in
+  `pickTarget` (`js/combat.js`) holt die Zielwahl VOR den Schlag; Deckung und
+  Königsdeckung greifen erst danach. Träger sind Gerudos „Alles auf mich"
+  (50 %) und „Der letzte Wall" des Echsenfürsten (35 %). Als Chance, nicht als
+  Zwang — ein Spotter, der alles zieht, löscht die Rollen der Gegenseite.
+- ~~**3. Zwei Reihen statt einer Liste.**~~ — hat sich mit Schritt 3 des
+  Hex-Wegs erledigt (Phasen 41-44): das Hexfeld IST der Raum, den zwei Reihen
+  angenähert hätten. Steht so auch im Entwurf weiter unten.
+- ~~**5. Kosten und Aufladung als System**~~ — halb erledigt, halb entschieden.
+  *Aufladung* ist ein Nicht-Ziel: Phase 10 hat die Abklingzeiten abgeschafft,
+  die Signatur feuert jede Runde. *Kosten* gibt es seit Phase 51 als `preis` an
+  vierter Stelle jeder Linie (`PREIS_INDEX` in `abilities.js`) — nicht
+  handgeschnitzt, sondern eine Stelle, die das Angebot kennt und „nichts
+  nehmen" danebenstellt. Phase 78 hat acht davon nachgemessen, Phase 79 zwei
+  weitere.
 
 ## Entwurf: Hexagonales Taktik-RPG
 
@@ -601,3 +613,16 @@ Balance und Werkzeug:
 - Der Bot in `balance.js` misst „vier auf B" gegen „eine auf S" weiterhin
   nicht — Phase 64 hat es mit `--kaufstil spitze` versucht und gezeigt, dass ein
   Sparfaktor dafuer nicht reicht.
+- **`dev/balance.js` sieht die bezahlten Passiven nie.** In Phase 79 gemessen:
+  über 120 Runs trifft der Bot ganze **6** Passiv-Entscheidungen, davon **0**
+  bezahlte. Die vierte Stelle jeder Linie (`PREIS_INDEX`) ist damit im
+  600-Run-Lauf unerreichbar — 156 Passiven, alle Keystones, alles was eine
+  Regel ändert. Der Grund ist keine Panne, sondern Phase 51: Einheiten kommen
+  fertig aus dem Markt, und `wuerfleLinienPassive` filtert `!o.preis`. Eine
+  Wahl entsteht nur beim Aufstieg, und den erlebt der Bot fast nie.
+
+  Praktische Folge: Änderungen an einem Keystone bewegen `npm run balance` um
+  exakt null — die beiden 600-Run-Läufe zu Phase 79 waren byte-identisch. Wer
+  einen Keystone misst, braucht `dev/linien.js`, nicht `balance.js`. Wer das
+  beheben will, muss dem Bot Aufstiege verschaffen, nicht an der Auswahl
+  drehen.

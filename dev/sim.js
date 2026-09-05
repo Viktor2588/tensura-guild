@@ -1009,6 +1009,56 @@ var giftLauf = C.simulate([def('rigurd', 2), def('shion', 2), def('gobkyu'), def
 ok(giftLauf.log.filter(function (l) { return l.source === 'Gift'; })
    .every(function (l) { return l.target !== 'Rigurd' || true; }), 'Giftschaden läuft ohne Umleitung');
 
+/* ---- Bedrohung: der Panzer holt sich die Zielwahl -----------------------
+   Deckung und Königsdeckung fangen ab, NACHDEM der Schlag gefallen ist.
+   `spott` greift eine Stufe früher, an der Zielwahl selbst.
+
+   Gemessen wird an einem FERNKÄMPFER, weil dessen Rollenregel die klarste
+   ist: er nimmt immer die Hinterreihe (`foes[foes.length - 1]`). Gerudo steht
+   vorn — jeder Treffer auf ihn ist also einer, den nur der Spott dorthin
+   gebracht haben kann.
+
+   Gegen echte Gegner ließ sich das nicht messen: ein Panzer, der die halbe
+   Zielwahl abbekommt, stirbt gegen `mult: 3` in wenigen Zügen und zieht
+   danach gar nichts mehr. Deshalb Attrappen mit viel Leben — geprüft wird die
+   Regel, nicht der Ausgang.
+
+   Gegen `Lastenträger` gemessen: dieselbe Linie, dieselbe Königsdeckung, kein
+   Spott. Damit ist der Spott der einzige Unterschied. */
+function zaeh(id, name, rolle, atk) {
+  return { id: id, name: name, tags: ['bestie', rolle], hp: 900000, atk: atk || 1,
+           def: 0, spd: 10, actives: [], effects: [], keywords: [] };
+}
+function spottAnteil(passiv) {
+  var eigen = 0, alle = 0;
+  for (var s = 1; s <= 8; s++) {
+    var m = R.member('gerudo');
+    m.rank = 3; m.passives = [passiv];
+    var g = R.resolve(m);
+    g.hp = 900000;
+    /* Der Schütze schlägt hart genug, um durch Gerudos Schild zu kommen. Bei
+       kleinem Schaden schluckt der Schild den Treffer ganz, und dann steht im
+       Log nur ein `schild`-Eintrag — die Zielwahl wäre unsichtbar, obwohl sie
+       stattgefunden hat. */
+    C.simulate([g, zaeh('d1', 'Hinten1', 'front'), zaeh('d2', 'Hinten2', 'front')],
+      [zaeh('s1', 'Schütze', 'fernkampf', 4000)], s).log.forEach(function (l) {
+      /* Nur die Schüsse des Schützen — Umgeleitetes und Königsdeckung sind
+         genau die alte Krücke und dürfen die Messung nicht tragen. */
+      if (l.type !== 'hit' || l.side !== 'player' || l.source !== 'Schütze') return;
+      alle++;
+      if (l.target === 'Gerudo') eigen++;
+    });
+  }
+  return alle ? eigen / alle : 0;
+}
+var mitSpott = spottAnteil('gerudo_mec4'), ohneSpott = spottAnteil('gerudo_mec3');
+ok(mitSpott > ohneSpott + 0.2,
+   'Spott zieht die Zielwahl auf den Panzer (' + Math.round(mitSpott * 100) + ' gegen ' +
+   Math.round(ohneSpott * 100) + ' % der direkten Treffer)');
+/* Kein Zwang: die Rollenregel der Gegenseite muss weiter durchkommen, sonst
+   ist die halbe Zielwahl toter Code. */
+ok(mitSpott < 0.9, 'und lässt die Zielwahl der Gegenseite am Leben');
+
 /* ------------------------------------------------------------- Kampf */
 head('Kampf');
 var team = ['rimuru', 'gobta', 'gruftwaechter'].map(function (id) { return def(id); });
@@ -1791,7 +1841,12 @@ function gerudoDeckung(pass) {
   }
   return summe / 20;
 }
-var ohneD = gerudoDeckung([]), mitD = gerudoDeckung(['gerudo_mec1']), vollD = gerudoDeckung(['gerudo_mec4']);
+/* `gerudo_mec4` stand hier früher als „voller Anteil". Seit die Zielwahl den
+   Spott kennt, deckt „Alles auf mich" nicht mehr, sondern ZIEHT — die
+   Königsdeckung war dort die Krücke dafür und ist weg. Gemessen wird deshalb
+   nur noch, was wirklich deckt: `mec1` gegen `mec3` (0.22 gegen 0.35 Anteil,
+   letzteres nur mit Schild im Trupp — den hat mec3 selbst). */
+var ohneD = gerudoDeckung([]), mitD = gerudoDeckung(['gerudo_mec1']), vollD = gerudoDeckung(['gerudo_mec3']);
 ok(mitD > ohneD && vollD > mitD,
    'Gerudo nimmt seiner Reihe Schaden ab, und mehr Anteil deckt mehr (' +
    Math.round(ohneD * 100) + ' % → ' + Math.round(mitD * 100) + ' % → ' +

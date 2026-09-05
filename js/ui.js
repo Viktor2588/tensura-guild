@@ -1387,7 +1387,7 @@
     if (k.schadensdeckel) extra.push('Treffer gedeckelt auf ' + Math.round(k.schadensdeckel * 100) + ' % Leben');
     if (k.markenmeister > 1) extra.push('Marken ×' + k.markenmeister);
     if (k.chaosmeister > 1) extra.push('Chaos ×' + k.chaosmeister);
-    if (k.jagdbefehl) extra.push('Jagdbefehl');
+    if (k.spott) extra.push('Spott ' + Math.round(k.spott * 100) + ' %');
     if (extra.length) html += '<p class="dbg-extra">' + esc(extra.join(' · ')) + '</p>';
 
     html += '<p class="dbg-extra">⚡ ' + (k.actives.map(function (x) {

@@ -639,14 +639,25 @@
       /* Steht niemand in Reichweite, gilt die Wahl unten dem LAUFZIEL. */
       if (nah.length) foes = nah;
       if (!foes.length) return null;
-      /* Jagdbefehl: der Trupp geht auf das, was der Assassine aufgerissen hat. */
-      if (u.jagdbefehl) {
-        var markiert = foes.filter(function (f) { return f.status.verwundbar > 0; });
-        if (markiert.length) {
-          return markiert.reduce(function (a, b) {
-            return (b.status.verwundbar || 0) > (a.status.verwundbar || 0) ? b : a;
-          });
-        }
+      /* Bedrohung. Ein Panzer konnte Schaden bisher nur UMLEITEN — die Deckung
+         hier oben und `koenigsdeckung` in abilities.js fangen ab, NACHDEM der
+         Schlag gefallen ist. Die Zielwahl selbst kam nie bei ihm an: sie hing
+         allein an der Rolle des Angreifers, und „ich ziehe die Treffer auf
+         mich" war damit eine Ansage ohne Regel dahinter.
+
+         `spott` ist eine CHANCE je Zielwahl, kein Zwang. Ein Spotter, der alles
+         auf sich zieht, loescht die Rollen der Gegenseite: Fernkampf trifft
+         dann nicht mehr die Hinterreihe, der Magier nicht mehr das
+         schwaechste Ziel — beide schlagen auf denselben Panzer ein, und die
+         halbe Zielwahl waere toter Code. Als Chance bleibt beides am Leben.
+
+         Auch gueltig, wenn niemand in Reichweite steht: dann ist das hier das
+         Laufziel, und ein Spott, der den Gegner ZU sich zieht, ist genau das,
+         wofuer er da ist. */
+      var spotter = foes.filter(function (f) { return f.spott > 0; });
+      if (spotter.length) {
+        var stark = spotter.reduce(function (a, b) { return b.spott > a.spott ? b : a; });
+        if (rng() < stark.spott) return stark;
       }
       if (u.role === 'fernkampf') return foes[foes.length - 1];               // Hinterreihe
       if (u.role === 'magier') {

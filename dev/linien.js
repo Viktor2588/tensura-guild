@@ -81,12 +81,18 @@ function bruchpunkt(id, rank, passives) {
   var lo = 0.2, hi = 3.0;
   if (quote(id, rank, passives, lo) < 0.5) return lo;      // schafft nicht mal das
   if (quote(id, rank, passives, hi) > 0.5) return hi;
-  /* Fünf Schritte, nicht sieben. Sieben lösen 2,8/128 = 0,02 Härte auf — bei
-     70 Proben je Punkt liegt der Standardfehler der Quote aber schon bei rund
-     6 Prozentpunkten, die letzten beiden Halbierungen messen also Rauschen und
-     kosten trotzdem je 140 Kämpfe. Fünf Schritte reichen auf 0,09 genau, und
-     der Lauf wird um gut ein Viertel kürzer. */
-  for (var i = 0; i < 5; i++) {
+  /* Auflösung nach Probenzahl. Fünf Schritte lösen 0,09 auf; sieben 0,02, was
+     bei 70 Proben (Standardfehler rund 6 Punkte) nur Rauschen wäre und je
+     Schritt trotzdem 140 Kämpfe kostet.
+
+     Seit die Spalten gegen einen GEMISCHTEN Bau zählen statt gegen die nackte
+     Einheit, sind die Unterschiede aber kleiner: „vier Passive statt keiner"
+     bewegt den Bruchpunkt um Zehntel, „diese Linie statt einer anderen" um
+     Hundertstel. Auf dem 0,09-Gitter steht dann überall +0.00, und der
+     Rundumlauf sagt nichts mehr. Wer genau hinsehen will, zahlt beides:
+     `--proben 300` schaltet auch die feineren Schritte frei. */
+  var schritte = PROBEN >= 250 ? 7 : PROBEN >= 120 ? 6 : 5;
+  for (var i = 0; i < schritte; i++) {
     var mid = (lo + hi) / 2;
     if (quote(id, rank, passives, mid) > 0.5) lo = mid; else hi = mid;
   }
@@ -94,25 +100,60 @@ function bruchpunkt(id, rank, passives) {
 }
 
 var LINIEN = ['angriff', 'mechanik', 'unterstuetzung', 'defensive'];
+
+/* ---- Warum nicht vier aus EINER Linie? ----------------------------------
+   Bis Phase 78 hat diese Datei je Linie alle `rank + 1` Plätze aus derselben
+   Linie gefüllt. Das misst einen Bau, den das Spiel nicht kennt: der Aufstieg
+   legt vier aus SECHZEHN vor, über alle Linien. Wer vier aus einer Linie
+   nimmt, stapelt auch deren vier Preise — Gerudos Mechaniklinie stand so bei
+   −0.17, obwohl keine ihrer Passiven einzeln unter −0.04 lag.
+
+   Jetzt: die halben Plätze aus der geprüften Linie (aufgerundet), der Rest
+   reihum aus den anderen dreien. Und verglichen wird gegen einen ebenso
+   gemischten Referenzbau statt gegen die nackte Einheit — sonst misst die
+   Spalte weiter „Passive gegen keine Passive" und nicht „diese Linie gegen
+   eine andere", was die Frage beim Aufstieg ist.                            */
+function mischung(L, slots, ausser) {
+  var quellen = LINIEN.filter(function (l) { return l !== ausser; });
+  var out = [];
+  for (var stufe = 0; out.length < slots && stufe < 4; stufe++) {
+    for (var i = 0; i < quellen.length && out.length < slots; i++) {
+      out.push(L[quellen[i]][stufe]);
+    }
+  }
+  return out;
+}
+/* Die halben Plätze aus der geprüften Linie, und die BEZAHLTE zuerst: sie ist
+   die Identität der Linie (`PREIS_INDEX` in abilities.js, Stelle 4), und wer
+   sich auf eine Linie legt, nimmt sie mit. Genau einen Preis statt vier — das
+   war der Fehler der alten Messung, nicht der Preis an sich. Die Stellen 0-2
+   sind keine Stufen mehr, die Reihenfolge dahinter ist also frei. */
+function bauplan(L, lin, slots) {
+  var eigen = [L[lin][3]].concat(L[lin].slice(0, 3)).slice(0, Math.ceil(slots / 2));
+  return eigen.concat(mischung(L, slots - eigen.length, lin));
+}
 var wen = process.argv.slice(2).filter(function (a, i, all) {
   return a.indexOf('--') !== 0 && all[i - 1] !== '--proben';
 });
 if (!wen.length) wen = Object.keys(AB.linien);
 
 console.log('Bruchpunkt = Gegnerstärke, bei der die Siegquote durch 50 % geht.');
-console.log('Höher ist besser. „ohne" ist der Grundwert derselben Einheit.\n');
-console.log('Einheit       Rang   ohne   Angriff  Mechanik  Unterst.  Defensiv');
+console.log('Höher ist besser. „ohne" ist die nackte Einheit, „gemischt" ein Bau');
+console.log('reihum aus allen vier Linien — die Deltas zählen gegen „gemischt",');
+console.log('denn das ist die Frage beim Aufstieg: diese Linie statt einer anderen.\n');
+console.log('Einheit       Rang   ohne  gem.   Angriff  Mechanik  Unterst.  Defensiv');
 
 wen.forEach(function (id) {
   var L = AB.linien[id];
   if (!L) { console.log('  ' + id + ': keine Linien'); return; }
   [1, 3].forEach(function (rank) {
-    var basis = bruchpunkt(id, rank, []);
+    var slots = rank + 1;
+    var nackt = bruchpunkt(id, rank, []);
+    var basis = bruchpunkt(id, rank, mischung(L, slots, null));
     var zeile = GD.unit(id).name.padEnd(14) + R.RANK_NAME[rank].padEnd(6) +
-      basis.toFixed(2).padStart(5);
+      nackt.toFixed(2).padStart(5) + basis.toFixed(2).padStart(6);
     LINIEN.forEach(function (lin) {
-      var p = L[lin].slice(0, rank + 1);
-      var b = bruchpunkt(id, rank, p);
+      var b = bruchpunkt(id, rank, bauplan(L, lin, slots));
       var d = b - basis;
       zeile += ('  ' + b.toFixed(2) + (d >= 0 ? ' +' : ' ') + d.toFixed(2)).padStart(10);
     });

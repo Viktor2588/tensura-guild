@@ -298,12 +298,26 @@ Einheit antippen, dann die andere — die beiden tauschen den Platz. Die Pfeile
 ▲▼ an jeder Karte bleiben für die Feinkorrektur. Der Strich in der Zeile
 markiert, ab wo die Deckung greift.
 
-## Deckung
+## Deckung und Spott
 
-Ab Platz 3 gibt eine Einheit **ein Drittel jedes Treffers an die vorderste
-lebende Einheit ab**. Ein zäher Körper vorn schützt die Reihe dahinter also
-wirklich — Gift und Brand gehen daran allerdings vorbei. Wer seinen Trupp
-sinnvoll aufstellt statt ihn zu lassen, wie er kam, gewinnt messbar öfter.
+**Deckung** hängt an der Lage auf dem Hexfeld: Steht ein lebender Verbündeter
+näher am Angreifer als dessen Ziel, übernimmt er **ein Drittel des Treffers**.
+Ein zäher Körper vorn schützt die Reihe dahinter also wirklich — Gift, Brand
+und Blutung gehen daran allerdings vorbei. Wer seinen Trupp sinnvoll aufstellt
+statt ihn zu lassen, wie er kam, gewinnt messbar öfter.
+
+**Spott** ist die Stufe davor. Deckung greift, NACHDEM der Schlag gefallen ist;
+Spott greift an der Zielwahl selbst. Wer Spott trägt, zieht jeden Angriff mit
+der angegebenen Wahrscheinlichkeit auf sich — egal welche Rolle der Angreifer
+hat und wen er eigentlich nehmen wollte. Es ist eine Chance, kein Zwang: der
+Rest der Angriffe geht weiter nach Rolle, ein Panzer schaltet die gegnerische
+Zielwahl also nicht ab.
+
+Zwei Passiven legen ihn an: Gerudos **Alles auf mich** (50 %) und **Der letzte
+Wall** des Echsenfürsten (35 %). Beide bezahlen ihn mit ihrem Angriff, und
+beide bringen eine Haut mit — 35 % Minderung beim einen, ein Schadensdeckel
+beim anderen. Das ist kein Zufall: Ziehen ohne Zähigkeit heißt nur, schneller
+zu sterben und den Trupp danach ungedeckt stehen zu lassen.
 
 ## Relikte mit Bedingung
 
