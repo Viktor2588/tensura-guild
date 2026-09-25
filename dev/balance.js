@@ -178,6 +178,7 @@ function play(seed, voll) {
         if (sc > bw) { bw = sc; bs = i; }
       });
       R.chooseStart(run, bs);
+      run._start = run.team.map(function (m) { return m.id; }).join('+');
       continue;
     }
     if (R.passivWahl(run)) {
@@ -297,7 +298,7 @@ var bossKampf = {}, bossSieg = {};
 var kaeufe = {}, unbezahlbar = 0, pwahlen = 0, mitKeystone = 0, keystones = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
 var angebote = {}, gekauft = {};                  // je Einheit: im Regal / gekauft
 var ohneFront = 0, ohneStuetze = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
-var proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {}, proResonanz = {};
+var proStart = {}, proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {}, proResonanz = {};
 /* Der Rang am RUN-ENDE ist eine Folge der Laufzeit, keine Ursache: ein Run, der
    in Akt 1 stirbt, hatte nie Geld fuer S. Deshalb zusaetzlich der Rang zu einem
    FESTEN Zeitpunkt — Beginn von Akt 2 —, und von dort aus die Siegquote. Das ist
@@ -345,6 +346,7 @@ for (var s = 0; s < N; s++) {
     bump(proEinheit, m.id, won);
   });
   bump(proRang, R.RANK_NAME[hoechster], won);
+  bump(proStart, run._start || '?', won, run.act === 1 ? 1 : 0);
   if (run._rangAkt2 !== null) bump(proRangAkt2, R.RANK_NAME[run._rangAkt2], won);
   /* JE KNOTEN, nicht je Run: ein gewonnener Run spielt 16 Knoten, ein
      verlorener oft die Haelfte. Je Run gezaehlt misst man die Laufzeit. */
@@ -561,6 +563,24 @@ relRows.forEach(function (r) {
       (r.a ? '  (' + Math.round(r.g / r.a * 100) + ' %)' : ''));
   });
 })();
+
+/* Phase 83: die Starteinheit ist der einzige saubere Vergleich zwischen
+   Einheiten. Der Bot waehlt sie fast gleichverteilt, und der erste Kampf ist
+   ein 1 gegen 1 auf Rang C — dort zaehlt die nackte Einheit. Die Tabelle je
+   Einheit weiter unten misst dagegen auch den Kaufzeitpunkt. */
+console.log('\nSiegquote je STARTEINHEIT (in Klammern: Tod in Akt 1):');
+var jeStart = Object.keys(proStart).map(function (id) {
+  var e = proStart[id];
+  return { id: id, q: e.w / e.n, a1: e.t / e.n, n: e.n };
+}).sort(function (a, b) { return b.q - a.q; });
+for (var si = 0; si < jeStart.length; si += 4) {
+  console.log('  ' + jeStart.slice(si, si + 4).map(function (e) {
+    return (e.id.slice(0, 14).padEnd(15) + String(Math.round(e.q * 100)).padStart(3) + '% (' +
+            Math.round(e.a1 * 100) + ')').padEnd(28);
+  }).join(''));
+}
+var spanne = jeStart.length ? Math.round((jeStart[0].q - jeStart[jeStart.length - 1].q) * 100) : 0;
+console.log('  Spanne ' + spanne + ' Punkte, je Einheit n≈' + Math.round(N / Math.max(1, jeStart.length)));
 
 console.log('\nSiegquote je EINHEIT im Trupp am Run-Ende (misst Staerke UND Kaufzeitpunkt — kausal nur mit --ohne):');
 var jeEinheit = Object.keys(proEinheit).map(function (id) {
