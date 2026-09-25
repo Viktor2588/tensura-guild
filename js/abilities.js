@@ -186,6 +186,45 @@
       chance(0.1, function (c) {
         c.gegner().forEach(function (f) { c.deal(f, c.self.atk * 0.7, 'Erdbeben'); c.markiere(f, 1); });
       })),
+    /* --- Phase 109: Stapel verbrauchen statt nur anhaeufen ---------------------
+       Fast jeder Zustand waechst nur; Donner war die einzige Ausnahme. Diese
+       vier geben aus: alles auf einmal, etwas weniger als der Restwert ueber
+       die Zeit, dafuer sofort. Die Entscheidung heisst: weiter aufbauen oder
+       jetzt ausloesen. */
+    passiv('giftschlag', 'Giftschlag', 'onHit', [], ['gift'],
+      'Trifft die Einheit ein Ziel mit mindestens 8 Gift, verbraucht sie alles Gift auf einmal: 0,8 × Stapel² Schaden',
+      function (c) {
+        var n = c.target.status.gift || 0;
+        if (n < 8) return;
+        c.target.status.gift = 0;
+        c.deal(c.target, 0.8 * n * n, 'Giftschlag', { pure: true });
+      }),
+    passiv('glutstoss', 'Glutstoß', 'onHit', [], ['brand'],
+      'Trifft die Einheit ein Ziel mit mindestens 6 Brand, verbraucht sie allen Brand auf einmal: 0,9 × Stapel² Schaden',
+      function (c) {
+        var n = c.target.status.brand || 0;
+        if (n < 6) return;
+        c.target.status.brand = 0;
+        c.deal(c.target, 0.9 * n * n, 'Glutstoß', { pure: true });
+      }),
+    passiv('schildsprenger', 'Schildsprenger', 'onHit', [], ['schild'],
+      'Jeder dritte Angriff sprengt den eigenen Schild: er ist weg, und das Ziel nimmt denselben Wert als Schaden',
+      function (c) {
+        c.self._sprenger = (c.self._sprenger || 0) + 1;
+        if (c.self._sprenger % 3) return;
+        var s2 = c.self.status.schild || 0;
+        if (s2 < 1) return;
+        c.self.status.schild = 0;
+        c.deal(c.target, s2, 'Schildsprenger', { pure: true });
+      }),
+    passiv('blutzoll', 'Blutzoll', 'onHit', [], ['blutung'],
+      'Trifft die Einheit ein Ziel mit mindestens 5 Blutung, verbraucht sie alle: je Stapel 3 % seines maximalen Lebens als Schaden',
+      function (c) {
+        var n = c.target.status.blutung || 0;
+        if (n < 5) return;
+        c.target.status.blutung = 0;
+        c.deal(c.target, c.target.maxHp * 0.03 * n, 'Blutzoll', { pure: true });
+      }),
     passiv('erstschlag', 'Erstschlag', 'onHit', [], [], 'Der erste Angriff verursacht +80 % Schaden',
       function (c) { if (!c.self._es) { c.self._es = 1; c.dmg *= 1.8; } }),
     passiv('scharfrichter', 'Scharfrichter', 'onHit', [], ['exekution'], 'Doppelter Schaden gegen Ziele unter 30 % Leben',
@@ -5962,6 +6001,7 @@
     /* Angriff: mehr Schaden, ohne Umweg über einen Zustand. */
     erstschlag: 'angriff', panzerbrecher: 'angriff', kriegsherz: 'angriff',
     herausforderung: 'defensive',
+    giftschlag: 'mechanik', glutstoss: 'mechanik', blutzoll: 'mechanik', schildsprenger: 'angriff',
     schwachstelle: 'mechanik', wundmal: 'mechanik', splitterhieb: 'mechanik',
     wirbelhieb: 'angriff', weitschlag: 'angriff', erdbeben: 'angriff',
     scharfrichter: 'angriff', henkersblick: 'angriff', blutrausch: 'angriff',
@@ -6583,6 +6623,7 @@
     /* Passive */
     kriegsherz: 1, windschritt: 1, erstschlag: 1, giftbrut: 1, glutkern: 1, schildwall: 1,
     herausforderung: 2,
+    giftschlag: 3, glutstoss: 3, schildsprenger: 3, blutzoll: 3,
     schwachstelle: 1, wundmal: 2, splitterhieb: 3, wirbelhieb: 3, weitschlag: 3, erdbeben: 4,
     lebenskraft: 3, bollwerkmeister: 3, massenschlaechter: 4, schwungmeister: 3, rachsucht: 3,
     blutrausch: 4, trophaenjaeger: 3,

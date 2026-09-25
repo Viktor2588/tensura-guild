@@ -2873,6 +2873,16 @@ head('Duo-Bindungen (Phase 108)');
   ok(mit > ohne, 'Shion schlägt mit Benimaru härter (' + ohne + ' → ' + mit + ')');
 })();
 
+head('Stapel verbrauchen (Phase 109)');
+(function () {
+  var m = R.member('albis'); m.rank = 2; m.passives = ['giftschlag'];
+  var sack = { id: 's', name: 'Sack', tags: ['bestie', 'front'], hp: 5000, atk: 1, def: 0, spd: 5,
+    actives: [], effects: [], keywords: [] };
+  var log = C.simulate([R.resolve(m)], [sack], 3).log;
+  ok(log.some(function (l) { return l.type === 'hit' && l.source === 'Giftschlag'; }),
+     'Albis sammelt Gift und verbraucht es mit dem Giftschlag');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

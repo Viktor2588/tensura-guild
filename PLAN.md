@@ -1331,7 +1331,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
   Diablo+Rimuru, Gabiru+Echsenfürst, Milim+Rimuru …). Stehen beide im Trupp,
   gilt ein dritter Effekt; Anzeige unter „Fähigkeits-Synergien" und im Markt
   („bindet mit …").
-- [~] **Phase 109 — Stapel verbrauchen.** (in Bearbeitung) Bibliotheks-Passiven mit
+- [x] **Phase 109 — Stapel verbrauchen.** (erledigt, siehe unten) Bibliotheks-Passiven mit
   „ausgeben statt anhäufen": Gift, Brand, Schild, Blutung je ein Verbraucher
   (ab N Stapeln alles verbrauchen für einen Stoß), gemessen mit
   `dev/beute.js`.
@@ -1382,3 +1382,17 @@ Fähigkeits-Synergien, im Markt „🔗 bindet: …" an der Einheit, die ein Paa
 schließen würde. Siegquote im Rahmen (Bindungen sind selten, der Markt mischt).
 
 `dev/sim.js` 556/556 · `dev/uitest.js` 141/141.
+
+### Phase 109 (2026-09-26): Stapel verbrauchen
+
+Vier Bibliotheks-Passiven geben Stapel auf einmal aus, statt sie nur zu häufen
+(Donner war bisher die einzige Entladung): **Giftschlag** (ab 8 Gift:
+0,8 × Stapel² Schaden), **Glutstoß** (ab 6 Brand: 0,9 × Stapel²),
+**Schildsprenger** (jeder dritte Angriff: eigener Schild wird zu Schaden),
+**Blutzoll** (ab 5 Blutung: je Stapel 3 % des maximalen Lebens). Etwas weniger
+als der Restwert über die Zeit, dafür sofort. Alle vier sind Verstärker: der
+Markt bietet sie nur an, wenn der Trupp die Quelle hat (`speisbar`), und der
+Prüfstand von `dev/beute.js` misst sie deshalb mit +0 — seine Referenztrupps
+legen keinen dieser Zustände. Test mit Albis in `dev/sim.js`.
+
+`dev/sim.js` 557/557 · `dev/uitest.js` 141/141.
