@@ -1049,6 +1049,17 @@ Boss kommt aus dem Pool von Akt 2. Jetzt steht dort sein Name.
 
 `dev/sim.js` 527/527 · `dev/uitest.js` 141/141.
 
-### [~] Phase 96 (2026-09-25): Der Markt sagt, was zum Bau passt (in Bearbeitung)
+### Phase 96 (2026-09-25): Der Markt sagt, was zum Bau passt
 
 Worktree `/home/viktor/tensura/worktree/phase-96-bauhinweis`, Branch `phase-96-bauhinweis`.
+
+Die Passiv-Wahl sagt seit Phase 78 an jeder Karte, woran sie weiterbaut. Der
+Markt sagte es nicht, obwohl dort die größeren Entscheidungen fallen — erst
+recht, seit Einheiten dort gemischt statt nach Thema kommen (Phase 84). Jetzt
+trägt jeder Posten mit Schlüsselwörtern eine Marke: grün „↗ baut weiter an:
+Gift" oder grau „↷ neuer Weg". Gezählt wird gegen den ganzen Trupp samt
+Relikten und Ausrüstung (`R.buildTeile`, dieselbe Quelle wie die Synergie-
+Anzeige); bei Einheiten Signatur und die Passiven des Pakets. Eine Aufwertung
+trägt ihre eigene Zeile und keine Marke. Im Browser angesehen.
+
+`dev/sim.js` 527/527 · `dev/uitest.js` 141/141.

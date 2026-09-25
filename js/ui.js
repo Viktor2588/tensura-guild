@@ -936,7 +936,32 @@
     return 'Steht schon im Trupp — Rang zu niedrig zum Aufwerten';
   }
 
+  /* Was ein Marktposten zum Bau beitraegt (Phase 96). Die Passiv-Wahl sagt
+     seit Phase 78, woran eine Karte weiterbaut — der Markt sagte es nicht,
+     obwohl dort die groesseren Entscheidungen fallen. Gezaehlt wird gegen den
+     ganzen Trupp samt Relikten und Ausruestung, wie die Synergie-Anzeige. */
+  function postenWorte(o) {
+    var quelle = o.kind === 'unit' ? [AB.get(GD.unit(o.id).signature)].concat((o.passives || []).map(AB.get))
+      : o.kind === 'item' ? [GD.item(o.id)] : o.kind === 'relic' ? [GD.relic(o.id)] : [];
+    var w = [];
+    quelle.forEach(function (x) {
+      ((x && x.keywords) || []).concat((x && x.amplifies) || []).forEach(function (k) {
+        if (w.indexOf(k) < 0) w.push(k);
+      });
+    });
+    return w;
+  }
+  function bauHinweis(o, bau) {
+    var eigen = postenWorte(o);
+    if (!eigen.length) return '';
+    var treffer = eigen.filter(function (k) { return bau[k]; });
+    return treffer.length
+      ? '<span class="unter bau-marke im-bau">↗ baut weiter an: ' + esc(treffer.map(kwName).join(' · ')) + '</span>'
+      : '<span class="unter bau-marke neuer-weg">↷ neuer Weg</span>';
+  }
+
   function marktHtml(offers) {
+    var bau = AB.keywords(R.buildTeile(run));
     var html = '<h3>Markt — ' + run.magicules + ' ✦</h3>' +
       '<p class="hinweis">Was der Kampf eingebracht hat, gibst du hier aus. ' +
       'Verkaufen: Gegenstand, Relikt oder Einheit auf die Fläche unten ziehen.</p>';
@@ -958,6 +983,7 @@
         '<div class="kw-leiste">' + belohnungTags(o) + '</div>' +
         '<span class="beschreibung">' + marktText(o) + '</span>' +
         (frei ? '' : '<span class="unter">' + sperrGrund(o) + '</span>') +
+        (aufwertung ? '' : bauHinweis(o, bau)) +
         (aufwertung ? '<span class="unter gut">Aufwertung: ersetzt ' +
           esc(GD.unit(R.ersetzbar(run, GD.unit(o.id), o.rang).id).name) +
           ', Einsatz wird angerechnet' + mitnahme(run, o) + '</span>' : '') +

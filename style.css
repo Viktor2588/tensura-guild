@@ -623,3 +623,7 @@ ul.mali li::before { content: '−'; position: absolute; left: -.9rem; opacity: 
 
 /* Boss-Regel in der Vorschau (Phase 94). */
 .boss-regel { color: var(--rot); }
+
+/* Bau-Hinweis am Marktposten (Phase 96), dieselben Farben wie in der Passiv-Wahl. */
+.karte .unter.bau-marke.im-bau { color: var(--gruen); }
+.karte .unter.bau-marke.neuer-weg { color: var(--grau); }
