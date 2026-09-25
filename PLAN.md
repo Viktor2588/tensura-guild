@@ -1250,3 +1250,7 @@ Klinge streute Chaos auf einen zweiten Gegner). Shion als Starterin 73 %
 (vorher 67–70), Siegquote gesamt 53 %.
 
 `dev/sim.js` 546/546 · `dev/uitest.js` 141/141.
+
+### [~] Phase 105 (2026-09-26): Provokation — die Front zieht alle Gegner auf sich (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-105-spott`, Branch `phase-105-spott`.
