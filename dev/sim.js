@@ -2948,6 +2948,25 @@ head('Chaos-Entladung (Phase 113)');
   ok(log.some(function (l) { return l.type === 'chaos_entladung'; }), 'ab 10 Chaos entlädt Shion es');
 })();
 
+head('Meisterkoch der Wirklichkeit (Phase 114)');
+(function () {
+  function mittel(pass) {
+    var summe = 0, n = 0;
+    for (var s = 1; s <= 40; s++) {
+      var m = R.member('shion'); m.rank = 3; m.passives = pass;
+      var sack = { id: 's', name: 'Sack', tags: ['bestie', 'front'], hp: 60000, atk: 5, def: 0, spd: 8,
+        actives: [], effects: [], keywords: [] };
+      C.simulate([R.resolve(m)], [sack], s).log.forEach(function (l) {
+        if (l.type === 'chaos' && l.side === 'enemy') { summe += l.atk; n++; }
+      });
+    }
+    return n ? summe / n : 100;
+  }
+  var ohne = mittel([]), mit = mittel(['shion_mec11']);
+  ok(mit < ohne, 'mit dem Meisterkoch würfeln Gegner unter Chaos schlechter (Ø Angriff ' +
+     Math.round(ohne) + ' % → ' + Math.round(mit) + ' %)');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

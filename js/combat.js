@@ -817,9 +817,16 @@
            gewürfelt konnte Chaos den Gegner ebenso gut STÄRKEN — als Debuff
            gedacht, als Glücksspiel gespielt. Unvorhersehbar bleibt es: die Höhe
            der Einbuße wird in jeder Runde neu gewürfelt. */
+        /* Meisterkoch der Wirklichkeit (Phase 114, Shion): steht er auf der
+           eigenen Seite, zaehlt beim Antichaos der bessere von zwei Wuerfen;
+           steht er gegenueber, beim Chaos der schlechtere fuer diese Einheit. */
+        var kochEigen = living(u.side).some(function (a) { return a.meisterkoch; });
+        var kochFeind = living(other(u.side)).some(function (a) { return a.meisterkoch; });
         ['atk', 'def', 'spd'].forEach(function (k) {
+          var auf = kochEigen ? Math.max(rng(), rng()) : rng();
+          var ab = kochFeind ? Math.max(rng(), rng()) : rng();
           u.chaos[k] = Math.min(CHAOS_MAX,
-            Math.max(CHAOS_MIN, 1 + rng() * streu * posC - rng() * streu * negC));
+            Math.max(CHAOS_MIN, 1 + auf * streu * posC - ab * streu * negC));
         });
         log.push({ t: t, type: 'chaos', key: u.key, unit: u.name, side: u.side,
                    stapel: Math.round(negC), anti: Math.round(posC),

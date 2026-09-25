@@ -346,6 +346,27 @@ Einheit antippen, dann die andere — die beiden tauschen den Platz. Die Pfeile
 ▲▼ an jeder Karte bleiben für die Feinkorrektur. Der Strich in der Zeile
 markiert, ab wo die Deckung greift.
 
+## Tiefere Systeme
+
+- **Meisterschaft:** jede Passive zählt die Kämpfe, in denen sie ausgelöst
+  hat. Ab 3 Kämpfen ✦, ab 8 ✦✦ — jede Stufe gibt dem Träger +3 % Leben und
+  Angriff. Die Aufwertung nimmt den Stand mit.
+- **Bindungen:** acht Paare aus der Welt schalten einen dritten Effekt frei,
+  wenn beide im Trupp stehen (Oger-Geschwister, Sturmbund, Goblinreiter …).
+  Sie stehen unter den Synergien; der Markt sagt „🔗 bindet: …".
+- **Stapel verbrauchen:** Giftschlag, Glutstoß, Schildsprenger und Blutzoll
+  lösen gesammelte Stapel auf einmal aus — weiter aufbauen oder jetzt zünden.
+- **Position:** Geschlossene Reihe, Reihenstärke, Lückenschlag und
+  Durchbohren lesen, wer auf dem Hexfeld neben wem steht.
+
+**Shion** hat dazu: die **Ausrichtung** (Ordnungsteufel und Verdorbener Teufel
+schließen sich aus — wer den einen wählt, ist festgelegt), den **Ultimativen
+Teufel** (nur Rang S, 12 Chaos auf den Gegnern und 6 Antichaos auf ihr
+zugleich), **Shions Küche** (ein zufälliges Gericht für jeden Verbündeten),
+die **Chaosentladung** (ab 10 Chaos: der Gegner erstarrt und trifft danach
+einen eigenen Verbündeten) und den **Meisterkoch der Wirklichkeit** (Chaos-Würfe
+der Gegner zählen doppelt schlecht, Antichaos-Würfe im Trupp doppelt gut).
+
 ## Provokation
 
 **Provokation** ist harter Spott für eine Runde: bis zum nächsten eigenen Zug

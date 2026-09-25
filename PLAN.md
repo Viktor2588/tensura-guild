@@ -1351,7 +1351,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
   entlädt Shion es (Passive in der Mechanik): der Gegner verliert einen Zug,
   und sein nächster Angriff trifft einen eigenen Verbündeten. Chaos wird
   verbraucht — Aufbauen zur Verwandlung gegen Entladen.
-- [~] **Phase 114 — Meisterkoch der Wirklichkeit (D).** (in Bearbeitung) Keystone-artige
+- [x] **Phase 114 — Meisterkoch der Wirklichkeit (D).** (erledigt, siehe unten) Keystone-artige
   Passive: Chaos-Würfe gegen Gegner zweimal würfeln, das schlechtere nehmen;
   Antichaos-Würfe im Trupp das bessere.
 
@@ -1446,3 +1446,17 @@ sich an …". Damit wird Chaos ausgegeben statt nur angehäuft — und steht geg
 den Verdorbenen Teufel, der 12 Chaos auf den Gegnern braucht.
 
 `dev/sim.js` 564/564 · `dev/uitest.js` 141/141.
+
+### Phase 114 (2026-09-26): Meisterkoch der Wirklichkeit
+
+Neue Mechanik-Passive `shion_mec11`: steht Shion mit ihr im Kampf, würfeln
+Gegner unter Chaos ihre Einbuße zweimal und das schlechtere zählt; eigene
+Einheiten unter Antichaos würfeln den Bonus zweimal und das bessere zählt
+(`meisterkoch` am Kämpfer, gelesen im Chaos-Wurf in `combat.js`).
+
+**Abschluss der Reihe 107–114:** Siegquote 54 % (6000 Runs), Shion als
+Starterin 66 % (mehr Passiven im Topf verteilen den zufälligen Startbonus
+breiter), Spanne der Starter 39 Punkte. `GAMEGUIDE.md` hat einen Abschnitt
+„Tiefere Systeme".
+
+`dev/sim.js` 565/565 · `dev/uitest.js` 141/141.

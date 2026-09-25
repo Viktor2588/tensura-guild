@@ -772,6 +772,12 @@
         z.verwirrt = 1;
         c.log.push({ t: 0, type: 'chaos_entladung', key: z.key, unit: z.name, side: z.side, stapel: n });
       }),
+    /* Phase 114: ihre spaete Faehigkeit schreibt das Ergebnis um. Eine kleine
+       Regel mit grosser Wirkung auf jeden Wurf des Rades. */
+    passiv('shion_mec11', 'Meisterkoch der Wirklichkeit', 'onStart', ['chaos', 'antichaos'], ['chaos', 'antichaos'],
+      'Shion schreibt das Ergebnis um: Chaos-Würfe der Gegner fallen zweimal und das schlechtere zählt, ' +
+      'Antichaos-Würfe im eigenen Trupp fallen zweimal und das bessere zählt',
+      function (c) { c.self.meisterkoch = 1; }),
     passiv('shion_unt2', 'Ordnung aus Unordnung', 'onChaos', ['chaos', 'heilung'], [],
       'Jeder angelegte Stapel gibt allen Verbündeten +1 Regeneration',
       function (c) { c.allies().forEach(function (u) { u.regen += Math.max(1, Math.round(c.stapel)); }); }),
@@ -5826,7 +5832,7 @@
          bleibt in jeder Linie der Keystone. */
       angriff: ['shion_ang1', 'shion_ang2', 'shion_ang3', 'shion_ang4'],
       mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4', 'shion_mec5',
-                 'shion_unt1', 'shion_ang5', 'shion_ang6', 'shion_mec9', 'shion_mec10'],
+                 'shion_unt1', 'shion_ang5', 'shion_ang6', 'shion_mec9', 'shion_mec10', 'shion_mec11'],
       unterstuetzung: ['shion_unt6', 'shion_unt2', 'shion_unt3', 'shion_unt4', 'shion_unt5', 'shion_unt7'],
       defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4', 'shion_def5', 'shion_def6']
     },
