@@ -1031,3 +1031,7 @@ Regeln sollen Bosse unterscheidbar machen, nicht schwerer. Siegquote im Run
 | gesamt | 53 % | 46 % | 52 % | |
 
 `dev/sim.js` 523/523 · `dev/uitest.js` 141/141.
+
+### [~] Phase 95 (2026-09-25): Der Tagesrun (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-95-tagesrun`, Branch `phase-95-tagesrun`.
