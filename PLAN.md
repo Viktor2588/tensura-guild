@@ -1339,7 +1339,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
   lesen: Nachbarn (stärker mit zwei Verbündeten daneben), Durchschlag (trifft
   den Gegner hinter dem Ziel mit), Flanke (Bonus gegen Ziele ohne Nachbarn).
   Helfer `nachbarn(u)` im Kampfkontext.
-- [~] **Phase 111 — Shion: Ausrichtung und Ultimativer Teufel (A).** (in Bearbeitung) Ab Rang A
+- [x] **Phase 111 — Shion: Ausrichtung und Ultimativer Teufel (A).** (erledigt, siehe unten) Ab Rang A
   legt sich Shion fest: Ordnung oder Verderbnis (Wahl im Aufstiegs-Dialog,
   gespeichert an der Einheit); die andere Verwandlung ist gesperrt. Rang S:
   dritte Form **Ultimativer Teufel**, nur wenn 12 Chaos auf den Gegnern UND
@@ -1408,3 +1408,19 @@ mit). Gemessen +2 bis +5 im Prüfstand (`dev/beute.js`), der nicht bewusst
 aufstellt — ihr Wert liegt in der Aufstellung, die der Spieler zieht.
 
 `dev/sim.js` 559/559 · `dev/uitest.js` 141/141.
+
+### Phase 111 (2026-09-26): Shions Ausrichtung und der Ultimative Teufel
+
+**Ausrichtung über die Passiv-Wahl** statt eines eigenen Dialogs: Ordnungsteufel
+und Verdorbener Teufel schließen sich aus (`AUSSCHLUSS` in `run.js`). Wer den
+einen gewählt hat, bekommt den anderen nicht mehr angeboten — die Wahl der
+Passive ist die Festlegung.
+
+**Ultimativer Teufel** (`shion_mec9`, Mechanik): nur auf Rang S, nur wenn
+zugleich 12 Chaos auf den Gegnern und 6 Antichaos auf Shion liegen. Bonus je
+Stapel (Chaos + Antichaos) 2 %, höchstens +90 %; neue Signatur „Klinge des
+Ultimativen Teufels": 140 % auf alle, jedem Gegner 2 Chaos, dem Trupp
+2 Antichaos. Kann auf eine erste Verwandlung folgen — belohnt den gemischten
+Bau, der das Rad wirklich dreht.
+
+`dev/sim.js` 561/561 · `dev/uitest.js` 141/141.

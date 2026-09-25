@@ -2899,6 +2899,30 @@ head('Position lesen (Phase 110)');
   ok(ctxProbe.einheiten.length === 3, 'Aufbau mit zwei Verbündeten steht');
 })();
 
+head('Shions Ausrichtung (Phase 111)');
+(function () {
+  var run = R.create(111, R.newMeta());
+  run.team = []; run.pwahlen = [];
+  R.addUnit(run, 'shion', null, 2);
+  var s = run.team[0];
+  s.passives = ['shion_ang5'];
+  var gesehen = false;
+  for (var i = 0; i < 40; i++) {
+    run.pwahlen = [];
+    s.rank = 2; R.rankUp(run, s.uid, true);
+    var w = R.passivWahl(run);
+    if (w && w.offers.some(function (o) { return o.id === 'shion_ang6'; })) gesehen = true;
+    s.passives = ['shion_ang5'];
+  }
+  ok(!gesehen, 'wer den Ordnungsteufel hat, bekommt den Verdorbenen nicht angeboten');
+  var m = R.member('shion'); m.rank = 3; m.passives = ['shion_mec9', 'shion_mec2', 'shion_unt6', 'shion_mec3'];
+  var sack = { id: 's', name: 'Sack', tags: ['bestie', 'front'], hp: 60000, atk: 20, def: 0, spd: 8,
+    actives: [], effects: [], keywords: [] };
+  var log = C.simulate([R.resolve(m)], [sack, JSON.parse(JSON.stringify(sack))], 11).log;
+  ok(log.some(function (l) { return l.type === 'verwandlung' && l.form === 'Ultimativer Teufel'; }),
+     'auf Rang S mit beiden Seiten voll wird Shion zum Ultimativen Teufel');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

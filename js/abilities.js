@@ -719,6 +719,21 @@
     passiv('shion_unt1', 'Realitätswarp', 'onStart', ['chaos', 'antichaos'], [],
       'Jeder von Shion angelegte Chaos-Stapel legt dem eigenen Trupp ebenso viel Antichaos an — dieselbe Streuung, aber nur nach oben',
       function (c) { c.self.antichaosWarp = Math.max(c.self.antichaosWarp || 0, 1); }),
+    /* Phase 111: die dritte Form. Nur auf Rang S, und nur wenn BEIDE Seiten
+       des Rades zugleich voll sind — belohnt den gemischten Bau, der das Rad
+       wirklich dreht. Kann auf eine erste Verwandlung folgen. */
+    passiv('shion_mec9', 'Ultimativer Teufel', 'onHit', ['chaos', 'antichaos'], ['chaos', 'antichaos'],
+      'Nur auf Rang S: liegen zugleich 12 Chaos auf den Gegnern und 6 Antichaos auf dir, wirst du zum Ultimativen Teufel: ' +
+      'je Stapel +2 % Angriff, +1 % Tempo und +1,2 % Leben — höchstens +90 %. Deine Signatur trifft alle. Einmal je Kampf.',
+      function (c) {
+        if (c.self._ultimativ || (c.self.rank || 0) < 3) return;
+        var chaos = 0;
+        c.gegner().forEach(function (f) { chaos += f.status.chaos || 0; });
+        var anti = c.self.status.antichaos || 0;
+        if (chaos < 12 || anti < 6) return;
+        c.self._ultimativ = 1;
+        verwandle(c, 'Ultimativer Teufel', 'sig_shion_ultimativ', chaos + anti, 18, 0.02, 0.9);
+      }),
     passiv('shion_unt2', 'Ordnung aus Unordnung', 'onChaos', ['chaos', 'heilung'], [],
       'Jeder angelegte Stapel gibt allen Verbündeten +1 Regeneration',
       function (c) { c.allies().forEach(function (u) { u.regen += Math.max(1, Math.round(c.stapel)); }); }),
@@ -5773,7 +5788,7 @@
          bleibt in jeder Linie der Keystone. */
       angriff: ['shion_ang1', 'shion_ang2', 'shion_ang3', 'shion_ang4'],
       mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4', 'shion_mec5',
-                 'shion_unt1', 'shion_ang5', 'shion_ang6'],
+                 'shion_unt1', 'shion_ang5', 'shion_ang6', 'shion_mec9'],
       unterstuetzung: ['shion_unt6', 'shion_unt2', 'shion_unt3', 'shion_unt4', 'shion_unt5'],
       defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4', 'shion_def5', 'shion_def6']
     },
@@ -6392,6 +6407,14 @@
     /* Die Signatur des Verdorbenen Teufels. Sie ersetzt den Chaosschlag erst,
        wenn die Verwandlung greift — vorher trägt sie niemand. `sig_`-Präfix
        heißt: einheitenspezifisch, also keine Raritätsstufe und kein Pool. */
+    /* Phase 111: die Signatur der dritten Form. Sie trifft alle und dreht das
+       Rad fuer beide Seiten weiter. */
+    aktiv('sig_shion_ultimativ', 'Klinge des Ultimativen Teufels', 4, ['chaos', 'antichaos', 'flaeche'],
+      '140 % Schaden auf alle Gegner; jeder bekommt 2 Chaos, der ganze Trupp 2 Antichaos. Die Signatur des Ultimativen Teufels.',
+      function (c) {
+        c.gegner().forEach(function (f) { c.attack(1.4, f); c.applyStatus(f, 'chaos', 2); });
+        c.trupp().forEach(function (u) { c.applyStatus(u, 'antichaos', 2); });
+      }),
     aktiv('sig_shion_verdorben', 'Chaosklinge des Verdorbenen', 4, ['chaos'],
       '230 % Schaden und die doppelte Menge Chaos — 4 Stapel auf Rang C, 6 auf B, ' +
       '6 auf A, 10 auf S. Die Signatur des Verdorbenen Teufels.',

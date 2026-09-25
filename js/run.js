@@ -1365,7 +1365,12 @@
          Dass es heute sechzehn sind und vier je Linie, ist Inhalt, keine Regel;
          wächst der Topf, zieht diese Stelle unverändert weiter. */
       var rng = rngOf(run);
-      var topf = AB.linienAngebot(m.id).filter(function (o) { return hab.indexOf(o.id) < 0; });
+      var topf = AB.linienAngebot(m.id).filter(function (o) {
+        /* Ausrichtung (Phase 111): Ordnungsteufel und Verdorbener Teufel
+           schliessen sich aus. Wer den einen gewaehlt hat, hat sich
+           festgelegt — der andere wird nicht mehr angeboten. */
+        return hab.indexOf(o.id) < 0 && hab.indexOf(AUSSCHLUSS[o.id]) < 0;
+      });
       topf = speisbar(run, topf, m);
       /* Blind gezogen war das Angebot der einzige Ort im Spiel, der den
          bisherigen Bau ignoriert — Markt (`themenWahl`), Startpaar und
@@ -1765,6 +1770,7 @@
   function beide(team, a, b) {
     return team.filter(function (u) { return u.id === a || u.id === b; });
   }
+  var AUSSCHLUSS = { shion_ang5: 'shion_ang6', shion_ang6: 'shion_ang5' };
   var BINDUNGEN = [
     { id: 'oger', paar: ['shion', 'benimaru'], name: 'Oger-Geschwister', text: 'Shion und Benimaru schlagen 12 % härter.',
       apply: function (team) { beide(team, 'shion', 'benimaru').forEach(function (u) { u.atk = Math.round(u.atk * 1.12); }); } },
