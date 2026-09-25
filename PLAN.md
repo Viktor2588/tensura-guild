@@ -4449,6 +4449,24 @@ sterben, und `c.allies()` war beim anschließenden `reduce` leer.
 
 `dev/sim.js` 506/506 · `dev/uitest.js` 141/141.
 
-### [~] Phase 88 (2026-09-25): Ein Einstieg ohne Wahl, eine Aufwertung ohne Verlust (in Bearbeitung)
+### Phase 88 (2026-09-25): Ein Einstieg ohne Wahl, eine Aufwertung ohne Verlust
 
 Worktree `/home/viktor/tensura/worktree/phase-88-einstieg`, Branch `phase-88-einstieg`.
+
+Aus dem ersten Spieltest (3 Minuten):
+
+**„Der erste Kampf sollte keine Wahl sein und schwer zu verlieren."** Der erste
+Knoten bot drei Kampfknoten nebeneinander an — eine Wahl ohne Inhalt. Jetzt
+steht dort EIN Kampf. Verloren ging er im Schnitt in 3 % der Runs, mit einem
+Unterstützer als Start aber in jedem vierten (Seelenhexe 26 %,
+Quellenpriesterin 25 %). `EINSTIEG_HAERTE[0]` 0.55 → 0.25: im Schnitt 0,1 %,
+schlechtester Starter 5 %. Die Gesamtquote bleibt bei 51 % (6000 Runs).
+
+**„Bei einer Aufwertung sollte die Ausrüstung nicht wegfliegen."** Sie flog in
+den Beutel und musste für denselben, nur stärkeren Kämpfer neu angelegt
+werden. Jetzt wandert sie mit; der höhere Rang hat mindestens so viele Slots,
+was trotzdem nicht passt (alte Stände), geht in den Beutel. Die Marktkarte
+sagt es: „Ausrüstung bleibt angelegt". Beim Entlassen landet sie weiterhin im
+Beutel.
+
+`dev/sim.js` 512/512 · `dev/uitest.js` 141/141.

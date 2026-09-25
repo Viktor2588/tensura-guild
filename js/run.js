@@ -18,12 +18,10 @@
   /* Kein Händler-Knoten mehr: nach JEDEM gewonnenen Kampf geht der Markt auf,
      ein eigener Knoten dafür wäre doppelt. Die drei Slots sind Kämpfe geworden. */
   var STEPS = [
-    /* Der erste Knoten ist immer ein Kampf — alle drei Wahlmoeglichkeiten sind
-       einer. Vorher konnte ein Run mit einem Ereignis beginnen, und der
-       Einstieg (das 1-gegen-1-Duell aus Phase 11) fiel damit ganz aus. Eine
-       Wahl bleibt es trotzdem: welcher Kampf, sagt der Knoten seit Phase 12
-       ohnehin nicht. */
-    ['kampf', 'kampf', 'kampf'],
+    /* Der erste Knoten ist EIN Kampf, keine Wahl (Phase 88). Drei Kampfknoten
+       nebeneinander waren eine Wahl ohne Inhalt — welcher Kampf, sagt der
+       Knoten seit Phase 12 nicht. */
+    ['kampf'],
     ['kampf', 'event', 'pruefung'],
     ['kampf', 'pruefung', 'elite'],
     ['kampf', 'elite', 'lager'],
@@ -809,7 +807,10 @@
   /* Und sie sind zusätzlich schwächer: mit einer einzigen Einheit ist selbst ein
      1-gegen-1 zur vollen Härte ein Münzwurf — gemessen 4 % Siegquote über den
      ganzen Run. */
-  var EINSTIEG_HAERTE = [0.55, 0.65, 0.72, 0.78, 0.84, 0.9, 0.95];
+  /* Phase 88: der erste Kampf soll schwer zu verlieren sein. Bei 0.55 verlor
+     jeder vierte Unterstuetzer-Start (Seelenhexe 26 %, Quellenpriesterin 25 %),
+     bei 0.25 im Schnitt 0,1 %. */
+  var EINSTIEG_HAERTE = [0.25, 0.65, 0.72, 0.78, 0.84, 0.9, 0.95];
 
   function regeln(run, node, foes) {
     if (run.act === 1 && node.type !== 'boss' && EINSTIEG[run.step]) {
@@ -1034,11 +1035,10 @@
     var weg = null;
     if (!freieEinheit(run, u.id)) {
       /* Aufwertung derselben Einheit: die alte Einheit macht Platz und ihr Einsatz
-         wird angerechnet. Die Ausruestung wandert zurueck in den Beutel. */
+         wird angerechnet. Die Ausruestung geht mit (unten, nach `member`). */
       weg = ersetzbar(run, u, rang || 0);
       if (!weg) return false;
       var platz = run.team.map(function (x) { return x.uid; }).indexOf(weg.uid);
-      weg.items.slice().forEach(function (iid) { unequip(run, weg.uid, iid); });
       /* Der GANZE Einsatz zurueck, nicht ein Viertel wie beim Entlassen: das
          hier ist kein Verkauf, sondern derselbe Weg ein Stueck weiter. Mit nur
          einem Viertel kostete eine Aufwertung gemessen das Zweieinhalbfache
@@ -1058,6 +1058,14 @@
        laesst sich neu anlegen — fuer verschlungene Gegner gibt es diesen Weg
        zurueck nicht. Der hoehere Rang traegt ohnehin mehr Slots. */
     if (weg) m.devoured = weg.devoured.slice();
+    /* Die Ausruestung bleibt angelegt (Phase 88). Vorher flog sie in den
+       Beutel und musste nach jeder Aufwertung von Hand neu angelegt werden —
+       fuer denselben Kaempfer, der jetzt nur staerker ist. Der hoehere Rang hat
+       mindestens so viele Slots; was trotzdem nicht passt, geht in den Beutel. */
+    if (weg) {
+      m.items = weg.items.slice(0, itemSlots(m));
+      weg.items.slice(itemSlots(m)).forEach(function (iid) { (run.bag = run.bag || []).push(iid); });
+    }
     /* ponytail: Frontlinie rückt beim Anwerben direkt auf Platz 1 — Abkürzung
        aus TODO.md, damit man zum Testen nicht jedes Mal von Hand umstellt.
        Wieder auf `push` setzen, sobald die Aufstellung Spielerentscheidung ist. */

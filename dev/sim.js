@@ -2691,6 +2691,25 @@ head('Aufwertung und Passiv-Erbe');
   ok(R.choosePassive(r3, 0) && !R.passivWahl(r3), 'Wahl einer verschwundenen Einheit verfaellt');
 })();
 
+head('Einstieg und Aufwertung (Phase 88)');
+(function () {
+  var run = R.create(21, R.newMeta());
+  R.chooseStart(run, 0);
+  ok(run.options.length === 1 && run.options[0].type === 'kampf',
+     'der erste Knoten ist EIN Kampf, keine Wahl');
+  ok(R.EINSTIEG_HAERTE[0] <= 0.3, 'und er ist deutlich entschärft');
+  var r2 = R.create(22, R.newMeta());
+  r2.team = []; r2.bank = []; r2.pwahlen = [];
+  R.addUnit(r2, 'shion', null, 1);
+  var alt = r2.team[0];
+  (r2.bag = r2.bag || []).push('kurzschwert');
+  ok(R.equip(r2, alt.uid, 'kurzschwert'), 'Shion trägt ein Kurzschwert');
+  ok(R.addUnit(r2, 'shion', null, 2, alt.passives.slice(), 1), 'Aufwertung auf A');
+  var neu = r2.team.filter(function (m) { return m.id === 'shion'; })[0];
+  ok(neu.items.indexOf('kurzschwert') >= 0, 'die Ausrüstung bleibt nach der Aufwertung angelegt');
+  ok(r2.bag.indexOf('kurzschwert') < 0, 'und landet nicht im Beutel');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

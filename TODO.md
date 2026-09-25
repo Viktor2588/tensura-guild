@@ -631,3 +631,9 @@ Balance und Werkzeug:
   (Magier 67 % im Schnitt), nicht die Signatur. Getestete Option: Magier auf
   Reichweite 2 (−6 bis −9 Punkte je Magier, auch für Gegner).
 - ~~Stufe 5 (Sturmgott) liegt bei 2 %~~ — Phase 86: 6 %.
+
+Rückmeldung aus dem Spieltest (2026-09-25), offen:
+
+- „Die neuen Weg-Fähigkeiten sind glaube ich aktuell noch sehr unattraktiv."
+  Noch unklar, was genau gemeint ist (Linien-Passive? die Keystones aus der
+  Aufwertungs-Wahl?) — weitere Rückmeldung angekündigt.

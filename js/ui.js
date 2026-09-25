@@ -846,15 +846,17 @@
   /* Was ein Posten wirklich tut — ausführlich, nicht als Kurzzeile. Der Markt
      ist die Stelle, an der entschieden wird; hier gehört die volle Beschreibung
      hin, nicht in einen Tooltip. */
-  /* Was die Aufwertung mitnimmt. Die Ausrüstung geht in den Beutel und die
-     Passiven stehen ohnehin auf der Karte — verschlungene Gegner nicht, und
-     genau die kann man nirgends zurückholen. Wer sich einen Prädator-Bau
+  /* Was die Aufwertung mitnimmt. Die Passiven stehen ohnehin auf der Karte;
+     Ausrüstung und verschlungene Gegner nicht. Wer sich einen Prädator-Bau
      aufgebaut hat, muss vor dem Kauf lesen können, dass er ihn behält. */
   function mitnahme(run, o) {
     var alt = R.ersetzbar(run, GD.unit(o.id), o.rang);
-    var n = alt ? alt.devoured.length : 0;
-    if (!n) return '';
-    return ' — ' + n + (n === 1 ? ' verschlungene Fähigkeit bleibt' : ' verschlungene Fähigkeiten bleiben');
+    if (!alt) return '';
+    var teile = [];
+    if (alt.items.length) teile.push('Ausrüstung bleibt angelegt');
+    var n = alt.devoured.length;
+    if (n) teile.push(n + (n === 1 ? ' verschlungene Fähigkeit bleibt' : ' verschlungene Fähigkeiten bleiben'));
+    return teile.length ? ' — ' + teile.join(', ') : '';
   }
 
   function marktText(o) {

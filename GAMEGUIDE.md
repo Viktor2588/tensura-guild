@@ -109,7 +109,8 @@ Art schon in deinem Trupp, ist der Posten eine Aufwertung — er ersetzt die alt
 Einheit, und ihr **ganzer Einsatz wird angerechnet** (nicht nur ein Viertel wie
 beim Entlassen). Netto zahlst du also die Differenz. Angeboten wird eine belegte
 Art nur mit höherem Rang; eine schwächere Fassung wäre kein Aufstieg. Die
-Ausrüstung der alten Einheit wandert zurück in den Beutel.
+Ausrüstung der alten Einheit bleibt angelegt — die neue Fassung hat mindestens
+so viele Slots.
 
 Ein Gratisaufstieg kommt weiterhin aus dem **Lager** — das ist eine Belohnung,
 kein Kaufposten.
