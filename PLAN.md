@@ -1285,6 +1285,28 @@ die Gesamtstärke.
 
 `dev/sim.js` 550/550 · `dev/uitest.js` 141/141.
 
-### [~] Phase 106 (2026-09-26): Mehr Verwundbar, mehr Angriffe auf alle (in Bearbeitung)
+### Phase 106 (2026-09-26): Mehr Verwundbar, mehr Angriffe auf alle
 
 Worktree `/home/viktor/tensura/worktree/phase-106-bibliothek`, Branch `phase-106-bibliothek`.
+
+Aus dem Spieltest: mehr Fähigkeiten, die den Gegner verwundbar machen oder mit
+einer Chance alle Gegner treffen. Die Bibliothek hatte je zwei (Markierer,
+Zangengriff; Mehrfachangriff, Kettenreaktion). Sechs neue, Flächentreffer an
+alle Gegner (`c.gegner()`):
+
+| Passive | Linie | Seltenheit | Wirkung | gemessen |
+|---|---|---|---|---|
+| Schwachstelle | Mechanik | üblich | erster Treffer je Ziel: 2 Verwundbar | +4 |
+| Wundmal | Mechanik | ungewöhnlich | jeder dritte Treffer: 3 Verwundbar | +0 |
+| Splitterhieb | Mechanik | selten | 20 %: alle Gegner 1 Verwundbar | +13 |
+| Wirbelhieb | Angriff | selten | 10 %: alle anderen Gegner 50 % | +13 |
+| Weitschlag | Angriff | selten | jeder vierte Angriff: alle anderen 60 % | +13 |
+| Erdbeben | Angriff | episch | 10 %: alle Gegner 70 % und 1 Verwundbar | +14 |
+
+(`dev/beute.js passive`, Siegquote-Gewinn an der Referenzhärte.) Wirbelhieb
+war als ungewöhnlich mit +14 stärker als das epische Mehrfachangriff; die
+Chance zu senken bewegte fast nichts, also ehrlich auf selten. Wundmal misst
+wie der alte Markierer +0 — Verwundbar verstärkt die Treffer des Trupps, und
+die Begleiter des Prüfstands treffen kaum. Siegquote gesamt 52 %.
+
+`dev/sim.js` 550/550 · `dev/uitest.js` 141/141.

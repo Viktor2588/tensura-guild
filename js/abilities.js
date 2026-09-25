@@ -149,6 +149,43 @@
         c.heal(c.self, c.self.maxHp * 0.08, 'Ruf aus dem Grab');
         c.gegner().forEach(function (f) { c.applyStatus(f, 'verderbnis', 1); });
       })),
+    /* --- Phase 106: mehr Verwundbar, mehr Angriffe auf alle ----------------------
+       Die Bibliothek hatte je zwei davon; aus dem Spieltest kam der Wunsch
+       nach mehr. Die Flaechentreffer gehen an ALLE Gegner (`c.gegner()`),
+       nicht nur an den Umkreis. */
+    passiv('schwachstelle', 'Schwachstelle', 'onHit', ['verwundbar'], [],
+      'Der erste Treffer auf jedes Ziel macht es 2 verwundbar',
+      function (c) {
+        if (c.target._schwachstelle) return;
+        c.target._schwachstelle = 1;
+        c.markiere(c.target, 2);
+      }),
+    passiv('wundmal', 'Wundmal', 'onHit', ['verwundbar'], [],
+      'Jeder dritte Treffer macht das Ziel 3 verwundbar',
+      function (c) {
+        c.self._wundmal = (c.self._wundmal || 0) + 1;
+        if (c.self._wundmal % 3 === 0) c.markiere(c.target, 3);
+      }),
+    passiv('splitterhieb', 'Splitterhieb', 'onHit', ['verwundbar', 'flaeche'], [],
+      '20 % Chance, dass ein Treffer alle Gegner 1 verwundbar macht',
+      chance(0.2, function (c) { c.gegner().forEach(function (f) { c.markiere(f, 1); }); })),
+    passiv('wirbelhieb', 'Wirbelhieb', 'onHit', ['flaeche'], [],
+      '10 % Chance, alle anderen Gegner zusätzlich für 50 % zu treffen',
+      chance(0.1, function (c) {
+        c.gegner().forEach(function (f) { if (f !== c.target) c.deal(f, c.self.atk * 0.5, 'Wirbelhieb'); });
+      })),
+    passiv('weitschlag', 'Weitschlag', 'onHit', ['flaeche'], [],
+      'Jeder vierte Angriff trifft zusätzlich alle anderen Gegner für 60 %',
+      function (c) {
+        c.self._weitschlag = (c.self._weitschlag || 0) + 1;
+        if (c.self._weitschlag % 4) return;
+        c.gegner().forEach(function (f) { if (f !== c.target) c.deal(f, c.self.atk * 0.6, 'Weitschlag'); });
+      }),
+    passiv('erdbeben', 'Erdbeben', 'onHit', ['flaeche', 'verwundbar'], [],
+      '10 % Chance, alle Gegner für 70 % zu treffen und 1 verwundbar zu machen',
+      chance(0.1, function (c) {
+        c.gegner().forEach(function (f) { c.deal(f, c.self.atk * 0.7, 'Erdbeben'); c.markiere(f, 1); });
+      })),
     passiv('erstschlag', 'Erstschlag', 'onHit', [], [], 'Der erste Angriff verursacht +80 % Schaden',
       function (c) { if (!c.self._es) { c.self._es = 1; c.dmg *= 1.8; } }),
     passiv('scharfrichter', 'Scharfrichter', 'onHit', [], ['exekution'], 'Doppelter Schaden gegen Ziele unter 30 % Leben',
@@ -5925,6 +5962,8 @@
     /* Angriff: mehr Schaden, ohne Umweg über einen Zustand. */
     erstschlag: 'angriff', panzerbrecher: 'angriff', kriegsherz: 'angriff',
     herausforderung: 'defensive',
+    schwachstelle: 'mechanik', wundmal: 'mechanik', splitterhieb: 'mechanik',
+    wirbelhieb: 'angriff', weitschlag: 'angriff', erdbeben: 'angriff',
     scharfrichter: 'angriff', henkersblick: 'angriff', blutrausch: 'angriff',
     massenschlaechter: 'angriff', schwungmeister: 'angriff', rachsucht: 'angriff',
     /* Mechanik: legt einen Zustand an oder schlägt daraus Kapital. */
@@ -6544,6 +6583,7 @@
     /* Passive */
     kriegsherz: 1, windschritt: 1, erstschlag: 1, giftbrut: 1, glutkern: 1, schildwall: 1,
     herausforderung: 2,
+    schwachstelle: 1, wundmal: 2, splitterhieb: 3, wirbelhieb: 3, weitschlag: 3, erdbeben: 4,
     lebenskraft: 3, bollwerkmeister: 3, massenschlaechter: 4, schwungmeister: 3, rachsucht: 3,
     blutrausch: 4, trophaenjaeger: 3,
     dornenhaut: 2, regenerator: 2, rachegeist: 2, henkersblick: 2, frostkern: 2,
