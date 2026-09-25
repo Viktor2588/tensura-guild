@@ -725,8 +725,8 @@ ok(zuHoch.threat === 0, 'eine nicht freigeschaltete Stufe greift nicht');
 var meta4 = R.newMeta(); meta4.threat = 5; meta4.threatGewaehlt = 5;
 var hart = R.create(1, meta4);
 ok(hart.threat === 5, 'eine freigeschaltete Stufe wird übernommen');
-ok(hart.lives === 3 && R.create(1, R.newMeta()).lives === 5,
-   'Stufe 5 nimmt zwei der fünf Leben');
+ok(hart.lives === 4 && R.create(1, R.newMeta()).lives === 5,
+   'Stufe 5 nimmt eines der fünf Leben');
 /* Jede Stufe muss eine Regel tragen, nicht nur eine Prozentzahl. */
 ok(R.BEDROHUNG.slice(1).every(function (b) { return !!b.regel; }),
    'jede Bedrohungsstufe ab 1 schaltet eine benannte Regel frei');

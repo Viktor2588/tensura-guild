@@ -630,4 +630,4 @@ Balance und Werkzeug:
 - Unten bleiben Gobkyu, Drachenwelpe, Gabiru (35–36 % als Start). Oben Diablo,
   Testarossa, Ultima (72–76 %). Weiter nur am Kit, gemessen mit „Siegquote je
   STARTEINHEIT".
-- Stufe 5 (Sturmgott) liegt bei 2 % — prüfen, ob das noch spielbar ist.
+- ~~Stufe 5 (Sturmgott) liegt bei 2 %~~ — Phase 86: 6 %.

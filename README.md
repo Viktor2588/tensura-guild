@@ -120,7 +120,7 @@ eine andere Schraube an, nicht nur die Gegnerwerte:
 | 2 | Nachschub | normale Gegner stehen einmal mit 30 % Leben wieder auf | 25 % |
 | 3 | Kriegsrecht | Markt bietet weniger Einheiten, Aufstiege kosten mehr | 18 % |
 | 4 | Belagerung | im zweiten Akt Eliten auf jedem zweiten Kampfknoten, Lager −15 % | 14 % |
-| 5 | Sturmgott | ein Drittel weniger Magicule, 3 Leben statt 5, Bosse eskalieren doppelt | 3 % |
+| 5 | Sturmgott | 15 % weniger Magicule, 4 Leben statt 5, Bosse eskalieren doppelt | 6 % |
 
 Gemessen mit `node dev/balance.js 400 --stufe N` (Stufe 0 mit 6000 Runs).
 
@@ -130,7 +130,6 @@ spielt zudem nur mittelmäßig — für einen Menschen liegt jede Stufe höher.
 ## Was fehlt
 
 - Die Starteinheit wiegt noch schwer: 35 bis 76 % Siegquote je Start.
-- Stufe 5 (Sturmgott) liegt bei 3 %.
 - Der Bot in `dev/balance.js` spielt Aufstellung und Ausrüstung stur; wie viel
   ein guter Spieler mehr herausholt, misst er nicht. Eine Breitenstrategie
   (vier auf B statt eine auf S) misst er ebenfalls nicht.

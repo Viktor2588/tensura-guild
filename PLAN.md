@@ -4393,6 +4393,26 @@ das S-Angebot, das zuerst kommt. Das zeigt erst ein Spieltest.
 
 `dev/sim.js` 506/506 · `dev/uitest.js` 141/141.
 
-### [~] Phase 86 (2026-09-25): Sturmgott bleibt schaffbar (in Bearbeitung)
+### Phase 86 (2026-09-25): Sturmgott bleibt schaffbar
 
 Worktree `/home/viktor/tensura/worktree/phase-86-sturmgott`, Branch `phase-86-sturmgott`.
+
+Stufe 5 lag nach den Phasen 84/85 bei 2–3 %, Stufe 4 bei 13 %. **86 % der Runs
+auf Stufe 5 endeten schon in Akt 1** (Stufe 4: 60 %). Die Zutaten einzeln
+zurückgenommen, je 1500 Runs auf Stufe 5:
+
+| ohne … | Siegquote |
+|---|---|
+| (wie bisher) | 2 % |
+| Einkommensabzug (−30 %) | 5 % |
+| Lebensabzug (3 statt 5) | 4 % |
+| doppelte Boss-Eskalation | 2 % |
+| fünften Härteaufschlag | 2 % |
+
+Keine Zutat allein trägt den Sprung; es ist die Summe auf einem Trupp, der
+schon bei Stufe 4 den Großteil seiner Runs in Akt 1 verliert. Zurückgenommen
+sind die beiden Schrauben mit der meisten Wirkung, beide nur halb: **−15 %
+statt −30 % Einkommen, 4 statt 3 Leben.** Die Handschrift der Stufe
+(weniger Geld, doppelt eskalierende Bosse) bleibt. Gemessen 6 % (3000 Runs).
+
+`dev/sim.js` 506/506 · `dev/uitest.js` 141/141.

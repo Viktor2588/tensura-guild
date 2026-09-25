@@ -128,7 +128,7 @@
       text: 'Im zweiten Akt steht auf jedem zweiten Kampfknoten eine Elite — zur Beute ' +
             'eines normalen Kampfes. Dazu gibt das Lager 15 % weniger.' },
     { stufe: 5, name: 'Sturmgott', regel: 'sturmgott',
-      text: 'Ein Drittel weniger Magicule aus jedem Kampf und jedem Lager. Dazu nur drei ' +
+      text: '15 % weniger Magicule aus jedem Kampf und jedem Lager. Dazu nur vier ' +
             'Leben statt fünf und doppelt eskalierende Bosse. Die Gegner sind kaum härter ' +
             'als auf Stufe 4.' }
   ];
@@ -153,7 +153,7 @@
     if (t >= 3) out.push('Nur 2 statt 4 Marktposten, Einheiten +30 % teurer');
     if (t >= 4) out.push('Akt 2: Elite zu normaler Beute, Lager −15 %');
     if (t >= 5) out.push('−' + Math.round((1 - STURM_BEUTE) * 100) +
-      ' % Magicule, 3 Leben statt 5, Bosse eskalieren doppelt');
+      ' % Magicule, ' + STURM_LEBEN + ' Leben statt 5, Bosse eskalieren doppelt');
     return out;
   }
   /* Gilt die Regel auf der Stufe dieses Runs? Kumulativ: Stufe 4 hat auch 1–3. */
@@ -210,7 +210,11 @@
      nirgends ein Ereignis — 4,5 % merkt man in keinem einzelnen Kauf. Ein
      Drittel weniger merkt man in jedem, und der Schritt von 4 auf 5 bekommt
      damit eine eigene Handschrift statt nur „dasselbe, etwas mehr". */
-  var STURM_BEUTE = 0.70;
+  /* Phase 86: 0.70 → 0.85 und 4 statt 3 Leben. Mit beidem zusammen lag Stufe 5
+     bei 2 % (Stufe 4: 13 %), 86 % der Runs endeten in Akt 1. Keine Zutat
+     allein trug das, es war die Summe; so steht die Stufe bei 6 %. */
+  var STURM_BEUTE = 0.85;
+  var STURM_LEBEN = 4;
   function beuteFaktor(run) {
     return regel(run, 'sturmgott') ? STURM_BEUTE : 1;
   }
@@ -442,7 +446,7 @@
     var run = {
       seed: seed >>> 0, rngState: seed >>> 0, meta: meta, threat: t,
       act: 1, step: 0, phase: 'karte', over: false, won: false,
-      magicules: 120, lives: t >= 5 ? 3 : 5,
+      magicules: 120, lives: t >= 5 ? STURM_LEBEN : 5,
       team: [], bank: [], relics: [],
       options: null, node: null, pending: null, wahl: null, chronik: []
     };
