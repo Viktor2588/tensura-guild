@@ -1130,3 +1130,7 @@ Kein Machtzuwachs — was im Beutel liegt, hatte keinen freien Platz. Das
 Schmelzen ist ein Werkzeug gegen tote Teile, keine neue Stärke.
 
 `dev/sim.js` 537/537 · `dev/uitest.js` 141/141.
+
+### [~] Phase 100 (2026-09-25): Drill — eine Verwendung für den Überschuss (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-100-drill`, Branch `phase-100-drill`.
