@@ -1210,3 +1210,7 @@ Im Browser angesehen: nach dem ersten Schlagabtausch 12 statt über 60 Zeilen,
 alles in einer Spalte sichtbar.
 
 `dev/sim.js` 546/546 · `dev/uitest.js` 141/141.
+
+### [~] Phase 104 (2026-09-26): Shions Linien — beide Seiten des Rades (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-104-shion`, Branch `phase-104-shion`.
