@@ -4470,3 +4470,7 @@ sagt es: „Ausrüstung bleibt angelegt". Beim Entlassen landet sie weiterhin im
 Beutel.
 
 `dev/sim.js` 512/512 · `dev/uitest.js` 141/141.
+
+### [~] Phase 89 (2026-09-25): Keystones, die sich lohnen (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-89-keystones`, Branch `phase-89-keystones`.
