@@ -1088,7 +1088,7 @@
       html += '<button class="karte' + (treffer.length ? ' im-bau' : ' neuer-weg') + (o.preis ? ' keystone' : '') +
         '" data-a="pwahl" data-i="' + i + '"' +
         tip(a.name + ' · ' + o.linieName, rarZeile(a.rarity, 'passive Fähigkeit') +
-          G.begriffe.passiv + '\n\nLinie: ' + o.linieName + '\nWirkung: ' + a.text +
+          'Linie: ' + o.linieName + '\nWirkung: ' + a.text +
           (eigen.length ? '\n\nSchlüsselwörter: ' + eigen.map(kwName).join(', ') : '') +
           (treffer.length
             ? '\n\n✓ Baut weiter an: ' + treffer.map(kwName).join(', ') + '.'
