@@ -4616,3 +4616,7 @@ seine Begleiter machen kaum Schaden. Siegquote 53 % (6000 Runs), keine
 Nachkalibrierung.
 
 `dev/sim.js` 515/515 · `dev/uitest.js` 141/141.
+
+### [~] Phase 92 (2026-09-25): Doku aufräumen — PLAN-Archiv, GAMEGUIDE nachziehen (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-92-doku`, Branch `phase-92-doku`.
