@@ -4363,6 +4363,32 @@ Die Stufenkurve ist steiler geworden; Stufe 5 mit 2 % ist hart am Rand.
 
 `dev/sim.js` 499/499 · `dev/uitest.js` 141/141.
 
-### [~] Phase 85 (2026-09-25): Ein Anführer — nur eine Einheit auf Rang S (in Bearbeitung)
+### Phase 85 (2026-09-25): Ein Anführer — nur eine Einheit auf Rang S
 
 Worktree `/home/viktor/tensura/worktree/phase-85-anfuehrer`, Branch `phase-85-anfuehrer`.
+
+Der älteste offene Designpunkt: der Rang war ein Meilenstein, keine
+Entscheidung. Jeder Run, der Akt 2 erreichte, hatte eine Einheit auf A oder S;
+höher kaufen lohnte sich immer. Auf Zuruf die kleinste der drei vorgelegten
+Regeln (Anführer, Rangbudget, Breite belohnen).
+
+**Höchstens eine Einheit in Trupp und Bank trägt Rang S.** Eine Regel,
+`anfuehrer(run, ausser)`, an allen Stellen, an denen S entsteht: `kaufbar`
+(Markt und UI), `addUnit`, `rankUp`, der Gratisaufstieg aus dem Lager, der
+Rangwurf im Markt (steht ein Anführer, würfelt der Markt kein zweites S) und
+der reservierte Aufwertungsplatz (eine A-Einheit wird nicht als tote
+Aufwertung angeboten). Dieselbe Einheit darf ihren eigenen Platz behalten —
+sie ersetzt sich ja nur. Die Marktkarte nennt den Grund („Nur ein Anführer auf
+Rang S — Milim ist es schon"), der Rang-Tooltip erklärt die Regel.
+
+Nebenbei im Glossar korrigiert: Aufwerten hängt seit Phase 76 an der Einheit,
+nicht an der Art, und öffnet seit Phase 80 eine Wahl.
+
+**Gemessen** (6000 Runs, frisch): Rangstufen im Trupp Ø 13,9 → 12,0,
+Siegquote 51 → 49 %. `GRUNDHAERTE` 1.45 → 1.42, gemessen 51 %. Stufen 0–5:
+51/37/25/18/14/3 %, alles frei 60 %, Kaufstil „spitze" 40 %.
+
+Was der Bot NICHT misst: ob „wer wird S?" eine spannende Frage ist. Er kauft
+das S-Angebot, das zuerst kommt. Das zeigt erst ein Spieltest.
+
+`dev/sim.js` 506/506 · `dev/uitest.js` 141/141.

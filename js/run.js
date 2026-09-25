@@ -168,7 +168,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.45;   // Phase 84: Einheiten-Markt gemischt, Spitze gekuerzt — gemessen 52 % (frisch, n=6000)
+  var GRUNDHAERTE = 1.42;   // Phase 85: ein Anfuehrer auf S — gemessen 51 % (frisch, n=6000)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -1002,9 +1002,23 @@
      trotzdem gesperrt, und damit war der einzige Weg,
      eine eigene Einheit hochzubringen, zugenagelt. Eine zweite Regel an einer
      zweiten Stelle, die von der ersten abwich; jetzt gibt es nur noch diese. */
+  /* ---- Ein Anfuehrer (Phase 85) -------------------------------------------
+     Hoechstens EINE Einheit in Trupp und Bank traegt Rang S. Vorher war der
+     Rang ein Meilenstein statt einer Entscheidung: jeder Run, der Akt 2
+     erreichte, hatte eine Einheit auf A oder S, und hoeher kaufen lohnte sich
+     immer. Jetzt ist die Frage „wer wird S?" statt „wann?". Liefert den
+     ANDEREN Anfuehrer — dieselbe Einheit darf ihren eigenen Platz behalten
+     (eine Aufwertung ersetzt sie ja). */
+  function anfuehrer(run, ausser) {
+    return run.team.concat(run.bank).filter(function (m) {
+      return m.rank >= 3 && m.id !== ausser;
+    })[0] || null;
+  }
+
   function kaufbar(run, id, rang) {
     var u = GD.unit(id);
     if (!u) return false;
+    if ((rang || 0) >= 3 && anfuehrer(run, u.id)) return false;
     if (freieEinheit(run, u.id)) return true;
     return !!ersetzbar(run, u, rang || 0);
   }
@@ -1012,6 +1026,7 @@
   function addUnit(run, id, startPassiveId, rang, passiveListe, wahl) {
     var u = GD.unit(id);
     if (!u) return false;
+    if ((rang || 0) >= 3 && anfuehrer(run, u.id)) return false;
     var weg = null;
     if (!freieEinheit(run, u.id)) {
       /* Aufwertung derselben Einheit: die alte Einheit macht Platz und ihr Einsatz
@@ -1152,6 +1167,7 @@
   function rankUp(run, uid, gratis, egal) {
     var m = find(run, uid);
     if (!m || m.rank >= 3 || passivWahl(run)) return false;
+    if (m.rank === 2 && anfuehrer(run, m.id)) return false;
     var cost = gratis ? 0 : rankCost(m, run);
     if (run.magicules < cost) return false;
     run.magicules -= cost;
@@ -1414,7 +1430,9 @@
        eigenen sechs kaum noch. Gemessen sackten die Rangstufen von 14,4 auf
        10,5 und die Siegquote von 53 auf 27 %. Also wird der Platz reserviert,
        statt auf den Zufall zu hoffen. */
-    var eigene = run.team.concat(run.bank).filter(function (m) { return m.rank < obergrenze; });
+    var eigene = run.team.concat(run.bank).filter(function (m) {
+      return m.rank < obergrenze && !(m.rank === 2 && anfuehrer(run, m.id));
+    });
     var soll = Math.min(wahl.length - 1, eigene.length);
     for (var iA = 0; iA < soll; iA++) {
       var drin = wahl.filter(function (u) {
@@ -1437,6 +1455,8 @@
           return m.id === u.id;
         })[0];
         if (vorhanden) rang = Math.max(rang, Math.min(obergrenze, vorhanden.rank + 1));
+        /* Steht schon ein Anfuehrer, bietet der Markt kein zweites S an. */
+        if (rang >= 3 && anfuehrer(run, u.id)) rang = 2;
         /* Eine Aufwertung wuerfelt ihre NEUEN Plaetze nicht aus, sie oeffnet sie
            nach dem Kauf als Wahl (`naechsteWahl`). Das ist der Weg zu den
            Keystones: `wuerfleLinienPassive` laesst bezahlte Passiven bewusst
@@ -1509,7 +1529,9 @@
     },
     /* Gratisaufstieg: trifft die niedrigste Einheit, damit es sich immer lohnt. */
     freierRang: function (run) {
-      var kandidaten = run.team.filter(function (m) { return m.rank < 3; });
+      var kandidaten = run.team.filter(function (m) {
+        return m.rank < 2 || (m.rank === 2 && !anfuehrer(run, m.id));
+      });
       if (!kandidaten.length) return false;
       var ziel = kandidaten.reduce(function (a, b) { return b.rank < a.rank ? b : a; });
       return rankUp(run, ziel.uid, true);
@@ -1807,7 +1829,7 @@
   root.Run = {
     create: create, newMeta: newMeta, resolve: resolve, member: member, abilities: abilities,
     choose: choose, advance: advance, devour: devour, zumMarkt: zumMarkt,
-    rankUp: rankUp,
+    rankUp: rankUp, anfuehrer: anfuehrer,
     passivWahl: passivWahl, choosePassive: choosePassive,
     eigeneWorte: eigeneWorte, passung: passung,
     passivIds: passivIds, hatLinien: hatLinien,

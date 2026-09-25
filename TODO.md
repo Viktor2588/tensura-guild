@@ -587,7 +587,8 @@ Balance und Werkzeug:
   enthält. Entweder ist die Heuristik zu geizig oder die Preiskurve zu steil —
   beides ist messbar, aber es sind zwei verschiedene Eingriffe. Solange das
   offen ist, messen alle Build-Zahlen nur die günstige Hälfte der Besetzung.
-- **Der Rang ist keine Entscheidung, sondern ein Meilenstein.** (Phase 64: ein
+- ~~**Der Rang ist keine Entscheidung, sondern ein Meilenstein.**~~ — Phase 85:
+  nur ein Anführer auf Rang S. Alte Notiz: (Phase 64: ein
   Reserve-Regler erzeugt keine Spitzenstrategie — beide Stile enden bei 6,0
   Einheiten. Braucht eine eigene Regel.) Die alte Zahl
   („Rang A gewinnt nie") war eine Tautologie: `dev/balance.js` las den Rang am

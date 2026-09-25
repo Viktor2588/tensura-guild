@@ -906,6 +906,14 @@
     return esc(o.text || '');
   }
 
+  /* Warum ein Einheiten-Posten nicht geht: schon ein Anfuehrer auf S, oder
+     dieselbe Einheit steht schon mindestens so hoch im Trupp. */
+  function sperrGrund(o) {
+    var chef = o.kind === 'unit' && o.rang >= 3 && R.anfuehrer(run, o.id);
+    if (chef) return 'Nur ein Anführer auf Rang S — ' + esc(GD.unit(chef.id).name) + ' ist es schon';
+    return 'Steht schon im Trupp — Rang zu niedrig zum Aufwerten';
+  }
+
   function marktHtml(offers) {
     var html = '<h3>Markt — ' + run.magicules + ' ✦</h3>' +
       '<p class="hinweis">Was der Kampf eingebracht hat, gibst du hier aus. ' +
@@ -927,7 +935,7 @@
         '<span class="titel">' + esc(o.name) + ' — ' + o.price + ' ✦' + (o.sold ? ' (gekauft)' : '') + '</span>' +
         '<div class="kw-leiste">' + belohnungTags(o) + '</div>' +
         '<span class="beschreibung">' + marktText(o) + '</span>' +
-        (frei ? '' : '<span class="unter">Steht schon im Trupp — Rang zu niedrig zum Aufwerten</span>') +
+        (frei ? '' : '<span class="unter">' + sperrGrund(o) + '</span>') +
         (aufwertung ? '<span class="unter gut">Aufwertung: ersetzt ' +
           esc(GD.unit(R.ersetzbar(run, GD.unit(o.id), o.rang).id).name) +
           ', Einsatz wird angerechnet' + mitnahme(run, o) + '</span>' : '') +

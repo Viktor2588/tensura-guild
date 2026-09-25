@@ -2691,6 +2691,26 @@ head('Aufwertung und Passiv-Erbe');
   ok(R.choosePassive(r3, 0) && !R.passivWahl(r3), 'Wahl einer verschwundenen Einheit verfaellt');
 })();
 
+head('Ein Anführer');
+/* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
+(function () {
+  var run = R.create(12, R.newMeta());
+  run.team = []; run.bank = []; run.pwahlen = [];
+  ok(R.addUnit(run, 'milim', null, 3), 'die erste S-Einheit geht');
+  ok(!R.kaufbar(run, 'diablo', 3), 'eine zweite S-Einheit ist nicht kaufbar');
+  ok(!R.addUnit(run, 'diablo', null, 3), 'und der Motor legt sie auch nicht an');
+  ok(R.kaufbar(run, 'diablo', 2), 'dieselbe Einheit auf A geht');
+  R.addUnit(run, 'diablo', null, 2);
+  var d = run.team.filter(function (m) { return m.id === 'diablo'; })[0];
+  ok(!R.rankUp(run, d.uid, true), 'ein Aufstieg auf S ist gesperrt, solange Milim fuehrt');
+  run.magicules = 99999;
+  var offers = R.marktOffers(run, { type: 'kampf' }, false).filter(function (o) { return o.kind === 'unit'; });
+  ok(offers.every(function (o) { return o.rang < 3; }), 'der Markt bietet kein zweites S an');
+  /* Geht der Anfuehrer, ist der Platz wieder frei. */
+  run.team = run.team.filter(function (m) { return m.id !== 'milim'; });
+  ok(R.rankUp(run, d.uid, true) && d.rank === 3, 'ohne Milim darf Diablo aufsteigen');
+})();
+
 head('Kampfbilanz');
 /* Phase 72: die Uebersicht nach dem Kampf. Sie wird beim Kampf gerechnet, nicht
    in der UI — das Log steht nach einem Neuladen nicht mehr zur Verfuegung. */

@@ -12,16 +12,19 @@ schon. Die Art (Goblin, Oger, Sturmwolf, Echsenmensch, Insektoid, Dämon, Drache
 Untot, Slime) ordnet nur ein, woher eine Einheit kommt — Völker-Boni gibt es
 keine, ein Build entsteht ausschließlich aus Fähigkeiten.
 
-**Rang C → B → A → S.** Jeder Aufstieg kostet Magicule und gibt einen Item-Slot,
-eine weitere aktive Fähigkeit (aus drei Angeboten gewählt) und schaltet die
-nächste eigene Passive frei. Rang S gibt zwei Item-Slots statt einem.
+**Rang C → B → A → S.** Einheiten stehen im Markt schon auf ihrem Rang. Jeder
+Rang gibt einen Item-Slot, eine weitere Passive und einen Prädator-Slot; wer
+eine eigene Einheit auf höherem Rang kauft, behält ihre Passiven und wählt die
+neuen Plätze. Rang S gibt zwei Item-Slots statt einem. **Nur eine Einheit darf
+Rang S tragen — der Anführer.** Die Frage ist also nicht, wann jemand S wird,
+sondern wer.
 
-| Rang | Item-Slots | Aktive | Passive | Prädator | Kosten |
-|---|---|---|---|---|---|
-| C | 1 | 1 (Signatur) | – | – | – |
-| B | 2 | 2 | 1 | 1 | 140 ✦ |
-| A | 3 | 3 | 2 | 2 | 300 ✦ |
-| S | 5 | 4 | 3 | 3 | 560 ✦ |
+| Rang | Item-Slots | Passive | Prädator |
+|---|---|---|---|
+| C | 1 | 1 | – |
+| B | 2 | 2 | 1 |
+| A | 3 | 3 | 2 |
+| S (nur einer) | 5 | 4 | 3 |
 
 ## Starten
 
@@ -92,10 +95,10 @@ das der einzige Weg, tote und dominante Builds zu finden.
 800 Runs mit dem Bot aus `dev/balance.js`. Ein Trupp gilt erst als *Build*, wenn
 ein Schlüsselwort zwei Quellen und einen Verstärker hat:
 
-6000 Runs, frischer Spieler, Bedrohungsstufe 0: **51 % Siege** (Phase 84,
-`GRUNDHAERTE` 1.45). Die Starteinheit liegt zwischen 35 und 76 % Siegquote
+6000 Runs, frischer Spieler, Bedrohungsstufe 0: **51 % Siege** (Phase 85,
+`GRUNDHAERTE` 1.42). Die Starteinheit liegt zwischen 35 und 76 % Siegquote
 („Siegquote je STARTEINHEIT" in `dev/balance.js`). Oben Schatten +14,
-Tempo und Dunkelheit +9. Mit allem Freigeschalteten 58 %.
+Tempo und Dunkelheit +9. Mit allem Freigeschalteten 60 %.
 
 Der Bot stellt seinen Trupp sinnvoll auf (zäh nach vorn) und kauft nach Wert je
 Gold. Beides ist nötig, damit die Zahlen kompetentes Spiel abbilden: ohne
@@ -113,11 +116,11 @@ eine andere Schraube an, nicht nur die Gegnerwerte:
 | Stufe | Name | Was dazukommt (kumulativ) | Siegquote des Bots |
 |---|---|---|---|
 | 0 | Jura-Wald | – | 51 % |
-| 1 | Überzahl | ein Gegner mehr je Begegnung | 35 % |
-| 2 | Nachschub | normale Gegner stehen einmal mit 30 % Leben wieder auf | 26 % |
-| 3 | Kriegsrecht | Markt bietet weniger Einheiten, Aufstiege kosten mehr | 17 % |
-| 4 | Belagerung | im zweiten Akt Eliten auf jedem zweiten Kampfknoten, Lager −15 % | 12 % |
-| 5 | Sturmgott | ein Drittel weniger Magicule, 3 Leben statt 5, Bosse eskalieren doppelt | 2 % |
+| 1 | Überzahl | ein Gegner mehr je Begegnung | 37 % |
+| 2 | Nachschub | normale Gegner stehen einmal mit 30 % Leben wieder auf | 25 % |
+| 3 | Kriegsrecht | Markt bietet weniger Einheiten, Aufstiege kosten mehr | 18 % |
+| 4 | Belagerung | im zweiten Akt Eliten auf jedem zweiten Kampfknoten, Lager −15 % | 14 % |
+| 5 | Sturmgott | ein Drittel weniger Magicule, 3 Leben statt 5, Bosse eskalieren doppelt | 3 % |
 
 Gemessen mit `node dev/balance.js 400 --stufe N` (Stufe 0 mit 6000 Runs).
 
@@ -127,7 +130,7 @@ spielt zudem nur mittelmäßig — für einen Menschen liegt jede Stufe höher.
 ## Was fehlt
 
 - Die Starteinheit wiegt noch schwer: 35 bis 76 % Siegquote je Start.
-- Stufe 5 (Sturmgott) liegt bei 2 %.
+- Stufe 5 (Sturmgott) liegt bei 3 %.
 - Der Bot in `dev/balance.js` spielt Aufstellung und Ausrüstung stur; wie viel
   ein guter Spieler mehr herausholt, misst er nicht. Eine Breitenstrategie
   (vier auf B statt eine auf S) misst er ebenfalls nicht.
