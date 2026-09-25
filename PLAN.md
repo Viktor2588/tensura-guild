@@ -1284,3 +1284,7 @@ Provokation verändert, wie Kämpfe laufen — Schutz für die Hinterreihe —, 
 die Gesamtstärke.
 
 `dev/sim.js` 550/550 · `dev/uitest.js` 141/141.
+
+### [~] Phase 106 (2026-09-26): Mehr Verwundbar, mehr Angriffe auf alle (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-106-bibliothek`, Branch `phase-106-bibliothek`.
