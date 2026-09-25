@@ -417,9 +417,10 @@ var kEinheiten = R.marktOffers(kRun, { type: 'kampf' }, false)
 ok(kEinheiten.length >= 4, 'der Markt bietet vier Einheiten (' + kEinheiten.length + ')');
 ok(kEinheiten.every(function (o) { return o.rang >= 0 && o.rang <= 3; }),
    'jede steht auf einem Rang zwischen C und S');
-/* C 1, B 2, A 3, S 4 — dieselbe Zahl, die PASSIV_SLOTS ohnehin freischaltet. */
-ok(kEinheiten.every(function (o) { return o.passives.length === o.rang + 1; }),
-   'die Zahl der Passiven haengt am Rang (C 1, B 2, A 3, S 4)');
+/* C 1, B 2, A 3, S 4 — dieselbe Zahl, die PASSIV_SLOTS ohnehin freischaltet.
+   Bei einer Aufwertung stehen die neuen Plaetze als `wahl` daneben (Phase 80). */
+ok(kEinheiten.every(function (o) { return o.passives.length + (o.wahl || 0) === o.rang + 1; }),
+   'die Zahl der Passiven haengt am Rang (C 1, B 2, A 3, S 4) — bei einer Aufwertung teils zur Wahl');
 ok(kEinheiten.every(function (o) {
      var seen = {};
      return o.passives.every(function (pid) {
@@ -2641,6 +2642,53 @@ head('Aufwertung und Passiv-Erbe');
   ok(fremd.every(function (pid) {
     return alle.concat(AB.linienAngebot('shion')).some(function (o) { return o.id === pid; });
   }), 'eine fremde Passive wird nicht vererbt');
+})();
+
+/* Phase 80: die Aufwertung oeffnet ihre neuen Plaetze als Wahl — der Weg zu
+   den Keystones, die der Markt sonst nie auslegt. */
+(function () {
+  var run = R.create(5, R.newMeta());
+  run.team = [];
+  run.pwahlen = [];
+  R.addUnit(run, 'shion', null, 0);
+  var erbe = run.team[0].passives.slice();
+  ok(erbe.length === 1 && !R.passivWahl(run), 'Shion auf C: ein Startpassiv, keine Wahl offen');
+  ok(R.addUnit(run, 'shion', null, 2, erbe, 2), 'Aufwertung C -> A mit zwei offenen Plaetzen');
+  var neu = run.team[0];
+  ok(erbe.every(function (pid) { return neu.passives.indexOf(pid) >= 0; }), 'das Erbe steht fest');
+  var wahlen = 0, keystone = false;
+  while (R.passivWahl(run) && wahlen < 5) {
+    var w = R.passivWahl(run);
+    keystone = keystone || w.offers.some(function (o) { return o.preis; });
+    R.choosePassive(run, 0);
+    wahlen++;
+  }
+  ok(wahlen === 2, 'zwei Plaetze, zwei Wahlen nacheinander (' + wahlen + ')');
+  ok(neu.passives.length + run.chronik.filter(function (z) { return /lehnt/.test(z); }).length === 3,
+     'danach drei Passive auf Rang A (oder bewusst verzichtet)');
+  ok(new Set(neu.passives).size === neu.passives.length, 'ohne Dubletten');
+
+  /* Ueber viele Seeds muss im Angebot einer Aufwertung auch ein Keystone stehen. */
+  var gesehen = 0;
+  for (var s = 1; s <= 30; s++) {
+    var r2 = R.create(s, R.newMeta());
+    r2.team = []; r2.pwahlen = [];
+    R.addUnit(r2, 'gerudo', null, 0);
+    R.addUnit(r2, 'gerudo', null, 3, r2.team[0].passives.slice(), 3);
+    var ww = R.passivWahl(r2);
+    if (ww && ww.offers.some(function (o) { return o.preis; })) gesehen++;
+  }
+  ok(gesehen > 0, 'Aufwertungen bieten Keystones an (' + gesehen + ' von 30)');
+
+  /* Weicht die Einheit mit offener Wahl einer weiteren Aufwertung, verfaellt die
+     Wahl, statt die Schlange zu sperren. */
+  var r3 = R.create(8, R.newMeta());
+  r3.team = []; r3.pwahlen = [];
+  R.addUnit(r3, 'shion', null, 0);
+  R.addUnit(r3, 'shion', null, 1, r3.team[0].passives.slice(), 1);
+  var alt = r3.team[0].uid;
+  r3.team = r3.team.filter(function (m) { return m.uid !== alt; });
+  ok(R.choosePassive(r3, 0) && !R.passivWahl(r3), 'Wahl einer verschwundenen Einheit verfaellt');
 })();
 
 head('Kampfbilanz');

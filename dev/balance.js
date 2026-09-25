@@ -187,6 +187,10 @@ function play(seed, voll) {
           .forEach(function (k) { if (pkw[k]) sc += pkw[k].quellen + pkw[k].verstaerker; });
         if (sc > pScore) { pScore = sc; pBest = i; }
       });
+      /* Seit Phase 79 ein eigener Befund: bezahlte Passiven kamen hier nie an. */
+      pwahlen++;
+      if (pw.offers.some(function (o) { return o.preis; })) mitKeystone++;
+      if (pw.offers[pBest].preis) keystones++;
       R.choosePassive(run, pBest);
       continue;
     }
@@ -284,7 +288,7 @@ function play(seed, voll) {
 var siege = 0, akte = {}, schritteSum = 0, rangSum = 0, teamSum = 0;
 var pruefGesamt = 0, pruefOk = 0;
 var bossKampf = {}, bossSieg = {};
-var kaeufe = {}, unbezahlbar = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
+var kaeufe = {}, unbezahlbar = 0, pwahlen = 0, mitKeystone = 0, keystones = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
 var angebote = {}, gekauft = {};                  // je Einheit: im Regal / gekauft
 var ohneFront = 0, ohneStuetze = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
 var proKeyword = {}, proRelikt = {}, proEinheit = {}, proRang = {}, proResonanz = {};
@@ -415,6 +419,8 @@ console.log('Ø Trupp: ' + (teamSum / N).toFixed(1) + ' Einheiten, Ø Rangstufen
 console.log('gescheitert je Akt: ' + Object.keys(akte).sort().map(function (a) {
   return a + ': ' + akte[a];
 }).join(' · '));
+console.log('Passiv-Wahlen: ' + pwahlen + ', davon mit Keystone im Angebot ' + mitKeystone +
+  ', Keystone genommen ' + keystones + ' (je Run ' + (keystones / N).toFixed(1) + ')');
 console.log('nicht bezahlbare Angebote: ' + unbezahlbar + ' (je Run ' + (unbezahlbar / N).toFixed(1) + ')');
 console.log('Trupps ohne Frontlinie: ' + ohneFront + ' · ohne Unterstützung: ' + ohneStuetze);
 console.log('Ø Relikte: ' + (reliktSum / N).toFixed(1) + ' · Ø angelegte Ausrüstung: ' + (itemSum / N).toFixed(1));

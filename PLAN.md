@@ -4147,7 +4147,36 @@ Vier Punkte standen als offen da, die es nicht mehr waren:
   *Aufladung* ist ein Nicht-Ziel seit Phase 10 (keine Abklingzeiten, die
   Signatur feuert jede Runde). *Kosten* gibt es seit Phase 51 als `preis`.
 
-### [~] Phase 80 (2026-09-25): Die Aufwertung öffnet die Keystone-Wahl (in Bearbeitung)
+### Phase 80 (2026-09-25): Die Aufwertung öffnet die Keystone-Wahl
 
 Worktree `/home/viktor/tensura/worktree/phase-80-keystones`, Branch
 `phase-80-keystones` (Pfad unter `$HOME` wie in Phase 79).
+
+**Der Befund aus Phase 79 war kein Bot-Problem.** `dev/balance.js` sah
+bezahlte Passiven nie — aber ein Spieler auch nicht. Seit Phase 51 kommen
+Einheiten fertig aus dem Markt, `wuerfleLinienPassive` lässt bezahlte Passiven
+bewusst weg, und die einzige Wahl mit Keystones öffnete `rankUp`, das nur
+`freierRang` aus sechs seltenen Ereignissen aufruft. 156 Passiven, jede vierte
+Stelle einer Linie, waren damit toter Inhalt — dasselbe Muster wie Phase 78.
+
+**Die Aufwertung öffnet ihre neuen Plätze als Wahl.** Kauft man eine Einheit,
+die schon im Trupp steht, auf höherem Rang, steht am Marktposten nur das Erbe;
+die neuen Plätze kommen nach dem Kauf über `passivAngebot` — dasselbe Angebot
+wie beim Aufstieg, mit Keystones, Bibliothek und Verzicht. Einer nach dem
+anderen (`naechsteWahl`), damit jedes Angebot die Wahl davor kennt. Die
+Marktkarte sagt „+ N neue Passiven zur Wahl nach dem Kauf — auch Keystones".
+Ein Neukauf bleibt ein fertiges Paket ohne Keystone: aufgedrängt bekommen soll
+man eine Regeländerung weiterhin nicht.
+
+Nebenbei: `choosePassive` blieb stecken, wenn die Einheit der offenen Wahl
+inzwischen einer weiteren Aufwertung gewichen war — die Wahl verfällt jetzt.
+
+**Gemessen** (300 Runs, frisch): 5790 Passiv-Wahlen, 4608 davon mit Keystone
+im Angebot, 5,0 genommene Keystones je Run (vorher 0 in 120 Runs). Die Zeile
+steht jetzt fest in `dev/balance.js`. Siegquote 83 → 79 %.
+
+**Nicht kalibriert.** Die Siegquote ist seit Phase 76 von 50 auf 79 %
+gewandert, über drei bewusste Eingriffe (siehe `TODO.md`). Zurück auf ~52 %
+bräuchte `GRUNDHAERTE` 1.03 → ~1.40 — eine eigene Entscheidung.
+
+`dev/sim.js` 499/499 · `dev/uitest.js` 141/141.

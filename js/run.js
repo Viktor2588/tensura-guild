@@ -1009,7 +1009,7 @@
     return !!ersetzbar(run, u, rang || 0);
   }
 
-  function addUnit(run, id, startPassiveId, rang, passiveListe) {
+  function addUnit(run, id, startPassiveId, rang, passiveListe, wahl) {
     var u = GD.unit(id);
     if (!u) return false;
     var weg = null;
@@ -1050,6 +1050,13 @@
 
     /* Task 3: Startzustand ist zufällig — die erste Linien-Passive wird
        vorausgewählt, damit beim Anwerben keine Auswahl-Karten erscheinen. */
+    if (hatLinien(m) && wahl > 0) {
+      /* Aufwertung: das Erbe steht, die neuen Plaetze werden gewaehlt. */
+      m.passives = (passiveListe || []).slice();
+      m.offen = wahl;
+      naechsteWahl(run, m);
+      return true;
+    }
     if (hatLinien(m)) {
       /* Eine gekaufte Einheit bringt ihr Paket schon mit — dann wird hier nichts
          mehr gezogen und danach keine Wahl geoeffnet. Der Spieler hat am
@@ -1338,19 +1345,35 @@
 
   function passivWahl(run) { return (run.pwahlen || [])[0] || null; }
 
+  /* Die offenen Plaetze einer Aufwertung kommen EINER nach dem anderen: jedes
+     Angebot soll kennen, was davor gewaehlt wurde. Liefert der Topf kein
+     Angebot mehr, verfaellt der Platz statt die Schlange zu blockieren. */
+  function naechsteWahl(run, m) {
+    while (m.offen > 0) {
+      m.offen--;
+      var vorher = (run.pwahlen || []).length;
+      passivAngebot(run, m);
+      if ((run.pwahlen || []).length > vorher) return;
+    }
+  }
+
   function choosePassive(run, i) {
     var w = passivWahl(run);
     if (!w) return false;
     var o = w.offers[i];
     var m = find(run, w.uid);
-    if (!o || !m) return false;
+    if (!o) return false;
     run.pwahlen.shift();
+    /* Die Einheit kann inzwischen einer weiteren Aufwertung gewichen sein —
+       dann verfaellt die Wahl, statt die Schlange fuer immer zu sperren. */
+    if (!m) return true;
     if (o.verzicht) {
       run.chronik.push('Passive: ' + GD.unit(m.id).name + ' lehnt den Keystone ab');
-      return true;
+    } else {
+      m.passives = (m.passives || []).concat(o.id);
+      run.chronik.push('Passive: ' + GD.unit(m.id).name + ' wählt ' + AB.get(o.id).name);
     }
-    m.passives = (m.passives || []).concat(o.id);
-    run.chronik.push('Passive: ' + GD.unit(m.id).name + ' wählt ' + AB.get(o.id).name);
+    naechsteWahl(run, m);
     return true;
   }
 
@@ -1409,14 +1432,22 @@
           return m.id === u.id;
         })[0];
         if (vorhanden) rang = Math.max(rang, Math.min(obergrenze, vorhanden.rank + 1));
+        /* Eine Aufwertung wuerfelt ihre NEUEN Plaetze nicht aus, sie oeffnet sie
+           nach dem Kauf als Wahl (`naechsteWahl`). Das ist der Weg zu den
+           Keystones: `wuerfleLinienPassive` laesst bezahlte Passiven bewusst
+           weg, und bis Phase 80 lag die einzige andere Tuer bei `freierRang`
+           aus sechs seltenen Ereignissen — 156 Passiven waren damit fuer
+           Spieler wie Bot praktisch unerreichbar. */
         var erbe = vorhanden ? passivIds(vorhanden) : null;
-        var pas = wuerfleLinienPassive(u.id, rang + 1, rng, erbe);
+        var pas = wuerfleLinienPassive(u.id, vorhanden ? Math.min(rang + 1, erbe.length) : rang + 1,
+                                       rng, erbe);
         offers.push({ kind: 'unit', id: u.id, name: u.name,
                       rang: rang, rangName: RANK_NAME[rang],
                       price: rangPreis(u, rang, run),
                       text: unitText(u),
                       passive: pas[0] || null,
                       passives: pas,
+                      wahl: vorhanden ? rang + 1 - pas.length : 0,
                       passiveNamen: pas.map(function (pid) {
                         var ab = AB.get(pid);
                         return ab ? ab.name : pid;
@@ -1445,7 +1476,7 @@
     var o = liste && liste[i];
     if (!o || o.sold || run.magicules < o.price) return false;
     if (o.kind === 'unit' &&
-        !addUnit(run, o.id, o.passive, o.rang, o.passives)) return false;
+        !addUnit(run, o.id, o.passive, o.rang, o.passives, o.wahl)) return false;
     if (o.kind === 'relic') run.relics.push(o.id);
     if (o.kind === 'item') (run.bag = run.bag || []).push(o.id);
     run.magicules -= o.price;

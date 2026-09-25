@@ -613,16 +613,14 @@ Balance und Werkzeug:
 - Der Bot in `balance.js` misst „vier auf B" gegen „eine auf S" weiterhin
   nicht — Phase 64 hat es mit `--kaufstil spitze` versucht und gezeigt, dass ein
   Sparfaktor dafuer nicht reicht.
-- **`dev/balance.js` sieht die bezahlten Passiven nie.** In Phase 79 gemessen:
-  über 120 Runs trifft der Bot ganze **6** Passiv-Entscheidungen, davon **0**
-  bezahlte. Die vierte Stelle jeder Linie (`PREIS_INDEX`) ist damit im
-  600-Run-Lauf unerreichbar — 156 Passiven, alle Keystones, alles was eine
-  Regel ändert. Der Grund ist keine Panne, sondern Phase 51: Einheiten kommen
-  fertig aus dem Markt, und `wuerfleLinienPassive` filtert `!o.preis`. Eine
-  Wahl entsteht nur beim Aufstieg, und den erlebt der Bot fast nie.
-
-  Praktische Folge: Änderungen an einem Keystone bewegen `npm run balance` um
-  exakt null — die beiden 600-Run-Läufe zu Phase 79 waren byte-identisch. Wer
-  einen Keystone misst, braucht `dev/linien.js`, nicht `balance.js`. Wer das
-  beheben will, muss dem Bot Aufstiege verschaffen, nicht an der Auswahl
-  drehen.
+- ~~**`dev/balance.js` sieht die bezahlten Passiven nie.**~~ — erledigt in
+  Phase 80, und es war kein Bot-Problem: auch Spieler sahen Keystones nur über
+  `freierRang` aus sechs seltenen Ereignissen. Jetzt öffnet die Aufwertung im
+  Markt ihre neuen Plätze als Wahl. Gemessen 5790 Passiv-Wahlen in 300 Runs,
+  4608 davon mit Keystone im Angebot, 5,0 genommene Keystones je Run.
+- **Die Siegquote ist seit Phase 76 von 50 auf 79 % gewandert** (frisch,
+  Stufe 0). Drei bewusste Eingriffe, keiner davon ein Fehler: `59092a3`
+  Einheiten gleichgestellt (+14), `2aa31ed` alle Einheiten im Starttopf (+13),
+  Phase 78 negative Passive repariert (+6); Phase 80 −4. Zurück auf ~52 %
+  bräuchte `GRUNDHAERTE` 1.03 → ~1.40 (gemessen 1.36: 55 %, 1.46: 49 %).
+  Offen, ob das gewollt ist.

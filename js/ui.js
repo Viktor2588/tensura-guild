@@ -861,15 +861,19 @@
     if (o.kind === 'unit') {
       var u = GD.unit(o.id), sig = AB.get(u.signature);
       var zeilen = ['<b>' + esc(sig.name) + '</b> — ' + esc(sig.text)];
-      /* Das ganze Paket steht da, nicht nur die erste Passive: es gibt keinen
-         Aufstieg mehr, bei dem man nachwählen könnte. Was hier steht, ist was
-         man bekommt. */
+      /* Das ganze Paket steht da, nicht nur die erste Passive. Was hier steht,
+         ist was man bekommt — bei einer Aufwertung plus die neuen Plätze, die
+         nach dem Kauf gewählt werden. */
       var pas = o.passives || (o.passive ? [o.passive] : []);
       if (pas.length) {
         zeilen.push(pas.map(function (pid) {
           var pp = AB.get(pid);
           return '· <b>' + esc(pp ? pp.name : pid) + '</b> — ' + esc(pp ? pp.text : '');
         }).join('<br>'));
+      }
+      if (o.wahl) {
+        zeilen.push('+ ' + o.wahl + (o.wahl === 1 ? ' neue Passive' : ' neue Passiven') +
+          ' zur Wahl nach dem Kauf — auch Keystones.');
       }
       /* Werte auf DEM Rang, der im Angebot steht — sonst liest man die Zahlen
          einer Einheit, die man so nicht kauft. */

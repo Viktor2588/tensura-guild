@@ -303,8 +303,8 @@ ok(einheiten.length >= 4, 'der Markt bietet vier Einheiten (' + einheiten.length
 ok(!posten.some(function (o) { return o.kind === 'rang'; }),
    'und keinen Aufstiegsposten mehr');
 /* Der Rang bestimmt, wie viele Passive dabei sind: C 1, B 2, A 3, S 4. */
-ok(einheiten.every(function (o) { return o.passives.length === o.rang + 1; }),
-   'jede Einheit bringt Rang+1 Passive mit');
+ok(einheiten.every(function (o) { return o.passives.length + (o.wahl || 0) === o.rang + 1; }),
+   'jede Einheit bringt Rang+1 Passive mit (Aufwertung: Erbe plus Wahl)');
 ok(einheiten.every(function (o) { return o.rangName === win.Run.RANK_NAME[o.rang]; }),
    'und nennt ihren Rang im Angebot');
 
