@@ -1043,7 +1043,16 @@
       'Aufstellung, Ausrüstung und Aufstiege.</p>' +
       marktHtml(p.markt || []) +
       '<div class="reihe"><button class="haupt" data-a="weiter">Weiterziehen</button>' +
-      neuwurfKnopf() + '</div>';
+      neuwurfKnopf() + drillKnopf() + '</div>';
+  }
+
+  /* Drill (Phase 100): der ganze Trupp dauerhaft staerker, Preis verdoppelt sich. */
+  function drillKnopf() {
+    var preis = R.drillPreis(run);
+    return '<button data-a="drill"' + (run.magicules >= preis ? '' : ' disabled') +
+      tip('Drill', 'Der ganze Trupp — auch wer später dazukommt — erhält für den Rest des Runs +4 % ' +
+        'Leben und Angriff. Jeder weitere Drill kostet das Doppelte. Bisher: Stufe ' + (run.drill || 0) + '.') +
+      '>⚔ Drill ' + ((run.drill || 0) + 1) + ' — ' + preis + ' ✦</button>';
   }
 
   /* Neu wuerfeln (Phase 93): der Preis steigt je Wurf im selben Markt. */
@@ -1661,6 +1670,7 @@
       R.devour(run, d.id, ziel ? ziel.value : run.team[0].uid);
       render(); speichern();
     },
+    drill: function () { R.drill(run); render(); speichern(); },
     neuwurf: function () { R.neuWuerfeln(run); render(); speichern(); },
     'zum-markt': function () { R.zumMarkt(run); replay = null; Brett3D.loese(); render(); speichern(); },
     weiter: function () { R.advance(run); replay = null; Brett3D.loese(); render(); speichern(); },
@@ -1912,7 +1922,7 @@
     }).join('') + '</div>';
     var ch = meta.chronik || [];
     if (ch.length) {
-      html += '<h4>Chronik</h4><div class="liste">' + ch.map(function (c) {
+      html += '<h4>Letzte Runs</h4><div class="liste">' + ch.map(function (c) {
         var u = c.start && GD.unit(c.start);
         return '<span class="chip' + (c.won ? '' : ' leer') + '">' + esc(c.datum) + ' · ' +
           (u ? esc(u.name) : '?') + (c.stufe ? ' · Stufe ' + c.stufe : '') + (c.tages ? ' · Tagesrun' : '') +

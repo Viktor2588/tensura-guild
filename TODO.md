@@ -639,6 +639,7 @@ Rückmeldung aus dem Spieltest (2026-09-25), offen:
   Keystones und einer ★-Marke auf der Karte. Phase 91: die zehn stärksten
   Ausreißer angefasst; offen bleiben die Trupp-Keystones (Zegion −0.26,
   Shion −0.33), die der Prüfstand unterschätzt.
-- **Geld ist nicht knapp** (Phase 93): Ø 9.100 Magicule bleiben am Run-Ende
-  ungenutzt, auch mit Neuwurf. Eine echte Senke fehlt.
-- Stufe 5 wieder bei 3 % (nach Phase 93).
+- ~~**Geld ist nicht knapp**~~ — Phase 100: der Drill nimmt den Überschuss auf,
+  Ø 2.960 statt 9.100 Magicule am Run-Ende. Stufe 5 wieder bei 5 %.
+- **Der Sprung von Stufe 2 auf 3 ist steil** (34 → 15 %): Kriegsrecht halbiert
+  das Einheitenangebot und verteuert es um 30 % — prüfen, ob eins davon reicht.

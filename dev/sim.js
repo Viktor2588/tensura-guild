@@ -2797,6 +2797,22 @@ head('Schmelzen (Phase 99)');
   ok(!R.schmelzbar(run).length, 'legendäre Teile schmelzen nicht weiter');
 })();
 
+head('Drill (Phase 100)');
+(function () {
+  var run = fertigerRun(100);
+  while (R.passivWahl(run)) R.choosePassive(run, 0);
+  run.phase = 'markt'; run.magicules = 1000;
+  var m = run.team[0], vorher = R.resolve(m).hp;
+  ok(R.drillPreis(run) === 200 && R.drill(run) && run.magicules === 800, 'der erste Drill kostet 200');
+  ok(R.drillPreis(run) === 400, 'der zweite das Doppelte');
+  ok(R.resolve(m).hp > vorher, 'der Trupp hält danach mehr aus (' + vorher + ' → ' + R.resolve(m).hp + ')');
+  R.addUnit(run, 'rigurd', null, 0);
+  var neu = run.team.concat(run.bank).filter(function (x) { return x.id === 'rigurd'; })[0];
+  ok(neu && neu.drill === 1, 'wer später dazukommt, hat denselben Stand');
+  run.phase = 'karte';
+  ok(!R.drill(run), 'gedrillt wird nur im Markt');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

@@ -166,7 +166,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.55;   // Phase 93: mit Markt-Neuwurf — gemessen 53 % (frisch, n=4000)
+  var GRUNDHAERTE = 1.62;   // Phase 100: mit Neuwurf und Drill — gemessen 53 % (frisch, n=4000)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -351,6 +351,11 @@
        Bot, der jeden angebotenen Keystone nimmt, gewann 48 %, einer, der nie
        einen nimmt, 50 %. Wer seine Einheit auf den Abschluss einer Linie
        festlegt, bekommt dafuer jetzt Leben und Angriff obendrauf. */
+    /* Drill (Phase 100): +4 % Leben und Angriff je Stufe, fuer den ganzen Trupp. */
+    if (m.drill) {
+      d.hp = Math.round(d.hp * (1 + DRILL_PLUS * m.drill));
+      d.atk = Math.round(d.atk * (1 + DRILL_PLUS * m.drill));
+    }
     if (passivIds(m).some(istKeystone)) {
       d.hp = Math.round(d.hp * (1 + KEYSTONE_PRAEMIE));
       d.atk = Math.round(d.atk * (1 + KEYSTONE_PRAEMIE));
@@ -1078,6 +1083,7 @@
     }
     var m = member(id);
     if (rang) m.rank = Math.max(0, Math.min(3, rang));
+    m.drill = run.drill || 0;
     /* Verschlungenes ueberlebt die Aufwertung. Es ist im Kampf erbeutet, nicht
        gekauft: eine Aufwertung, die es wegwirft, bestraft genau das Spiel, das
        der Praedator belohnen soll. Die Ausruestung wandert in den Beutel und
@@ -1718,6 +1724,26 @@
      ungenutzten Magicule — der Markt kann den Ertrag nicht aufnehmen. Ein
      linearer Preis waere damit gratis; verdoppelnd bleibt der dritte und
      vierte Wurf eine Frage. */
+  /* ---- Drill (Phase 100) ---------------------------------------------------
+     Die Verwendung fuer den Ueberschuss: ein Run endete mit rund 9.000
+     ungenutzten Magicule, weil der Markt den Ertrag nicht aufnehmen kann.
+     Der Drill macht den ganzen Trupp fuer den Rest des Runs staerker, und sein
+     Preis verdoppelt sich — so konkurriert Geld wieder mit Neuwurf und
+     Einheiten, statt liegen zu bleiben. Auch spaeter gekaufte Einheiten
+     bekommen den Stand (`addUnit`). */
+  var DRILL_PREIS = 200, DRILL_PLUS = 0.04;
+  function drillPreis(run) { return DRILL_PREIS * Math.pow(2, run.drill || 0); }
+  function drill(run) {
+    if (run.phase !== 'markt') return false;
+    var preis = drillPreis(run);
+    if (run.magicules < preis) return false;
+    run.magicules -= preis;
+    run.drill = (run.drill || 0) + 1;
+    run.team.concat(run.bank).forEach(function (m) { m.drill = run.drill; });
+    run.chronik.push('Drill: der Trupp auf Stufe ' + run.drill);
+    return true;
+  }
+
   var NEUWURF_PREIS = 50;
   function neuwurfPreis(run) {
     var p = run.pending;
@@ -1911,7 +1937,7 @@
       over: run.over, won: run.won,
       pwahlen: run.pwahlen || [],
       team: run.team, bank: run.bank, uidSeq: uidSeq, startwahl: run.startwahl,
-      pending: schlankesPending(run), tages: run.tages || null, startId: run.startId || null
+      pending: schlankesPending(run), tages: run.tages || null, startId: run.startId || null, drill: run.drill || 0
     });
   }
   function deserialize(raw) {
@@ -1930,7 +1956,7 @@
     var run = create(d.seed, meta);
     if (d.tages) run.tages = d.tages;
     run.team = []; run.bank = [];
-    ['rngState', 'act', 'step', 'threat', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank', 'bosse', 'startId']
+    ['rngState', 'act', 'step', 'threat', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank', 'bosse', 'startId', 'drill']
       .forEach(function (k) { if (d[k] !== undefined) run[k] = d[k]; });
     uidSeq = Math.max(uidSeq, d.uidSeq || 0);
     run.pending = null;
@@ -2033,7 +2059,7 @@
     START_MAX_RARITAET: START_MAX_RARITAET,
     itemSlots: itemSlots, aktivSlots: aktivSlots, passivSlots: passivSlots, praedatorSlots: praedatorSlots,
     buy: buy, eventChoose: eventChoose, camp: camp, marktOffers: marktOffers,
-    neuWuerfeln: neuWuerfeln, neuwurfPreis: neuwurfPreis,
+    neuWuerfeln: neuWuerfeln, neuwurfPreis: neuwurfPreis, drill: drill, drillPreis: drillPreis,
     equip: equip, unequip: unequip, move: move, bench: bench, deploy: deploy, entlassen: entlassen,
     find: find, addUnit: addUnit, swap: swap, unitPool: unitPool, relicPool: relicPool,
     entlassenWert: entlassenWert, darfEntlassen: darfEntlassen,

@@ -284,6 +284,9 @@ function play(seed, voll) {
           neuwuerfe++;
           continue;
         }
+        /* Phase 100: was dann noch uebrig ist und eine Einheit nicht braucht,
+           geht in den Drill. */
+        while (DRILL && run.magicules - R.drillPreis(run) >= RESERVE + 265 && R.drill(run)) drills++;
       }
       R.advance(run);
       continue;
@@ -309,7 +312,8 @@ function play(seed, voll) {
 var siege = 0, akte = {}, schritteSum = 0, rangSum = 0, teamSum = 0;
 var pruefGesamt = 0, pruefOk = 0;
 var bossKampf = {}, bossSieg = {};
-var neuwuerfe = 0, restGeld = 0, geschmolzen = 0;
+var neuwuerfe = 0, restGeld = 0, geschmolzen = 0, drills = 0;
+var DRILL = process.argv.indexOf('--ohne-drill') < 0;
 var SCHMELZEN = process.argv.indexOf('--ohne-schmelzen') < 0;
 var kaeufe = {}, unbezahlbar = 0, pwahlen = 0, mitKeystone = 0, keystones = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
 var angebote = {}, gekauft = {};                  // je Einheit: im Regal / gekauft
@@ -447,6 +451,7 @@ console.log('gescheitert je Akt: ' + Object.keys(akte).sort().map(function (a) {
 console.log('Passiv-Wahlen: ' + pwahlen + ', davon mit Keystone im Angebot ' + mitKeystone +
   ', Keystone genommen ' + keystones + ' (je Run ' + (keystones / N).toFixed(1) + ')');
 console.log('Markt neu gewuerfelt: ' + neuwuerfe + ' (je Run ' + (neuwuerfe / N).toFixed(1) + '), Ø Magicule am Run-Ende: ' + Math.round(restGeld / N));
+console.log('Drill: ' + drills + ' (je Run ' + (drills / N).toFixed(1) + ')');
 console.log('Geschmolzen: ' + geschmolzen + ' (je Run ' + (geschmolzen / N).toFixed(1) + ')');
 console.log('nicht bezahlbare Angebote: ' + unbezahlbar + ' (je Run ' + (unbezahlbar / N).toFixed(1) + ')');
 console.log('Trupps ohne Frontlinie: ' + ohneFront + ' · ohne Unterstützung: ' + ohneStuetze);

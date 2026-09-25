@@ -1131,6 +1131,24 @@ Schmelzen ist ein Werkzeug gegen tote Teile, keine neue Stärke.
 
 `dev/sim.js` 537/537 · `dev/uitest.js` 141/141.
 
-### [~] Phase 100 (2026-09-25): Drill — eine Verwendung für den Überschuss (in Bearbeitung)
+### Phase 100 (2026-09-25): Drill — eine Verwendung für den Überschuss
 
 Worktree `/home/viktor/tensura/worktree/phase-100-drill`, Branch `phase-100-drill`.
+
+Ein Run endete mit rund 9.000 ungenutzten Magicule (Phase 93): der Markt kann
+den Ertrag nicht aufnehmen. **Drill** im Markt: der ganze Trupp erhält für den
+Rest des Runs +4 % Leben und Angriff (`m.drill`, eingerechnet in `resolve`,
+damit auch die Truppwerte in der Oberfläche ihn zeigen), auch später gekaufte
+Einheiten (`addUnit` gibt den Stand mit). Preis 200 ✦, verdoppelnd.
+
+Der Bot drillt mit dem, was nach Käufen und Neuwürfen übrig ist, solange eine
+Einheit noch bezahlbar bliebe: 3,8-mal je Run, Ø 2.960 Magicule am Ende statt
+9.100. `GRUNDHAERTE` 1.55 → 1.62: 53 % mit Drill, 48 % ohne
+(`--ohne-drill`). Stufen 0–5: 53/42/34/15/12/5 % — Stufe 5 ist damit von 3 auf
+5 % zurück. Neu sichtbar: der Sprung 2 → 3 (Kriegsrecht) ist steil.
+
+Nebenbei: im Menü hieß ein Reiter schon „Chronik" (der laufende Run); der
+Abschnitt aus Phase 98 heißt jetzt „Letzte Runs". Die UI der Phasen 94, 98
+und 99 im Browser angesehen (Boss-Regel in der Vorschau, Erfolge, Schmelzen).
+
+`dev/sim.js` 542/542 · `dev/uitest.js` 141/141.

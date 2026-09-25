@@ -137,6 +137,13 @@ so viele Slots.
 Ein Gratisaufstieg kommt weiterhin aus dem **Lager** — das ist eine Belohnung,
 kein Kaufposten.
 
+### Drill
+
+Übriges Geld geht in den **Drill**: der ganze Trupp — auch wer später
+dazukommt — erhält für den Rest des Runs +4 % Leben und Angriff. Der erste
+kostet 200 ✦, jeder weitere das Doppelte. Neu würfeln, Einheiten, Drill:
+dieselben Magicule, drei Wege.
+
 ### Neu würfeln
 
 Passt nichts, würfelst du den Markt neu — derselbe Markt, frisch gezogen, für
