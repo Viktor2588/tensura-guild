@@ -1339,7 +1339,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
   lesen: Nachbarn (stärker mit zwei Verbündeten daneben), Durchschlag (trifft
   den Gegner hinter dem Ziel mit), Flanke (Bonus gegen Ziele ohne Nachbarn).
   Helfer `nachbarn(u)` im Kampfkontext.
-- [ ] **Phase 111 — Shion: Ausrichtung und Ultimativer Teufel (A).** Ab Rang A
+- [~] **Phase 111 — Shion: Ausrichtung und Ultimativer Teufel (A).** (in Bearbeitung) Ab Rang A
   legt sich Shion fest: Ordnung oder Verderbnis (Wahl im Aufstiegs-Dialog,
   gespeichert an der Einheit); die andere Verwandlung ist gesperrt. Rang S:
   dritte Form **Ultimativer Teufel**, nur wenn 12 Chaos auf den Gegnern UND
