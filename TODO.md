@@ -620,7 +620,10 @@ Balance und Werkzeug:
   4608 davon mit Keystone im Angebot, 5,0 genommene Keystones je Run.
 - ~~**Die Siegquote ist seit Phase 76 von 50 auf 79 % gewandert.**~~ —
   Phase 81: `GRUNDHAERTE` 1.03 → 1.41, gemessen 52 % (frisch, n=800).
-- **Schatten dominiert** seit der Kalibrierung sichtbar: +24 gegen den Schnitt
-  der Builds (93 %, n=61). Tempo, Licht, Exekution, Dunkelheit +12 bis +14;
-  Fläche −7, Chaos −5. Erst mit `dev/linien.js` die Träger finden, dann an
-  der Wurzel drehen, nicht am Knopf.
+- ~~**Schatten dominiert**~~ — Phase 82: Symptom. Schatten-Builds sind
+  Diablo-Runs, und weder Mechanik noch Grundwerte bewegen etwas.
+- **Die Rolle entscheidet mehr als das Kit.** Magier 69 %, Fernkampf 63 %,
+  Front 47 %, Verstärker 46 %. Ohne Rigurd oder Echsenfürst (zähe Front, wenig
+  Schaden) gewinnt der Bot 5 Punkte öfter. Boss-Eskalation als Ursache
+  widerlegt. Nächste Spur: Reichweite 1 läuft vier Felder, bevor sie zuschlägt.
+  Messen mit `dev/balance.js --ohne`, nicht mit der Siegquote je Einheit.

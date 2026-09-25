@@ -26,6 +26,8 @@ var STELLEN = process.argv.indexOf('--chaos') < 0;
 var STIL = 'breite';
 process.argv.forEach(function (a, i) { if (a === '--kaufstil') STIL = process.argv[i + 1] || 'breite'; });
 var RESERVE = STIL === 'spitze' ? 600 : 140;
+var OHNE = [];
+process.argv.forEach(function (a, i) { if (a === '--ohne') OHNE = (process.argv[i + 1] || '').split(','); });
 process.argv.forEach(function (a, i) { if (a === '--stufe') STUFE = parseInt(process.argv[i + 1] || '0', 10); });
 
 /* --voll = alles frei. --nur-einheiten / --nur-relikte trennen die beiden
@@ -114,6 +116,10 @@ function play(seed, voll) {
   var rng = globalThis.RNG(seed ^ 0x9e3779b9);
   var basis = R.newMeta();
   basis.threat = STUFE; basis.threatGewaehlt = STUFE;
+  /* --ohne a,b: Einheiten ganz aus dem Spiel nehmen. Der einzige kausale Test
+     fuer eine Einheit — ihre Siegquote im Trupp misst auch, WANN sie gekauft
+     wird (Phase 82: Diablo blieb bei 92 %, egal wie weit sein Angriff fiel). */
+  if (OHNE.length) basis.unlockedUnits = basis.unlockedUnits.filter(function (id) { return OHNE.indexOf(id) < 0; });
   var run = R.create(seed, voll ? vollMeta() : basis);
   var schritte = 0;
 
@@ -555,6 +561,16 @@ relRows.forEach(function (r) {
       (r.a ? '  (' + Math.round(r.g / r.a * 100) + ' %)' : ''));
   });
 })();
+
+console.log('\nSiegquote je EINHEIT im Trupp am Run-Ende (misst Staerke UND Kaufzeitpunkt — kausal nur mit --ohne):');
+var jeEinheit = Object.keys(proEinheit).map(function (id) {
+  return { id: id, q: proEinheit[id].w / proEinheit[id].n, n: proEinheit[id].n };
+}).sort(function (a, b) { return b.q - a.q; });
+for (var zi = 0; zi < jeEinheit.length; zi += 4) {
+  console.log('  ' + jeEinheit.slice(zi, zi + 4).map(function (e) {
+    return (e.id.slice(0, 16).padEnd(17) + Math.round(e.q * 100) + '%').padEnd(24);
+  }).join(''));
+}
 
 var nie = GD.units.filter(function (u) { return !proEinheit[u.id]; });
 if (nie.length) console.log('  ! nie gespielt: ' + nie.map(function (u) { return u.name; }).join(', '));

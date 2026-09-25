@@ -4213,6 +4213,52 @@ als Regeln statt Prozentzahlen.
 
 `dev/sim.js` 499/499 · `dev/uitest.js` 141/141.
 
-### [~] Phase 82 (2026-09-25): Schatten dominiert (in Bearbeitung)
+### Phase 82 (2026-09-25): Schatten war ein Symptom — Diagnose, kein Eingriff
 
 Worktree `/home/viktor/tensura/worktree/phase-82-schatten`, Branch `phase-82-schatten`.
+
+Auftrag war „Schatten dominiert" (+24 gegen den Schnitt der Builds, 96 %,
+n=162 bei 2000 Runs). Ergebnis: **kein Eingriff am Spiel**, weil keiner der
+naheliegenden Knöpfe etwas bewegt — dafür eine belastbare Diagnose und zwei
+Messwerkzeuge. Alle Zahlen 2000 Runs, frisch, Rauschen etwa ±2 Punkte.
+
+**Die Mechanik ist es nicht.** Ausweichen je Stapel 7 → 5 %, Obergrenze
+60 → 35 %: der Schatten-Build bleibt bei 92–96 %.
+
+**Schatten-Builds sind Diablo-Runs.** Verstärker für Schatten tragen nur Diablo
+und Ranga; Diablo steht in 133 der 162 Schatten-Builds. Aber auch Diablo ist
+nicht einfach zu stark: Angriff 30 → 20, Belial 3 → 1 Dunkelheit, Dunkelheit-
+Deckel 60 → 40 % — seine Siegquote im Trupp bleibt bei 90–95 %. Sie misst vor
+allem, WANN er gekauft wird. Kausal ist nur das Herausnehmen (`--ohne`):
+
+| ohne | Siegquote (Basis 54 %) |
+|---|---|
+| Milim | 49 % |
+| Diablo | 50 % |
+| Ranga | 51 % |
+| Carrera, Seelenhexe, Gobta | 52–55 % (Rauschen) |
+| Rigurd | 59 % |
+| Echsenfürst | 59 % |
+
+**Grundwerte sind nicht der Hebel.** ±20 % auf Leben und Angriff für zehn
+Ausreißer (Diablo, Milim, Hakuro, Phobio runter; Rigurd, Gobta, Echsenfürst,
+Drachenknecht, Gruftwächter, Rigur hoch) verschieben den Bruchpunkt in
+`dev/linien.js` um einen Messschritt und die `--ohne`-Abstände gar nicht.
+Zurückgenommen. Die Stärke steckt im Kit.
+
+**Die eigentliche Spannweite ist die Rolle.** Siegquote je Rolle: Magier 69,
+Fernkampf 63, Unterstützer 48, Front 47, Verstärker 46 %. Die beiden Einheiten,
+deren Fehlen hilft, sind zähe Frontkämpfer mit wenig Schaden. Die naheliegende
+Erklärung — die Boss-Eskalation bestraft lange Kämpfe — ist **widerlegt**:
+ohne Eskalation (`ENRAGE_CAP = 0`) steigt alles auf 59 %, der Abstand Magier
+zu Front bleibt bei 22 Punkten, und ohne Rigurd wird es wieder +5. Übrig
+bleibt die Reichweite: Reichweite 3 schlägt ab dem ersten Zug zu, Reichweite 1
+läuft erst vier Felder. Nicht gemessen, nächste Spur.
+
+`dev/linien.js` misst eine Einheit allein (Bruchpunkt S von 0.77 bei Rigurd bis
+3.00 bei Shion) und unterschätzt damit Unterstützer; als Ziel taugt es nur
+innerhalb einer Rolle.
+
+**Neu in `dev/balance.js`:** `--ohne a,b` nimmt Einheiten ganz aus dem Spiel,
+und eine Tabelle zeigt die Siegquote je Einheit im Trupp — mit dem Hinweis,
+dass sie den Kaufzeitpunkt mitmisst.
