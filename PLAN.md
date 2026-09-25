@@ -4181,6 +4181,34 @@ bräuchte `GRUNDHAERTE` 1.03 → ~1.40 — eine eigene Entscheidung.
 
 `dev/sim.js` 499/499 · `dev/uitest.js` 141/141.
 
-### [~] Phase 81 (2026-09-25): Die Siegquote zurück auf den Sollwert (in Bearbeitung)
+### Phase 81 (2026-09-25): Die Siegquote zurück auf den Sollwert
 
 Worktree `/home/viktor/tensura/worktree/phase-81-kalibrierung`, Branch `phase-81-kalibrierung`.
+
+Seit Phase 76 war die Siegquote (frisch, Stufe 0) ohne Nachkalibrierung von
+50 auf 83 % gewandert, über drei bewusste Eingriffe: `59092a3` Einheiten
+gleichgestellt (+14), `2aa31ed` alle Einheiten im Starttopf (+13), Phase 78
+reparierte negative Passive (+6); Phase 80 brachte −4. Keiner davon ist ein
+Fehler, alle heben die Spielerstärke quer über die Builds — genau der Fall,
+für den `GRUNDHAERTE` da ist. Auf Zuruf zurück auf den Sollwert.
+
+**`GRUNDHAERTE` 1.03 → 1.41.** Die Kurve ist flach: 1.10 71 %, 1.22 62 %,
+1.36 55 %, 1.41 53 %, 1.46 49 % (je 300–600 Runs). Bei 83 % trennte die
+Build-Auswertung nichts mehr — jeder Build lag über 88 %. Jetzt wieder:
+
+| | Siegquote |
+|---|---|
+| Stufe 0 / 1 / 2 / 3 / 4 / 5 | 53 / 41 / 28 / 22 / 18 / 4 % |
+| alles freigeschaltet (`--voll`) | 64 % |
+| Runs mit Build (604 von 800) | 69 %, ohne Build fast nie |
+
+**Neu sichtbar: Schatten dominiert** (+24 gegen den Schnitt der Builds, 93 %,
+n=61), dahinter Tempo, Licht, Exekution, Dunkelheit (+12 bis +14). Unten
+Fläche (−7) und Chaos (−5). Steht in `TODO.md`, nicht angefasst.
+
+Der alte README-Punkt „Freischalten macht den Bot schwächer" hat sich
+umgedreht (64 gegen 53 %) und ist gestrichen. Das README ist bei der
+Gelegenheit auf den Stand gebracht: Dateiliste, Testzahlen, Bedrohungsstufen
+als Regeln statt Prozentzahlen.
+
+`dev/sim.js` 499/499 · `dev/uitest.js` 141/141.

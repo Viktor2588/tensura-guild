@@ -168,7 +168,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.03;   // Phase 76: die Artsperre ist weg, gemessen 50 % (frisch)
+  var GRUNDHAERTE = 1.41;   // Phase 81: zurueck auf den Sollwert, gemessen 53 % (frisch, n=600)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend

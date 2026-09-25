@@ -618,9 +618,9 @@ Balance und Werkzeug:
   `freierRang` aus sechs seltenen Ereignissen. Jetzt öffnet die Aufwertung im
   Markt ihre neuen Plätze als Wahl. Gemessen 5790 Passiv-Wahlen in 300 Runs,
   4608 davon mit Keystone im Angebot, 5,0 genommene Keystones je Run.
-- **Die Siegquote ist seit Phase 76 von 50 auf 79 % gewandert** (frisch,
-  Stufe 0). Drei bewusste Eingriffe, keiner davon ein Fehler: `59092a3`
-  Einheiten gleichgestellt (+14), `2aa31ed` alle Einheiten im Starttopf (+13),
-  Phase 78 negative Passive repariert (+6); Phase 80 −4. Zurück auf ~52 %
-  bräuchte `GRUNDHAERTE` 1.03 → ~1.40 (gemessen 1.36: 55 %, 1.46: 49 %).
-  Offen, ob das gewollt ist.
+- ~~**Die Siegquote ist seit Phase 76 von 50 auf 79 % gewandert.**~~ —
+  Phase 81: `GRUNDHAERTE` 1.03 → 1.41, gemessen 52 % (frisch, n=800).
+- **Schatten dominiert** seit der Kalibrierung sichtbar: +24 gegen den Schnitt
+  der Builds (93 %, n=61). Tempo, Licht, Exekution, Dunkelheit +12 bis +14;
+  Fläche −7, Chaos −5. Erst mit `dev/linien.js` die Träger finden, dann an
+  der Wurzel drehen, nicht am Knopf.

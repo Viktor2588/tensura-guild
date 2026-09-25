@@ -36,7 +36,7 @@ npm start                         # http://localhost:8080
 (`dev/serve.js`). Nötig ist er nicht — er ist nur bequemer, weil manche Browser
 auf `file://` sparsam mit `localStorage` umgehen.
 
-> **Nicht durch einen Bundler schicken.** Die acht Skripte in `index.html` laufen
+> **Nicht durch einen Bundler schicken.** Die Skripte in `index.html` laufen
 > so, wie sie dastehen: klassische Skripte, die ihre Schnittstelle an `globalThis`
 > hängen. Wer `bun index.html` benutzt, startet Buns Dev-Server mit Hot-Reload,
 > der daraus ES-Module macht — und meldet dann Fehler aus dem Bundler statt aus
@@ -48,25 +48,36 @@ auf `file://` sparsam mit `localStorage` umgehen.
 
 ```
 index.html  style.css
+js/vendor/three.min.js  three.js für das 3D-Brett
 js/rng.js        deterministischer RNG (mulberry32), Seed = ganzer Run
-js/abilities.js  40 Signaturen, 16 Pool-Aktive, 34 Passive
+js/hex.js        Hexgeometrie (achsiale Koordinaten), rein
+js/abilities.js  44 Signaturen, 34 Pool-Aktive, 704 Passive (Linien je Einheit + Bibliothek)
 js/data.js       39 Einheiten, 52 Relikte, 32 Ausrüstungen, GLOSSAR (Tooltip-Texte)
 js/combat.js     simulate(teamA, teamB, seed, opts) — reine Funktion, kein DOM
-js/enemies.js    48 Gegner (mit eigenen Aktiven), 3 Bosse, 50 Begegnungen, 26 Ereignisse
-js/run.js        Karte, Ränge, Belohnungen, Shop, Prädator, Speicherstand
+js/enemies.js    72 Gegner, 8 Bosse, 82 Begegnungen, 34 Ereignisse
+js/run.js        Karte, Markt, Ränge, Passiv-Wahl, Prädator, Speicherstand
+js/regie.js      macht aus dem Kampflog einen Zeitplan für die Wiedergabe
+js/brett3d.js    das Brett in three.js (ohne WebGL ein No-Op)
+js/fx.js         Nachbearbeitung: Bloom und Vignette
+js/ton.js        prozeduraler Ton (Web Audio), abschaltbar im Menü
 js/ui.js         Darstellung; ändert Zustand nur über Run.*
 js/main.js       Start
-dev/sim.js       189 Selbsttests
-dev/uitest.js    UI-Test in jsdom: klickt einen Run durch (46 Prüfungen)
+dev/sim.js       499 Selbsttests
+dev/uitest.js    UI-Test in jsdom: klickt einen Run durch (141 Prüfungen)
 dev/balance.js   spielt N komplette Runs headless und misst die Builds
+dev/linien.js    misst je Einheit und Linie, was eine Passive wert ist
+dev/beute.js     misst Relikte, Ausrüstung und Passive einzeln
+dev/bildcheck.js Abnahme für Figurenbilder (assets/einheiten/)
+dev/prompts.js   Prompts und Herkunftszeilen für Figurenbilder
 ```
 
 ## Entwicklung
 
 ```bash
 npm install                  # nur für den UI-Test (jsdom); das Spiel selbst hat keine Abhängigkeiten
-node dev/sim.js              # Logik-Selbsttests, muss 189/189 sein
-node dev/uitest.js           # UI-Test, muss 46/46 sein
+npm test                     # sim + uitest + bildcheck, alles muss grün sein
+node dev/sim.js              # Logik-Selbsttests, 499/499
+node dev/uitest.js           # UI-Test, 141/141
 node dev/balance.js 600      # Balance, frischer Spieler
 node dev/balance.js 400 --stufe 3   # Balance auf Bedrohungsstufe 3
 node dev/balance.js 600 --voll   # Balance, alles freigeschaltet
@@ -81,9 +92,10 @@ das der einzige Weg, tote und dominante Builds zu finden.
 800 Runs mit dem Bot aus `dev/balance.js`. Ein Trupp gilt erst als *Build*, wenn
 ein Schlüsselwort zwei Quellen und einen Verstärker hat:
 
-800 Runs, frischer Spieler, Bedrohungsstufe 0: **53 % Siege**. Nach Build:
-Heilung 62 %, Schild 59 %, Gift 59 %, Konter 45 %, Exekution 30 %, **ohne Build
-0 %**.
+800 Runs, frischer Spieler, Bedrohungsstufe 0: **52 % Siege** (Phase 81,
+`GRUNDHAERTE` 1.41). Drei Viertel der Runs finden einen Build und gewinnen
+dann 69 %, **ohne Build fast nie**. Oben Schatten 93 %, Tempo 83 %, Licht 82 %;
+unten Chaos 64 %, Fläche 62 %. Mit allem Freigeschalteten 64 %.
 
 Der Bot stellt seinen Trupp sinnvoll auf (zäh nach vorn) und kauft nach Wert je
 Gold. Beides ist nötig, damit die Zahlen kompetentes Spiel abbilden: ohne
@@ -98,28 +110,26 @@ Begegnung in `js/enemies.js` — ein Knopf pro Begegnung.
 Nach dem ersten Sieg geht Stufe 1 auf, danach jeweils die nächste. Jede zieht
 eine andere Schraube an, nicht nur die Gegnerwerte:
 
-| Stufe | Name | Was sich ändert | Siegquote des Bots |
+| Stufe | Name | Was dazukommt (kumulativ) | Siegquote des Bots |
 |---|---|---|---|
-| 0 | Jura-Wald | – | 54 % |
-| 1 | Unruhige Grenze | Gegner +2,5 % | 47 % |
-| 2 | Aufmarsch | +5 %, 20 Gold weniger zum Start | 39 % |
-| 3 | Krieg | +7,5 %, Ränge kosten 12 % mehr | 28 % |
-| 4 | Untergang | +10 % | 20 % |
-| 5 | Sturmgott | +12,5 %, Elite und Boss zusätzlich, nur zwei Leben | 10 % |
+| 0 | Jura-Wald | – | 53 % |
+| 1 | Überzahl | ein Gegner mehr je Begegnung | 41 % |
+| 2 | Nachschub | normale Gegner stehen einmal mit 30 % Leben wieder auf | 28 % |
+| 3 | Kriegsrecht | Markt bietet weniger Einheiten, Aufstiege kosten mehr | 22 % |
+| 4 | Belagerung | im zweiten Akt Eliten auf jedem zweiten Kampfknoten, Lager −15 % | 18 % |
+| 5 | Sturmgott | ein Drittel weniger Magicule, 3 Leben statt 5, Bosse eskalieren doppelt | 4 % |
 
-Die Schritte sind absichtlich klein: die Kurve ist steil genug, dass 20 % mehr
-Gegnerwerte fast jeden Run kippen. Der Bot spielt zudem nur mittelmäßig — für
-einen Menschen liegt jede Stufe höher.
+Gemessen mit `node dev/balance.js 400 --stufe N` (Stufe 0 mit 600 Runs).
+
+Jede Stufe verlangt einen anderen Trupp, nicht nur einen stärkeren. Der Bot
+spielt zudem nur mittelmäßig — für einen Menschen liegt jede Stufe höher.
 
 ## Was fehlt
 
-- **Freischalten macht den Bot schwächer**: mit allem Freigeschalteten fällt die
-  Siegquote von 53 auf 41 %. Ursache teilweise gefunden und behoben (enge
-  Relikte tragen jetzt eine Bedingung und fallen aus dem Angebot, Reliktpreise
-  hängen nicht mehr an der Seltenheit) — der Rest ist offen. Truppstärke und
-  Ränge sind in beiden Fällen gleich; der Unterschied liegt in Relikten und
-  Ausrüstung (7,4 statt 8,0 bzw. 5,6 statt 6,0 je Run).
-- Verderbnis-, Tempo- und Flächen-Builds entstehen zu selten für belastbare Zahlen.
+- **Schatten dominiert**: +24 Punkte gegen den Schnitt der Builds (93 %, n=61).
+  Erst seit Phase 81 sichtbar — bei 83 % Siegquote trennte die Auswertung nicht.
 - Der Bot in `dev/balance.js` spielt Aufstellung und Ausrüstung stur; wie viel
-  ein guter Spieler mehr herausholt, misst er nicht.
-- Keine Grafik — Textkarten und Balken.
+  ein guter Spieler mehr herausholt, misst er nicht. Eine Breitenstrategie
+  (vier auf B statt eine auf S) misst er ebenfalls nicht.
+- Echte Figurenbilder: das Werkzeug steht (Phase 77), `assets/einheiten/` ist
+  noch leer — das Brett zeigt prozedurale Silhouetten.
