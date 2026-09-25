@@ -1187,3 +1187,7 @@ letzten Boss, und „Weiter" auf dem Ergebnisbildschirm führt direkt zum Ende.
 Test in `dev/sim.js`.
 
 `dev/sim.js` 546/546 · `dev/uitest.js` 141/141.
+
+### [~] Phase 103 (2026-09-26): Der Kampfbildschirm — kürzeres Log, neue Anordnung (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-103-kampfbild`, Branch `phase-103-kampfbild`.
