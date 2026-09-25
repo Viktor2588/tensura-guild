@@ -1114,3 +1114,7 @@ geschrieben. Im Menü steht alles unter *Fortschritt*, neue Erfolge auf dem
 Endbildschirm.
 
 `dev/sim.js` 532/532 · `dev/uitest.js` 141/141.
+
+### [~] Phase 99 (2026-09-25): Ausrüstung schmelzen (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-99-schmelzen`, Branch `phase-99-schmelzen`.
