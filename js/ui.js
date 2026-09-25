@@ -406,7 +406,7 @@
   }
 
   function starteReplay(res) {
-    replay = { res: res, i: 0, u: {}, zeilen: [], fertig: false, raf: null,
+    replay = { res: res, i: 0, u: {}, zeilen: [], kurz: [], zug: null, fertig: false, raf: null,
                plan: Regie.zeitplan(res.log), konto: 0, zeit: 0, beat: null, stopp: 0 };
     res.roster.forEach(function (r) {
       replay.u[r.key] = { key: r.key, id: r.id, name: r.name, side: r.side,
@@ -553,6 +553,32 @@
     else if (l.type === 'death') { text = esc(l.unit) + ' fällt'; klasse = 'tod'; }
     if (text) replay.zeilen.push('<div class="' + klasse + '">' + text + '</div>');
     if (replay.zeilen.length > 140) replay.zeilen.shift();
+    kurzZeile(l, text, klasse);
+  }
+
+  /* Das kurze Log (Phase 103). Ein Kampf schrieb rund 150 Zeilen, davon 63
+     einzelne Treffer und 32 Zustaende — beides steht als Zahl und Marke schon
+     auf dem Brett. Hier bleiben die Momente, die zaehlen: eine Zeile je
+     Signatur samt Ziel und Schaden, dazu Tode, Verwandlungen, Kombos,
+     Entladungen, Wut, Resonanz, Verpuffen. „Alle Details" zeigt den Rest. */
+  var logDetails = false;
+  try { logDetails = localStorage.getItem('tensura-logdetails') === '1'; } catch (e) {}
+  var KURZ = { death: 1, revive: 1, verwandlung: 1, kombi: 1, entladung: 1, wut: 1, resonanz: 1, fehlschlag: 1 };
+  function kurzZeile(l, text, klasse) {
+    if (l.type === 'aktiv') {
+      replay.zug = { key: l.key, kopf: '⚡ ' + esc(l.unit) + ' · ' + esc(l.name), ziele: {}, summe: 0,
+                     klasse: klasse, idx: replay.kurz.length };
+      replay.kurz.push('<div class="' + klasse + '">' + replay.zug.kopf + '</div>');
+    } else if (l.type === 'hit' && replay.zug && l.von === replay.zug.key) {
+      var z = replay.zug;
+      z.summe += l.dmg; z.ziele[l.target] = 1;
+      var ziele = Object.keys(z.ziele);
+      replay.kurz[z.idx] = '<div class="' + z.klasse + '">' + z.kopf + ' → ' +
+        esc(ziele.length > 2 ? ziele.length + ' Ziele' : ziele.join(', ')) + ': ' + Math.round(z.summe) + '</div>';
+    } else if (text && KURZ[l.type]) {
+      replay.kurz.push('<div class="' + klasse + '">' + text + '</div>');
+    }
+    if (replay.kurz.length > 80) { replay.kurz.shift(); if (replay.zug) replay.zug.idx--; }
   }
 
   function kaempferHtml(u) {
@@ -567,12 +593,15 @@
           (STATUS_NAMEN[k] || k) + ' ' + Math.round(u.status[k]) + '</span>';
       }).join('');
     var pct = Math.max(0, Math.round(u.hp / u.maxHp * 100));
-    return '<div class="kaempfer' + (u.tot ? ' tot' : '') + (u.side === 'enemy' ? ' feind' : '') + '"' +
-      tip(u.name, GD.rolleName(u.role) + '\n' + (G.rollen[u.role] || '') +
-        (u.aktive ? '\n\nSignatur: ' + u.aktive : '')) + '>' +
-      '<div class="zeile"><span>' + esc(u.name) + '</span><span>' + Math.max(0, u.hp) + '/' + u.maxHp + '</span></div>' +
+    /* Eine Zeile je Kaempfer (Phase 103): Name, Balken, Leben. Die Werte stehen
+       im Tooltip. Mit drei Zeilen je Einheit schoben 6 gegen 3 das Kampflog
+       ganz aus dem Bild. */
+    return '<div class="kaempfer kompakt' + (u.tot ? ' tot' : '') + (u.side === 'enemy' ? ' feind' : '') + '"' +
+      tip(u.name, GD.rolleName(u.role) + ' · ' + u.atk + '⚔ ' + u.def + '🛡 ' + u.spd + '⚡\n' +
+        (G.rollen[u.role] || '') + (u.aktive ? '\n\nSignatur: ' + u.aktive : '')) + '>' +
+      '<div class="zeile"><span class="name">' + esc(u.name) + '</span>' +
       '<div class="balken"><i style="width:' + pct + '%"></i></div>' +
-      '<div class="kwerte">' + u.atk + '⚔ ' + u.def + '🛡 ' + u.spd + '⚡</div>' +
+      '<span class="lp">' + Math.max(0, u.hp) + '</span></div>' +
       (marken ? '<div class="marken">' + marken + '</div>' : '') + '</div>';
   }
 
@@ -633,9 +662,13 @@
       }
     }
     var feld = $('kampffeld');
-    if (feld) feld.innerHTML = seiteHtml('player', 'Dein Trupp') + seiteHtml('enemy', 'Gegner');
+    /* Gegner zuerst: dorthin schaut man im Kampf. */
+    if (feld) feld.innerHTML = seiteHtml('enemy', 'Gegner') + seiteHtml('player', 'Dein Trupp');
     var log = $('kampflog');
-    if (log) { log.innerHTML = replay.zeilen.join(''); log.scrollTop = log.scrollHeight; }
+    if (log) {
+      log.innerHTML = (logDetails ? replay.zeilen : replay.kurz).join('');
+      log.scrollTop = log.scrollHeight;
+    }
   }
 
   function zeichneKampf() {
@@ -646,6 +679,8 @@
     if (replay) html += '<div id="kampfbuehne">' +
       '<div id="kampfbrett"></div>' +
       '<div id="kampfseite"><div class="feld" id="kampffeld"></div>' +
+      '<div id="kampflog-kopf"><span>Kampflog</span><button type="button" data-a="logdetails">' +
+      (logDetails ? 'Nur das Wichtige' : 'Alle Details') + '</button></div>' +
       '<div id="kampflog"></div></div></div>';
     if (replay && !replay.fertig) {
       html += '<div class="reihe" id="kampf-takt">' +
@@ -1712,6 +1747,13 @@
     },
     neu: function () { neuerRun(); },
     tages: function () { tagesRun(); },
+    logdetails: function (d, el) {
+      logDetails = !logDetails;
+      try { localStorage.setItem('tensura-logdetails', logDetails ? '1' : '0'); } catch (e) {}
+      if (el) el.textContent = logDetails ? 'Nur das Wichtige' : 'Alle Details';
+      var log = $('kampflog');
+      if (log && replay) { log.innerHTML = (logDetails ? replay.zeilen : replay.kurz).join(''); log.scrollTop = log.scrollHeight; }
+    },
     schmelzen: function (d) { R.schmelze(run, +d.r); render(); speichern(); },
     speichern: function () { speichern(); $('menu').close(); },
     'menu-zu': function () { $('menu').close(); }
@@ -2123,7 +2165,7 @@
     if (!a) return;
     ev.preventDefault();
     Ton.klick();
-    a(el.dataset);
+    a(el.dataset, el);
   }
 
   function start() {

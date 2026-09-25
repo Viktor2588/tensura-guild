@@ -1188,6 +1188,25 @@ Test in `dev/sim.js`.
 
 `dev/sim.js` 546/546 · `dev/uitest.js` 141/141.
 
-### [~] Phase 103 (2026-09-26): Der Kampfbildschirm — kürzeres Log, neue Anordnung (in Bearbeitung)
+### Phase 103 (2026-09-26): Der Kampfbildschirm — kürzeres Log, neue Anordnung
 
 Worktree `/home/viktor/tensura/worktree/phase-103-kampfbild`, Branch `phase-103-kampfbild`.
+
+Aus dem Spieltest: „Der Kampflog ist viel zu lang, wir müssen die Anordnung
+anders gestalten." Ein Kampf mit fünf Einheiten schrieb 151 Logzeilen, davon
+63 einzelne Treffer und 32 Zustände — beides steht als Zahl und Marke schon
+auf dem Brett. Und die Seitenspalte stellte jede Einheit als dreizeiligen
+Kasten dar; bei 6 gegen 3 lag das Log ganz unterhalb des sichtbaren Bereichs.
+
+- **Kurzes Log** (Standard): eine Zeile je Signatur samt Ziel und Schaden
+  („⚡ Shion · Chaosschlag → Reliquienwächter: 39"), dazu Tode, Verwandlungen,
+  Kombos, Entladungen, Wut, Resonanz, Verpuffen. Umschalter „Alle Details" über
+  dem Log, gemerkt in `localStorage`.
+- **Eine Zeile je Kämpfer**: Name, Lebensbalken, Leben; Zustände darunter, die
+  Werte im Tooltip.
+- **Gegner zuerst**, dann der eigene Trupp.
+
+Im Browser angesehen: nach dem ersten Schlagabtausch 12 statt über 60 Zeilen,
+alles in einer Spalte sichtbar.
+
+`dev/sim.js` 546/546 · `dev/uitest.js` 141/141.
