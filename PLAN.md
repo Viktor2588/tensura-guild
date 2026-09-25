@@ -1175,6 +1175,15 @@ leichter; Sturmgott nimmt dafür 25 statt 15 % des Einkommens (0.85: 9 %,
 
 `dev/sim.js` 542/542 · `dev/uitest.js` 141/141.
 
-### [~] Phase 102 (2026-09-26): Nach dem letzten Boss ist Schluss (in Bearbeitung)
+### Phase 102 (2026-09-26): Nach dem letzten Boss ist Schluss
 
 Worktree `/home/viktor/tensura/worktree/phase-102-ende`, Branch `phase-102-ende`.
+
+Aus dem Spieltest: „Wenn ich den Boss aus Akt 2 besiege, geht das Spiel noch
+weiter." Nach dem Sieg legte `fight` wie nach jedem Kampf einen Markt und eine
+Verschlingen-Auswahl an; erst das Weiterziehen aus der Verwaltung merkte in
+`advance`, dass es keinen dritten Akt gibt. Jetzt entfallen beide nach dem
+letzten Boss, und „Weiter" auf dem Ergebnisbildschirm führt direkt zum Ende.
+Test in `dev/sim.js`.
+
+`dev/sim.js` 546/546 · `dev/uitest.js` 141/141.

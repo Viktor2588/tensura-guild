@@ -962,7 +962,12 @@
       run.pending.gold = beute;
       /* Der Markt statt einer Belohnungskarte: was der Kampf einbringt, wird
          hier ausgegeben — Einheiten, Ausrüstung, Relikte. */
-      run.pending.markt = marktOffers(run, node, run.pending.bestanden);
+      /* Nach dem letzten Boss gibt es nichts mehr einzukaufen (Phase 102): kein
+         Markt, der Ergebnisbildschirm fuehrt mit „Weiter" direkt zum Ende.
+         Vorher oeffnete sich noch die Verwaltung, und erst das Weiterziehen
+         merkte, dass es keinen dritten Akt gibt. */
+      var letzterBoss = node.type === 'boss' && run.act >= AKTE;
+      if (!letzterBoss) run.pending.markt = marktOffers(run, node, run.pending.bestanden);
       run.pending.stark = !!(node && (node.type === 'elite' || node.type === 'boss'));
       run.pending.wuerfe = 0;
       run.pending.devour = res.fallen.filter(function (f) { return f.side === 'enemy'; })
@@ -973,6 +978,7 @@
             return { name: ab.name, text: ab.text || '' };
           }) };
         });
+      if (letzterBoss) run.pending.devour = null;
       run.chronik.push('Akt ' + run.act + '.' + (run.step + 1) + ': ' + node.name + ' bezwungen');
     } else {
       run.lives--;

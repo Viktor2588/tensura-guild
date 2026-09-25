@@ -2813,6 +2813,21 @@ head('Drill (Phase 100)');
   ok(!R.drill(run), 'gedrillt wird nur im Markt');
 })();
 
+head('Nach dem letzten Boss ist Schluss (Phase 102)');
+(function () {
+  var run = fertigerRun(102);
+  while (R.passivWahl(run)) R.choosePassive(run, 0);
+  run.team.forEach(function (m) { m.rank = 3; m.drill = 500; });
+  run.act = R.AKTE; run.step = R.STEPS.length - 1; run.phase = 'karte'; run.pending = null;
+  R.rollTest(run);
+  ok(run.options.length === 1 && run.options[0].type === 'boss', 'der letzte Knoten ist der Boss');
+  var p = R.choose(run, 0);
+  ok(p.result.winner === 'player', 'der (stark gemachte) Trupp gewinnt');
+  ok(!p.markt && !p.devour, 'danach kein Markt und kein Verschlingen mehr');
+  R.advance(run);
+  ok(run.over && run.won && run.phase === 'ende', 'Weiter führt direkt zum Ende, gewonnen');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {
