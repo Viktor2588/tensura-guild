@@ -4146,3 +4146,8 @@ Vier Punkte standen als offen da, die es nicht mehr waren:
 - **Idee 5, Kosten und Aufladung** — halb erledigt, halb entschieden.
   *Aufladung* ist ein Nicht-Ziel seit Phase 10 (keine Abklingzeiten, die
   Signatur feuert jede Runde). *Kosten* gibt es seit Phase 51 als `preis`.
+
+### [~] Phase 80 (2026-09-25): Die Aufwertung öffnet die Keystone-Wahl (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-80-keystones`, Branch
+`phase-80-keystones` (Pfad unter `$HOME` wie in Phase 79).
