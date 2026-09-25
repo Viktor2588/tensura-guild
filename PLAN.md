@@ -1335,7 +1335,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
   „ausgeben statt anhäufen": Gift, Brand, Schild, Blutung je ein Verbraucher
   (ab N Stapeln alles verbrauchen für einen Stoß), gemessen mit
   `dev/beute.js`.
-- [ ] **Phase 110 — Position lesen.** Bibliotheks-Passiven, die das Hexfeld
+- [~] **Phase 110 — Position lesen.** (in Bearbeitung) Bibliotheks-Passiven, die das Hexfeld
   lesen: Nachbarn (stärker mit zwei Verbündeten daneben), Durchschlag (trifft
   den Gegner hinter dem Ziel mit), Flanke (Bonus gegen Ziele ohne Nachbarn).
   Helfer `nachbarn(u)` im Kampfkontext.
