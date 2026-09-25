@@ -1092,6 +1092,25 @@ offenen Frage, wo der Überschuss hin soll (`TODO.md`).
 
 `dev/sim.js` 527/527 · `dev/uitest.js` 141/141.
 
-### [~] Phase 98 (2026-09-25): Erfolge, Chronik, besiegte Bosse (in Bearbeitung)
+### Phase 98 (2026-09-25): Erfolge, Chronik, besiegte Bosse
 
 Worktree `/home/viktor/tensura/worktree/phase-98-erfolge`, Branch `phase-98-erfolge`.
+
+Meta-Fortschritt gab es nur als Relikt-Freischaltung; nach dem ersten Sieg
+gab es wenig Neues zu entdecken. Neu in der Meta, gebucht in `finish`:
+
+- **Elf Erfolge** (`Run.ERFOLGE`): Ziele, die zu einer anderen Spielweise
+  einladen — unversehrt, drei Keystones, zwei Resonanzen, höchstens vier
+  Einheiten, ohne Rang S, Stufe 3/5, Tagesrun, alle acht Bosse. Sie machen
+  nichts stärker.
+- **Besiegte Bosse** (`meta.besiegt`): jeder Boss eines Akts, den der Run
+  hinter sich gelassen hat.
+- **Chronik** (`meta.chronik`): die letzten zwanzig Runs mit Datum,
+  Starteinheit, Stufe und Ergebnis (`run.startId` neu im Speicherstand).
+
+Ein Tagesrun spielt mit Wegwerf-Stand (Phase 95); seine Erfolge und seine
+Chronik-Zeile gehören trotzdem dem Spieler und werden in den echten Stand
+geschrieben. Im Menü steht alles unter *Fortschritt*, neue Erfolge auf dem
+Endbildschirm.
+
+`dev/sim.js` 532/532 · `dev/uitest.js` 141/141.

@@ -34,6 +34,14 @@ dieselben Startpaare, dieselben Märkte, derselbe Boss für alle, die heute
 spielen. Er läuft auf Stufe 0 mit frischem Freischaltstand und ändert deinen
 eigenen Fortschritt nicht. Gemerkt wird dein bestes Ergebnis des Tages.
 
+## Erfolge und Chronik
+
+Im Menü unter *Fortschritt* stehen elf **Erfolge** — Ziele, die zu einer
+anderen Spielweise einladen: ohne Rückschlag gewinnen, mit drei Keystones, ohne
+Rang S, mit höchstens vier Einheiten, jeden Boss einmal besiegen … Sie machen
+nichts stärker. Daneben die **besiegten Bosse** und eine **Chronik** der
+letzten zwanzig Runs. Auch ein Tagesrun zählt für Erfolge und Chronik.
+
 ## Der Start
 
 **Ein Anfang aus vier.** Jeder ist ein Paar: eine Einheit und ein Relikt, das zu

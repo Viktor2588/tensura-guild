@@ -1077,6 +1077,9 @@
     if (run.unlocked && run.unlocked.length) {
       html += '<p>Neu freigeschaltet: <b>' + esc(run.unlocked.join(', ')) + '</b></p>';
     }
+    if (run.neueErfolge && run.neueErfolge.length) {
+      html += '<p class="gut">Neuer Erfolg: <b>' + esc(run.neueErfolge.join(', ')) + '</b></p>';
+    }
     if (run.neueStufe) {
       html += '<p class="gut">Bedrohungsstufe ' + run.neueStufe.stufe + ' offen: <b>' +
         esc(run.neueStufe.name) + '</b> — ' + esc(run.neueStufe.text) + '</p>';
@@ -1815,7 +1818,8 @@
   }
 
   function metaHtml() {
-    var meta = run.meta;
+    /* Im Tagesrun ist run.meta ein Wegwerf-Stand — der Fortschritt ist der echte. */
+    var meta = run.tages ? R.loadMeta() : run.meta;
     var uOffen = GD.units.filter(function (u) { return meta.unlockedUnits.indexOf(u.id) < 0; });
     var rOffen = GD.relics.filter(function (r) { return meta.unlockedRelics.indexOf(r.id) < 0; });
     var uOffenIds = uOffen.map(function (u) { return u.id; });
@@ -1875,7 +1879,35 @@
       (rOffen.length
         ? '<p class="hinweis">Noch verschlossen: ' + rOffen.length + ' Relikte.</p>' +
           liste(rOffenIds, GD.relics, function (r) { return r.text; }, true)
-        : '<p class="gut">Alle Relikte frei.</p>');
+        : '<p class="gut">Alle Relikte frei.</p>') +
+      erfolgeHtml(meta);
+  }
+
+  /* Erfolge, besiegte Bosse und die letzten Runs (Phase 98). */
+  function erfolgeHtml(meta) {
+    var er = meta.erfolge || {}, besiegt = meta.besiegt || {};
+    var hab = R.ERFOLGE.filter(function (e) { return er[e.id]; }).length;
+    var html = '<h4>Erfolge</h4>' +
+      '<div class="fortschritt"><i style="width:' + Math.round(hab / R.ERFOLGE.length * 100) + '%"></i><b>' +
+      hab + ' / ' + R.ERFOLGE.length + '</b></div><div class="liste">' +
+      R.ERFOLGE.map(function (e) {
+        return '<span class="chip' + (er[e.id] ? '' : ' leer') + '"' +
+          tip(e.name, e.text + (er[e.id] ? '\n\nErreicht am ' + er[e.id] + '.' : '')) + '>' +
+          (er[e.id] ? '★ ' : '') + esc(e.name) + '</span>';
+      }).join('') + '</div>';
+    html += '<h4>Bosse</h4><div class="liste">' + EN.bosses.map(function (b) {
+      return '<span class="chip' + (besiegt[b.id] ? '' : ' leer') + '">' + (besiegt[b.id] ? '✓ ' : '') + esc(b.name) + '</span>';
+    }).join('') + '</div>';
+    var ch = meta.chronik || [];
+    if (ch.length) {
+      html += '<h4>Chronik</h4><div class="liste">' + ch.map(function (c) {
+        var u = c.start && GD.unit(c.start);
+        return '<span class="chip' + (c.won ? '' : ' leer') + '">' + esc(c.datum) + ' · ' +
+          (u ? esc(u.name) : '?') + (c.stufe ? ' · Stufe ' + c.stufe : '') + (c.tages ? ' · Tagesrun' : '') +
+          ' · ' + (c.won ? 'Sieg' : 'Akt ' + c.act + ', Knoten ' + (c.step + 1)) + '</span>';
+      }).join('') + '</div>';
+    }
+    return html;
   }
 
   function heute() {

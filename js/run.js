@@ -527,6 +527,7 @@
     if (!run.startwahl) return false;
     var o = run.startwahl.offers[i];
     if (!o || !addUnit(run, o.unit, o.passive)) return false;
+    run.startId = o.unit;
     if (o.relic) run.relics.push(o.relic);
     run.startwahl = null;
     run.phase = 'karte';
@@ -1763,6 +1764,67 @@
     return { best: alle[datum] || punkte, neu: neu };
   }
 
+  /* ---- Erfolge und Chronik (Phase 98) --------------------------------------
+     Meta-Fortschritt gab es nur als Relikt-Freischaltung — nach dem ersten
+     Sieg gab es wenig Neues zu entdecken. Erfolge sind Ziele, die zu einer
+     anderen Spielweise einladen, keine Belohnung in Werten: sie machen nichts
+     staerker. Die Chronik haelt die letzten Runs fest, `besiegt` die Bosse. */
+  function keystoneZahl(run) {
+    var n = 0;
+    run.team.forEach(function (m) { n += (m.passives || []).filter(istKeystone).length; });
+    return n;
+  }
+  var ERFOLGE = [
+    { id: 'erster_sieg', name: 'Der erste Sieg', text: 'Gewinne einen Run.',
+      pruef: function (run, won) { return won; } },
+    { id: 'stufe3', name: 'Kriegsrecht überstanden', text: 'Gewinne auf Bedrohungsstufe 3 oder höher.',
+      pruef: function (run, won) { return won && run.threat >= 3; } },
+    { id: 'stufe5', name: 'Sturmgott bezwungen', text: 'Gewinne auf Bedrohungsstufe 5.',
+      pruef: function (run, won) { return won && run.threat >= 5; } },
+    { id: 'unversehrt', name: 'Ohne einen Rückschlag', text: 'Gewinne, ohne einen Kampf zu verlieren.',
+      pruef: function (run, won) { return won && run.lives >= (run.threat >= 5 ? STURM_LEBEN : 5); } },
+    { id: 'anfuehrer', name: 'Ein Anführer', text: 'Gewinne mit einer Einheit auf Rang S.',
+      pruef: function (run, won) { return won && run.team.some(function (m) { return m.rank >= 3; }); } },
+    { id: 'drei_keystones', name: 'Schlusssteine', text: 'Gewinne mit drei Keystones im Trupp.',
+      pruef: function (run, won) { return won && keystoneZahl(run) >= 3; } },
+    { id: 'zwei_resonanzen', name: 'Doppelter Einklang', text: 'Gewinne mit zwei Resonanzen zugleich.',
+      pruef: function (run, won) { return won && Object.keys(resonanzen(run)).length >= 2; } },
+    { id: 'kleiner_trupp', name: 'Wenige, aber die Richtigen', text: 'Gewinne mit höchstens vier Einheiten.',
+      pruef: function (run, won) { return won && run.team.length <= 4; } },
+    { id: 'ohne_s', name: 'Breite statt Spitze', text: 'Gewinne, ohne dass eine Einheit Rang S trägt.',
+      pruef: function (run, won) { return won && !run.team.some(function (m) { return m.rank >= 3; }); } },
+    { id: 'tagesrun', name: 'Der Tag gehört dir', text: 'Gewinne einen Tagesrun.',
+      pruef: function (run, won) { return won && !!run.tages; } },
+    { id: 'alle_bosse', name: 'Bossjäger', text: 'Besiege jeden der acht Bosse mindestens einmal.',
+      pruef: function (run, won, meta) {
+        return EN.bosses.every(function (b) { return (meta.besiegt || {})[b.id]; });
+      } }
+  ];
+  function heuteText() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function bucheErfolge(run, won) {
+    /* Ein Tagesrun spielt mit einem Wegwerf-Stand — seine Erfolge gehoeren
+       trotzdem dem Spieler. Also in den echten Stand schreiben. */
+    var meta = run.tages ? loadMeta() : run.meta;
+    meta.erfolge = meta.erfolge || {};
+    meta.besiegt = meta.besiegt || {};
+    meta.chronik = meta.chronik || [];
+    /* Besiegt ist jeder Boss eines Akts, den der Run hinter sich gelassen hat. */
+    (run.bosse || []).forEach(function (bid, i) { if (won || i + 1 < run.act) meta.besiegt[bid] = 1; });
+    var neu = [];
+    ERFOLGE.forEach(function (e) {
+      if (meta.erfolge[e.id]) return;
+      if (e.pruef(run, won, meta)) { meta.erfolge[e.id] = heuteText(); neu.push(e.name); }
+    });
+    meta.chronik.unshift({ datum: heuteText(), start: run.startId || null, stufe: run.threat || 0,
+                           won: !!won, act: run.act, step: run.step, tages: run.tages || null });
+    meta.chronik = meta.chronik.slice(0, 20);
+    if (run.tages) saveMeta(meta);
+    return neu;
+  }
+
   function finish(run, won) {
     run.over = true;
     run.won = won;
@@ -1781,6 +1843,7 @@
     var score = (run.act - 1) * STEPS.length + run.step;
     run.meta.best = Math.max(run.meta.best || 0, won ? AKTE * STEPS.length : score);
     if (run.tages) run.tagesErgebnis = merkeTages(run.tages, won ? AKTE * STEPS.length + 1 : score);
+    run.neueErfolge = bucheErfolge(run, won);
     run.unlocked = unlock(run.meta, rng);
     commit(run, rng);
   }
@@ -1821,7 +1884,7 @@
       over: run.over, won: run.won,
       pwahlen: run.pwahlen || [],
       team: run.team, bank: run.bank, uidSeq: uidSeq, startwahl: run.startwahl,
-      pending: schlankesPending(run), tages: run.tages || null
+      pending: schlankesPending(run), tages: run.tages || null, startId: run.startId || null
     });
   }
   function deserialize(raw) {
@@ -1840,7 +1903,7 @@
     var run = create(d.seed, meta);
     if (d.tages) run.tages = d.tages;
     run.team = []; run.bank = [];
-    ['rngState', 'act', 'step', 'threat', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank', 'bosse']
+    ['rngState', 'act', 'step', 'threat', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank', 'bosse', 'startId']
       .forEach(function (k) { if (d[k] !== undefined) run[k] = d[k]; });
     uidSeq = Math.max(uidSeq, d.uidSeq || 0);
     run.pending = null;
@@ -1957,7 +2020,7 @@
     ersetzbar: ersetzbar,
     buildTeile: buildTeile, resonanzen: resonanzen, analyse: analyse,
     save: save, load: load, clear: clear, loadMeta: loadMeta, saveMeta: saveMeta,
-    createTages: createTages, tagesSeed: tagesSeed, tagesBest: tagesBest,
+    createTages: createTages, tagesSeed: tagesSeed, tagesBest: tagesBest, ERFOLGE: ERFOLGE, finishTest: finish,
     serialize: serialize, deserialize: deserialize,
     TEAM_MAX: TEAM_MAX, BANK_MAX: BANK_MAX, STEPS: STEPS, RANK_NAME: RANK_NAME, AKTE: AKTE
   };

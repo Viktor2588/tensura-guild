@@ -2767,6 +2767,22 @@ head('Tagesrun (Phase 95)');
   ok(geladen.tages === '2026-09-25' && paare(geladen) === paare(a), 'er überlebt das Speichern');
 })();
 
+head('Erfolge und Chronik (Phase 98)');
+(function () {
+  var run = fertigerRun(98);
+  run.startId = 'shion';
+  run.team.forEach(function (m) { m.rank = 2; });
+  run.team[0].rank = 3;
+  run.act = 2; run.step = 7;
+  R.finishTest(run, true);
+  var er = run.meta.erfolge || {};
+  ok(er.erster_sieg && er.anfuehrer, 'ein Sieg mit S-Einheit bucht „Der erste Sieg" und „Ein Anführer"');
+  ok(!er.ohne_s, 'und nicht „Breite statt Spitze"');
+  ok(run.neueErfolge.length >= 2, 'die neuen Erfolge stehen am Run (' + run.neueErfolge.join(', ') + ')');
+  ok(run.meta.chronik[0].won && run.meta.chronik[0].start === 'shion', 'die Chronik hält den Run fest');
+  ok(run.bosse.every(function (b) { return run.meta.besiegt[b]; }), 'beide Bosse gelten als besiegt');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

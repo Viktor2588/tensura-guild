@@ -485,11 +485,12 @@ ok($$('#menu-meta [data-a=stufe]').length + $$('#menu-meta button[disabled]').le
 ok($$('#menu-meta button[disabled]').length > 0, 'verschlossene sind als solche erkennbar');
 ok(/gewinnst/.test(text('#menu-meta')), 'und es steht dabei, wie die Stufe steigt');
 ok(!!$('#hud-stufe'), 'die Kopfzeile zeigt die Bedrohungsstufe dauerhaft');
-ok($$('#menu-meta .fortschritt').length === 3,
-   'der Fortschritt zeigt Balken für Bedrohungsstufe, Einheiten und Relikte');
+ok($$('#menu-meta .fortschritt').length === 4,
+   'der Fortschritt zeigt Balken für Bedrohungsstufe, Einheiten, Relikte und Erfolge');
 ok(/\d+ \/ \d+/.test(text('#menu-meta')), 'mit Zahlen daran');
-ok($$('#menu-meta .chip').length === win.GameData.units.length + win.GameData.relics.length,
-   'und listet Einheiten und Relikte vollständig (inkl. verschlossen) einzeln auf');
+ok($$('#menu-meta .chip').length === win.GameData.units.length + win.GameData.relics.length +
+   win.Run.ERFOLGE.length + win.Enemies.bosses.length + (win.UI.aktueller().meta.chronik || []).length,
+   'und listet Einheiten, Relikte, Erfolge und Bosse vollständig (inkl. verschlossen) einzeln auf');
 ok($$('#menu-meta .chip[data-tip]').length > 0, 'jeder Eintrag erklärt sich im Tooltip');
 ok($$('#menu-glossar h4').length >= 5, 'das Glossar ist in Abschnitte geteilt');
 ok(/je Zug seines TRÄGERS/.test(text('#menu-glossar')),
