@@ -903,7 +903,9 @@
     /* Eine Auflage darf auch den Trupp beschneiden, der antritt. */
     var p = node.pruefung ? pruefung(node.pruefung) : null;
     var antritt = (p && p.vorher ? p.vorher(run).team : run.team);
-    var res = C.simulate(antritt.map(resolve), foes, seed, { relics: run.relics.map(GD.relic) });
+    var res = C.simulate(antritt.map(resolve), foes, seed, {
+      relics: run.relics.map(GD.relic).concat(bindungen(run, antritt.map(function (m) { return m.id; })))
+    });
     /* Meisterschaft (Phase 107): jede Passive, die ausgeloest hat, zaehlt
        einen Kampf mehr. */
     antritt.forEach(function (m, i) {
@@ -1756,6 +1758,47 @@
      Einheiten, statt liegen zu bleiben. Auch spaeter gekaufte Einheiten
      bekommen den Stand (`addUnit`). */
   var DRILL_PREIS = 200, DRILL_PLUS = 0.04;
+  /* ---- Duo-Bindungen (Phase 108) ------------------------------------------
+     Paare aus der Welt: stehen beide im Trupp, gilt ein dritter Effekt. Er
+     laeuft ueber denselben Weg wie ein Relikt (`apply` zu Kampfbeginn) — ein
+     zweites Puzzle neben den Schluesselwoertern, beim Zusammenstellen. */
+  function beide(team, a, b) {
+    return team.filter(function (u) { return u.id === a || u.id === b; });
+  }
+  var BINDUNGEN = [
+    { id: 'oger', paar: ['shion', 'benimaru'], name: 'Oger-Geschwister', text: 'Shion und Benimaru schlagen 12 % härter.',
+      apply: function (team) { beide(team, 'shion', 'benimaru').forEach(function (u) { u.atk = Math.round(u.atk * 1.12); }); } },
+    { id: 'sturmbund', paar: ['rimuru', 'veldora'], name: 'Sturmbund', text: 'Der ganze Trupp hat 8 % mehr Leben.',
+      apply: function (team) { team.forEach(function (u) { var m = Math.round(u.maxHp * 0.08); u.maxHp += m; u.hp += m; }); } },
+    { id: 'spaeher', paar: ['souei', 'souka'], name: 'Späher im Schatten', text: 'Souei und Souka beginnen in 3 Schatten.',
+      apply: function (team, api) { beide(team, 'souei', 'souka').forEach(function (u) { u.status.schatten = (u.status.schatten || 0) + 3; }); } },
+    { id: 'reiter', paar: ['gobta', 'ranga'], name: 'Goblinreiter', text: 'Gobta und Ranga sind 15 % schneller.',
+      apply: function (team) { beide(team, 'gobta', 'ranga').forEach(function (u) { u.spd = Math.round(u.spd * 1.15); }); } },
+    { id: 'lehrer', paar: ['hakuro', 'benimaru'], name: 'Meister und Schüler', text: 'Hakuro und Benimaru beginnen mit Schild über 20 % ihres Lebens.',
+      apply: function (team) { beide(team, 'hakuro', 'benimaru').forEach(function (u) { u.status.schild = (u.status.schild || 0) + u.maxHp * 0.2; }); } },
+    { id: 'diener', paar: ['diablo', 'rimuru'], name: 'Der treue Diener', text: 'Diablo schlägt 15 % härter, Rimuru hat 15 % mehr Leben.',
+      apply: function (team) { team.forEach(function (u) {
+        if (u.id === 'diablo') u.atk = Math.round(u.atk * 1.15);
+        if (u.id === 'rimuru') { var m = Math.round(u.maxHp * 0.15); u.maxHp += m; u.hp += m; }
+      }); } },
+    { id: 'sumpf', paar: ['gabiru', 'echsenfuerst'], name: 'Vater und Sohn', text: 'Gabiru und der Echsenfürst regenerieren je Zug 2 % ihres Lebens.',
+      apply: function (team) { beide(team, 'gabiru', 'echsenfuerst').forEach(function (u) { u.regen += Math.round(u.maxHp * 0.02); }); } },
+    { id: 'freunde', paar: ['milim', 'rimuru'], name: 'Beste Freunde', text: 'Milim schlägt 10 % härter und ist 10 % schneller.',
+      apply: function (team) { team.forEach(function (u) { if (u.id === 'milim') { u.atk = Math.round(u.atk * 1.1); u.spd = Math.round(u.spd * 1.1); } }); } }
+  ];
+  function bindungen(run, ids) {
+    ids = ids || run.team.map(function (m) { return m.id; });
+    return BINDUNGEN.filter(function (b) { return ids.indexOf(b.paar[0]) >= 0 && ids.indexOf(b.paar[1]) >= 0; });
+  }
+  /* Mit wem wuerde diese Einheit im Trupp binden? Fuer den Markthinweis. */
+  function bindungsPartner(run, id) {
+    var ids = run.team.map(function (m) { return m.id; });
+    return BINDUNGEN.filter(function (b) {
+      var i = b.paar.indexOf(id);
+      return i >= 0 && ids.indexOf(b.paar[1 - i]) >= 0 && ids.indexOf(id) < 0;
+    });
+  }
+
   /* ---- Meisterschaft (Phase 107) -------------------------------------------
      Eine Passive waechst mit dem Run: sie zaehlt die Kaempfe, in denen sie
      ausgeloest hat (nicht die Ausloesungen — sonst waechst eine Trefferpassive
@@ -2092,6 +2135,7 @@
     buy: buy, eventChoose: eventChoose, camp: camp, marktOffers: marktOffers,
     neuWuerfeln: neuWuerfeln, neuwurfPreis: neuwurfPreis, drill: drill, drillPreis: drillPreis,
     meisterStufe: meisterStufe, MEISTER_SCHWELLEN: MEISTER_SCHWELLEN,
+    BINDUNGEN: BINDUNGEN, bindungen: bindungen, bindungsPartner: bindungsPartner,
     equip: equip, unequip: unequip, move: move, bench: bench, deploy: deploy, entlassen: entlassen,
     find: find, addUnit: addUnit, swap: swap, unitPool: unitPool, relicPool: relicPool,
     entlassenWert: entlassenWert, darfEntlassen: darfEntlassen,

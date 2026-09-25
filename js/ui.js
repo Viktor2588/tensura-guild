@@ -999,6 +999,12 @@
     return w;
   }
   function bauHinweis(o, bau) {
+    var bind = o.kind === 'unit' ? R.bindungsPartner(run, o.id) : [];
+    var bindZeile = bind.length ? '<span class="unter bau-marke im-bau">🔗 bindet: ' +
+      esc(bind.map(function (b) { return b.name; }).join(', ')) + '</span>' : '';
+    return bindZeile + bauHinweisWorte(o, bau);
+  }
+  function bauHinweisWorte(o, bau) {
     var eigen = postenWorte(o);
     if (!eigen.length) return '';
     var treffer = eigen.filter(function (k) { return bau[k]; });
@@ -1249,7 +1255,7 @@
     var keys = Object.keys(kw).sort(function (a, b) {
       return (kw[b].quellen + kw[b].verstaerker) - (kw[a].quellen + kw[a].verstaerker);
     });
-    if (!keys.length) return '';
+    if (!keys.length) return bindungsHtml();
     var html = '<h3' + tip('Fähigkeits-Synergien',
       'Was der Trupp erzeugt und was er davon ausnutzt. Ein Build ist erst rund, wenn zu einer ' +
       'Quelle auch ein Verstärker desselben Schlüsselworts kommt — grün markiert.\n\n' +
@@ -1271,7 +1277,16 @@
         (e.verstaerker ? ' · ' + e.verstaerker + '× Verstärker' : '') +
         (an ? ' <b class="reso-marke">RESONANZ</b>' : '') + '</span>';
     });
-    return html + '</div>';
+    return html + '</div>' + bindungsHtml();
+  }
+
+  /* Duo-Bindungen (Phase 108): aktive Paare unter den Synergien. */
+  function bindungsHtml() {
+    var akt = R.bindungen(run);
+    if (!akt.length) return '';
+    return '<div class="syn-leiste">' + akt.map(function (b) {
+      return '<span class="syn-eintrag an"' + tip('Bindung: ' + b.name, b.text) + '>🔗 <b>' + esc(b.name) + '</b></span>';
+    }).join('') + '</div>';
   }
 
   /* Aufstellung: erste Einheit antippen, zweite antippen, getauscht.

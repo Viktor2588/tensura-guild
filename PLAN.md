@@ -1326,7 +1326,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
   häufigsten Muster (Schaden, Stapel). Anzeige: Stufe als ✦ an der Passive,
   Fortschritt im Tooltip. Zählen im Kampf über `fire()`; nach dem Kampf in den
   Run zurückschreiben.
-- [~] **Phase 108 — Duo-Bindungen.** (in Bearbeitung) Tabelle `BINDUNGEN` (Paare aus der Welt:
+- [x] **Phase 108 — Duo-Bindungen.** (erledigt, siehe unten) Tabelle `BINDUNGEN` (Paare aus der Welt:
   Shion+Benimaru, Rimuru+Veldora, Souei+Souka, Gobta+Ranga, Hakuro+Benimaru,
   Diablo+Rimuru, Gabiru+Echsenfürst, Milim+Rimuru …). Stehen beide im Trupp,
   gilt ein dritter Effekt; Anzeige unter „Fähigkeits-Synergien" und im Markt
@@ -1369,3 +1369,16 @@ Karte: ✦ an der Passive, Fortschritt im Tooltip.
 Gemessen: Siegquote 52 → 59 %; `GRUNDHAERTE` 1.62 → 1.70 (1.72: 51 %).
 
 `dev/sim.js` 553/553 · `dev/uitest.js` 141/141.
+
+### Phase 108 (2026-09-26): Duo-Bindungen
+
+Acht Paare aus der Welt (`BINDUNGEN` in `run.js`): Oger-Geschwister (Shion +
+Benimaru), Sturmbund (Rimuru + Veldora), Späher im Schatten (Souei + Souka),
+Goblinreiter (Gobta + Ranga), Meister und Schüler (Hakuro + Benimaru), der treue
+Diener (Diablo + Rimuru), Vater und Sohn (Gabiru + Echsenfürst), Beste Freunde
+(Milim + Rimuru). Stehen beide im antretenden Trupp, gilt ihr Effekt — über
+denselben Weg wie ein Relikt (`apply` zu Kampfbeginn). Anzeige: 🔗 unter den
+Fähigkeits-Synergien, im Markt „🔗 bindet: …" an der Einheit, die ein Paar
+schließen würde. Siegquote im Rahmen (Bindungen sind selten, der Markt mischt).
+
+`dev/sim.js` 556/556 · `dev/uitest.js` 141/141.

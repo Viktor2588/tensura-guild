@@ -2860,6 +2860,19 @@ head('Meisterschaft (Phase 107)');
   ok(run.team.some(function (x) { return x.meister && Object.keys(x.meister).length; }), 'nach einem Kampf zählt der Run ausgelöste Passiven');
 })();
 
+head('Duo-Bindungen (Phase 108)');
+(function () {
+  var run = R.create(108, R.newMeta());
+  run.team = []; run.pwahlen = [];
+  R.addUnit(run, 'shion', null, 1);
+  ok(!R.bindungen(run).length && R.bindungsPartner(run, 'benimaru').length === 1, 'Benimaru würde mit Shion binden');
+  R.addUnit(run, 'benimaru', null, 1);
+  ok(R.bindungen(run).some(function (b) { return b.id === 'oger'; }), 'mit beiden im Trupp gilt die Bindung');
+  var ohne = C.simulate([R.resolve(run.team[0])], [], 1, { nurAufbau: true }).einheiten[0].atk;
+  var mit = C.simulate([R.resolve(run.team[0])], [], 1, { nurAufbau: true, relics: R.bindungen(run) }).einheiten[0].atk;
+  ok(mit > ohne, 'Shion schlägt mit Benimaru härter (' + ohne + ' → ' + mit + ')');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {
