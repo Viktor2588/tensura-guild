@@ -701,11 +701,21 @@
      ponytail: einmal projiziert und dann per CSS bewegt. Sobald die Kamera in
      Phase 59 faehrt, muss die Position je Bild mitlaufen. */
   function zahl(f, wert, seite, gross) {
+    schwebe(f, (wert < 0 ? '+' : '') + Math.abs(Math.round(wert)),
+            (seite === 'player' ? 'spieler' : 'feind') + (gross ? ' gross' : '') + (wert < 0 ? ' heilung' : ''));
+  }
+  /* Text statt Zahl ueber einer Figur (Phase 90). Chaos wirkte bisher nur im
+     Kampflog: der Wurf der Runde und das Verpuffen einer Faehigkeit standen
+     nirgends auf dem Brett, und Shion sah deshalb schwaecher aus, als sie ist. */
+  function schrift(key, text) {
+    var f = zustand && zustand.figuren[key];
+    if (f) schwebe(f, text, 'chaos');
+  }
+  function schwebe(f, text, klasse) {
     if (!zustand || !zustand.zahlen) return;
     var el = root.document.createElement('span');
-    el.className = (seite === 'player' ? 'spieler' : 'feind') +
-      (gross ? ' gross' : '') + (wert < 0 ? ' heilung' : '');
-    el.textContent = (wert < 0 ? '+' : '') + Math.abs(Math.round(wert));
+    el.className = klasse;
+    el.textContent = text;
     zustand.zahlen.appendChild(el);
     zustand.zahlenListe.push({ el: el, x: f.gruppe.position.x,
                                y: SPRITE_H * 0.75, z: f.gruppe.position.z });
@@ -1399,7 +1409,7 @@
   function montiert(el) { return !!zustand && zustand.el === el; }
 
   root.Brett3D = { verfuegbar: verfuegbar, montiere: montiere, montiert: montiert,
-                   aktualisiere: aktualisiere, effekt: effekt, treffer: treffer,
+                   aktualisiere: aktualisiere, effekt: effekt, treffer: treffer, schrift: schrift,
                    einsatz: einsatz, halt: halt, stufe: setzeStufe, blick: blick,
                    zeitlupe: zeitlupe, loese: loese,
                    /* nur fuer dev/uitest.js: die Handschriften-Tabelle ist

@@ -583,6 +583,7 @@ table.dbg i.ab { color: #e77; }
 .brett3d-zahlen .feind { color: #ffd7a0; }
 .brett3d-zahlen .spieler { color: #ffb0a8; }
 .brett3d-zahlen .heilung { color: #6ee7a8; }
+.brett3d-zahlen .chaos { color: #ff5fbf; font-size: .8em; }
 .brett3d-zahlen .gross { font-size: 1.5rem; color: #fff2c0; }
 @keyframes zahl-steigt {
   0%   { opacity: 0; transform: translate(-50%, -30%) scale(.7); }

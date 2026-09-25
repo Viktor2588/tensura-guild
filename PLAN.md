@@ -4523,6 +4523,45 @@ einzelne im Spiel weiter tot anfühlen.
 
 `dev/sim.js` 515/515 · `dev/uitest.js` 141/141.
 
-### [~] Phase 90 (2026-09-25): Shion schlägt öfter zu, und man sieht ihr Chaos (in Bearbeitung)
+### Phase 90 (2026-09-25): Shion schlägt öfter zu, und man sieht ihr Chaos
 
 Worktree `/home/viktor/tensura/worktree/phase-90-shion`, Branch `phase-90-shion`.
+
+Rückmeldung aus dem Spieltest: „Shion fühlt sich sehr schwach an." Gemessen
+ist sie das nicht — als Starterin 70 % (Platz 3 von 39), und ohne sie fällt die
+Siegquote des Bots von 53 auf 50 %. Was sie schwach WIRKEN lässt:
+
+- **Tempo 18**, das zweitniedrigste im Spiel (Median 27). Sie handelt selten.
+- **Ihre Stärke ist unsichtbar.** Chaos würfelt Angriff, Rüstung und Tempo des
+  Ziels jede Runde neu und lässt dessen Fähigkeiten verpuffen — das stand nur
+  im Kampflog und im Tooltip, nie auf dem Brett.
+
+Auf Zuruf: schneller bei gleicher Stärke, und Chaos sichtbar.
+
+**Schneller.** Der Schaden je Schlag ist bei Shion fast egal — mit Tempo 24
+gewann sie als Start 79 % bei 100 %, 120 % und 150 % Signaturschaden gleich.
+Ihre Stärke ist das Chaos, das sie bei JEDER Aktion anlegt; mehr Aktionen sind
+mehr Chaos. Deshalb wird nicht der Schaden gegengerechnet, sondern die Stapel:
+
+| Tempo | Chaos C/B/A/S | als Start |
+|---|---|---|
+| 18 | 2/3/4/6 | 70 % |
+| 20 | 2/3/4/6 | 74 % |
+| 22 | 2/3/4/6 | 76 % |
+| 22 | 2/3/3/5 | 71 % |
+
+Übernommen: Tempo 22, Chaos 2/3/3/5. Nachgemessen 67–69 %. Der Text der
+Verdorbenen-Signatur stimmte schon vorher nicht (doppelte Menge von 2/3/4/6
+wäre 4/6/8/12 gewesen) und nennt jetzt 4/6/6/10.
+
+**Chaos sichtbar.** `Brett3D.schrift(key, text)` legt Text statt einer Zahl
+über eine Figur, auf demselben Weg wie die Schadenszahlen. Der Wurf der Runde
+steht als „🎲 ⚔ 62 %" über dem Gegner, eine verpuffte Fähigkeit als
+„✗ verpufft". Nicht im Browser angesehen — die Tests laufen, das Aussehen
+zeigt erst der nächste Spieltest.
+
+`dev/sim.js`: ein Shion-Test verglich den Bonus der Verwandlung exakt mit
+2 × Stapelzahl; Stapel können Bruchzahlen sein, das Log rundet. Mit den alten
+Werten passte das zufällig, jetzt mit einem Punkt Spielraum.
+
+`dev/sim.js` 515/515 · `dev/uitest.js` 141/141.

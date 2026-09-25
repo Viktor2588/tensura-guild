@@ -167,7 +167,7 @@
 
     u('benimaru', 'Benimaru', 'oger', 'verstaerker', 4, 120, 22, 5, 28,
       'sig_benimaru'),
-    u('shion', 'Shion', 'oger', 'front', 3, 135, 19, 6, 18,
+    u('shion', 'Shion', 'oger', 'front', 3, 135, 19, 6, 22,
       'sig_shion'),
     u('souei', 'Souei', 'oger', 'fernkampf', 3, 80, 19, 2, 34,
       'sig_souei'),

@@ -38,8 +38,10 @@
   function chance(p, fn) { return function (c) { if (c.rng() < p) fn(c); }; }
 
   /* Entwicklungsstufen: C Oger, B Teufel, A Verdorbener Teufel, S Ultimativer
-     Teufel. Die Zahl der Chaos-Stapel ist die eine Stelle, an der das hängt. */
-  var CHAOS_JE_RANG = [2, 3, 4, 6];
+     Teufel. Die Zahl der Chaos-Stapel ist die eine Stelle, an der das hängt.
+     Phase 90: A 4 → 3, S 6 → 5 — dafür Tempo 18 → 22. Shion handelt öfter und
+     legt bei jeder Aktion Chaos; Stärke gleich (als Start 70 → 71 %). */
+  var CHAOS_JE_RANG = [2, 3, 3, 5];
   var MARKE_JE_RANG = [1, 2, 3, 5];
 
   /* ---- Passive Bibliothek: geteilt, jede Einheit trägt drei davon --------- */
@@ -6083,7 +6085,7 @@
     /* Shions Signatur skaliert nicht über eine Zahl, sondern über den Rang:
        Oger → Teufel → Verdorbener Teufel → Ultimativer Teufel. */
     aktiv('sig_shion', 'Chaosschlag', 3, ['chaos'],
-      '180 % Schaden und legt Chaos an — 2 Stapel auf Rang C, 3 auf B, 4 auf A, 6 auf S. ' +
+      '180 % Schaden und legt Chaos an — 2 Stapel auf Rang C, 3 auf B, 3 auf A, 5 auf S. ' +
       'Jeder Stapel würfelt Angriff, Rüstung und Tempo des Ziels in jeder Runde neu aus ' +
       'und lässt seine Fähigkeiten zu 5 % je Stapel verpuffen.',
       function (c) {
@@ -6170,7 +6172,7 @@
        wenn die Verwandlung greift — vorher trägt sie niemand. `sig_`-Präfix
        heißt: einheitenspezifisch, also keine Raritätsstufe und kein Pool. */
     aktiv('sig_shion_verdorben', 'Chaosklinge des Verdorbenen', 4, ['chaos'],
-      '230 % Schaden und die doppelte Menge Chaos — 2 Stapel auf Rang C, 4 auf B, ' +
+      '230 % Schaden und die doppelte Menge Chaos — 4 Stapel auf Rang C, 6 auf B, ' +
       '6 auf A, 10 auf S. Die Signatur des Verdorbenen Teufels.',
       function (c) {
         c.attack(2.3);

@@ -476,6 +476,10 @@
        Figur auf der Stelle, und das ist genau richtig: da kam auch niemand. */
     else if (l.type === 'hit') Brett3D.treffer(l.von, l.key, l.dmg / (l.maxHp || 1), beat, l.dmg);
     else if (l.type === 'heal') Brett3D.treffer(null, l.key, 0, beat, -l.amount);
+    /* Chaos sichtbar machen: der gewuerfelte Angriff der Runde und jede
+       verpuffte Faehigkeit stehen jetzt auch ueber der Figur. */
+    else if (l.type === 'chaos' && l.stapel) Brett3D.schrift(l.key, '🎲 ⚔ ' + l.atk + ' %');
+    else if (l.type === 'fehlschlag') Brett3D.schrift(l.key, '✗ verpufft');
   }
 
   /* Was die Regie aus dem Log macht, hoert man auch — unabhaengig vom Brett:

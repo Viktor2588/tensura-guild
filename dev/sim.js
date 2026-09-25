@@ -1910,7 +1910,9 @@ ok(verdorben.formen.length === 1 && verdorben.formen[0] === 'Verdorbener Teufel'
 ok(verdorben.klinge > 0, 'und danach schlägt die Chaosklinge des Verdorbenen');
 
 /* Der Bonus hängt an der Zahl der Stapel, nicht nur am Erreichen der Schwelle. */
-ok(verdorben.stapel >= 20 && verdorben.bonus === Math.min(90, 2 * verdorben.stapel),
+/* Stapel koennen Bruchzahlen sein; das Log rundet sie, der Bonus rechnet mit
+   dem echten Wert — daher ein Punkt Spielraum. */
+ok(verdorben.stapel >= 20 && Math.abs(verdorben.bonus - Math.min(90, 2 * verdorben.stapel)) <= 1,
    'der Bonus skaliert mit den Stapeln (' + verdorben.stapel + ' Stapel → +' +
    verdorben.bonus + ' %)');
 
