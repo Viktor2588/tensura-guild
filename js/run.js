@@ -120,7 +120,7 @@
       text: 'Jeder normale Gegner steht einmal mit 30 % Leben wieder auf — Bosse nicht. ' +
             'Wer nur exekutiert, räumt nicht mehr ab; Gift, Brand und Blutung tragen weiter.' },
     { stufe: 3, name: 'Kriegsrecht', regel: 'kriegsrecht',
-      text: 'Der Händler bietet nur noch EINE Einheit an statt drei, und Rangaufstiege kosten ' +
+      text: 'Der Händler bietet nur noch zwei Einheiten an statt vier, und Einheiten kosten ' +
             '30 % mehr Magicule.' },
     { stufe: 4, name: 'Belagerung', regel: 'belagerung',
       text: 'Im zweiten Akt steht auf jedem zweiten Kampfknoten eine Elite — zur Beute ' +

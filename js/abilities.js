@@ -3947,7 +3947,7 @@
       }),
     /* ---- Die vier Stufen gelten auch für die handgeschriebenen Linien ------
        Auftakt (1), Manöverzähler (2), Voraussetzung an den Trupp (3), Keystone
-       mit Preis (4) — siehe PLAN.md, Phase 21. Das Thema bleibt das der
+       mit Preis (4) — siehe PLAN-archiv.md, Phase 21. Das Thema bleibt das der
        Einheit; nur der Aufbau ist überall derselbe. `zaehler` und
        `truppFuehrt` stehen weiter unten und sind hochgezogen.                 */
 

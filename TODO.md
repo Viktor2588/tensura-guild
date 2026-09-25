@@ -12,7 +12,7 @@ Abgearbeitet in Phase 76:
       Marktplatz als Ersatz bekommen — ohne den fiel die Siegquote von 53 auf
       27 %. `GRUNDHAERTE` 1.13 → 1.03, gemessen 50 % Siege (frisch).
 
-Abgearbeitet in Phase 7 — Details in PLAN.md:
+Abgearbeitet in Phase 7 — Details in PLAN-archiv.md:
 
 - [x] Frontlinie rückt beim Anwerben direkt auf Platz 1 (Testabkürzung, `Run.addUnit`)
 - [x] Zwei Akte, Bosse allein, zwei Boss-Pools

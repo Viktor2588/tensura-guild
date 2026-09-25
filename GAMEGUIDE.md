@@ -9,11 +9,11 @@ stärkeren Trupp, eine Regel verlangt einen anderen. Die Regeln sind kumulativ.
 | Stufe | Name | Regel | Was sie vom Spiel verlangt |
 |---|---|---|---|
 | 0 | Jura-Wald | — | Der normale Weg. |
-| 1 | Überzahl | Jede Begegnung bringt einen Nachzügler mit (halbe Werte) | Fläche und Konter werden wertvoll, reiner Einzelzielschaden verliert |
-| 2 | Nachschub | Der vorderste Gegner steht einmal mit 30 % Leben wieder auf | Exekution allein räumt nicht mehr ab — Gift, Brand und Blutung tragen weiter |
-| 3 | Kriegsrecht | Der Händler bietet nur noch eine Einheit statt drei, Ränge kosten 15 % mehr | Du gewinnst weitgehend mit dem Trupp, den du gedraftet hast |
-| 4 | Belagerung | Auf jedem Kampfknoten steht eine Elite — zur Beute eines normalen Kampfes, und das Lager gibt 15 % weniger | Kein ruhiger Knoten mehr; die Route wird zur Überlebensfrage |
-| 5 | Sturmgott | Nur drei Leben statt fünf, Bosse eskalieren doppelt so schnell | Tempo: wer den Boss nicht schnell legt, verliert ihn |
+| 1 | Überzahl | Jede Begegnung bringt einen Gegner mehr mit (75 % der Werte) | Fläche und Konter werden wertvoll, reiner Einzelzielschaden verliert |
+| 2 | Nachschub | Jeder normale Gegner steht einmal mit 30 % Leben wieder auf — Bosse nicht | Exekution allein räumt nicht mehr ab — Gift, Brand und Blutung tragen weiter |
+| 3 | Kriegsrecht | Der Markt bietet zwei Einheiten statt vier, und sie kosten 30 % mehr | Du gewinnst weitgehend mit dem Trupp, den du hast |
+| 4 | Belagerung | Im zweiten Akt steht auf jedem zweiten Kampfknoten eine Elite — zur Beute eines normalen Kampfes; das Lager gibt 15 % weniger | Kein ruhiger Knoten mehr; die Route wird zur Überlebensfrage |
+| 5 | Sturmgott | 15 % weniger Magicule, vier Leben statt fünf, Bosse eskalieren doppelt so schnell | Tempo: wer den Boss nicht schnell legt, verliert ihn |
 
 Welche Regeln gerade gelten, steht über der Karte, und die **aktuelle Stufe
 steht dauerhaft in der Kopfzeile** (⚠). Ein kleines `+1` daneben heißt: eine
@@ -23,9 +23,9 @@ höhere ist frei, du spielst aber gerade eine niedrigere.
 nichts. Umstellen kannst du sie jederzeit im Menü unter *Fortschritt*; das setzt
 den laufenden Run neu auf.
 
-Gemessen mit `node dev/balance.js 500 --stufe N`: 48 / 35 / 24 / 16 / 11 / 6 %
-Siegquote. Die Werteschraube läuft nur noch leise nebenher (+1,2 % je Stufe) —
-die Härte kommt aus den Regeln.
+Gemessen mit `node dev/balance.js 400 --stufe N` (Phasen 85/86): 51 / 37 / 25 /
+18 / 14 / 6 % Siegquote. Die Werteschraube läuft nur leise nebenher — die Härte
+kommt aus den Regeln.
 
 ## Der Start
 
@@ -36,8 +36,9 @@ wirklich eine andere Richtung ist. Die Start-Relikte sind höchstens
 **ungewöhnlich** — Seltenes, Episches und Legendäres wird erspielt, nicht
 ausgewürfelt.
 
-Die ersten Knoten sind entsprechend gestaffelt: **der erste Kampf ist ein
-1 gegen 1**, die nächsten gehen gegen zwei, dann drei, und die Gegner sind dabei
+Die ersten Knoten sind entsprechend gestaffelt: **der erste Knoten ist ein
+einzelner Kampf, 1 gegen 1 und stark abgeschwächt** — er ist keine Wahl und kaum
+zu verlieren. Die nächsten gehen gegen zwei, dann drei, und die Gegner sind dabei
 zusätzlich abgeschwächt. Ab dem achten Knoten steht die volle Begegnung.
 
 Und die Welt wächst mit dir: die Gegnerhärte hängt an deiner Truppgröße. Der
@@ -130,16 +131,16 @@ Ausrüstung wandert in den Beutel. Während der Kampfauflösung ist das gesperrt
 
 ## Magicule — die einzige Währung
 
-Es gibt kein Gold mehr. **Alles kostet Magicule**: Rangaufstiege, Einheiten,
-Ausrüstung, Relikte. Jeder gewonnene Kampf bringt welche, und jeder ausgegebene
-Punkt fehlt woanders. Genau darin liegt die Entscheidung — ein Relikt für 340
-ist ein verzichteter Aufstieg von C auf B plus die Hälfte des nächsten.
+**Alles kostet Magicule**: Einheiten, Ausrüstung, Relikte. Jeder gewonnene
+Kampf bringt welche, und jeder ausgegebene Punkt fehlt woanders. Genau darin
+liegt die Entscheidung — ein Relikt für 340 ist eine höhere Fassung einer
+Einheit, die du dafür nicht kaufst.
 
 | Was | Preis |
 |---|---|
 | Einheit auf Rang C | 265 — jede Einheit, kein Aufpreis für die starken |
 | dieselbe auf B / A / S | zusätzlich 140 / +300 / +560 |
-| Aufwertung (dieselbe Art, höherer Rang) | der Paketpreis minus dem ganzen Einsatz der alten Einheit |
+| Aufwertung (dieselbe Einheit, höherer Rang) | der Paketpreis minus dem ganzen Einsatz der alten Einheit |
 | Relikt im Laden | 340 |
 | Ausrüstung | das Dreifache ihres Grundwerts |
 
@@ -181,18 +182,15 @@ abräumt, verliert allmählich. Ohne die Eskalation entscheidet sich ein Kampf
 gegen einen einzelnen Gegner in der ersten Runde: gemessen sprang die Siegquote
 von 100 auf 0 %, sobald der Boss 10 % stärker wurde.
 
-An jedem Knoten wählst du zwischen **drei Wegen** — und die Vorschau zeigt dir
-vorher, welche Gegner dort stehen, welche Werte sie haben und welche Fähigkeiten
-sie einsetzen. Ein Heiler in der gegnerischen Reihe ist ein Grund für Brand, ein
-einzelner harter Gegner ein Grund für Frost. Am Ende jedes Akts steht ein Boss.
+Ab dem zweiten Knoten wählst du zwischen **drei Wegen** — Kampf, Elite,
+Ereignis, Lager, Kampfherausforderung. Welche Gegner antreten, zeigt der Knoten
+nicht, nur seine Art (siehe unten). Am Ende jedes Akts steht ein Boss.
 
 Die **Wegleiste** unter der Kopfzeile zeigt den ganzen Akt: welche Knotenarten an
 welcher Stelle zur Wahl stehen, wo du gerade bist und welcher Boss am Ende
-wartet. Fünf verlorene Kämpfe beenden den Run — danach werden zwei neue Karten
-dauerhaft freigeschaltet.
-
-Weil ein Run über fünf Akte läuft, reichen die Magicule jetzt bis **Rang S**:
-gemessen erreicht ein sauber gespielter Trupp neun bis zehn Rangstufen.
+wartet. Fünf verlorene Kämpfe beenden den Run (auf Stufe 5 vier) — danach
+werden neue Relikte dauerhaft freigeschaltet. Einheiten sind alle von Anfang an
+frei.
 
 Kämpfe laufen **von allein** ab. Du greifst nicht ein. Alles entscheidet sich
 vorher.
@@ -238,27 +236,27 @@ Kampfdauer, Insektoiden häuten sich.
 
 ## Ränge
 
-| Rang | Item-Slots | Aktive | Passive | Prädator | Kosten |
-|---|---|---|---|---|---|
-| C | 1 | 1 (Signatur) | – | – | Start |
-| B | 2 | 1 (Signatur) | 1 | 1 | 140 ✦ |
-| A | 3 | 1 (Signatur) | 2 | 2 | 300 ✦ |
-| S | **5** | 1 (Signatur) | 3 | 3 | 560 ✦ |
+| Rang | Item-Slots | Aktive | Passive | Prädator |
+|---|---|---|---|---|
+| C | 1 | 1 (Signatur) | 1 | – |
+| B | 2 | 1 (Signatur) | 2 | 1 |
+| A | 3 | 1 (Signatur) | 3 | 2 |
+| S (nur einer) | **5** | 1 (Signatur) | 4 | 3 |
 
 **Die aktive Fähigkeit ist immer die Signatur — sie ändert sich nie.** Alles,
-was eine Einheit darüber hinaus lernt, ist passiv. Jeder Aufstieg gibt +30 %
-Leben und Angriff, +1 Rüstung, +1 Tempo, einen Item-Slot (auf S zwei), einen
-Prädator-Slot und **eine Passive zur Wahl**:
+was eine Einheit darüber hinaus lernt, ist passiv. Jeder Rang gibt +30 % Leben
+und Angriff, +1 Rüstung, +1 Tempo, einen Item-Slot (auf S zwei), einen
+Prädator-Slot und eine Passive mehr.
 
-- Einheiten mit eigenen **Linien** (bisher Shion und Souei) wählen aus **vier** —
-  je eine aus Angriff, eigener Mechanik, Unterstützung und Defensive.
-- Alle anderen wählen aus **drei**: ihrer eigenen nächsten Passive plus zwei aus
-  der geteilten Bibliothek, die zu ihren Schlüsselwörtern passen.
+Ränge werden nicht einzeln gekauft: eine Einheit steht im Markt schon auf ihrem
+Rang. Kaufst du eine **eigene** Einheit auf höherem Rang, behält sie Passiven,
+Ausrüstung und Verschlungenes, und die **neuen Plätze wählst du selbst** — aus
+den vier Linien der Einheit (Angriff, eigene Mechanik, Unterstützung,
+Defensive). Darunter kann ein ★ **Keystone** sein (siehe oben).
 
-Verzichten ist erlaubt, kostet dann aber den Slot.
-
-Magicule sind knapp. Vier Einheiten auf Rang B oder eine auf S? Das ist die
-Frage, die jeden Run prägt.
+**Nur eine Einheit darf Rang S tragen — der Anführer.** Steht er, bietet der
+Markt kein zweites S an. Die Frage ist also nicht, wann jemand S wird, sondern
+wer.
 
 ## Aktiv und Passiv
 
@@ -411,13 +409,13 @@ welchem Rang sie steht, sagt schon genug über sie.
 | Legendär | Run-definierend. |
 
 Die Stufe ist nicht nur Farbe: sie steuert, **wie wahrscheinlich etwas
-angeboten wird**. In Akt 1 dominiert Übliches, in Akt 3 tauchen Episches und
-Legendäres deutlich öfter auf — bei Ausrüstung und Relikten, nicht bei
-Einheiten. Elite- und Bosskämpfe würfeln eine Stufe besser
-als normale Kämpfe, und je höher der Rang einer Einheit, desto besser der Topf,
-aus dem beim Aufstieg die drei Fähigkeiten gezogen werden.
+angeboten wird**. Früh dominiert Übliches, gegen Ende des zweiten Akts tauchen
+Episches und Legendäres deutlich öfter auf — bei Ausrüstung und Relikten, nicht
+bei Einheiten. Elite- und Bosskämpfe würfeln eine Stufe besser als normale
+Kämpfe.
 
-Die Signatur einer Einheit hat immer dieselbe Stufe wie die Einheit selbst.
+Einheitenspezifisches — Signaturen und die Passiven der Linien — trägt keine
+Stufe.
 
 ## Prädator
 
@@ -430,13 +428,7 @@ Auf der Einheit steht sie danach mit Namen und Beschreibung, und ihre
 Schlüsselwörter zählen für deine Synergie-Anzeige mit: ein verschlungener
 Giftbiss macht aus einer Gift-Quelle zwei.
 
-## Gold und Ausrüstung
-
-Gold gibst du beim Händler aus, und es reicht nie für alles. Drei Dinge
-konkurrieren um denselben Beutel:
-
-- **Einheiten** (65–180 Gold) — mehr Körper, eine neue Art, eine neue Signatur.
-- **Ausrüstung** (35–100 Gold) — macht eine vorhandene Einheit deutlich besser.
+## Ausrüstung
 
 Ausrüstung liegt im Beutel, bis du sie einer Einheit anlegst — die Slots hängen
 am Rang. Ein Teil der Ausrüstung schaut darauf, **wen** du ausrüstest: der
@@ -590,11 +582,11 @@ Entwicklungslinien einer Einheit ebenso.
 
 - Zwei Quellen plus ein Verstärker desselben Schlüsselworts schlagen fast immer
   vier zusammengewürfelte Fähigkeiten.
-- Lass einen aktiven Slot frei, wenn du auf eine bestimmte Gegnerfähigkeit
-  spekulierst — der Prädator füllt ihn.
-- Fähigkeiten mit langer Abklingzeit verdrängen die kurzen. Ein Wuchtschlag
-  (cd 3) neben einer Signatur (cd 2) heißt: die Signatur kommt seltener.
-- Verderbnis stapelt nur bis 5, Frost nur bis 2 — der Rest ist verschenkt.
+- Lass einen Prädator-Slot frei, wenn du auf eine bestimmte Gegnerfähigkeit
+  spekulierst.
+- Stapel sind unbegrenzt, gedeckelt ist die Wirkung — Erstarrung ist ein
+  Schalter und bleibt bei 1.
+- Wer den Trupp stärkt oder heilt, gehört in die Mitte der Aufstellung.
 - Rang S auf der vordersten Einheit plus *Anführerkrone* ist eine eigene
   Strategie: fünf Item-Slots auf einem Körper.
 
@@ -602,9 +594,10 @@ Entwicklungslinien einer Einheit ebenso.
 
 **Chaos** ist kein Schaden, sondern Unberechenbarkeit. Wer Chaos trägt, würfelt
 zu Beginn jedes eigenen Zuges Angriff, Rüstung und Tempo neu aus — je Stapel um
-bis zu 6 % nach oben *oder* unten —, und jede aktive Fähigkeit verpufft mit 5 %
-Chance je Stapel, ohne dass die Abklingzeit ausbleibt. Der Tooltip an der
-Chaos-Marke zeigt den Wurf der laufenden Runde.
+bis zu 6 % nach **unten** (Antichaos zieht nach oben) —, und seine Signatur
+verpufft mit 5 % Chance je Stapel. Über der Figur steht der Wurf der Runde
+(„🎲 ⚔ 62 %"), eine verpuffte Fähigkeit als „✗ verpufft"; der Tooltip an der
+Chaos-Marke zeigt alle drei Werte.
 
 **Antichaos** ist dieselbe Mechanik, invertiert: dieselbe Streuung, aber nur
 nach oben und ohne Fehlschlag.
