@@ -1310,3 +1310,47 @@ wie der alte Markierer +0 — Verwundbar verstärkt die Treffer des Trupps, und
 die Begleiter des Prüfstands treffen kaum. Siegquote gesamt 52 %.
 
 `dev/sim.js` 550/550 · `dev/uitest.js` 141/141.
+
+## Plan 2026-09-26: tiefere Passiven und Shions Systeme (Phasen 107–114)
+
+Auf Zuruf alles umsetzen; der Plan steht vorab hier, damit ein Abbruch keine
+Arbeit verliert. Reihenfolge = Umsetzungsreihenfolge. Jede Phase in eigenem
+Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
+`GRUNDHAERTE` nachziehen (Ziel 52–53 %).
+
+- [ ] **Phase 107 — Meisterschaft.** Jede Passive zählt im Run, wie oft sie
+  auslöst (`m.meister[pid]`, gespeichert an der Einheit). Ab einer Schwelle
+  (z. B. 25 / 75 Auslösungen) steigt sie um eine Stufe: ihre Wirkung
+  multipliziert sich mit 1,25 / 1,5 — umgesetzt über einen Faktor, den die
+  Passive im Kampfkontext liest (`c.meister`), zunächst für die Zahlen der
+  häufigsten Muster (Schaden, Stapel). Anzeige: Stufe als ✦ an der Passive,
+  Fortschritt im Tooltip. Zählen im Kampf über `fire()`; nach dem Kampf in den
+  Run zurückschreiben.
+- [ ] **Phase 108 — Duo-Bindungen.** Tabelle `BINDUNGEN` (Paare aus der Welt:
+  Shion+Benimaru, Rimuru+Veldora, Souei+Souka, Gobta+Ranga, Hakuro+Benimaru,
+  Diablo+Rimuru, Gabiru+Echsenfürst, Milim+Rimuru …). Stehen beide im Trupp,
+  gilt ein dritter Effekt; Anzeige unter „Fähigkeits-Synergien" und im Markt
+  („bindet mit …").
+- [ ] **Phase 109 — Stapel verbrauchen.** Bibliotheks-Passiven mit
+  „ausgeben statt anhäufen": Gift, Brand, Schild, Blutung je ein Verbraucher
+  (ab N Stapeln alles verbrauchen für einen Stoß), gemessen mit
+  `dev/beute.js`.
+- [ ] **Phase 110 — Position lesen.** Bibliotheks-Passiven, die das Hexfeld
+  lesen: Nachbarn (stärker mit zwei Verbündeten daneben), Durchschlag (trifft
+  den Gegner hinter dem Ziel mit), Flanke (Bonus gegen Ziele ohne Nachbarn).
+  Helfer `nachbarn(u)` im Kampfkontext.
+- [ ] **Phase 111 — Shion: Ausrichtung und Ultimativer Teufel (A).** Ab Rang A
+  legt sich Shion fest: Ordnung oder Verderbnis (Wahl im Aufstiegs-Dialog,
+  gespeichert an der Einheit); die andere Verwandlung ist gesperrt. Rang S:
+  dritte Form **Ultimativer Teufel**, nur wenn 12 Chaos auf den Gegnern UND
+  6 Antichaos auf Shion zugleich liegen — Signatur trifft alle und kehrt Stapel.
+- [ ] **Phase 112 — Shions Küche (B).** Passive: zu Kampfbeginn bekommt jeder
+  Verbündete einen zufälligen Effekt aus einer Tabelle (gut und schlecht);
+  Antichaos auf dem Verbündeten dreht schlechte ins Gute.
+- [ ] **Phase 113 — Chaos-Entladung (C).** Ab 10 Chaos auf einem Gegner
+  entlädt Shion es (Passive in der Mechanik): der Gegner verliert einen Zug,
+  und sein nächster Angriff trifft einen eigenen Verbündeten. Chaos wird
+  verbraucht — Aufbauen zur Verwandlung gegen Entladen.
+- [ ] **Phase 114 — Meisterkoch der Wirklichkeit (D).** Keystone-artige
+  Passive: Chaos-Würfe gegen Gegner zweimal würfeln, das schlechtere nehmen;
+  Antichaos-Würfe im Trupp das bessere.
