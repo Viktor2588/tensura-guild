@@ -27,6 +27,13 @@ Gemessen mit `node dev/balance.js 400 --stufe N` (Phasen 85/86): 51 / 37 / 25 /
 18 / 14 / 6 % Siegquote. Die Werteschraube läuft nur leise nebenher — die Härte
 kommt aus den Regeln.
 
+## Der Tagesrun
+
+Im Menü startet **Tagesrun** einen Run, dessen Seed aus dem Datum kommt:
+dieselben Startpaare, dieselben Märkte, derselbe Boss für alle, die heute
+spielen. Er läuft auf Stufe 0 mit frischem Freischaltstand und ändert deinen
+eigenen Fortschritt nicht. Gemerkt wird dein bestes Ergebnis des Tages.
+
 ## Der Start
 
 **Ein Anfang aus vier.** Jeder ist ein Paar: eine Einheit und ein Relikt, das zu

@@ -2756,6 +2756,17 @@ head('Boss-Regeln (Phase 94)');
   ok(log.some(function (l) { return l.source === 'Sturmflut'; }), 'Charybdis spült mit der Sturmflut');
 })();
 
+head('Tagesrun (Phase 95)');
+(function () {
+  var a = R.createTages('2026-09-25'), b = R.createTages('2026-09-25'), c = R.createTages('2026-09-26');
+  function paare(r) { return JSON.stringify(r.startwahl.offers.map(function (o) { return o.unit + '+' + o.relic; })); }
+  ok(paare(a) === paare(b) && a.bosse.join() === b.bosse.join(), 'derselbe Tag gibt dieselben Startpaare und Bosse');
+  ok(a.seed !== c.seed, 'ein anderer Tag einen anderen Seed');
+  ok(a.threat === 0 && a.tages === '2026-09-25', 'der Tagesrun läuft auf Stufe 0 und kennt sein Datum');
+  var geladen = R.deserialize(R.serialize(a));
+  ok(geladen.tages === '2026-09-25' && paare(geladen) === paare(a), 'er überlebt das Speichern');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

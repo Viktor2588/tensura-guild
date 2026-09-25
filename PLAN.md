@@ -1032,6 +1032,19 @@ Regeln sollen Bosse unterscheidbar machen, nicht schwerer. Siegquote im Run
 
 `dev/sim.js` 523/523 · `dev/uitest.js` 141/141.
 
-### [~] Phase 95 (2026-09-25): Der Tagesrun (in Bearbeitung)
+### Phase 95 (2026-09-25): Der Tagesrun
 
 Worktree `/home/viktor/tensura/worktree/phase-95-tagesrun`, Branch `phase-95-tagesrun`.
+
+Der ganze Run hängt an einem Seed (`rng.js`, mulberry32). Ein Seed aus dem
+Datum (FNV-1a über „JJJJ-MM-TT") macht daraus einen Tagesrun: dieselben
+Startpaare, Märkte und Bosse für alle, die heute spielen. `Run.createTages`
+startet mit frischem `newMeta()` und Stufe 0; `speichern()` schreibt den
+Wegwerf-Stand nie zurück, und das Laden baut ihn frisch statt aus dem eigenen
+Fortschritt. Das beste Ergebnis je Tag steht unter `tensura-guild-tagesrun`.
+Knopf im Menü und auf dem Endbildschirm, die Kopfzeile nennt das Datum.
+
+Nebenbei: der Siegbildschirm sagte immer „Milim ist bezwungen" — der letzte
+Boss kommt aus dem Pool von Akt 2. Jetzt steht dort sein Name.
+
+`dev/sim.js` 527/527 · `dev/uitest.js` 141/141.

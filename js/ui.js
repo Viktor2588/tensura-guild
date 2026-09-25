@@ -131,7 +131,7 @@
   function zeichneHud() {
     $('hud-ort').textContent = (run.over ? 'Run beendet'
       : 'Akt ' + run.act + ' · Knoten ' + (run.step + 1) + '/' + R.STEPS.length) +
-      (run.threat ? ' · Stufe ' + run.threat : '');
+      (run.threat ? ' · Stufe ' + run.threat : '') + (run.tages ? ' · Tagesrun ' + run.tages : '');
     var st = R.bedrohung(run.threat || 0);
     var offen = run.meta.threat || 0;
     var ml = R.mali(run.threat || 0);
@@ -1041,8 +1041,10 @@
   /* --------------------------------------------------------------- Ende */
 
   function zeichneEnde() {
+    /* Der letzte Boss kommt aus dem Pool von Akt 2 — hier stand fest „Milim". */
+    var letzter = R.boss(run, R.AKTE || 2);
     var html = run.won
-      ? '<h2 class="gut">Milim ist bezwungen — der Run ist gewonnen.</h2>'
+      ? '<h2 class="gut">' + (letzter ? esc(letzter.name) + ' ist bezwungen — ' : '') + 'der Run ist gewonnen.</h2>'
       : '<h2 class="schlecht">Der Trupp ist gefallen.</h2>';
     html += '<p>Erreicht: Akt ' + run.act + ', Knoten ' + (run.step + 1) + '. ' +
       'Runs gespielt: ' + run.meta.runs + ', gewonnen: ' + run.meta.wins + '.</p>';
@@ -1053,7 +1055,14 @@
       html += '<p class="gut">Bedrohungsstufe ' + run.neueStufe.stufe + ' offen: <b>' +
         esc(run.neueStufe.name) + '</b> — ' + esc(run.neueStufe.text) + '</p>';
     }
-    html += '<div class="reihe"><button class="haupt" data-a="neu">Neuer Run</button></div>';
+    if (run.tages && run.tagesErgebnis) {
+      var e = run.tagesErgebnis, gesamt = (R.AKTE || 2) * R.STEPS.length;
+      html += '<p>Tagesrun ' + esc(run.tages) + ': ' + (e.neu ? '<b class="gut">neue Bestleistung</b> — ' : '') +
+        'bestes Ergebnis heute ' + (e.best > gesamt ? 'gewonnen' : 'Knoten ' + e.best + ' von ' + gesamt) +
+        '. Derselbe Seed gilt für alle, die heute spielen.</p>';
+    }
+    html += '<div class="reihe"><button class="haupt" data-a="neu">Neuer Run</button>' +
+      '<button data-a="tages">Tagesrun</button></div>';
     $('view').innerHTML = html;
   }
 
@@ -1570,7 +1579,8 @@
   }
 
   function speichern() {
-    R.saveMeta(run.meta);
+    /* Der Tagesrun spielt mit einem Wegwerf-Stand und schreibt ihn nie zurueck. */
+    if (!run.tages) R.saveMeta(run.meta);
     if (!run.over) R.save(run); else R.clear();
   }
 
@@ -1651,6 +1661,7 @@
       render();
     },
     neu: function () { neuerRun(); },
+    tages: function () { tagesRun(); },
     speichern: function () { speichern(); $('menu').close(); },
     'menu-zu': function () { $('menu').close(); }
   };
@@ -1839,6 +1850,20 @@
         ? '<p class="hinweis">Noch verschlossen: ' + rOffen.length + ' Relikte.</p>' +
           liste(rOffenIds, GD.relics, function (r) { return r.text; }, true)
         : '<p class="gut">Alle Relikte frei.</p>');
+  }
+
+  function heute() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+  function tagesRun() {
+    R.clear();
+    run = R.createTages(heute());
+    replay = null; Brett3D.loese();
+    $('menu').close();
+    render();
+    speichern();
   }
 
   function neuerRun() {

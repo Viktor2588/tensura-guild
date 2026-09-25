@@ -1730,6 +1730,39 @@
     return true;
   }
 
+  /* ---- Tagesrun (Phase 95) -------------------------------------------------
+     Der ganze Run haengt an einem Seed. Ein Seed aus dem Datum macht daraus
+     einen Tagesrun: dieselben Startpaare, dieselben Maerkte, derselbe Boss fuer
+     jeden, der heute spielt. Damit das stimmt, startet er mit frischem
+     Freischaltstand und auf Stufe 0 — und schreibt nichts in den eigenen
+     Fortschritt zurueck. Gemerkt wird nur das beste Ergebnis je Tag. */
+  var TAGES_KEY = 'tensura-guild-tagesrun';
+  function tagesSeed(datum) {
+    var h = 0x811c9dc5;                              // FNV-1a, 32 Bit
+    for (var i = 0; i < datum.length; i++) {
+      h ^= datum.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h >>> 0;
+  }
+  function createTages(datum) {
+    var run = create(tagesSeed(datum), newMeta());
+    run.tages = datum;
+    return run;
+  }
+  function tagesBest() {
+    try { return JSON.parse(localStorage.getItem(TAGES_KEY) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function merkeTages(datum, punkte) {
+    var alle = tagesBest();
+    var neu = punkte > (alle[datum] || 0);
+    if (neu) {
+      alle[datum] = punkte;
+      try { localStorage.setItem(TAGES_KEY, JSON.stringify(alle)); } catch (e) {}
+    }
+    return { best: alle[datum] || punkte, neu: neu };
+  }
+
   function finish(run, won) {
     run.over = true;
     run.won = won;
@@ -1747,6 +1780,7 @@
     }
     var score = (run.act - 1) * STEPS.length + run.step;
     run.meta.best = Math.max(run.meta.best || 0, won ? AKTE * STEPS.length : score);
+    if (run.tages) run.tagesErgebnis = merkeTages(run.tages, won ? AKTE * STEPS.length + 1 : score);
     run.unlocked = unlock(run.meta, rng);
     commit(run, rng);
   }
@@ -1787,7 +1821,7 @@
       over: run.over, won: run.won,
       pwahlen: run.pwahlen || [],
       team: run.team, bank: run.bank, uidSeq: uidSeq, startwahl: run.startwahl,
-      pending: schlankesPending(run)
+      pending: schlankesPending(run), tages: run.tages || null
     });
   }
   function deserialize(raw) {
@@ -1801,7 +1835,10 @@
        Meta-Eintrag. */
     var meta = loadMeta();
     if (d.meta && !gespeicherteMeta()) meta = d.meta;
+    /* Ein Tagesrun spielt mit frischem Stand, auch nach dem Neuladen. */
+    if (d.tages) meta = newMeta();
     var run = create(d.seed, meta);
+    if (d.tages) run.tages = d.tages;
     run.team = []; run.bank = [];
     ['rngState', 'act', 'step', 'threat', 'magicules', 'lives', 'relics', 'bag', 'chronik', 'team', 'bank', 'bosse']
       .forEach(function (k) { if (d[k] !== undefined) run[k] = d[k]; });
@@ -1920,6 +1957,7 @@
     ersetzbar: ersetzbar,
     buildTeile: buildTeile, resonanzen: resonanzen, analyse: analyse,
     save: save, load: load, clear: clear, loadMeta: loadMeta, saveMeta: saveMeta,
+    createTages: createTages, tagesSeed: tagesSeed, tagesBest: tagesBest,
     serialize: serialize, deserialize: deserialize,
     TEAM_MAX: TEAM_MAX, BANK_MAX: BANK_MAX, STEPS: STEPS, RANK_NAME: RANK_NAME, AKTE: AKTE
   };
