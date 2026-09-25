@@ -1318,7 +1318,7 @@ Arbeit verliert. Reihenfolge = Umsetzungsreihenfolge. Jede Phase in eigenem
 Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
 `GRUNDHAERTE` nachziehen (Ziel 52–53 %).
 
-- [ ] **Phase 107 — Meisterschaft.** Jede Passive zählt im Run, wie oft sie
+- [~] **Phase 107 — Meisterschaft.** (in Bearbeitung, Worktree `/home/viktor/tensura/worktree/phase-107-meister`) Jede Passive zählt im Run, wie oft sie
   auslöst (`m.meister[pid]`, gespeichert an der Einheit). Ab einer Schwelle
   (z. B. 25 / 75 Auslösungen) steigt sie um eine Stufe: ihre Wirkung
   multipliziert sich mit 1,25 / 1,5 — umgesetzt über einen Faktor, den die
