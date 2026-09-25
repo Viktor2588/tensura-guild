@@ -1344,7 +1344,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
   gespeichert an der Einheit); die andere Verwandlung ist gesperrt. Rang S:
   dritte Form **Ultimativer Teufel**, nur wenn 12 Chaos auf den Gegnern UND
   6 Antichaos auf Shion zugleich liegen — Signatur trifft alle und kehrt Stapel.
-- [ ] **Phase 112 — Shions Küche (B).** Passive: zu Kampfbeginn bekommt jeder
+- [~] **Phase 112 — Shions Küche (B).** (in Bearbeitung) Passive: zu Kampfbeginn bekommt jeder
   Verbündete einen zufälligen Effekt aus einer Tabelle (gut und schlecht);
   Antichaos auf dem Verbündeten dreht schlechte ins Gute.
 - [ ] **Phase 113 — Chaos-Entladung (C).** Ab 10 Chaos auf einem Gegner
