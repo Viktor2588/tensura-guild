@@ -32,10 +32,10 @@ Kein Build, keine Abhängigkeiten. Zwei Wege:
 
 ```
 index.html doppelklicken          # file:// genügt
-npm start                         # http://localhost:8080
+pnpm start                        # http://localhost:3000
 ```
 
-`npm start` legt einen winzigen statischen Server aus Node-Bordmitteln auf
+`pnpm start` legt einen winzigen statischen Server aus Node-Bordmitteln auf
 (`dev/serve.js`). Nötig ist er nicht — er ist nur bequemer, weil manche Browser
 auf `file://` sparsam mit `localStorage` umgehen.
 
@@ -77,8 +77,8 @@ dev/prompts.js   Prompts und Herkunftszeilen für Figurenbilder
 ## Entwicklung
 
 ```bash
-npm install                  # nur für den UI-Test (jsdom); das Spiel selbst hat keine Abhängigkeiten
-npm test                     # sim + uitest + bildcheck, alles muss grün sein
+pnpm install                 # nur für den UI-Test (jsdom); das Spiel selbst hat keine Abhängigkeiten
+pnpm test                    # sim + uitest + bildcheck, alles muss grün sein
 node dev/sim.js              # Logik-Selbsttests, 499/499
 node dev/uitest.js           # UI-Test, 141/141
 node dev/balance.js 600      # Balance, frischer Spieler
