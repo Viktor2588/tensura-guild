@@ -638,3 +638,6 @@ ul.mali li::before { content: '−'; position: absolute; left: -.9rem; opacity: 
 #kampfseite .seite h3 { margin: .2rem 0; font-size: .85rem; }
 #kampflog-kopf { display: flex; justify-content: space-between; align-items: center; font-size: .8rem; color: var(--grau); }
 #kampflog-kopf button { font-size: .72rem; padding: .1rem .5rem; }
+
+/* Meisterschaft (Phase 107). */
+.fk .meister { color: var(--gold); font-weight: 600; }

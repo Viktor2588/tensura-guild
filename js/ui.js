@@ -1401,9 +1401,15 @@
         '>⚡ ' + esc(a.name) + '</div>';
     });
     passive.forEach(function (a) {
+      /* Meisterschaft (Phase 107): Stufe als ✦, Fortschritt im Tooltip. */
+      var kaempfe = (m.meister || {})[a.id] || 0, st = R.meisterStufe(kaempfe);
+      var naechste = R.MEISTER_SCHWELLEN[st];
+      var meisterText = '\n\nMeisterschaft: ' + kaempfe + ' Kämpfe ausgelöst' +
+        (st ? ' — Stufe ' + st + ', +' + st * 3 + ' % Leben und Angriff' : '') +
+        (naechste ? ' · nächste Stufe bei ' + naechste : ' · gemeistert');
       html += '<div class="fk passiv' + (a.rarity ? ' rar-text-' + a.rarity : '') + '"' +
-        tip(a.name, 'Passive Fähigkeit\n\n' + a.text + kwZeile(a)) +
-        '>◈ ' + esc(a.name) + '</div>';
+        tip(a.name, 'Passive Fähigkeit\n\n' + a.text + kwZeile(a) + meisterText) +
+        '>◈ ' + esc(a.name) + (st ? ' <b class="meister">' + '✦'.repeat(st) + '</b>' : '') + '</div>';
     });
     /* Auf A steht der Weg nach S nur offen, solange es keinen anderen
        Anfuehrer gibt (Phase 85) — sonst waere der Hinweis ein Versprechen,

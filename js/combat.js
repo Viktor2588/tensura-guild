@@ -541,7 +541,12 @@
 
     function fire(u, hook, c) {
       for (var i = 0; i < u.effects.length; i++) {
-        if (u.effects[i].hook === hook) u.effects[i].fn(c);
+        var e = u.effects[i];
+        if (e.hook !== hook) continue;
+        /* Meisterschaft (Phase 107): welche Passiven haben in diesem Kampf
+           ausgeloest? Der Run zaehlt daraus Kaempfe je Passive. */
+        if (e.art === 'passiv' && e.id) (u._meister || (u._meister = {}))[e.id] = 1;
+        e.fn(c);
       }
     }
 
@@ -905,6 +910,10 @@
     log.push({ t: t, type: 'end', winner: winner });
     return {
       winner: winner, ticks: t, log: log, roster: roster,
+      meister: units.reduce(function (o, u) {
+        if (u.side === 'player') o[u.key] = Object.keys(u._meister || {});
+        return o;
+      }, {}),
       /* `dmgDealt`/`dmgTaken` gehoeren mit in die Projektion: die Kampfbilanz
          nach dem Sieg (Phase 72) braucht sie, und die vollen Einheitenobjekte
          verlassen `simulate` bewusst nicht. Auch die Gefallenen tragen sie —

@@ -165,7 +165,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.62;   // Phase 100: mit Neuwurf und Drill — gemessen 53 % (frisch, n=4000)
+  var GRUNDHAERTE = 1.70;   // Phase 107: mit Meisterschaft — gemessen um 52 % (frisch, n=4000)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -350,6 +350,13 @@
        Bot, der jeden angebotenen Keystone nimmt, gewann 48 %, einer, der nie
        einen nimmt, 50 %. Wer seine Einheit auf den Abschluss einer Linie
        festlegt, bekommt dafuer jetzt Leben und Angriff obendrauf. */
+    /* Meisterschaft (Phase 107): jede Stufe einer Passive +3 % Leben und Angriff. */
+    var meister = 0;
+    passivIds(m).forEach(function (pid) { meister += meisterStufe((m.meister || {})[pid] || 0); });
+    if (meister) {
+      d.hp = Math.round(d.hp * (1 + MEISTER_PLUS * meister));
+      d.atk = Math.round(d.atk * (1 + MEISTER_PLUS * meister));
+    }
     /* Drill (Phase 100): +4 % Leben und Angriff je Stufe, fuer den ganzen Trupp. */
     if (m.drill) {
       d.hp = Math.round(d.hp * (1 + DRILL_PLUS * m.drill));
@@ -897,6 +904,14 @@
     var p = node.pruefung ? pruefung(node.pruefung) : null;
     var antritt = (p && p.vorher ? p.vorher(run).team : run.team);
     var res = C.simulate(antritt.map(resolve), foes, seed, { relics: run.relics.map(GD.relic) });
+    /* Meisterschaft (Phase 107): jede Passive, die ausgeloest hat, zaehlt
+       einen Kampf mehr. */
+    antritt.forEach(function (m, i) {
+      ((res.meister || {})['p' + i] || []).forEach(function (pid) {
+        m.meister = m.meister || {};
+        m.meister[pid] = (m.meister[pid] || 0) + 1;
+      });
+    });
     run.phase = 'kampf';
     /* Die Bilanz getrennt vom Log: der Ergebnisbildschirm braucht sie auch nach
        einem Neuladen, und das ganze Kampflog wandert nicht in den Speicherstand. */
@@ -1097,6 +1112,7 @@
        laesst sich neu anlegen — fuer verschlungene Gegner gibt es diesen Weg
        zurueck nicht. Der hoehere Rang traegt ohnehin mehr Slots. */
     if (weg) m.devoured = weg.devoured.slice();
+    if (weg && weg.meister) m.meister = JSON.parse(JSON.stringify(weg.meister));
     /* Die Ausruestung bleibt angelegt (Phase 88). Vorher flog sie in den
        Beutel und musste nach jeder Aufwertung von Hand neu angelegt werden —
        fuer denselben Kaempfer, der jetzt nur staerker ist. Der hoehere Rang hat
@@ -1740,6 +1756,13 @@
      Einheiten, statt liegen zu bleiben. Auch spaeter gekaufte Einheiten
      bekommen den Stand (`addUnit`). */
   var DRILL_PREIS = 200, DRILL_PLUS = 0.04;
+  /* ---- Meisterschaft (Phase 107) -------------------------------------------
+     Eine Passive waechst mit dem Run: sie zaehlt die Kaempfe, in denen sie
+     ausgeloest hat (nicht die Ausloesungen — sonst waechst eine Trefferpassive
+     zehnmal schneller als eine zum Kampfbeginn). Ab 3 Kaempfen Stufe 1, ab 8
+     Stufe 2; jede Stufe staerkt den Traeger um 3 % Leben und Angriff. */
+  var MEISTER_SCHWELLEN = [3, 8], MEISTER_PLUS = 0.03;
+  function meisterStufe(n) { return n >= MEISTER_SCHWELLEN[1] ? 2 : n >= MEISTER_SCHWELLEN[0] ? 1 : 0; }
   function drillPreis(run) { return DRILL_PREIS * Math.pow(2, run.drill || 0); }
   function drill(run) {
     if (run.phase !== 'markt') return false;
@@ -2068,6 +2091,7 @@
     itemSlots: itemSlots, aktivSlots: aktivSlots, passivSlots: passivSlots, praedatorSlots: praedatorSlots,
     buy: buy, eventChoose: eventChoose, camp: camp, marktOffers: marktOffers,
     neuWuerfeln: neuWuerfeln, neuwurfPreis: neuwurfPreis, drill: drill, drillPreis: drillPreis,
+    meisterStufe: meisterStufe, MEISTER_SCHWELLEN: MEISTER_SCHWELLEN,
     equip: equip, unequip: unequip, move: move, bench: bench, deploy: deploy, entlassen: entlassen,
     find: find, addUnit: addUnit, swap: swap, unitPool: unitPool, relicPool: relicPool,
     entlassenWert: entlassenWert, darfEntlassen: darfEntlassen,

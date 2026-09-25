@@ -2846,6 +2846,20 @@ head('Provokation (Phase 105)');
   ok(gegnerTreffer.every(function (l) { return l.target === 'Gobta'; }), 'in der Runde danach trifft jeder Gegner Gobta');
 })();
 
+head('Meisterschaft (Phase 107)');
+(function () {
+  var m = R.member('shion'); m.rank = 2; m.passives = [AB.linien.shion.defensive[0]];
+  var vorher = R.resolve(m).hp;
+  m.meister = {}; m.meister[m.passives[0]] = 3;
+  ok(R.meisterStufe(3) === 1 && R.meisterStufe(8) === 2 && R.meisterStufe(2) === 0, 'Stufen bei 3 und 8 Kämpfen');
+  ok(R.resolve(m).hp > vorher, 'eine gemeisterte Passive stärkt ihren Träger (' + vorher + ' → ' + R.resolve(m).hp + ')');
+  var run = fertigerRun(107);
+  while (R.passivWahl(run)) R.choosePassive(run, 0);
+  run.phase = 'karte'; run.pending = null; R.rollTest(run);
+  R.choose(run, 0);
+  ok(run.team.some(function (x) { return x.meister && Object.keys(x.meister).length; }), 'nach einem Kampf zählt der Run ausgelöste Passiven');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

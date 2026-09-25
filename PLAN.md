@@ -1318,7 +1318,7 @@ Arbeit verliert. Reihenfolge = Umsetzungsreihenfolge. Jede Phase in eigenem
 Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
 `GRUNDHAERTE` nachziehen (Ziel 52–53 %).
 
-- [~] **Phase 107 — Meisterschaft.** (in Bearbeitung, Worktree `/home/viktor/tensura/worktree/phase-107-meister`) Jede Passive zählt im Run, wie oft sie
+- [x] **Phase 107 — Meisterschaft.** (erledigt, siehe unten) Jede Passive zählt im Run, wie oft sie
   auslöst (`m.meister[pid]`, gespeichert an der Einheit). Ab einer Schwelle
   (z. B. 25 / 75 Auslösungen) steigt sie um eine Stufe: ihre Wirkung
   multipliziert sich mit 1,25 / 1,5 — umgesetzt über einen Faktor, den die
@@ -1354,3 +1354,18 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
 - [ ] **Phase 114 — Meisterkoch der Wirklichkeit (D).** Keystone-artige
   Passive: Chaos-Würfe gegen Gegner zweimal würfeln, das schlechtere nehmen;
   Antichaos-Würfe im Trupp das bessere.
+
+### Phase 107 (2026-09-26): Meisterschaft
+
+Umgesetzt in allgemeiner Form statt „Wirkung ×1,25": die 700 Passiven haben
+ihre Zahlen fest im Code, ein Faktor je Passive hätte jede einzeln angefasst.
+Stattdessen zählt eine Passive die **Kämpfe, in denen sie ausgelöst hat**
+(`fire()` merkt es sich, `fight()` schreibt es an die Einheit, `m.meister`).
+Kämpfe statt Auslösungen, sonst wüchse eine Trefferpassive zehnmal schneller
+als eine zum Kampfbeginn. Ab 3 Kämpfen Stufe ✦, ab 8 ✦✦; jede Stufe gibt dem
+Träger +3 % Leben und Angriff (`resolve`). Die Aufwertung nimmt den Stand mit.
+Karte: ✦ an der Passive, Fortschritt im Tooltip.
+
+Gemessen: Siegquote 52 → 59 %; `GRUNDHAERTE` 1.62 → 1.70 (1.72: 51 %).
+
+`dev/sim.js` 553/553 · `dev/uitest.js` 141/141.
