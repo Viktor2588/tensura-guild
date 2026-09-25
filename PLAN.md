@@ -4180,3 +4180,7 @@ gewandert, über drei bewusste Eingriffe (siehe `TODO.md`). Zurück auf ~52 %
 bräuchte `GRUNDHAERTE` 1.03 → ~1.40 — eine eigene Entscheidung.
 
 `dev/sim.js` 499/499 · `dev/uitest.js` 141/141.
+
+### [~] Phase 81 (2026-09-25): Die Siegquote zurück auf den Sollwert (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-81-kalibrierung`, Branch `phase-81-kalibrierung`.
