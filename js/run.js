@@ -120,13 +120,12 @@
       text: 'Jeder normale Gegner steht einmal mit 30 % Leben wieder auf — Bosse nicht. ' +
             'Wer nur exekutiert, räumt nicht mehr ab; Gift, Brand und Blutung tragen weiter.' },
     { stufe: 3, name: 'Kriegsrecht', regel: 'kriegsrecht',
-      text: 'Der Händler bietet nur noch zwei Einheiten an statt vier, und Einheiten kosten ' +
-            '30 % mehr Magicule.' },
+      text: 'Der Händler bietet nur noch zwei Einheiten an statt vier.' },
     { stufe: 4, name: 'Belagerung', regel: 'belagerung',
       text: 'Im zweiten Akt steht auf jedem zweiten Kampfknoten eine Elite — zur Beute ' +
             'eines normalen Kampfes. Dazu gibt das Lager 15 % weniger.' },
     { stufe: 5, name: 'Sturmgott', regel: 'sturmgott',
-      text: '15 % weniger Magicule aus jedem Kampf und jedem Lager. Dazu nur vier ' +
+      text: '25 % weniger Magicule aus jedem Kampf und jedem Lager. Dazu nur vier ' +
             'Leben statt fünf und doppelt eskalierende Bosse. Die Gegner sind kaum härter ' +
             'als auf Stufe 4.' }
   ];
@@ -148,7 +147,7 @@
       Math.round(NACHZUEGLER * 100) + ' % der Werte)');
     if (t >= 2) out.push('Jeder Gegner steht einmal mit ' +
       Math.round(NACHSCHUB_LEBEN * 100) + ' % Leben wieder auf');
-    if (t >= 3) out.push('Nur 2 statt 4 Marktposten, Einheiten +30 % teurer');
+    if (t >= 3) out.push('Nur 2 statt 4 Einheiten im Markt');
     if (t >= 4) out.push('Akt 2: Elite zu normaler Beute, Lager −15 %');
     if (t >= 5) out.push('−' + Math.round((1 - STURM_BEUTE) * 100) +
       ' % Magicule, ' + STURM_LEBEN + ' Leben statt 5, Bosse eskalieren doppelt');
@@ -211,7 +210,7 @@
   /* Phase 86: 0.70 → 0.85 und 4 statt 3 Leben. Mit beidem zusammen lag Stufe 5
      bei 2 % (Stufe 4: 13 %), 86 % der Runs endeten in Akt 1. Keine Zutat
      allein trug das, es war die Summe; so steht die Stufe bei 6 %. */
-  var STURM_BEUTE = 0.85;
+  var STURM_BEUTE = 0.75;   // Phase 101: 0.85 → 0.75, weil Kriegsrecht milder wurde; Stufe 5 gemessen 6 %
   var STURM_LEBEN = 4;
   function beuteFaktor(run) {
     return regel(run, 'sturmgott') ? STURM_BEUTE : 1;
@@ -670,7 +669,9 @@
        (22 % gegen 22 %), und die Verteuerung auf 32 % bewegte davon exakt
        nichts. Ein Zuschlag auf den Marktpreis ist dieselbe Absicht an der
        Stelle, an der heute wirklich bezahlt wird. */
-    if (run && regel(run, 'kriegsrecht')) p = Math.round(p * 1.30);
+    /* Phase 101: der Aufschlag ist weg. Halbes Angebot UND 30 % teurer machte
+       Stufe 3 zur Klippe (34 → 15 %); gemessen war der Preis die haertere
+       Haelfte. Uebrig bleibt die Regel, die man sieht: zwei statt vier. */
     return p;
   }
 

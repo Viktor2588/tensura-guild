@@ -118,9 +118,9 @@ eine andere Schraube an, nicht nur die Gegnerwerte:
 | 0 | Jura-Wald | – | 53 % |
 | 1 | Überzahl | ein Gegner mehr je Begegnung | 42 % |
 | 2 | Nachschub | normale Gegner stehen einmal mit 30 % Leben wieder auf | 34 % |
-| 3 | Kriegsrecht | zwei statt vier Einheiten im Markt, 30 % teurer | 15 % |
-| 4 | Belagerung | im zweiten Akt Eliten auf jedem zweiten Kampfknoten, Lager −15 % | 12 % |
-| 5 | Sturmgott | 15 % weniger Magicule, 4 Leben statt 5, Bosse eskalieren doppelt | 5 % |
+| 3 | Kriegsrecht | zwei statt vier Einheiten im Markt | 26 % |
+| 4 | Belagerung | im zweiten Akt Eliten auf jedem zweiten Kampfknoten, Lager −15 % | 20 % |
+| 5 | Sturmgott | 25 % weniger Magicule, 4 Leben statt 5, Bosse eskalieren doppelt | 6 % |
 
 Gemessen mit `node dev/balance.js 400 --stufe N` (Stufe 0 mit 6000 Runs).
 

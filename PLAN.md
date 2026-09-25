@@ -1153,6 +1153,24 @@ und 99 im Browser angesehen (Boss-Regel in der Vorschau, Erfolge, Schmelzen).
 
 `dev/sim.js` 542/542 · `dev/uitest.js` 141/141.
 
-### [~] Phase 101 (2026-09-25): Kriegsrecht ohne Klippe (in Bearbeitung)
+### Phase 101 (2026-09-25): Kriegsrecht ohne Klippe
 
 Worktree `/home/viktor/tensura/worktree/phase-101-kriegsrecht`, Branch `phase-101-kriegsrecht`.
+
+Nach Phase 100 fiel die Kurve 53 / 42 / 34 / **15** / 12 / 5 % — Stufe 3 war
+eine Klippe. Kriegsrecht verschärfte doppelt: halbes Einheitenangebot und 30 %
+Aufschlag. Einzeln gemessen (1200 Runs, Stufe 3 / Stufe 5):
+
+| Kriegsrecht | Stufe 3 | Stufe 5 |
+|---|---|---|
+| 2 statt 4 und +30 % (bisher) | 15 % | 5 % |
+| nur +30 %, 4 Einheiten | 18 % | 5 % |
+| nur 2 statt 4 | 26 % | 9 % |
+| 3 statt 4 und +15 % | 22 % | 10 % |
+
+Der Preis war die härtere Hälfte. Übernommen: **nur 2 statt 4** — die Regel,
+die man im Markt sieht. Weil die Regeln kumulativ sind, wurde Stufe 5 damit
+leichter; Sturmgott nimmt dafür 25 statt 15 % des Einkommens (0.85: 9 %,
+0.75: 6 %, 0.65: 4 %). Neue Kurve: **53 / 42 / 34 / 26 / 20 / 6 %**.
+
+`dev/sim.js` 542/542 · `dev/uitest.js` 141/141.

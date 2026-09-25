@@ -11,9 +11,9 @@ stärkeren Trupp, eine Regel verlangt einen anderen. Die Regeln sind kumulativ.
 | 0 | Jura-Wald | — | Der normale Weg. |
 | 1 | Überzahl | Jede Begegnung bringt einen Gegner mehr mit (75 % der Werte) | Fläche und Konter werden wertvoll, reiner Einzelzielschaden verliert |
 | 2 | Nachschub | Jeder normale Gegner steht einmal mit 30 % Leben wieder auf — Bosse nicht | Exekution allein räumt nicht mehr ab — Gift, Brand und Blutung tragen weiter |
-| 3 | Kriegsrecht | Der Markt bietet zwei Einheiten statt vier, und sie kosten 30 % mehr | Du gewinnst weitgehend mit dem Trupp, den du hast |
+| 3 | Kriegsrecht | Der Markt bietet zwei Einheiten statt vier | Du gewinnst weitgehend mit dem Trupp, den du hast |
 | 4 | Belagerung | Im zweiten Akt steht auf jedem zweiten Kampfknoten eine Elite — zur Beute eines normalen Kampfes; das Lager gibt 15 % weniger | Kein ruhiger Knoten mehr; die Route wird zur Überlebensfrage |
-| 5 | Sturmgott | 15 % weniger Magicule, vier Leben statt fünf, Bosse eskalieren doppelt so schnell | Tempo: wer den Boss nicht schnell legt, verliert ihn |
+| 5 | Sturmgott | 25 % weniger Magicule, vier Leben statt fünf, Bosse eskalieren doppelt so schnell | Tempo: wer den Boss nicht schnell legt, verliert ihn |
 
 Welche Regeln gerade gelten, steht über der Karte, und die **aktuelle Stufe
 steht dauerhaft in der Kopfzeile** (⚠). Ein kleines `+1` daneben heißt: eine
@@ -23,8 +23,8 @@ höhere ist frei, du spielst aber gerade eine niedrigere.
 nichts. Umstellen kannst du sie jederzeit im Menü unter *Fortschritt*; das setzt
 den laufenden Run neu auf.
 
-Gemessen mit `node dev/balance.js 400 --stufe N` (Phasen 85/86): 51 / 37 / 25 /
-18 / 14 / 6 % Siegquote. Die Werteschraube läuft nur leise nebenher — die Härte
+Gemessen mit `node dev/balance.js 1200 --stufe N` (Phase 101): 53 / 42 / 34 /
+26 / 20 / 6 % Siegquote. Die Werteschraube läuft nur leise nebenher — die Härte
 kommt aus den Regeln.
 
 ## Der Tagesrun
