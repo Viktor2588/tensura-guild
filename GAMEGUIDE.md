@@ -651,21 +651,25 @@ Chaos-Marke zeigt alle drei Werte.
 nach oben und ohne Fehlschlag.
 
 Shions Signatur **Chaosschlag** legt Chaos nach ihrer Entwicklungsstufe an —
-C Oger 2 Stapel, B Teufel 3, A Verdorbener Teufel 4, S Ultimativer Teufel 6.
-Sie ist damit die erste Einheit mit **wählbaren Passiven**: vier Linien à vier
-Stufen, insgesamt sechzehn.
+C Oger 2 Stapel, B Teufel 3, A Verdorbener Teufel 3, S Ultimativer Teufel 5.
 
-| Linie | Worum es geht | Stufe 1 |
+| Linie | Worum es geht | Beispiele |
 |---|---|---|
-| Angriff | Chaos in eigene Werte umsetzen | Chaosrausch |
-| Chaos-Mechanik | das Chaos selbst schärfen | Chaosmeisterschaft |
-| Unterstützung | Antichaos für den Trupp | Realitätswarp |
-| Defensive | Oger-Fleisch | Ogerschild |
+| Angriff | Chaos in eigene Werte umsetzen | Chaosrausch, Wutspirale |
+| Mechanik | das Rad selbst — Stapel legen, wachsen lassen, umwandeln, verwandeln | Instabile Klinge, Entropiebruch, Chaosernte, Realitätswarp, Ordnungsteufel, Verdorbener Teufel |
+| Unterstützung | Antichaos und Stärke für den Trupp | Stille Ordnung, Geteilte Wut, Umkehr der Ordnung |
+| Defensive | Oger-Fleisch | Ogerschild, Chaosbollwerk |
 
-Beim Anwerben und bei **jedem Aufstieg** wählst du **eine aus vier** — eine je
-Linie, auf der Stufe, die dem Rang entspricht. Verzichten ist erlaubt. Gemessen
-lohnt sich das Mischen: eine Shion mit je einer Passiven aus verschiedenen
-Linien steht deutlich besser da als eine, die eine Linie durchzieht.
+Die Mechanik arbeitet mit **beiden Seiten des Rades**: Chaos auf den Gegnern,
+Antichaos im eigenen Trupp. Die **Chaosernte** dreht es in beide Richtungen
+(fällt ein Gegner mit 5 Chaos, bekommt ein Verbündeter 5 Antichaos; trägt ein
+Verbündeter 5 Antichaos, werden sie zu 5 Chaos auf einem Gegner), der
+**Entropiebruch** lässt jeden liegenden Stapel jede Runde wachsen, die
+**Gesetzlosigkeit** hält beides fest.
+
+**Verwandlungen:** ab **6 Antichaos** auf Shion wird sie zum Ordnungsteufel, ab
+**12 Chaos** auf den Gegnern zum Verdorbenen Teufel — je Stapel mehr Angriff,
+Tempo und Leben, höchstens +90 %, und eine neue Signatur.
 
 ## Schatten, Dunkelheit und Licht
 

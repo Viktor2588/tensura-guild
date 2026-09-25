@@ -444,51 +444,77 @@
        stapelt, und zehn Antichaos auf sich selbst nur, wer den Realitätswarp
        trägt. Deshalb kostet sie nichts: die Bedingung IST der Preis. */
     passiv('shion_ang5', 'Ordnungsteufel', 'onHit', ['chaos'], ['chaos', 'antichaos'],
-      'Ab 10 Antichaos auf dir selbst wirst du zum Ordnungsteufel: je Stapel ' +
-      '+3 % Angriff, +1,5 % Tempo und +1,8 % Leben — höchstens +90 %. Deine Signatur ' +
+      'Ab 6 Antichaos auf dir selbst wirst du zum Ordnungsteufel: je Stapel ' +
+      '+5 % Angriff, +2,5 % Tempo und +3 % Leben — höchstens +90 %. Deine Signatur ' +
       'wird zur Klinge der Ordnung, die den ganzen Trupp mit Antichaos versorgt. Einmal je Kampf.',
       function (c) {
         if (c.self._ordnung) return;
         var anti = c.self.status.antichaos || 0;
-        if (anti < 10) return;
+        if (anti < 6) return;
         c.self._ordnung = 1;
-        verwandle(c, 'Ordnungsteufel', 'sig_shion_ordnung', anti, 10, 0.03, 0.9);
+        /* Phase 104: Schwelle 10 → 6, je Stapel 3 → 5 % — dieselbe Staerke an
+           der Schwelle, aber in einem gewoehnlichen Kampf erreichbar. */
+        verwandle(c, 'Ordnungsteufel', 'sig_shion_ordnung', anti, 6, 0.05, 0.9);
       }),
     passiv('shion_ang6', 'Verdorbener Teufel', 'onHit', ['chaos', 'antichaos'], ['chaos'],
-      'Liegen zusammen 20 Chaos auf den Gegnern, wirst du zum Verdorbenen Teufel: ' +
-      'je Stapel +2 % Angriff, +1 % Tempo und +1,2 % Leben — höchstens +90 %. Deine Signatur ' +
+      'Liegen zusammen 12 Chaos auf den Gegnern, wirst du zum Verdorbenen Teufel: ' +
+      'je Stapel +3,3 % Angriff, +1,7 % Tempo und +2 % Leben — höchstens +90 %. Deine Signatur ' +
       'wird zur Chaosklinge des Verdorbenen (230 % Schaden, doppeltes Chaos). Einmal je Kampf.',
       function (c) {
         if (c.self._verdorben) return;
         var chaos = 0;
-        c.foes().forEach(function (f) { chaos += f.status.chaos || 0; });
-        if (chaos < 20) return;
+        /* Phase 104: alle Gegner, nicht nur der Umkreis — der Text sagt
+           „auf den Gegnern". Schwelle 20 → 12, je Stapel 2 → 3,3 %. */
+        c.gegner().forEach(function (f) { chaos += f.status.chaos || 0; });
+        if (chaos < 12) return;
         c.self._verdorben = 1;
-        verwandle(c, 'Verdorbener Teufel', 'sig_shion_verdorben', chaos, 20, 0.02, 0.9);
+        verwandle(c, 'Verdorbener Teufel', 'sig_shion_verdorben', chaos, 12, 0.033, 0.9);
       }),
 
     /* Chaos und Antichaos sind dasselbe Rad, einmal nach unten und einmal nach
        oben. Diese drei Passiven drehen daran, statt Zahlen zu erhöhen:
        ernten, umleiten, verbrauchen. */
-    passiv('shion_mec5', 'Chaosernte', 'onKill', ['chaos', 'antichaos'], ['chaos'],
-      'Fällt ein Ziel mit mindestens 5 Chaos, erntet Shion die Ladung: je Stapel +2 % Angriff dauerhaft, und der ganze Trupp bekommt ein Drittel davon als Antichaos',
+    /* Phase 104: das Rad dreht sich in beide Richtungen. Eine Passive hat nur
+       einen Haken, deshalb haengt sie beide Richtungen als Effekte an Shion.
+       Shion selbst gibt ihr Antichaos nicht her — es naehrt den Ordnungsteufel. */
+    passiv('shion_mec5', 'Chaosernte', 'onStart', ['chaos', 'antichaos'], ['chaos'],
+      'Das Rad dreht sich in beide Richtungen: fällt ein Gegner mit mindestens 5 Chaos, bekommt ein Verbündeter 5 Antichaos. ' +
+      'Trägt ein Verbündeter 5 Antichaos, werden sie zu Beginn von Shions Zug verbraucht, und ein Gegner bekommt 5 Chaos',
       function (c) {
-        var geerntet = Math.floor(c.getoetet.status.chaos || 0);
-        if (geerntet < 5) return;
-        c.self.atk = Math.round(c.self.atk * (1 + 0.02 * geerntet));
-        var anti = Math.max(1, Math.round(geerntet / 3));
-        c.allies().forEach(function (u) { c.applyStatus(u, 'antichaos', anti); });
+        c.addEffect(c.self, { hook: 'onKill', name: 'Chaosernte', fn: function (k) {
+          if ((k.getoetet.status.chaos || 0) < 5) return;
+          var ziel = schwaechstes(k.trupp(), function (u) { return u.status.antichaos || 0; });
+          if (ziel) k.applyStatus(ziel, 'antichaos', 5);
+        } });
+        c.addEffect(c.self, { hook: 'onTurnStart', name: 'Chaosernte', fn: function (k) {
+          var geber = k.trupp().filter(function (u) { return u !== k.self && (u.status.antichaos || 0) >= 5; })[0];
+          if (!geber) return;
+          geber.status.antichaos -= 5;
+          var opfer = k.gegner().reduce(function (a, b) { return !a || b.hp > a.hp ? b : a; }, null);
+          if (opfer) k.applyStatus(opfer, 'chaos', 5);
+        } });
       }),
     passiv('shion_unt5', 'Umkehr der Ordnung', 'onTurnStart', ['chaos', 'antichaos'], ['chaos'],
-      'Zu Beginn jedes Zuges zieht Shion 2 Chaos vom am stärksten belasteten Gegner ab und gibt sie dem schwächsten Verbündeten als Antichaos — Unordnung wird zu Ordnung',
+      'Jeden dritten Zug kehrt Shion ein Ziel ganz um: alle Chaos des am stärksten belasteten Gegners werden Antichaos für den schwächsten Verbündeten. ' +
+      'Trägt kein Gegner Chaos, wird alles Antichaos des stärksten Verbündeten zu Chaos auf dem Gegner mit dem meisten Leben',
       function (c) {
-        var quelle = c.foes().reduce(function (a, b) {
-          return (b.status.chaos || 0) > (a.status.chaos || 0) ? b : a;
-        }, c.foes()[0]);
-        if (!quelle || (quelle.status.chaos || 0) < 2) return;
-        quelle.status.chaos -= 2;
-        var ziel = schwaechstes(c.allies(), function (u) { return u.hp / u.maxHp; });
-        if (ziel) c.applyStatus(ziel, 'antichaos', 2);
+        c.self._umkehr = (c.self._umkehr || 0) + 1;
+        if (c.self._umkehr % 3) return;
+        var feinde = c.gegner(), freunde = c.trupp();
+        var quelle = feinde.reduce(function (a, b) { return (b.status.chaos || 0) > ((a && a.status.chaos) || 0) ? b : a; }, null);
+        if (quelle && (quelle.status.chaos || 0) > 0) {
+          var n = quelle.status.chaos;
+          quelle.status.chaos = 0;
+          var ziel = schwaechstes(freunde, function (u) { return u.hp / u.maxHp; });
+          if (ziel) c.applyStatus(ziel, 'antichaos', n);
+          return;
+        }
+        var geber = freunde.reduce(function (a, b) { return (b.status.antichaos || 0) > ((a && a.status.antichaos) || 0) ? b : a; }, null);
+        if (!geber || !(geber.status.antichaos > 0)) return;
+        var m = geber.status.antichaos;
+        geber.status.antichaos = 0;
+        var opfer = feinde.reduce(function (a, b) { return !a || b.hp > a.hp ? b : a; }, null);
+        if (opfer) c.chaos(opfer, m / (c.self.chaosmeister || 1));
       }),
     passiv('shion_def5', 'Ordnungspanzer', 'onDamaged', ['chaos'], ['chaos', 'antichaos'],
       'Je Antichaos-Stapel erleidet Shion 3 % weniger Schaden — höchstens 45 %. Jeder abgefangene Treffer verbraucht dafür einen Stapel',
@@ -501,26 +527,30 @@
     passiv('shion_mec1', 'Chaosmeisterschaft', 'onStart', [], ['chaos'],
       'Shion legt 50 % mehr Chaos-Stapel an, als die Fähigkeit angibt',
       function (c) { c.self.chaosmeister = Math.max(c.self.chaosmeister || 1, 1.5); }),
-    passiv('shion_mec2', 'Instabile Klinge', 'onChaos', ['chaos'], [],
-      'Dieselbe Menge Chaos geht zusätzlich auf einen zweiten Gegner',
+    /* Phase 104: beide Seiten des Rades — mehr Chaos auf dem Ziel, dazu
+       Antichaos fuer Shion selbst (das naehrt den Ordnungsteufel). */
+    passiv('shion_mec2', 'Instabile Klinge', 'onChaos', ['chaos', 'antichaos'], [],
+      'Jede Chaos-Gabe legt 1 Chaos mehr an und gibt Shion selbst 1 Antichaos',
       function (c) {
-        var f = c.foes().filter(function (x) { return x !== c.ziel; })[0];
-        if (f) c.applyStatus(f, 'chaos', c.stapel);
+        if (c.ziel) c.applyStatus(c.ziel, 'chaos', 1);
+        c.applyStatus(c.self, 'antichaos', 1);
       }),
     /* Der Verstärker gehört dem ganzen Trupp, nicht nur Shion: gemessen war die
        Mechanik-Linie als Einzelbonus exakt so stark wie gar keine Passive. */
-    passiv('shion_mec3', 'Entropiebruch', 'onStart', [], ['chaos'],
-      'Der ganze Trupp verursacht +2,2 % Schaden je Chaos-Stapel, höchstens +45 %',
+    /* Phase 104: kein Schaden mehr in der Mechaniklinie, sondern Stapel. Was
+       liegt, waechst — auf beiden Seiten des Rades. */
+    passiv('shion_mec3', 'Entropiebruch', 'onTurnStart', ['chaos', 'antichaos'], [],
+      'Zu Beginn jedes ihrer Züge wächst jeder Chaos-Stapel auf einem Gegner um 1 und jedes Antichaos im eigenen Trupp um 1',
       function (c) {
-        c.allies().forEach(function (u) {
-          c.addEffect(u, { hook: 'onHit', name: 'Entropiebruch', fn: function (k) {
-            k.dmg *= 1 + Math.min(0.45, 0.022 * (k.target.status.chaos || 0));
-          } });
-        });
+        c.gegner().forEach(function (f) { if ((f.status.chaos || 0) > 0) c.applyStatus(f, 'chaos', 1); });
+        c.trupp().forEach(function (u) { if ((u.status.antichaos || 0) > 0) c.applyStatus(u, 'antichaos', 1); });
       }),
-    passiv('shion_mec4', 'Gesetzlosigkeit', 'onStart', ['chaos'], [],
-      'Chaos, das Shion anlegt, baut sich nicht mehr ab — es bleibt bis zum Ende des Kampfes liegen',
-      function (c) { c.self.gesetzlos = 1; }),
+    passiv('shion_mec4', 'Gesetzlosigkeit', 'onStart', ['chaos', 'antichaos'], [],
+      'Chaos, das Shion anlegt, und Antichaos im eigenen Trupp bauen sich nicht mehr ab — beides bleibt bis zum Ende des Kampfes liegen',
+      function (c) {
+        c.self.gesetzlos = 1;
+        c.trupp().forEach(function (u) { u.zaehesAntichaos = 1; });
+      }),
 
     passiv('shion_unt1', 'Realitätswarp', 'onStart', ['chaos', 'antichaos'], [],
       'Jeder von Shion angelegte Chaos-Stapel legt dem eigenen Trupp ebenso viel Antichaos an — dieselbe Streuung, aber nur nach oben',
@@ -528,9 +558,26 @@
     passiv('shion_unt2', 'Ordnung aus Unordnung', 'onChaos', ['chaos', 'heilung'], [],
       'Jeder angelegte Stapel gibt allen Verbündeten +1 Regeneration',
       function (c) { c.allies().forEach(function (u) { u.regen += Math.max(1, Math.round(c.stapel)); }); }),
+    /* Phase 104: las nur den Realitaetswarp (jetzt Mechanik) — jetzt beide
+       Stapelarten: Chaos auf dem Ziel und Antichaos auf dem Angreifer. */
     passiv('shion_unt3', 'Geteilte Wut', 'onStart', ['chaos', 'antichaos'], [],
-      'Der Realitätswarp legt 50 % mehr Antichaos an',
-      function (c) { c.self.antichaosWarp = (c.self.antichaosWarp || 0) + 0.5; }),
+      'Der ganze Trupp trifft +1 % härter je Chaos-Stapel auf dem Ziel und +1 % je eigenem Antichaos — höchstens +30 %',
+      function (c) {
+        c.trupp().forEach(function (u) {
+          c.addEffect(u, { hook: 'onHit', name: 'Geteilte Wut', fn: function (k) {
+            var n = (k.target.status.chaos || 0) + (k.self.status.antichaos || 0);
+            k.dmg *= 1 + Math.min(0.3, 0.01 * n);
+          } });
+        });
+      }),
+    /* Phase 104: die Unterstuetzungslinie gab ihren Antichaos-Erzeuger
+       (Realitaetswarp) an die Mechanik ab — dieser ersetzt ihn. */
+    passiv('shion_unt6', 'Stille Ordnung', 'onTurnStart', ['antichaos'], [],
+      'Zu Beginn jedes ihrer Züge gibt Shion dem Verbündeten mit dem wenigsten Antichaos 2 Antichaos',
+      function (c) {
+        var ziel = schwaechstes(c.trupp(), function (u) { return u.status.antichaos || 0; });
+        if (ziel) c.applyStatus(ziel, 'antichaos', 2);
+      }),
     passiv('shion_unt4', 'Wille der Herrin', 'onStart', ['chaos', 'schild', 'antichaos'], [],
       'Der ganze Trupp startet mit 5 Antichaos und Schild 50',
       function (c) {
@@ -5558,9 +5605,12 @@
      die drei festen Passiven aus data.js. */
   var linien = {
     shion: {
-      angriff: ['shion_ang1', 'shion_ang2', 'shion_ang3', 'shion_ang4', 'shion_ang5', 'shion_ang6'],
-      mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4', 'shion_mec5'],
-      unterstuetzung: ['shion_unt1', 'shion_unt2', 'shion_unt3', 'shion_unt4', 'shion_unt5'],
+      /* Phase 104: Verwandlungen und Realitaetswarp sind Mechanik. Stelle 3
+         bleibt in jeder Linie der Keystone. */
+      angriff: ['shion_ang1', 'shion_ang2', 'shion_ang3', 'shion_ang4'],
+      mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4', 'shion_mec5',
+                 'shion_unt1', 'shion_ang5', 'shion_ang6'],
+      unterstuetzung: ['shion_unt6', 'shion_unt2', 'shion_unt3', 'shion_unt4', 'shion_unt5'],
       defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4', 'shion_def5']
     },
     /* Rimuru und Adalmann standen im Generator, bis ihre Kits eigene Linien

@@ -1211,6 +1211,42 @@ alles in einer Spalte sichtbar.
 
 `dev/sim.js` 546/546 · `dev/uitest.js` 141/141.
 
-### [~] Phase 104 (2026-09-26): Shions Linien — beide Seiten des Rades (in Bearbeitung)
+### Phase 104 (2026-09-26): Shions Linien — beide Seiten des Rades
 
 Worktree `/home/viktor/tensura/worktree/phase-104-shion`, Branch `phase-104-shion`.
+
+Rückmeldung aus dem Spieltest, Punkt für Punkt umgesetzt:
+
+- **Stapel bauen sich zu langsam auf, 20 / 10 sind zu viele** → Verwandlungen
+  ab **12 Chaos** auf den Gegnern (Verdorbener Teufel) bzw. **6 Antichaos** auf
+  Shion (Ordnungsteufel). Bonus je Stapel entsprechend hoch (3,3 % / 5 %),
+  damit die Verwandlung an der Schwelle so stark ist wie vorher. Der Verdorbene
+  zählt jetzt alle Gegner (`c.gegner()`), nicht nur den Umkreis.
+- **Ordnungsteufel / Verdorbener Teufel und Realitätswarp gehören in die
+  Mechanik** → verschoben. Die Unterstützung bekommt als Ersatz für den
+  Antichaos-Erzeuger **Stille Ordnung** (jeden Zug 2 Antichaos an den
+  Verbündeten mit den wenigsten). Stelle 3 bleibt in jeder Linie der Keystone.
+- **Entropiebruch: keine Schadenspassive in der Mechanik** → jeder liegende
+  Chaos-Stapel auf Gegnern und jedes Antichaos im Trupp wächst zu Beginn von
+  Shions Zug um 1.
+- **Chaosernte in beide Richtungen** → Gegner fällt mit 5 Chaos: ein
+  Verbündeter bekommt 5 Antichaos. Verbündeter trägt 5 Antichaos: sie werden
+  verbraucht, ein Gegner bekommt 5 Chaos (Shion selbst ausgenommen — ihr
+  Antichaos nährt den Ordnungsteufel).
+- **Gesetzlosigkeit für beide** → auch Antichaos im Trupp baut sich nicht ab
+  (`zaehesAntichaos` in `combat.js`).
+- **Umkehr der Ordnung wandelt alle Stapel eines Ziels** → jeden dritten Zug:
+  alle Chaos des stärksten Gegners werden Antichaos für den schwächsten
+  Verbündeten; trägt kein Gegner Chaos, wird alles Antichaos des stärksten
+  Verbündeten Chaos auf dem Gegner mit dem meisten Leben.
+- **Instabile Klinge erhöht beides** → jede Chaos-Gabe 1 Chaos mehr, dazu
+  1 Antichaos für Shion.
+- **Geteilte Wut mit beiden Stapeln** → +1 % Schaden je Chaos auf dem Ziel und
+  je eigenem Antichaos, höchstens +30 %.
+
+Gemessen: Ordnungsteufel greift in 181 statt 107 von 200 Kämpfen (Rang S,
+Rimuru-freier Referenztrupp), Verdorbener 138 statt 146 (die alte Instabile
+Klinge streute Chaos auf einen zweiten Gegner). Shion als Starterin 73 %
+(vorher 67–70), Siegquote gesamt 53 %.
+
+`dev/sim.js` 546/546 · `dev/uitest.js` 141/141.

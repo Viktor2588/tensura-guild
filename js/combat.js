@@ -791,7 +791,7 @@
                    atk: Math.round(u.chaos.atk * 100), def: Math.round(u.chaos.def * 100),
                    spd: Math.round(u.chaos.spd * 100) });
         if (negC && !u.zaehesChaos) u.status.chaos--;
-        if (u.status.antichaos > 0) u.status.antichaos--;
+        if (u.status.antichaos > 0 && !u.zaehesAntichaos) u.status.antichaos--;   // Shions Gesetzlosigkeit (Phase 104)
       } else u.chaos = null;
       if (u.regen > 0) heal(u, u.regen, 'Regeneration');
       /* Baut sich nur bis zur eigenen Obergrenze auf, sonst wächst die Barriere
