@@ -307,6 +307,18 @@
 
   /* Baut aus dem Mitglied die Kampfdefinition: Werte, aktive und passive
      Fähigkeiten, Ausrüstung, verschlungene Gegnerfähigkeiten. */
+  var KEYSTONE_PRAEMIE = 0.15;
+  var keystones = null;
+  function istKeystone(id) {
+    if (!keystones) {
+      keystones = {};
+      Object.keys(AB.linien).forEach(function (u) {
+        Object.keys(AB.linien[u]).forEach(function (l) { keystones[AB.linien[u][l][3]] = 1; });
+      });
+    }
+    return !!keystones[id];
+  }
+
   function resolve(m) {
     var base = GD.unit(m.id);
     var r = m.rank;
@@ -333,6 +345,17 @@
         d.keywords = d.keywords.concat(p.keywords || [], p.amplifies || []);
       }
     });
+
+    /* Keystone-Praemie (Phase 89). Ein Keystone kostet etwas — halber Angriff,
+       kein Heilen, weniger Leben — und war gemessen trotzdem nichts wert: ein
+       Bot, der jeden angebotenen Keystone nimmt, gewann 48 %, einer, der nie
+       einen nimmt, 50 %. Wer seine Einheit auf den Abschluss einer Linie
+       festlegt, bekommt dafuer jetzt Leben und Angriff obendrauf. */
+    if (passivIds(m).some(istKeystone)) {
+      d.hp = Math.round(d.hp * (1 + KEYSTONE_PRAEMIE));
+      d.atk = Math.round(d.atk * (1 + KEYSTONE_PRAEMIE));
+      d.keystone = true;
+    }
 
     m.items.forEach(function (iid) {
       var it = GD.item(iid);
@@ -1841,7 +1864,7 @@
   root.Run = {
     create: create, newMeta: newMeta, resolve: resolve, member: member, abilities: abilities,
     choose: choose, advance: advance, devour: devour, zumMarkt: zumMarkt,
-    rankUp: rankUp, anfuehrer: anfuehrer,
+    rankUp: rankUp, anfuehrer: anfuehrer, KEYSTONE_PRAEMIE: KEYSTONE_PRAEMIE, istKeystone: istKeystone,
     passivWahl: passivWahl, choosePassive: choosePassive,
     eigeneWorte: eigeneWorte, passung: passung,
     passivIds: passivIds, hatLinien: hatLinien,

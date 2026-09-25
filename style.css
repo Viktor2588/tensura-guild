@@ -300,6 +300,8 @@ dialog::backdrop { background: rgba(0,0,0,.65); }
 .karte .bau-marke { display: block; text-transform: none; letter-spacing: 0;
                     font-size: .68rem; font-weight: 600; margin-top: .1rem; }
 .karte.im-bau { border-color: var(--gruen); }
+.karte.keystone { border-color: var(--gold); }
+.karte .ks-marke { display: block; color: var(--gold); font-size: .72rem; margin-top: 2px; }
 .karte.im-bau .bau-marke { color: var(--gruen); }
 .karte.neuer-weg .bau-marke { color: var(--grau); }
 

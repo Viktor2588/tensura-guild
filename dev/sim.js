@@ -2710,6 +2710,17 @@ head('Einstieg und Aufwertung (Phase 88)');
   ok(r2.bag.indexOf('kurzschwert') < 0, 'und landet nicht im Beutel');
 })();
 
+head('Keystone-Prämie (Phase 89)');
+(function () {
+  var l = AB.linien.diablo;
+  var ohne = R.member('diablo'); ohne.rank = 3; ohne.passives = [l.angriff[0], l.mechanik[0], l.unterstuetzung[0], l.defensive[0]];
+  var mit = R.member('diablo'); mit.rank = 3; mit.passives = [l.angriff[0], l.mechanik[0], l.unterstuetzung[0], l.defensive[3]];
+  ok(R.istKeystone(l.defensive[3]) && !R.istKeystone(l.defensive[0]), 'die vierte Stelle einer Linie ist der Keystone');
+  var a = R.resolve(ohne), b = R.resolve(mit);
+  ok(b.keystone && !a.keystone, 'resolve merkt sich den Keystone');
+  ok(b.hp === Math.round(a.hp * (1 + R.KEYSTONE_PRAEMIE)), 'der Keystone bringt die Prämie auf das Leben (' + a.hp + ' → ' + b.hp + ')');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

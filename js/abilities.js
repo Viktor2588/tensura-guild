@@ -649,12 +649,12 @@
         c.allies().forEach(function (u) { u.pierce = Math.max(u.pierce || 0, p); });
       }),
     passiv('zegion_unt4', 'Insektenkaiser', 'onStart', [], [],
-      'Der Trupp geht durch jeden Schild hindurch — Zegion selbst schlägt nur noch mit einem Viertel',
+      'Der Trupp geht durch jeden Schild hindurch — Zegion selbst schlägt nur noch mit 55 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
         andere.forEach(function (u) { u.durchschlag = 1; });
-        c.self.atk = Math.round(c.self.atk * 0.25);
+        c.self.atk = Math.round(c.self.atk * 0.55);
       }),
 
     passiv('zegion_def1', 'Chitinpanzer', 'onStart', [], [],
@@ -793,11 +793,11 @@
         });
       }),
     passiv('apito_unt4', 'Herrin des Nests', 'onStart', ['gift'], [],
-      'Der Trupp trifft vergiftete Ziele 32 % härter — Apito selbst schlägt nur noch mit einem Drittel',
+      'Der Trupp trifft vergiftete Ziele 32 % härter — Apito selbst schlägt nur noch mit 60 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
         c.allies().forEach(function (u) {
           c.addEffect(u, { hook: 'onHit', name: 'Herrin des Nests', fn: function (k) {
             if ((k.target.status.gift || 0) > 0) k.dmg *= 1.32;
@@ -915,7 +915,7 @@
         });
       }),
     passiv('testarossa_unt4', 'Urtümliche Weiße', 'onStart', ['exekution'], [],
-      'Der Trupp bekommt 50 % Durchschlag und +20 % Angriff — Testarossa selbst schlägt nur noch mit einem Drittel',
+      'Der Trupp bekommt 50 % Durchschlag und +20 % Angriff — Testarossa selbst schlägt nur noch mit 60 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -923,7 +923,7 @@
           u.pierce = Math.max(u.pierce || 0, 0.5);
           u.atk = Math.round(u.atk * 1.2);
         });
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
       }),
 
     passiv('testarossa_def1', 'Dämonenhaut', 'onStart', [], [],
@@ -1037,11 +1037,11 @@
         });
       }),
     passiv('ultima_unt4', 'Urtümliche Schwarze', 'onStart', ['verderbnis'], [],
-      'Der Trupp trifft verdorbene Ziele 35 % härter — Ultima selbst greift kaum noch an',
+      'Der Trupp trifft verdorbene Ziele 35 % härter — Ultima selbst greift nur noch mit halber Kraft an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        c.self.atk = Math.round(c.self.atk * 0.2);
+        c.self.atk = Math.round(c.self.atk * 0.5);
         c.allies().forEach(function (u) {
           c.addEffect(u, { hook: 'onHit', name: 'Urtümliche Schwarze', fn: function (k) {
             if ((k.target.status.verderbnis || 0) > 0) k.dmg *= 1.35;
@@ -1172,11 +1172,11 @@
         });
       }),
     passiv('carrera_unt4', 'Flächenbrand', 'onStart', ['brand', 'flaeche'], [],
-      'Der Trupp trifft brennende Ziele 30 % härter — Carrera selbst schlägt nur noch mit einem Drittel',
+      'Der Trupp trifft brennende Ziele 30 % härter — Carrera selbst schlägt nur noch mit 60 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
         c.allies().forEach(function (u) {
           c.addEffect(u, { hook: 'onHit', name: 'Flächenbrand', fn: function (k) {
             if ((k.target.status.brand || 0) > 0) k.dmg *= 1.3;
@@ -1302,7 +1302,7 @@
         });
       }),
     passiv('daemonengarde_unt4', 'Leibgarde der Urtümlichen', 'onStart', ['konter'], [],
-      'Die Verbündeten bekommen +25 % Tempo und Angriff — die Garde selbst greift kaum noch an',
+      'Die Verbündeten bekommen +25 % Tempo und Angriff — die Garde selbst greift nur noch mit halber Kraft an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -1310,7 +1310,7 @@
           u.spd = Math.round(u.spd * 1.25);
           u.atk = Math.round(u.atk * 1.25);
         });
-        c.self.atk = Math.round(c.self.atk * 0.2);
+        c.self.atk = Math.round(c.self.atk * 0.5);
       }),
 
     passiv('daemonengarde_def1', 'Gardepanzer', 'onStart', [], [],
@@ -1429,11 +1429,11 @@
         });
       }),
     passiv('drachenwelpe_unt4', 'Drachenblut für alle', 'onStart', [], [],
-      'Der Trupp wächst mit jedem Zug des Welpen um 4 % Angriff — er selbst greift nur noch mit einem Drittel an',
+      'Der Trupp wächst mit jedem Zug des Welpen um 4 % Angriff — er selbst greift nur noch mit 60 % an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
         c.addEffect(c.self, { hook: 'onTurnStart', name: 'Drachenblut für alle', fn: function (k) {
           k.allies().forEach(function (u) {
             if (u !== k.self) u.atk = Math.round(u.atk * 1.04);
@@ -1544,7 +1544,7 @@
         c.allies().forEach(function (u) { u.regen += n; });
       }),
     passiv('wightkoenig_unt4', 'Grabesheer', 'onStart', ['heilung'], [],
-      'Der Trupp heilt 45 % stärker und bekommt +15 % Leben — der König greift kaum noch an',
+      'Der Trupp heilt 45 % stärker und bekommt +15 % Leben — der König greift nur noch mit halber Kraft an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -1553,7 +1553,7 @@
           var mehr = Math.round(u.maxHp * 0.15);
           u.maxHp += mehr; u.hp += mehr;
         });
-        c.self.atk = Math.round(c.self.atk * 0.2);
+        c.self.atk = Math.round(c.self.atk * 0.5);
       }),
 
     passiv('wightkoenig_def1', 'Königsmantel', 'onStart', [], [],
@@ -2022,12 +2022,12 @@
         });
       }),
     passiv('albis_unt4', 'Weiße Herrin', 'onStart', ['exekution'], [],
-      'Der Trupp bekommt 45 % Durchschlag — Albis selbst schlägt nur noch mit einem Drittel',
+      'Der Trupp bekommt 45 % Durchschlag — Albis selbst schlägt nur noch mit 60 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
         andere.forEach(function (u) { u.pierce = Math.max(u.pierce || 0, 0.45); });
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
       }),
 
     passiv('albis_def1', 'Schuppenkleid', 'onStart', [], [],
@@ -2145,7 +2145,7 @@
         c.allies().forEach(function (u) { u.minderung = Math.max(u.minderung || 0, m); });
       }),
     passiv('suphia_unt4', 'Goldene Wacht', 'onStart', [], [],
-      'Die Verbündeten bekommen +25 % Leben und Rüstung — Suphia selbst greift kaum noch an',
+      'Die Verbündeten bekommen +25 % Leben und Rüstung — Suphia selbst greift nur noch mit halber Kraft an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -2154,7 +2154,7 @@
           var mehr = Math.round(u.maxHp * 0.25);
           u.maxHp += mehr; u.hp += mehr;
         });
-        c.self.atk = Math.round(c.self.atk * 0.2);
+        c.self.atk = Math.round(c.self.atk * 0.5);
       }),
 
     passiv('suphia_def1', 'Goldenes Fell', 'onStart', ['schild'], [],
@@ -2331,12 +2331,12 @@
         });
       }),
     passiv('wind_unt4', 'Sturmgeleit', 'onStart', ['tempo'], [],
-      'Der Trupp bekommt +30 % Tempo — der Windrache selbst schlägt nur noch mit einem Drittel',
+      'Der Trupp bekommt +30 % Tempo — der Windrache selbst schlägt nur noch mit 60 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
         andere.forEach(function (u) { u.spd = Math.round(u.spd * 1.3); });
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
       }),
 
     passiv('wind_def1', 'Windschild', 'onStart', ['tempo'], [],
@@ -2452,11 +2452,11 @@
         });
       }),
     passiv('gruft_unt4', 'Herr der Gruft', 'onStart', ['schild'], [],
-      'Der Trupp trifft erstarrte Ziele 40 % härter — der Wächter selbst greift kaum noch an',
+      'Der Trupp trifft erstarrte Ziele 40 % härter — der Wächter selbst greift nur noch mit halber Kraft an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        c.self.atk = Math.round(c.self.atk * 0.2);
+        c.self.atk = Math.round(c.self.atk * 0.5);
         c.allies().forEach(function (u) {
           c.addEffect(u, { hook: 'onHit', name: 'Herr der Gruft', fn: function (k) {
             if ((k.target.status.erstarrung || 0) > 0) k.dmg *= 1.4;
@@ -2582,7 +2582,7 @@
         });
       }),
     passiv('hexe_unt4', 'Herrin der Seelen', 'onStart', ['heilung'], [],
-      'Der Trupp heilt 40 % stärker und bekommt +12 % Leben — die Hexe greift nur noch mit einem Viertel an',
+      'Der Trupp heilt 40 % stärker und bekommt +12 % Leben — die Hexe greift nur noch mit 55 % an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -2591,7 +2591,7 @@
           var add = Math.round(u.maxHp * 0.12);
           u.maxHp += add; u.hp += add;
         });
-        c.self.atk = Math.round(c.self.atk * 0.25);
+        c.self.atk = Math.round(c.self.atk * 0.55);
       }),
 
     passiv('hexe_def1', 'Knochenschleier', 'onStart', [], [],
@@ -2716,11 +2716,11 @@
         });
       }),
     passiv('diablo_unt4', 'Perfekter Diener', 'onStart', ['dunkelheit'], [],
-      'Der Trupp trifft umnachtete Ziele 30 % härter — Diablo selbst schlägt nur noch mit einem Drittel',
+      'Der Trupp trifft umnachtete Ziele 30 % härter — Diablo selbst schlägt nur noch mit 60 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
         c.allies().forEach(function (u) {
           c.addEffect(u, { hook: 'onHit', name: 'Perfekter Diener', fn: function (k) {
             if ((k.target.status.dunkelheit || 0) > 0) k.dmg *= 1.3;
@@ -2989,11 +2989,11 @@
         });
       }),
     passiv('veldora_unt4', 'Sturm der Vernichtung', 'onStart', ['flaeche'], [],
-      'Jeder Treffer des Trupps fegt für 25 % über alle übrigen Gegner — Veldora selbst schlägt nur noch mit einem Drittel',
+      'Jeder Treffer des Trupps fegt für 25 % über alle übrigen Gegner — Veldora selbst schlägt nur noch mit 60 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
         c.allies().forEach(function (u) {
           c.addEffect(u, { hook: 'onHit', name: 'Sturm der Vernichtung', fn: function (k) {
             k.foes().forEach(function (f) {
@@ -3134,11 +3134,11 @@
         });
       }),
     passiv('rimuru_unt4', 'Herr der Monster', 'onStart', ['chaos'], ['antichaos'],
-      'Antichaos des Trupps wirkt doppelt — Rimuru selbst greift nur noch mit einem Viertel an',
+      'Antichaos des Trupps wirkt doppelt — Rimuru selbst greift nur noch mit 55 % an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        c.self.atk = Math.round(c.self.atk * 0.25);
+        c.self.atk = Math.round(c.self.atk * 0.55);
         c.allies().forEach(function (u) { u.antichaosDoppelt = 1; });
       }),
 
@@ -3266,11 +3266,11 @@
         });
       }),
     passiv('souei_unt4', 'Jagdbefehl', 'onStart', ['verwundbar'], [],
-      'Der Trupp trifft markierte Ziele 35 % härter — Souei selbst schlägt nur noch mit einem Drittel',
+      'Der Trupp trifft markierte Ziele 35 % härter — Souei selbst schlägt nur noch mit 60 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
         c.allies().forEach(function (u) {
           c.addEffect(u, { hook: 'onHit', name: 'Jagdbefehl', fn: function (k) {
             if ((k.target.status.verwundbar || 0) > 0) k.dmg *= 1.35;
@@ -3651,11 +3651,11 @@
         });
       }),
     passiv('adal_unt4', 'Totenmesse', 'onStart', ['licht'], [],
-      'Der Trupp schlägt mit 25 % göttlichem Licht nach — Adalmann selbst greift nur noch mit einem Drittel an',
+      'Der Trupp schlägt mit 25 % göttlichem Licht nach — Adalmann selbst greift nur noch mit 60 % an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
         andere.forEach(function (u) {
           c.addEffect(u, { hook: 'onHit', name: 'Totenmesse', fn: function (k) {
             heiligerSchlag(k, k.target, 0.25, 'Totenmesse');
@@ -4263,7 +4263,7 @@
         c.allies().forEach(function (u) { u.def = Math.round(u.def * f); });
       }),
     passiv('rigurd_unt4', 'Dorfältester', 'onStart', [], [],
-      'Der Trupp bekommt +25 % Leben — Rigurd greift nur noch mit einem Viertel an',
+      'Der Trupp bekommt +25 % Leben — Rigurd greift nur noch mit 55 % an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -4271,7 +4271,7 @@
           var add = Math.round(u.maxHp * 0.25);
           u.maxHp += add; u.hp += add;
         });
-        c.self.atk = Math.round(c.self.atk * 0.25);
+        c.self.atk = Math.round(c.self.atk * 0.55);
       }),
 
     passiv('rigurd_def1', 'Dickes Fell', 'onStart', ['schild'], [],
@@ -4515,7 +4515,7 @@
         c.allies().forEach(function (u) { u.regen += n; });
       }),
     passiv('gobwa_unt4', 'Mutter der Truppe', 'onStart', ['heilung'], [],
-      'Der Trupp bekommt +10 % Leben und heilt 22 % stärker — Gobwa greift nur noch mit einem Drittel an',
+      'Der Trupp bekommt +10 % Leben und heilt 22 % stärker — Gobwa greift nur noch mit 60 % an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -4524,7 +4524,7 @@
           var add = Math.round(u.maxHp * 0.1);
           u.maxHp += add; u.hp += add;
         });
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
       }),
 
     passiv('gobwa_def1', 'Flink', 'onStart', ['schild', 'tempo'], [],
@@ -4631,7 +4631,7 @@
         });
       }),
     passiv('ranga_unt4', 'Auge des Sturms', 'onStart', ['tempo'], [],
-      'Der Trupp bekommt +30 % Tempo und +15 % Angriff — Ranga selbst schlägt nur noch mit einem Drittel',
+      'Der Trupp bekommt +30 % Tempo und +15 % Angriff — Ranga selbst schlägt nur noch mit 60 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -4639,7 +4639,7 @@
           u.spd = Math.round(u.spd * 1.3);
           u.atk = Math.round(u.atk * 1.15);
         });
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
       }),
 
     passiv('ranga_def1', 'Windfell', 'onStart', ['schatten', 'tempo'], [],
@@ -4761,12 +4761,12 @@
         });
       }),
     passiv('sturm_unt4', 'Alpha im Werden', 'onStart', ['tempo'], [],
-      'Der Trupp bekommt +25 % Tempo — der Wolf selbst wird auf ein Drittel Angriff gedrosselt',
+      'Der Trupp bekommt +25 % Tempo — der Wolf selbst wird auf 60 % Angriff gedrosselt',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
         andere.forEach(function (u) { u.spd = Math.round(u.spd * 1.25); });
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
       }),
 
     passiv('sturm_def1', 'Flinkes Fell', 'onStart', ['tempo'], [],
@@ -4882,12 +4882,12 @@
         });
       }),
     passiv('gab_unt4', 'Der große Gabiru', 'onStart', [], [],
-      'Der Trupp bekommt +26 % Angriff — Gabiru selbst schlägt nur noch mit einem Drittel',
+      'Der Trupp bekommt +26 % Angriff — Gabiru selbst schlägt nur noch mit 60 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
         andere.forEach(function (u) { u.atk = Math.round(u.atk * 1.26); });
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
       }),
 
     passiv('gab_def1', 'Schuppenpanzer', 'onStart', [], [],
@@ -4992,12 +4992,12 @@
         c.allies().forEach(function (u) { u.pierce = Math.max(u.pierce || 0, p); });
       }),
     passiv('souka_unt4', 'Späherin der Sümpfe', 'onStart', ['verwundbar'], [],
-      'Marken des Trupps wirken doppelt — Souka selbst schlägt nur noch mit einem Viertel',
+      'Marken des Trupps wirken doppelt — Souka selbst schlägt nur noch mit 55 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
         andere.forEach(function (u) { u.markenmeister = Math.max(u.markenmeister || 1, 2); });
-        c.self.atk = Math.round(c.self.atk * 0.25);
+        c.self.atk = Math.round(c.self.atk * 0.55);
       }),
 
     passiv('souka_def1', 'Fluchtinstinkt', 'onStart', ['tempo'], [],
@@ -5112,7 +5112,7 @@
         c.allies().forEach(function (u) { u.regen += n; });
       }),
     passiv('fuerst_unt4', 'Herr der Sümpfe', 'onStart', [], [],
-      'Der Trupp bekommt +30 % Leben — der Fürst selbst greift kaum noch an',
+      'Der Trupp bekommt +30 % Leben — der Fürst selbst greift nur noch mit halber Kraft an',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -5120,7 +5120,7 @@
           var add = Math.round(u.maxHp * 0.3);
           u.maxHp += add; u.hp += add;
         });
-        c.self.atk = Math.round(c.self.atk * 0.2);
+        c.self.atk = Math.round(c.self.atk * 0.5);
       }),
 
     passiv('fuerst_def1', 'Schuppenwall', 'onStart', ['schild'], [],

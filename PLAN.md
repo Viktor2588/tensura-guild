@@ -4471,6 +4471,54 @@ Beutel.
 
 `dev/sim.js` 512/512 · `dev/uitest.js` 141/141.
 
-### [~] Phase 89 (2026-09-25): Keystones, die sich lohnen (in Bearbeitung)
+### Phase 89 (2026-09-25): Keystones, die sich lohnen
 
 Worktree `/home/viktor/tensura/worktree/phase-89-keystones`, Branch `phase-89-keystones`.
+
+Rückmeldung aus dem Spieltest: „Die Keystones sind unattraktiv." Gemessen
+stimmt das auf drei Ebenen.
+
+**Einzeln (Prüfstand wie `dev/linien.js`, Rang S, Keystone statt der Stufe-1-
+Passive derselben Linie):** 90 von 156 Keystones machen die Einheit schwächer,
+56 deutlich (≤ −0.10). Je Linie: Unterstützung −0.25 (34 von 39 negativ),
+Mechanik −0.04, Angriff −0.01, Defensive ±0.00. Die Unterstützungs-Keystones
+folgen fast alle einer Formel — „der Trupp bekommt X, die Einheit selbst
+schlägt nur noch mit einem Drittel/Viertel" — und haben damit genau den Fehler
+aus Phase 78: der Preis sitzt auf dem, was die Einheit auszahlt. Der Prüfstand
+übertreibt das allerdings, seine vier Begleiter (Rigurd, Gobwa, Souka,
+Sturmwolf) machen kaum Schaden, ein Trupp-Buff hat dort wenig zu verstärken.
+
+**Im ganzen Spiel:** ein Bot, der jeden angebotenen Keystone nimmt, gewann
+48 %, einer, der nie einen nimmt, 50 %. Ein Abschluss, der etwas kostet und
+nichts bringt.
+
+**In der UI:** die Keystone-Karte war nicht gekennzeichnet. Der Hinweis sagte
+„eine davon ändert eine Regel und kostet dafür etwas", welche, stand nirgends
+— sichtbar war nur der Nachteil im Text.
+
+Drei Eingriffe:
+
+1. **Milderer Preis bei 25 Unterstützungs-Keystones**: eigener Angriff
+   34 → 60 %, 25 → 55 %, 20 → 50 %, Texte mit. Prüfstand −0.25 → −0.17;
+   im Spiel 48 → 49 % (immer) gegen 50 % (nie).
+2. **Keystone-Prämie**: wer einen Keystone trägt, bekommt +15 % Leben und
+   Angriff (`KEYSTONE_PRAEMIE` in `run.js`, angewandt in `resolve`).
+   Immer/nie im ganzen Spiel, je 3000 Runs:
+
+   | Prämie | immer | nie |
+   |---|---|---|
+   | – | 49 % | 50 % |
+   | +15 % | 55 % | 50 % |
+   | +30 % | 61 % | 50 % |
+
+   +15 %: lohnend, aber kein Pflichtkauf.
+3. **Die Karte zeigt ihn**: ★-Marke, Goldrand, „★ Keystone — +15 % Leben und
+   Angriff", und der Hinweistext nennt die Prämie.
+
+`GRUNDHAERTE` bleibt bei 1.42 (gemessen 52 %). Die übrigen 131 Keystones sind
+nicht einzeln angefasst — die Prämie hebt sie alle. Die schlimmsten Einzelfälle
+(Shions „Wille der Herrin" −0.59 ohne jeden Angriffspreis, Soueis Schwarmmal
+−0.53, Zegions Mechanik und Defensive) wären der nächste Schritt, falls sich
+einzelne im Spiel weiter tot anfühlen.
+
+`dev/sim.js` 515/515 · `dev/uitest.js` 141/141.

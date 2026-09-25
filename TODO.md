@@ -634,6 +634,7 @@ Balance und Werkzeug:
 
 Rückmeldung aus dem Spieltest (2026-09-25), offen:
 
-- „Die neuen Weg-Fähigkeiten sind glaube ich aktuell noch sehr unattraktiv."
-  Noch unklar, was genau gemeint ist (Linien-Passive? die Keystones aus der
-  Aufwertungs-Wahl?) — weitere Rückmeldung angekündigt.
+- ~~„Die Keystones sind unattraktiv."~~ — Phase 89: gemessen wertlos bis
+  schädlich, jetzt mit Prämie (+15 %), milderem Preis bei 25 Unterstützungs-
+  Keystones und einer ★-Marke auf der Karte. Einzelfälle offen: Shions
+  „Wille der Herrin" (−0.59), Soueis Schwarmmal (−0.53), Zegion.

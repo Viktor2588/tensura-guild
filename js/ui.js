@@ -1057,7 +1057,8 @@
         }).join('') + '</div></div>';
     }
     html += '<p class="hinweis">' + (w.offers.some(function (o) { return o.verzicht; })
-        ? 'Eine davon ändert eine Regel und kostet dafür etwas. Daneben steht die Bibliothek — schwächer, aber ohne Preis — oder gar nichts.'
+        ? 'Der ★ Keystone ändert eine Regel und kostet dafür etwas — dafür bekommt die Einheit +' +
+          Math.round(R.KEYSTONE_PRAEMIE * 100) + ' % Leben und Angriff. Daneben steht die Bibliothek — schwächer, aber ohne Preis — oder gar nichts.'
         : 'Ein Angebot passt zum bisherigen Bau so gut wie möglich, die übrigen sind ' +
           'gewichtet gezogen: was anschließt, kommt öfter — ausgeschlossen ist nichts. ' +
           'Was woran anschließt, steht an der Karte.') + '</p>' +
@@ -1079,7 +1080,12 @@
       var treffer = eigen.filter(function (k, j) {
         return worte[k] && eigen.indexOf(k) === j;
       });
-      html += '<button class="karte' + (treffer.length ? ' im-bau' : ' neuer-weg') +
+      /* Der Keystone war in der Wahl nicht zu erkennen — nur sein Nachteil
+         stand im Text. Jetzt traegt er eine eigene Marke und nennt die
+         Praemie, die er mitbringt (Phase 89). */
+      var ks = o.preis ? '<span class="ks-marke">★ Keystone — +' +
+        Math.round(R.KEYSTONE_PRAEMIE * 100) + ' % Leben und Angriff</span>' : '';
+      html += '<button class="karte' + (treffer.length ? ' im-bau' : ' neuer-weg') + (o.preis ? ' keystone' : '') +
         '" data-a="pwahl" data-i="' + i + '"' +
         tip(a.name + ' · ' + o.linieName, rarZeile(a.rarity, 'passive Fähigkeit') +
           G.begriffe.passiv + '\n\nLinie: ' + o.linieName + '\nWirkung: ' + a.text +
@@ -1092,7 +1098,7 @@
         '<span class="titel">◈ ' + esc(a.name) + '</span>' +
         '<span class="linie">' + esc(o.linieName) +
         '<b class="bau-marke">' + (treffer.length
-          ? '↗ ' + esc(treffer.map(kwName).join(' · ')) : '↷ neuer Weg') + '</b></span>' +
+          ? '↗ ' + esc(treffer.map(kwName).join(' · ')) : '↷ neuer Weg') + '</b></span>' + ks +
         '<span class="unter">' + esc(a.text) + '</span></button>';
     });
     return html + '</div></div>';

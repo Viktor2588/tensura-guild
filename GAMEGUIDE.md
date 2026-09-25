@@ -104,6 +104,12 @@ Welche Passiven dabei sind, wird gewürfelt (Keystones mit Nachteil bleiben
 draußen). Alles davon steht am Posten, bevor du kaufst: Rang, Werte auf
 diesem Rang, und jede einzelne Passive mit ihrem Text.
 
+**Keystones** sind die vierte Stufe jeder Linie: sie ändern eine Regel und
+kosten dafür etwas. Angeboten werden sie, wenn du eine eigene Einheit auf
+höherem Rang kaufst — die neuen Plätze wählst du dann selbst, der Keystone ist
+mit ★ markiert. Wer einen nimmt, bekommt obendrauf **+15 % Leben und
+Angriff**; ablehnen kannst du ihn immer.
+
 **Aufwerten heißt jetzt: eine bessere Fassung derselben Art kaufen.** Steht die
 Art schon in deinem Trupp, ist der Posten eine Aufwertung — er ersetzt die alte
 Einheit, und ihr **ganzer Einsatz wird angerechnet** (nicht nur ein Viertel wie
