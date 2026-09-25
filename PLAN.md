@@ -1344,7 +1344,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
   gespeichert an der Einheit); die andere Verwandlung ist gesperrt. Rang S:
   dritte Form **Ultimativer Teufel**, nur wenn 12 Chaos auf den Gegnern UND
   6 Antichaos auf Shion zugleich liegen — Signatur trifft alle und kehrt Stapel.
-- [~] **Phase 112 — Shions Küche (B).** (in Bearbeitung) Passive: zu Kampfbeginn bekommt jeder
+- [x] **Phase 112 — Shions Küche (B).** (erledigt, siehe unten) Passive: zu Kampfbeginn bekommt jeder
   Verbündete einen zufälligen Effekt aus einer Tabelle (gut und schlecht);
   Antichaos auf dem Verbündeten dreht schlechte ins Gute.
 - [ ] **Phase 113 — Chaos-Entladung (C).** Ab 10 Chaos auf einem Gegner
@@ -1424,3 +1424,14 @@ Ultimativen Teufels": 140 % auf alle, jedem Gegner 2 Chaos, dem Trupp
 Bau, der das Rad wirklich dreht.
 
 `dev/sim.js` 561/561 · `dev/uitest.js` 141/141.
+
+### Phase 112 (2026-09-26): Shions Küche
+
+Neue Unterstützungs-Passive `shion_unt7`: zu Kampfbeginn bekommt jeder
+Verbündete ein zufälliges Gericht — vier gute (+15 % Angriff, +10 % Tempo,
+Schild 20 %, 2 Antichaos), zwei schlechte (3 Gift, −10 % Angriff). Wer schon
+Antichaos trägt (Wille der Herrin, Bindungen …), bekommt statt eines schlechten
+ein gutes. Eine Risiko-Mechanik im eigenen Trupp, die das Rad weiterträgt.
+Gemessen in 21 von 30 Kämpfen ein Gericht als Zustand, sonst als Wert.
+
+`dev/sim.js` 563/563 · `dev/uitest.js` 141/141.

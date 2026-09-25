@@ -2923,6 +2923,22 @@ head('Shions Ausrichtung (Phase 111)');
      'auf Rang S mit beiden Seiten voll wird Shion zum Ultimativen Teufel');
 })();
 
+head('Shions Küche (Phase 112)');
+(function () {
+  ok(AB.linien.shion.unterstuetzung.indexOf('shion_unt7') >= 0, 'Shions Küche steht in der Unterstützung');
+  var gerichte = 0;
+  for (var s = 1; s <= 30; s++) {
+    var m = R.member('shion'); m.rank = 2; m.passives = ['shion_unt7'];
+    var b = R.member('gobta'); b.rank = 2;
+    var sack = { id: 's', name: 'Sack', tags: ['bestie', 'front'], hp: 9000, atk: 1, def: 0, spd: 1,
+      actives: [], effects: [], keywords: [] };
+    var log = C.simulate([R.resolve(m), R.resolve(b)], [sack], s).log;
+    if (log.some(function (l) { return l.type === 'status' && l.side === 'player' && l.t === 0 &&
+        ['gift', 'antichaos', 'schild'].indexOf(l.status) >= 0; })) gerichte++;
+  }
+  ok(gerichte > 0, 'zu Kampfbeginn werden Gerichte aufgetischt (' + gerichte + ' von 30 mit Zustand)');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

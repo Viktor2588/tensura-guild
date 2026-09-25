@@ -734,6 +734,30 @@
         c.self._ultimativ = 1;
         verwandle(c, 'Ultimativer Teufel', 'sig_shion_ultimativ', chaos + anti, 18, 0.02, 0.9);
       }),
+    /* Phase 112: Shions Kueche — Lore, ihr Essen ist beruechtigt. Eine
+       Risiko-Mechanik im EIGENEN Trupp: jeder Verbuendete bekommt ein
+       zufaelliges Gericht, vier gute, zwei schlechte. Antichaos dreht ein
+       schlechtes ins Gute — das Rad wirkt auch am Esstisch. */
+    passiv('shion_unt7', 'Shions Küche', 'onStart', ['antichaos'], ['antichaos'],
+      'Zu Kampfbeginn tischt Shion jedem Verbündeten ein zufälliges Gericht auf: +15 % Angriff, +10 % Tempo, Schild 20 % oder 2 Antichaos — ' +
+      'oder aber 3 Gift oder −10 % Angriff. Wer schon Antichaos trägt, bekommt statt eines schlechten ein gutes',
+      function (c) {
+        var gut = [
+          function (u) { u.atk = Math.round(u.atk * 1.15); },
+          function (u) { u.spd = Math.round(u.spd * 1.1); },
+          function (u) { c.applyStatus(u, 'schild', u.maxHp * 0.2); },
+          function (u) { c.applyStatus(u, 'antichaos', 2); }
+        ];
+        var schlecht = [
+          function (u) { c.applyStatus(u, 'gift', 3); },
+          function (u) { u.atk = Math.round(u.atk * 0.9); }
+        ];
+        c.trupp().forEach(function (u) {
+          var i = Math.floor(c.rng() * (gut.length + schlecht.length));
+          if (i >= gut.length && (u.status.antichaos || 0) > 0) i = Math.floor(c.rng() * gut.length);
+          (i < gut.length ? gut[i] : schlecht[i - gut.length])(u);
+        });
+      }),
     passiv('shion_unt2', 'Ordnung aus Unordnung', 'onChaos', ['chaos', 'heilung'], [],
       'Jeder angelegte Stapel gibt allen Verbündeten +1 Regeneration',
       function (c) { c.allies().forEach(function (u) { u.regen += Math.max(1, Math.round(c.stapel)); }); }),
@@ -5789,7 +5813,7 @@
       angriff: ['shion_ang1', 'shion_ang2', 'shion_ang3', 'shion_ang4'],
       mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4', 'shion_mec5',
                  'shion_unt1', 'shion_ang5', 'shion_ang6', 'shion_mec9'],
-      unterstuetzung: ['shion_unt6', 'shion_unt2', 'shion_unt3', 'shion_unt4', 'shion_unt5'],
+      unterstuetzung: ['shion_unt6', 'shion_unt2', 'shion_unt3', 'shion_unt4', 'shion_unt5', 'shion_unt7'],
       defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4', 'shion_def5', 'shion_def6']
     },
     /* Rimuru und Adalmann standen im Generator, bis ihre Kits eigene Linien
