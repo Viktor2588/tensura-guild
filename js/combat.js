@@ -496,6 +496,13 @@
            raumgefiltert; Boss-Regeln wie die Sturmflut (Phase 94) meinen
            wirklich jeden. */
         gegner: function () { return living(other(self.side)); },
+        /* Wer steht direkt neben dieser Einheit, auf ihrer Seite (Phase 110)? */
+        nachbarn: function (wer) {
+          wer = wer || self;
+          return living(wer.side).filter(function (a) {
+            return a !== wer && a.hex && wer.hex && H.distanz(a.hex, wer.hex) === 1;
+          });
+        },
         foes: function () {
           var alle = living(other(self.side));
           if (!alle.length) return alle;

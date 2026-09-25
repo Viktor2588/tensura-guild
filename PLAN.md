@@ -1335,7 +1335,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
   „ausgeben statt anhäufen": Gift, Brand, Schild, Blutung je ein Verbraucher
   (ab N Stapeln alles verbrauchen für einen Stoß), gemessen mit
   `dev/beute.js`.
-- [~] **Phase 110 — Position lesen.** (in Bearbeitung) Bibliotheks-Passiven, die das Hexfeld
+- [x] **Phase 110 — Position lesen.** (erledigt, siehe unten) Bibliotheks-Passiven, die das Hexfeld
   lesen: Nachbarn (stärker mit zwei Verbündeten daneben), Durchschlag (trifft
   den Gegner hinter dem Ziel mit), Flanke (Bonus gegen Ziele ohne Nachbarn).
   Helfer `nachbarn(u)` im Kampfkontext.
@@ -1396,3 +1396,15 @@ Prüfstand von `dev/beute.js` misst sie deshalb mit +0 — seine Referenztrupps
 legen keinen dieser Zustände. Test mit Albis in `dev/sim.js`.
 
 `dev/sim.js` 557/557 · `dev/uitest.js` 141/141.
+
+### Phase 110 (2026-09-26): Position lesen
+
+Neu im Kampfkontext: `c.nachbarn(wer)`, die Verbündeten von `wer` auf direkt
+angrenzenden Hexfeldern. Vier Bibliotheks-Passiven lesen damit die
+Aufstellung: **Geschlossene Reihe** (−6 % Schaden je Nachbar, bis −18 %),
+**Reihenstärke** (+6 % Schaden je Nachbar, bis +18 %), **Lückenschlag** (+25 %
+gegen Ziele ohne Nachbarn), **Durchbohren** (ein Nachbar des Ziels nimmt 40 %
+mit). Gemessen +2 bis +5 im Prüfstand (`dev/beute.js`), der nicht bewusst
+aufstellt — ihr Wert liegt in der Aufstellung, die der Spieler zieht.
+
+`dev/sim.js` 559/559 · `dev/uitest.js` 141/141.

@@ -2883,6 +2883,22 @@ head('Stapel verbrauchen (Phase 109)');
      'Albis sammelt Gift und verbraucht es mit dem Giftschlag');
 })();
 
+head('Position lesen (Phase 110)');
+(function () {
+  var a = R.member('gobta'); a.rank = 2; a.passives = ['reihenstaerke'];
+  var b = R.member('rigurd'); b.rank = 2;
+  var sack = { id: 's', name: 'Sack', tags: ['bestie', 'front'], hp: 9000, atk: 1, def: 0, spd: 5,
+    actives: [], effects: [], keywords: [] };
+  function schaden(team) {
+    return C.simulate(team, [sack], 4).log.filter(function (l) { return l.type === 'hit' && l.source && l.side === 'enemy'; })
+      .reduce(function (x, l) { return x + l.dmg; }, 0);
+  }
+  var allein = schaden([R.resolve(a)]);
+  ok(typeof allein === 'number', 'Reihenstärke läuft ohne Nachbarn (' + Math.round(allein) + ')');
+  var ctxProbe = C.simulate([R.resolve(a), R.resolve(b)], [sack], 4, { nurAufbau: true });
+  ok(ctxProbe.einheiten.length === 3, 'Aufbau mit zwei Verbündeten steht');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

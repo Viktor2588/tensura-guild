@@ -225,6 +225,27 @@
         c.target.status.blutung = 0;
         c.deal(c.target, c.target.maxHp * 0.03 * n, 'Blutzoll', { pure: true });
       }),
+    /* --- Phase 110: Position lesen --------------------------------------------
+       Die Aufstellung per Ziehen gibt es, gelesen wurde sie kaum. Diese vier
+       Passiven fragen das Hexfeld: wer steht neben wem. */
+    passiv('geschlossene_reihe', 'Geschlossene Reihe', 'onTurnStart', [], [],
+      'Je Verbündetem direkt daneben erleidet die Einheit 6 % weniger Schaden — höchstens 18 %',
+      function (c) {
+        if (c.self._reiheBasis === undefined) c.self._reiheBasis = c.self.minderung || 0;
+        c.self.minderung = c.self._reiheBasis + 0.06 * Math.min(3, c.nachbarn().length);
+      }),
+    passiv('reihenstaerke', 'Reihenstärke', 'onHit', [], [],
+      'Je Verbündetem direkt daneben trifft die Einheit 6 % härter — höchstens 18 %',
+      function (c) { c.dmg *= 1 + 0.06 * Math.min(3, c.nachbarn().length); }),
+    passiv('flanke', 'Lückenschlag', 'onHit', [], [],
+      'Steht das Ziel ohne Verbündeten neben sich, trifft die Einheit es 25 % härter',
+      function (c) { if (!c.nachbarn(c.target).length) c.dmg *= 1.25; }),
+    passiv('durchbohren', 'Durchbohren', 'onHit', [], [],
+      'Jeder Treffer geht durch: ein Gegner direkt neben dem Ziel nimmt 40 % mit',
+      function (c) {
+        var hinter = c.nachbarn(c.target)[0];
+        if (hinter) c.deal(hinter, c.dmg * 0.4, 'Durchbohren');
+      }),
     passiv('erstschlag', 'Erstschlag', 'onHit', [], [], 'Der erste Angriff verursacht +80 % Schaden',
       function (c) { if (!c.self._es) { c.self._es = 1; c.dmg *= 1.8; } }),
     passiv('scharfrichter', 'Scharfrichter', 'onHit', [], ['exekution'], 'Doppelter Schaden gegen Ziele unter 30 % Leben',
@@ -6001,6 +6022,7 @@
     /* Angriff: mehr Schaden, ohne Umweg über einen Zustand. */
     erstschlag: 'angriff', panzerbrecher: 'angriff', kriegsherz: 'angriff',
     herausforderung: 'defensive',
+    geschlossene_reihe: 'defensive', reihenstaerke: 'angriff', flanke: 'angriff', durchbohren: 'angriff',
     giftschlag: 'mechanik', glutstoss: 'mechanik', blutzoll: 'mechanik', schildsprenger: 'angriff',
     schwachstelle: 'mechanik', wundmal: 'mechanik', splitterhieb: 'mechanik',
     wirbelhieb: 'angriff', weitschlag: 'angriff', erdbeben: 'angriff',
@@ -6623,6 +6645,7 @@
     /* Passive */
     kriegsherz: 1, windschritt: 1, erstschlag: 1, giftbrut: 1, glutkern: 1, schildwall: 1,
     herausforderung: 2,
+    geschlossene_reihe: 2, reihenstaerke: 2, flanke: 2, durchbohren: 2,
     giftschlag: 3, glutstoss: 3, schildsprenger: 3, blutzoll: 3,
     schwachstelle: 1, wundmal: 2, splitterhieb: 3, wirbelhieb: 3, weitschlag: 3, erdbeben: 4,
     lebenskraft: 3, bollwerkmeister: 3, massenschlaechter: 4, schwungmeister: 3, rachsucht: 3,
