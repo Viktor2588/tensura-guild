@@ -4566,6 +4566,53 @@ Werten passte das zufällig, jetzt mit einem Punkt Spielraum.
 
 `dev/sim.js` 515/515 · `dev/uitest.js` 141/141.
 
-### [~] Phase 91 (2026-09-25): Sichtprüfung im Browser, Keystone-Ausreißer (in Bearbeitung)
+### Phase 91 (2026-09-25): Sichtprüfung im Browser, Keystone-Ausreißer
 
 Worktree `/home/viktor/tensura/worktree/phase-91-sichtpruefung`, Branch `phase-91-sichtpruefung`.
+
+**Sichtprüfung.** Die UI-Änderungen der Phasen 85–90 waren nur durch Tests
+gedeckt, nie angesehen. Mit Playwright durchgeklickt, Zustände über
+`UI.aktueller()` hergestellt. Gefunden und behoben:
+
+- **Chaos-Schrift und Schadenszahl am selben Anker.** Ein Chaosschlag trifft
+  und würfelt im selben Takt — beide Texte lagen deckungsgleich übereinander.
+  Die Schrift sitzt jetzt über dem Lebensbalken (`schwebe(…, hoehe)`).
+- **„Wohin?" über einem einzigen Knoten** (Phase 88). Steht nur einer da,
+  heißt es „Weiter".
+- **„Kampf / Kampf".** Jeder normale Kampfknoten zeigte Titel und Untertitel
+  gleich. Der Untertitel erscheint nur noch, wenn er etwas anderes sagt.
+- **„Bleibt bei drei Passiven"** stand fest im Verzicht-Text — seit die
+  Aufwertung ihre Plätze als Wahl öffnet (Phase 80), stimmt das nur beim
+  Aufstieg auf S. Jetzt die echte Zahl.
+- **„◈ Wahl auf Rang S" an einer A-Einheit, obwohl schon ein Anführer
+  steht** (Phase 85) — ein Versprechen, das der Markt nicht einlöst. Der
+  Hinweis entfällt dann; sein Tooltip beschrieb außerdem noch den Aufstieg
+  vor Phase 51 („je eine aus den vier Linien").
+
+In Ordnung waren: die ★-Keystone-Karte, die Anführer-Sperre im Markt samt
+Grund, die Chaos-Schrift selbst. Die einzigen Konsolenfehler sind 404 für
+`favicon.ico` und die noch fehlenden Figurenbilder. Screenshots vom laufenden
+3D-Brett scheitern im Headless-Browser (Zeitüberschreitung beim Auslesen des
+WebGL-Bilds); geprüft wurde dort über die DOM-Positionen.
+
+**Keystone-Ausreißer.** Neu gemessen mit Prämie (Phase 89): Schnitt aller 156
+Keystones ±0.00, 43 noch ≤ −0.10. Die zehn stärksten Abweichungen angefasst:
+
+| Keystone | Eingriff | vorher → nachher |
+|---|---|---|
+| Souei „Schwarmmal" | Preis galt bei JEDER Marke (Fehler), jetzt einmal | −0.53 → −0.18 |
+| Zegion „Absolute Verteidigung" | Angriff ⅓ → 60 % | −0.48 → −0.09 |
+| Zegion „Insektenkaiser" | Angriff 55 → 80 % | −0.48 → −0.26 |
+| Zegion „Unbewegter Kaiser" | Tempo ½ → ¾ | −0.35 → −0.09 |
+| Shion „Wille der Herrin" | 3 → 5 Antichaos, Schild 30 → 50 | −0.46 → −0.33 |
+| Hakuro „Hundert Schnitte" | Leben ½ → 70 % | −0.35 → −0.13 |
+| Hakuro „Vermächtnis" | nur noch Rüstung als Preis | −0.35 → −0.09 |
+| Ranga „Herr der Stürme" | Angriff ½ → 70 % | −0.35 → −0.17 |
+| Ranga „Gewitterfront" | 2 → 1 Donner je Schlag | +1.14 → +0.48 |
+| Gruftwächter „Mausoleum" | Frost nur jeden zweiten Zug | +0.96 → +0.39 |
+
+Die beiden Trupp-Keystones bleiben im Minus; der Prüfstand unterschätzt sie,
+seine Begleiter machen kaum Schaden. Siegquote 53 % (6000 Runs), keine
+Nachkalibrierung.
+
+`dev/sim.js` 515/515 · `dev/uitest.js` 141/141.

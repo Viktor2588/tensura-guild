@@ -709,16 +709,18 @@
      nirgends auf dem Brett, und Shion sah deshalb schwaecher aus, als sie ist. */
   function schrift(key, text) {
     var f = zustand && zustand.figuren[key];
-    if (f) schwebe(f, text, 'chaos');
+    /* Ueber der Schadenszahl, nicht auf ihr: beide kommen oft im selben Takt
+       (Chaosschlag trifft UND wuerfelt), und am selben Anker deckten sie sich. */
+    if (f) schwebe(f, text, 'chaos', SPRITE_H * 1.05);
   }
-  function schwebe(f, text, klasse) {
+  function schwebe(f, text, klasse, hoehe) {
     if (!zustand || !zustand.zahlen) return;
     var el = root.document.createElement('span');
     el.className = klasse;
     el.textContent = text;
     zustand.zahlen.appendChild(el);
     zustand.zahlenListe.push({ el: el, x: f.gruppe.position.x,
-                               y: SPRITE_H * 0.75, z: f.gruppe.position.z });
+                               y: hoehe || SPRITE_H * 0.75, z: f.gruppe.position.z });
     zeigeZahlen();                                   // sonst blitzt sie erst oben links auf
     root.setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1000);
   }

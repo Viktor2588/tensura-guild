@@ -219,7 +219,10 @@
   };
 
   function zeichneKarte() {
-    var html = regelListe(false) + bossVorschau(run.act) + '<h2>Wohin?</h2><div class="karten">';
+    /* Steht nur ein Knoten da (der erste Kampf, Phase 88), gibt es nichts zu
+       waehlen — dann fragt die Ueberschrift auch nicht danach. */
+    var html = regelListe(false) + bossVorschau(run.act) +
+      '<h2>' + (run.options.length === 1 ? 'Weiter' : 'Wohin?') + '</h2><div class="karten">';
     run.options.forEach(function (o, i) {
       var klasse = 'karte' + (o.type === 'boss' ? ' boss' : o.type === 'elite' ? ' elite' : '') +
         (o.type === 'pruefung' ? ' pruefung' : '');
@@ -232,7 +235,12 @@
         tip(o.name, text) + '>' +
         '<span class="art art-' + o.type + '">' + (TYP_ICON[o.type] || '') + '</span>' +
         '<span class="titel">' + esc(o.name) + '</span>' +
-        '<span class="unter">' + esc(p ? p.name : (TYP_TEXT[o.type] || o.type)) + '</span></button>';
+        /* Der Untertitel nur, wenn er etwas anderes sagt als der Titel — ein
+           normaler Kampf stand sonst als „Kampf / Kampf" da. */
+        (function () {
+          var unter = p ? p.name : (TYP_TEXT[o.type] || o.type);
+          return unter === o.name ? '' : '<span class="unter">' + esc(unter) + '</span>';
+        })() + '</button>';
     });
     html += '</div>';
     $('view').innerHTML = html;
@@ -1034,6 +1042,12 @@
 
   /* Passive wählen: vier Angebote, eines je Linie. Die Linie steht dabei, sonst
      ist es nur eine weitere Liste von vier Namen. */
+  /* „drei Passiven" stand fest im Text — seit die Aufwertung ihre Plaetze als
+     Wahl oeffnet (Phase 80), stimmt das nur noch beim Aufstieg auf S. */
+  function passivZahl(n) {
+    return (['keiner', 'einer', 'zwei', 'drei', 'vier'][n] || n) + (n === 1 ? ' Passive' : ' Passiven');
+  }
+
   function passivWahlHtml() {
     var w = R.passivWahl(run);
     if (!w) return '';
@@ -1070,11 +1084,11 @@
     w.offers.forEach(function (o, i) {
       if (o.verzicht) {
         html += '<button class="karte verzicht" data-a="pwahl" data-i="' + i + '"' +
-          tip('Nichts nehmen', 'Die Einheit bleibt bei drei Passiven. Kein Keystone, ' +
+          tip('Nichts nehmen', 'Die Einheit bleibt bei ' + passivZahl(hat) + '. Kein Keystone, ' +
             'aber auch kein Preis.') + '>' +
           '<span class="titel">◇ Nichts nehmen</span>' +
           '<span class="linie">Verzicht</span>' +
-          '<span class="unter">Bleibt bei drei Passiven — ohne den Preis des Keystones.</span></button>';
+          '<span class="unter">Bleibt bei ' + passivZahl(hat) + ' — ohne den Preis des Keystones.</span></button>';
         return;
       }
       var a = AB.get(o.id);
@@ -1278,12 +1292,14 @@
         tip(a.name, 'Passive Fähigkeit\n\n' + a.text + kwZeile(a)) +
         '>◈ ' + esc(a.name) + '</div>';
     });
-    if (m.rank < 3) {
-      var wieviele = R.hatLinien(m) ? 'vier' : 'drei';
+    /* Auf A steht der Weg nach S nur offen, solange es keinen anderen
+       Anfuehrer gibt (Phase 85) — sonst waere der Hinweis ein Versprechen,
+       das der Markt nicht einloest. */
+    var chef = m.rank === 2 && R.anfuehrer(run, m.id);
+    if (m.rank < 3 && !chef) {
       html += '<div class="fk leer"' + tip('Nächste Passive',
-        'Der Aufstieg auf Rang ' + R.RANK_NAME[m.rank + 1] + ' gibt eine Passive zur Wahl — ' +
-        'eine aus ' + wieviele + (R.hatLinien(m) ? ', je eine aus den vier Linien dieser Einheit.'
-          : ', darunter die nächste eigene Passive dieser Einheit.')) +
+        'Kaufst du ' + GD.unit(m.id).name + ' im Markt auf Rang ' + R.RANK_NAME[m.rank + 1] +
+        ', bleiben die Passiven, und die neuen Plätze wählst du selbst — darunter kann ein ★ Keystone sein.') +
         '>◈ Wahl auf Rang ' + R.RANK_NAME[m.rank + 1] + '</div>';
     }
     m.devoured.slice(0, R.praedatorSlots(m)).forEach(function (eid) {

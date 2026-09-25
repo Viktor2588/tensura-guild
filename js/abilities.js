@@ -532,11 +532,11 @@
       'Der Realitätswarp legt 50 % mehr Antichaos an',
       function (c) { c.self.antichaosWarp = (c.self.antichaosWarp || 0) + 0.5; }),
     passiv('shion_unt4', 'Wille der Herrin', 'onStart', ['chaos', 'schild', 'antichaos'], [],
-      'Der ganze Trupp startet mit 3 Antichaos und Schild 30',
+      'Der ganze Trupp startet mit 5 Antichaos und Schild 50',
       function (c) {
         c.allies().forEach(function (u) {
-          c.applyStatus(u, 'antichaos', 3);
-          c.applyStatus(u, 'schild', 30);
+          c.applyStatus(u, 'antichaos', 5);
+          c.applyStatus(u, 'schild', 50);
         });
       }),
 
@@ -624,10 +624,10 @@
         } });
       }),
     passiv('zegion_mec4', 'Absolute Verteidigung', 'onStart', [], [],
-      'Kein Treffer kostet Zegion mehr als 8 % seines Lebens — dafür schlägt er nur noch mit einem Drittel',
+      'Kein Treffer kostet Zegion mehr als 8 % seines Lebens — dafür schlägt er nur noch mit 60 %',
       function (c) {
         c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.08);
-        c.self.atk = Math.round(c.self.atk * 0.34);
+        c.self.atk = Math.round(c.self.atk * 0.6);
       }),
 
     passiv('zegion_unt1', 'Kaiserbefehl', 'onStart', [], [],
@@ -651,12 +651,12 @@
         c.allies().forEach(function (u) { u.pierce = Math.max(u.pierce || 0, p); });
       }),
     passiv('zegion_unt4', 'Insektenkaiser', 'onStart', [], [],
-      'Der Trupp geht durch jeden Schild hindurch — Zegion selbst schlägt nur noch mit 55 %',
+      'Der Trupp geht durch jeden Schild hindurch — Zegion selbst schlägt nur noch mit 80 %',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
         andere.forEach(function (u) { u.durchschlag = 1; });
-        c.self.atk = Math.round(c.self.atk * 0.55);
+        c.self.atk = Math.round(c.self.atk * 0.8);
       }),
 
     passiv('zegion_def1', 'Chitinpanzer', 'onStart', [], [],
@@ -675,10 +675,10 @@
         c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
       }),
     passiv('zegion_def4', 'Unbewegter Kaiser', 'onStart', [], [],
-      'Zegion erleidet 35 % weniger Schaden — dafür ist er nur noch halb so schnell',
+      'Zegion erleidet 35 % weniger Schaden — dafür verliert er ein Viertel seines Tempos',
       function (c) {
         c.self.minderung = Math.max(c.self.minderung || 0, 0.35);
-        c.self.spd = Math.max(1, Math.round(c.self.spd * 0.5));
+        c.self.spd = Math.max(1, Math.round(c.self.spd * 0.75));
       }),
 
 
@@ -2424,10 +2424,12 @@
         if (f) c.applyStatus(f, 'erstarrung', 1);
       }),
     passiv('gruft_mec4', 'Mausoleum', 'onStart', ['frost'], [],
-      'Jeder Zug lässt ALLE Gegner erstarren — dafür schlägt der Wächter nur noch mit einem Viertel',
+      'Jeder zweite Zug lässt ALLE Gegner erstarren — dafür schlägt der Wächter nur noch mit einem Viertel',
       function (c) {
         c.self.atk = Math.round(c.self.atk * 0.25);
         c.addEffect(c.self, { hook: 'onTurnStart', name: 'Mausoleum', fn: function (k) {
+          k.self._mausoleum = !k.self._mausoleum;
+          if (!k.self._mausoleum) return;
           k.foes().forEach(function (f) { k.applyStatus(f, 'erstarrung', 1); });
         } });
       }),
@@ -3233,7 +3235,9 @@
       function (c) {
         if (c.self._schwarm) return;
         c.self._schwarm = 1;
-        c.self.atk = Math.round(c.self.atk * 0.6);
+        /* Phase 91: der Preis lag hier bei JEDER Marke — nach fuenf Marken
+           schlug Souei noch mit 8 %. Er gilt jetzt einmal je Kampf. */
+        if (!c.self._schwarmBezahlt) { c.self._schwarmBezahlt = 1; c.self.atk = Math.round(c.self.atk * 0.6); }
         c.foes().forEach(function (f) {
           if (f !== c.ziel) c.applyStatus(f, 'verwundbar', c.stapel || 1);
         });
@@ -3718,9 +3722,9 @@
         c.dmg *= truppFuehrt(c, 'exekution') ? 3 : 2;
       }),
     passiv('hak_ang4', 'Hundert Schnitte', 'onStart', ['exekution'], [],
-      'Jeder Abschuss gibt einen weiteren Zug und +10 % Angriff — dafür hält Hakuro nur die Hälfte aus',
+      'Jeder Abschuss gibt einen weiteren Zug und +10 % Angriff — dafür verliert Hakuro 30 % seines Lebens',
       function (c) {
-        c.self.maxHp = Math.round(c.self.maxHp * 0.5);
+        c.self.maxHp = Math.round(c.self.maxHp * 0.7);
         c.self.hp = Math.min(c.self.hp, c.self.maxHp);
         c.addEffect(c.self, { hook: 'onKill', name: 'Hundert Schnitte', fn: function (k) {
           k.self.atk = Math.round(k.self.atk * 1.1);
@@ -3782,7 +3786,7 @@
       }),
     passiv('hak_unt4', 'Vermächtnis', 'onStart', ['exekution'], [],
       'Der Trupp führt Hakuros Technik weiter: jeder Treffer sitzt ein zweites Mal für 30 % — ' +
-      'Hakuro selbst verliert die halbe Rüstung und ein Drittel Leben',
+      'Hakuro selbst verliert die halbe Rüstung',
       function (c) {
         var andere = c.allies().filter(function (u) { return u !== c.self; });
         if (!andere.length) return;
@@ -3795,8 +3799,6 @@
           } });
         });
         c.self.def = Math.round(c.self.def * 0.5);
-        c.self.maxHp = Math.round(c.self.maxHp * 0.67);
-        c.self.hp = Math.min(c.self.hp, c.self.maxHp);
       }),
 
     passiv('hak_def1', 'Ausweichschritt', 'onStart', ['tempo'], [],
@@ -4583,11 +4585,11 @@
         }
       }),
     passiv('ranga_ang4', 'Gewitterfront', 'onStart', ['donner'], [],
-      'Jeder Schlag lädt die ganze Reihe mit 2 Donner auf — dafür trifft Ranga 30 % schwächer',
+      'Jeder Schlag lädt die ganze Reihe mit 1 Donner auf — dafür trifft Ranga 30 % schwächer',
       function (c) {
         c.addEffect(c.self, { hook: 'onHit', name: 'Gewitterfront', fn: function (k) {
           k.dmg *= 0.7;
-          k.foes().forEach(function (f) { k.applyStatus(f, 'donner', 2); });
+          k.foes().forEach(function (f) { k.applyStatus(f, 'donner', 1); });
         } });
       }),
 
@@ -4663,9 +4665,9 @@
         c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, d);
       }),
     passiv('ranga_def4', 'Herr der Stürme', 'onStart', ['donner'], [],
-      'Jede Entladung heilt Ranga um 8 % — dafür schlägt er nur noch halb so hart',
+      'Jede Entladung heilt Ranga um 8 % — dafür schlägt er 30 % schwächer',
       function (c) {
-        c.self.atk = Math.round(c.self.atk * 0.5);
+        c.self.atk = Math.round(c.self.atk * 0.7);
         c.addEffect(c.self, { hook: 'onTurnStart', name: 'Herr der Stürme', fn: function (k) {
           var geladen = k.foes().filter(function (f) { return (f.status.donner || 0) > 0; }).length;
           if (geladen) k.heal(k.self, k.self.maxHp * 0.08, 'Herr der Stürme');

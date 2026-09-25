@@ -636,5 +636,6 @@ Rückmeldung aus dem Spieltest (2026-09-25), offen:
 
 - ~~„Die Keystones sind unattraktiv."~~ — Phase 89: gemessen wertlos bis
   schädlich, jetzt mit Prämie (+15 %), milderem Preis bei 25 Unterstützungs-
-  Keystones und einer ★-Marke auf der Karte. Einzelfälle offen: Shions
-  „Wille der Herrin" (−0.59), Soueis Schwarmmal (−0.53), Zegion.
+  Keystones und einer ★-Marke auf der Karte. Phase 91: die zehn stärksten
+  Ausreißer angefasst; offen bleiben die Trupp-Keystones (Zegion −0.26,
+  Shion −0.33), die der Prüfstand unterschätzt.
