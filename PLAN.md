@@ -4522,3 +4522,7 @@ nicht einzeln angefasst — die Prämie hebt sie alle. Die schlimmsten Einzelfä
 einzelne im Spiel weiter tot anfühlen.
 
 `dev/sim.js` 515/515 · `dev/uitest.js` 141/141.
+
+### [~] Phase 90 (2026-09-25): Shion schlägt öfter zu, und man sieht ihr Chaos (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-90-shion`, Branch `phase-90-shion`.
