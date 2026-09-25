@@ -627,7 +627,7 @@ Balance und Werkzeug:
   Rollen-Tabelle misst den Kaufzeitpunkt.
 - ~~**Die Starteinheit entscheidet den Run**~~ — Phase 84: Einheiten-Markt
   gemischt, Milim/Testarossa/Diablo gekürzt. Spanne 68 → 41 Punkte.
-- Unten bleiben Gobkyu, Drachenwelpe, Gabiru (35–36 % als Start). Oben Diablo,
-  Testarossa, Ultima (72–76 %). Weiter nur am Kit, gemessen mit „Siegquote je
-  STARTEINHEIT".
+- Starter liegen nach Phase 87 zwischen 38 und 77 %. Oben trägt die Rolle
+  (Magier 67 % im Schnitt), nicht die Signatur. Getestete Option: Magier auf
+  Reichweite 2 (−6 bis −9 Punkte je Magier, auch für Gegner).
 - ~~Stufe 5 (Sturmgott) liegt bei 2 %~~ — Phase 86: 6 %.

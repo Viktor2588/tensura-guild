@@ -6038,11 +6038,11 @@
         c.applyStatus(c.self, 'schild', c.self.hp < c.self.maxHp * 0.5 ? 40 : 20);
       }),
     aktiv('sig_gobkyu', 'Windpfeil', 2, [],
-      '120 % Schaden auf die Hinterreihe. Trägt das Ziel bereits einen Zustand, sind es 170 %.',
+      '140 % Schaden auf die Hinterreihe. Trägt das Ziel bereits einen Zustand, sind es 190 %.',
       function (c) {
         var f = c.foes(), ziel = f[f.length - 1];
         var belastet = ziel.status.gift || ziel.status.brand || ziel.status.erstarrung || ziel.status.verderbnis;
-        c.attack(belastet ? 1.7 : 1.2, ziel);
+        c.attack(belastet ? 1.9 : 1.4, ziel);
       }),
     aktiv('sig_rigurd', 'Häuptlingsruf', 4, ['schild'],
       'Alle Verbündeten erhalten Schild 25 und +3 Rüstung, die vorderste Einheit zusätzlich +15 % Angriff.',
@@ -6058,11 +6058,12 @@
         c.applyStatus(c.self, 'schild', 20);
       }),
     aktiv('sig_gobwa', 'Feldverband', 3, ['heilung'],
-      'Heilt den schwächsten Verbündeten um 200 % des Angriffs. Liegt er unter 40 % Leben, gibt es zusätzlich Schild 25.',
+      'Heilt den schwächsten Verbündeten um 200 % des Angriffs und schlägt mit 80 % zu. Liegt er unter 40 % Leben, gibt es zusätzlich Schild 25.',
       function (c) {
         var u = c.allies().reduce(function (a, b) { return (b.hp / b.maxHp) < (a.hp / a.maxHp) ? b : a; });
         c.heal(u, c.self.atk * 2, 'Feldverband');
         if (u.hp < u.maxHp * 0.4) c.applyStatus(u, 'schild', 25);
+        c.attack(0.8);
       }, verwundet),
 
     /* --- Oger --- */
@@ -6118,10 +6119,10 @@
         if (schon) c.self.atk = Math.round(c.self.atk * 1.06);
       }),
     aktiv('sig_suphia', 'Goldene Wacht', 3, ['schild'],
-      '130 % Schaden. Ist ein Verbündeter unter der Hälfte, bekommt er zusätzlich Schild 45 ' +
+      '150 % Schaden. Ist ein Verbündeter unter der Hälfte, bekommt er zusätzlich Schild 45 ' +
       'und Suphia +10 % Angriff für den Rest des Kampfes.',
       function (c) {
-        c.attack(1.3);
+        c.attack(1.5);
         var u = schwaechstes(c.allies(), function (x) { return x.hp / x.maxHp; });
         if (u && u.hp < u.maxHp * 0.5) {
           c.applyStatus(u, 'schild', 45);
@@ -6249,8 +6250,9 @@
         c.attack(1.6, f[f.length - 1], { pierce: 0.5 });
       }),
     aktiv('sig_echsenfuerst', 'Bollwerk', 4, ['schild', 'heilung'],
-      'Schild 60 auf sich, +4 Rüstung für alle. Unter der Hälfte des Lebens heilt er sich zusätzlich um 15 %.',
+      '100 % Schaden, Schild 60 auf sich, +4 Rüstung für alle. Unter der Hälfte des Lebens heilt er sich zusätzlich um 15 %.',
       function (c) {
+        c.attack(1.0);
         c.applyStatus(c.self, 'schild', 60);
         c.allies().forEach(function (u) { u.def += 4; });
         if (c.self.hp < c.self.maxHp * 0.5) c.heal(c.self, c.self.maxHp * 0.15, 'Bollwerk');
@@ -6293,11 +6295,11 @@
 
     /* --- Dämonen --- */
     aktiv('sig_diablo', 'Belial', 3, ['dunkelheit', 'schatten'],
-      '140 % Schaden und 2 Dunkelheit. Diablo tritt danach in 2 Schatten zurück; ' +
+      '120 % Schaden und 2 Dunkelheit. Diablo tritt danach in 2 Schatten zurück; ' +
       'ist das Ziel bereits völlig umnachtet, reißt der Griff zusätzlich 80 % von Diablos Angriff heraus.',
       function (c) {
         var blind = (c.target.status.dunkelheit || 0) >= 5;
-        c.attack(1.4);
+        c.attack(1.2);
         /* Phase 84: an Diablos Angriff statt am Leben des Ziels. 12 % des
            maximalen Lebens waren gegen Bosse die staerkste Waffe im Spiel —
            als Start gewann Diablo 94 %, mit dieser Fassung 78 %. */
@@ -6306,27 +6308,27 @@
         c.applyStatus(c.self, 'schatten', 2);
       }),
     aktiv('sig_testarossa', 'Todesstreich', 4, ['exekution'],
-      '120 % Schaden plus 8 % des maximalen Lebens. Unter 30 % Leben wird daraus die doppelte Portion.',
+      '120 % Schaden plus 5 % des maximalen Lebens. Unter 30 % Leben wird daraus die doppelte Portion.',
       function (c) {
         var schwach = c.target.hp < c.target.maxHp * 0.3;
         c.attack(schwach ? 2.4 : 1.2);
-        c.deal(c.target, c.target.maxHp * (schwach ? 0.16 : 0.08), 'Todesstreich', { pure: true });
+        c.deal(c.target, c.target.maxHp * (schwach ? 0.1 : 0.05), 'Todesstreich', { pure: true });
       }),
     aktiv('sig_ultima', 'Seelenzehrung', 3, ['gift', 'verderbnis', 'heilung'],
-      '120 % Schaden, 3 Gift und 2 Verderbnis. Ultima heilt 15 Leben für jeden Zustand, den das Ziel bereits trug.',
+      '100 % Schaden, 3 Gift und 2 Verderbnis. Ultima heilt 15 Leben für jeden Zustand, den das Ziel bereits trug.',
       function (c) {
         var zaehler = 0;
         ['gift', 'brand', 'erstarrung', 'verderbnis'].forEach(function (k) { if (c.target.status[k] > 0) zaehler++; });
-        c.attack(1.2);
+        c.attack(1.0);
         c.applyStatus(c.target, 'gift', 3);
         c.applyStatus(c.target, 'verderbnis', 2);
         if (zaehler) c.heal(c.self, zaehler * 15, 'Seelenzehrung');
       }),
     aktiv('sig_carrera', 'Sprengung', 4, ['flaeche', 'brand'],
-      '80 % Schaden und 2 Brand auf alle Gegner. Gegen brennende Ziele 120 %.',
+      '100 % Schaden und 2 Brand auf alle Gegner. Gegen brennende Ziele 140 %.',
       function (c) {
         c.foes().forEach(function (f) {
-          c.attack(f.status.brand > 0 ? 1.2 : 0.8, f);
+          c.attack(f.status.brand > 0 ? 1.4 : 1.0, f);
           c.applyStatus(f, 'brand', 2);
         });
       }),
@@ -6352,11 +6354,11 @@
         if (c.target.hp <= 0) { var f = c.foes()[0]; if (f) c.attack(2.0, f); }
       }),
     aktiv('sig_drachenwelpe', 'Glutatem', 3, ['brand'],
-      '130 % Schaden und 3 Brand, gegen ein bereits brennendes Ziel 170 %. Brannte es schon, greift das Feuer mit 1 Brand auf ein zweites Ziel über.',
+      '150 % Schaden und 3 Brand, gegen ein bereits brennendes Ziel 190 %. Brannte es schon, greift das Feuer mit 1 Brand auf ein zweites Ziel über.',
       function (c) {
         var brannte = c.target.status.brand > 0;
         var haupt = c.target;
-        c.attack(brannte ? 1.7 : 1.3);
+        c.attack(brannte ? 1.9 : 1.5);
         c.applyStatus(haupt, 'brand', 3);
         if (brannte) {
           var f = c.foes().filter(function (x) { return x !== haupt; })[0];

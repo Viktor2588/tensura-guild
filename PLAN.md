@@ -4417,6 +4417,34 @@ statt −30 % Einkommen, 4 statt 3 Leben.** Die Handschrift der Stufe
 
 `dev/sim.js` 506/506 · `dev/uitest.js` 141/141.
 
-### [~] Phase 87 (2026-09-25): Die Ränder der Starter-Tabelle (in Bearbeitung)
+### Phase 87 (2026-09-25): Die Ränder der Starter-Tabelle
 
 Worktree `/home/viktor/tensura/worktree/phase-87-raender`, Branch `phase-87-raender`.
+
+Nach Phase 84 lag die Starter-Tabelle zwischen 36 und 76 %. Kleine Eingriffe
+am Kit der Ränder, gemeinsam gemessen (6000 Runs, n≈154 je Starter):
+
+| Einheit | Signatur | Start vorher → nachher |
+|---|---|---|
+| Diablo | Belial 140 → 120 % | 76 → 77 % |
+| Testarossa | +8 → +5 % max. Leben | 76 → 71 % |
+| Ultima | Seelenzehrung 120 → 100 % | 72 → 72 % |
+| Echsenfürst | Bollwerk schlägt mit 100 % zu | 36 → 40 % |
+| Carrera | Sprengung 80/120 → 100/140 % | 38 → 40 % |
+| Drachenwelpe | Glutatem 130/170 → 150/190 % | 38 → 44 % |
+| Suphia | Goldene Wacht 130 → 150 % | 38 → 40 % |
+| Gobkyu | Windpfeil 120/170 → 140/190 % | 39 → 43 % |
+| Gobwa | Feldverband schlägt danach mit 80 % zu | 39 → 43 % |
+
+Spanne 40 → 39 Punkte, Siegquote 52 %. Unten wirkt es, oben kaum: Diablo und
+Ultima bewegen 20 % weniger Signaturschaden nicht. **Oben trägt die Rolle.**
+Starter nach Rolle: Magier 67 %, Fernkampf 55 %, Unterstützer 49 %, Front 47 %,
+Verstärker 46 %. Getestet, nicht übernommen: Magier auf Reichweite 2 drückt
+jeden Magier um 6–9 Punkte (Diablo 69 %), die Spanne aber nur auf 37 — eine
+Regeländerung für alle Magier auf beiden Seiten für zwei Punkte. Liegt als
+Option bereit, falls Magier als Starter weiter herausstechen.
+
+Gobwa: der Schlag gehört HINTER die Heilung. Davor konnte Gobwa am Konter
+sterben, und `c.allies()` war beim anschließenden `reduce` leer.
+
+`dev/sim.js` 506/506 · `dev/uitest.js` 141/141.
