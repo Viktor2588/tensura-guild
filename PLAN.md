@@ -4212,3 +4212,7 @@ Gelegenheit auf den Stand gebracht: Dateiliste, Testzahlen, Bedrohungsstufen
 als Regeln statt Prozentzahlen.
 
 `dev/sim.js` 499/499 · `dev/uitest.js` 141/141.
+
+### [~] Phase 82 (2026-09-25): Schatten dominiert (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-82-schatten`, Branch `phase-82-schatten`.
