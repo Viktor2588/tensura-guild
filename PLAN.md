@@ -1326,7 +1326,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
   häufigsten Muster (Schaden, Stapel). Anzeige: Stufe als ✦ an der Passive,
   Fortschritt im Tooltip. Zählen im Kampf über `fire()`; nach dem Kampf in den
   Run zurückschreiben.
-- [ ] **Phase 108 — Duo-Bindungen.** Tabelle `BINDUNGEN` (Paare aus der Welt:
+- [~] **Phase 108 — Duo-Bindungen.** (in Bearbeitung) Tabelle `BINDUNGEN` (Paare aus der Welt:
   Shion+Benimaru, Rimuru+Veldora, Souei+Souka, Gobta+Ranga, Hakuro+Benimaru,
   Diablo+Rimuru, Gabiru+Echsenfürst, Milim+Rimuru …). Stehen beide im Trupp,
   gilt ein dritter Effekt; Anzeige unter „Fähigkeits-Synergien" und im Markt
