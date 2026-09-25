@@ -1091,3 +1091,7 @@ Die alten Magicule-Optionen sind nicht umgeschrieben — das hängt an der
 offenen Frage, wo der Überschuss hin soll (`TODO.md`).
 
 `dev/sim.js` 527/527 · `dev/uitest.js` 141/141.
+
+### [~] Phase 98 (2026-09-25): Erfolge, Chronik, besiegte Bosse (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-98-erfolge`, Branch `phase-98-erfolge`.
