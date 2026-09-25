@@ -4362,3 +4362,7 @@ wieder vergibt, sollte es klein halten.
 Die Stufenkurve ist steiler geworden; Stufe 5 mit 2 % ist hart am Rand.
 
 `dev/sim.js` 499/499 · `dev/uitest.js` 141/141.
+
+### [~] Phase 85 (2026-09-25): Ein Anführer — nur eine Einheit auf Rang S (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-85-anfuehrer`, Branch `phase-85-anfuehrer`.
