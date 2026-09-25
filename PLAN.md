@@ -1063,3 +1063,7 @@ Anzeige); bei Einheiten Signatur und die Passiven des Pakets. Eine Aufwertung
 trägt ihre eigene Zeile und keine Marke. Im Browser angesehen.
 
 `dev/sim.js` 527/527 · `dev/uitest.js` 141/141.
+
+### [~] Phase 97 (2026-09-25): Ereignisse mit echten Abwägungen (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-97-ereignisse`, Branch `phase-97-ereignisse`.
