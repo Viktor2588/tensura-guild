@@ -4416,3 +4416,7 @@ statt −30 % Einkommen, 4 statt 3 Leben.** Die Handschrift der Stufe
 (weniger Geld, doppelt eskalierende Bosse) bleibt. Gemessen 6 % (3000 Runs).
 
 `dev/sim.js` 506/506 · `dev/uitest.js` 141/141.
+
+### [~] Phase 87 (2026-09-25): Die Ränder der Starter-Tabelle (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-87-raender`, Branch `phase-87-raender`.
