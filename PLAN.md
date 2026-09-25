@@ -1152,3 +1152,7 @@ Abschnitt aus Phase 98 heißt jetzt „Letzte Runs". Die UI der Phasen 94, 98
 und 99 im Browser angesehen (Boss-Regel in der Vorschau, Erfolge, Schmelzen).
 
 `dev/sim.js` 542/542 · `dev/uitest.js` 141/141.
+
+### [~] Phase 101 (2026-09-25): Kriegsrecht ohne Klippe (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-101-kriegsrecht`, Branch `phase-101-kriegsrecht`.
