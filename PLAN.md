@@ -1347,7 +1347,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
 - [x] **Phase 112 — Shions Küche (B).** (erledigt, siehe unten) Passive: zu Kampfbeginn bekommt jeder
   Verbündete einen zufälligen Effekt aus einer Tabelle (gut und schlecht);
   Antichaos auf dem Verbündeten dreht schlechte ins Gute.
-- [ ] **Phase 113 — Chaos-Entladung (C).** Ab 10 Chaos auf einem Gegner
+- [~] **Phase 113 — Chaos-Entladung (C).** (in Bearbeitung) Ab 10 Chaos auf einem Gegner
   entlädt Shion es (Passive in der Mechanik): der Gegner verliert einen Zug,
   und sein nächster Angriff trifft einen eigenen Verbündeten. Chaos wird
   verbraucht — Aufbauen zur Verwandlung gegen Entladen.
