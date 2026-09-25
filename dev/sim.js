@@ -2723,6 +2723,25 @@ head('Keystone-Prämie (Phase 89)');
   ok(b.hp === Math.round(a.hp * (1 + R.KEYSTONE_PRAEMIE)), 'der Keystone bringt die Prämie auf das Leben (' + a.hp + ' → ' + b.hp + ')');
 })();
 
+head('Markt neu würfeln (Phase 93)');
+(function () {
+  var run = fertigerRun(93);
+  while (R.passivWahl(run)) R.choosePassive(run, 0);
+  run.phase = 'markt';
+  run.pending = { markt: R.marktOffers(run, { type: 'kampf' }, false), stark: false, wuerfe: 0 };
+  run.magicules = 1000;
+  var alterMarkt = run.pending.markt, zustand = run.rngState;
+  ok(R.neuwurfPreis(run) === 50, 'der erste Wurf kostet 50');
+  ok(R.neuWuerfeln(run) && run.magicules === 950, 'neu würfeln zieht den Preis ab');
+  ok(R.neuwurfPreis(run) === 100, 'der zweite Wurf kostet das Doppelte');
+  ok(run.pending.markt !== alterMarkt && run.rngState !== zustand, 'der Markt ist neu gezogen');
+  run.magicules = 10;
+  ok(!R.neuWuerfeln(run), 'ohne Magicule geht es nicht');
+  run.phase = 'karte';
+  run.magicules = 1000;
+  ok(!R.neuWuerfeln(run), 'und nur im Markt');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

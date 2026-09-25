@@ -166,7 +166,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.42;   // Phase 85: ein Anfuehrer auf S — gemessen 51 % (frisch, n=6000)
+  var GRUNDHAERTE = 1.55;   // Phase 93: mit Markt-Neuwurf — gemessen 53 % (frisch, n=4000)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -956,6 +956,8 @@
       /* Der Markt statt einer Belohnungskarte: was der Kampf einbringt, wird
          hier ausgegeben — Einheiten, Ausrüstung, Relikte. */
       run.pending.markt = marktOffers(run, node, run.pending.bestanden);
+      run.pending.stark = !!(node && (node.type === 'elite' || node.type === 'boss'));
+      run.pending.wuerfe = 0;
       run.pending.devour = res.fallen.filter(function (f) { return f.side === 'enemy'; })
         .filter(function (f) { return (EN.get(f.id).effects || []).length; })
         .map(function (f) {
@@ -1678,6 +1680,32 @@
 
   /* Drei Bildschirme statt zweier: Kampf -> Ergebnis -> Verwaltung. Der Markt
      hing vorher am Ergebnis, also lief beides auf einer Seite. */
+  /* ---- Markt neu wuerfeln (Phase 93) --------------------------------------
+     Fuer Magicule einen frischen Markt, jeder weitere Wurf im selben Markt
+     teurer. Die Entscheidung: jetzt ausgeben oder auf das bessere Angebot
+     spielen — und der Weg, gezielt eine Aufwertung fuer die eigene Einheit
+     (und damit einen Keystone) zu suchen. Gleiche Stufe wie der erste Wurf:
+     ein Elite- oder Bossmarkt bleibt einer. */
+  /* Verdoppelnd, nicht linear: gemessen endet ein Run mit rund 12.000
+     ungenutzten Magicule — der Markt kann den Ertrag nicht aufnehmen. Ein
+     linearer Preis waere damit gratis; verdoppelnd bleibt der dritte und
+     vierte Wurf eine Frage. */
+  var NEUWURF_PREIS = 50;
+  function neuwurfPreis(run) {
+    var p = run.pending;
+    return NEUWURF_PREIS * Math.pow(2, (p && p.wuerfe) || 0);
+  }
+  function neuWuerfeln(run) {
+    var p = run.pending;
+    if (run.phase !== 'markt' || !p || !p.markt || passivWahl(run)) return false;
+    var preis = neuwurfPreis(run);
+    if (run.magicules < preis) return false;
+    run.magicules -= preis;
+    p.wuerfe = (p.wuerfe || 0) + 1;
+    p.markt = shopOffers(run, p.stark ? 1 : 0, p.bestanden ? 1 : 0);
+    return true;
+  }
+
   function zumMarkt(run) {
     if (run.phase !== 'kampf' || !run.pending || !run.pending.markt) return false;
     run.phase = 'markt';
@@ -1746,6 +1774,7 @@
     if (!p || !p.markt || (run.phase !== 'kampf' && run.phase !== 'markt')) return null;
     return {
       markt: p.markt, bestanden: p.bestanden, devour: p.devour, gold: p.gold,
+      stark: p.stark, wuerfe: p.wuerfe,
       bilanz: p.bilanz, node: { name: p.node.name }, result: { winner: p.result.winner }
     };
   }
@@ -1877,6 +1906,7 @@
     START_MAX_RARITAET: START_MAX_RARITAET,
     itemSlots: itemSlots, aktivSlots: aktivSlots, passivSlots: passivSlots, praedatorSlots: praedatorSlots,
     buy: buy, eventChoose: eventChoose, camp: camp, marktOffers: marktOffers,
+    neuWuerfeln: neuWuerfeln, neuwurfPreis: neuwurfPreis,
     equip: equip, unequip: unequip, move: move, bench: bench, deploy: deploy, entlassen: entlassen,
     find: find, addUnit: addUnit, swap: swap, unitPool: unitPool, relicPool: relicPool,
     entlassenWert: entlassenWert, darfEntlassen: darfEntlassen,

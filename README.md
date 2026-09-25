@@ -95,8 +95,8 @@ das der einzige Weg, tote und dominante Builds zu finden.
 800 Runs mit dem Bot aus `dev/balance.js`. Ein Trupp gilt erst als *Build*, wenn
 ein Schlüsselwort zwei Quellen und einen Verstärker hat:
 
-6000 Runs, frischer Spieler, Bedrohungsstufe 0: **51 % Siege** (Phase 85,
-`GRUNDHAERTE` 1.42). Die Starteinheit liegt zwischen 35 und 76 % Siegquote
+6000 Runs, frischer Spieler, Bedrohungsstufe 0: **51 % Siege** (Phase 93,
+`GRUNDHAERTE` 1.55, der Bot würfelt den Markt neu). Die Starteinheit liegt zwischen 35 und 76 % Siegquote
 („Siegquote je STARTEINHEIT" in `dev/balance.js`). Oben Schatten +14,
 Tempo und Dunkelheit +9. Mit allem Freigeschalteten 60 %.
 
@@ -115,12 +115,12 @@ eine andere Schraube an, nicht nur die Gegnerwerte:
 
 | Stufe | Name | Was dazukommt (kumulativ) | Siegquote des Bots |
 |---|---|---|---|
-| 0 | Jura-Wald | – | 51 % |
-| 1 | Überzahl | ein Gegner mehr je Begegnung | 37 % |
-| 2 | Nachschub | normale Gegner stehen einmal mit 30 % Leben wieder auf | 25 % |
-| 3 | Kriegsrecht | Markt bietet weniger Einheiten, Aufstiege kosten mehr | 18 % |
-| 4 | Belagerung | im zweiten Akt Eliten auf jedem zweiten Kampfknoten, Lager −15 % | 14 % |
-| 5 | Sturmgott | 15 % weniger Magicule, 4 Leben statt 5, Bosse eskalieren doppelt | 6 % |
+| 0 | Jura-Wald | – | 53 % |
+| 1 | Überzahl | ein Gegner mehr je Begegnung | 44 % |
+| 2 | Nachschub | normale Gegner stehen einmal mit 30 % Leben wieder auf | 32 % |
+| 3 | Kriegsrecht | zwei statt vier Einheiten im Markt, 30 % teurer | 16 % |
+| 4 | Belagerung | im zweiten Akt Eliten auf jedem zweiten Kampfknoten, Lager −15 % | 11 % |
+| 5 | Sturmgott | 15 % weniger Magicule, 4 Leben statt 5, Bosse eskalieren doppelt | 3 % |
 
 Gemessen mit `node dev/balance.js 400 --stufe N` (Stufe 0 mit 6000 Runs).
 

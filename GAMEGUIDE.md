@@ -122,6 +122,13 @@ so viele Slots.
 Ein Gratisaufstieg kommt weiterhin aus dem **Lager** — das ist eine Belohnung,
 kein Kaufposten.
 
+### Neu würfeln
+
+Passt nichts, würfelst du den Markt neu — derselbe Markt, frisch gezogen, für
+50 ✦. Jeder weitere Wurf im selben Markt kostet das Doppelte (100, 200, 400 …).
+So suchst du gezielt eine höhere Fassung einer eigenen Einheit, und damit die
+Keystone-Wahl. Gekauftes bleibt gekauft.
+
 ### Verkaufen
 
 Einheit, Ausrüstung oder Relikt auf die **Verkaufsfläche ziehen** — sie steht

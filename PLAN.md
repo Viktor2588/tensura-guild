@@ -971,6 +971,29 @@ vier, und teurer werden die Einheiten.
 
 `dev/sim.js` 515/515 · `dev/uitest.js` 141/141.
 
-### [~] Phase 93 (2026-09-25): Markt neu würfeln (in Bearbeitung)
+### Phase 93 (2026-09-25): Markt neu würfeln
 
 Worktree `/home/viktor/tensura/worktree/phase-93-reroll`, Branch `phase-93-reroll`.
+
+Für Magicule einen frischen Markt derselben Stufe: 50 ✦, jeder weitere Wurf im
+selben Markt das Doppelte. `Run.neuWuerfeln`, Knopf „🎲 Neu würfeln — N ✦"
+neben „Weiterziehen". Elite- und Bossmärkte bleiben es (`pending.stark`),
+gespeichert wird mit.
+
+**Der Befund dahinter: Geld ist nicht knapp.** Ein Bot-Run endet im Schnitt mit
+rund 12.600 ungenutzten Magicule — der Markt kann den Ertrag nicht aufnehmen
+(sechs Plätze, vier Einheiten je Markt, Ränge nur mit der Einheit). Ein
+linearer Neuwurfpreis war deshalb gratis: bei 30, 60 und 100 ✦ würfelte der
+Bot gleich oft (9,4 je Run) und gewann 62 statt 53 %. Verdoppelnd wird der
+dritte, vierte Wurf eine Frage; übrig bleiben jetzt Ø 9.100.
+
+Der Bot würfelt, wenn er keine Einheit gekauft hat und danach noch eine kaufen
+könnte, höchstens zweimal je Markt (`--ohne-neuwurf` schaltet das ab).
+`GRUNDHAERTE` 1.42 → 1.55: 53 % mit Neuwurf, 44 % ohne — wer das Werkzeug
+liegen lässt, spielt merklich schwächer. Stufen 0–5: 53/44/32/16/11/3 %.
+
+Offen: **Stufe 5 ist wieder bei 3 %** (Sturmgott kürzt das Einkommen und damit
+die Würfe). Und der Überschuss selbst — 9.000 Magicule am Ende sind keine
+Entscheidung. Der Neuwurf nimmt einen Teil auf, eine echte Senke fehlt.
+
+`dev/sim.js` 521/521 · `dev/uitest.js` 141/141.

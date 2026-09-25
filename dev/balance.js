@@ -27,6 +27,7 @@ var STIL = 'breite';
 process.argv.forEach(function (a, i) { if (a === '--kaufstil') STIL = process.argv[i + 1] || 'breite'; });
 var RESERVE = STIL === 'spitze' ? 600 : 140;
 var OHNE = [];
+var NEUWURF = process.argv.indexOf('--ohne-neuwurf') < 0;
 process.argv.forEach(function (a, i) { if (a === '--ohne') OHNE = (process.argv[i + 1] || '').split(','); });
 process.argv.forEach(function (a, i) { if (a === '--stufe') STUFE = parseInt(process.argv[i + 1] || '0', 10); });
 
@@ -258,6 +259,7 @@ function play(seed, voll) {
             : o.kind === 'item' ? 7 : 5;
           return { i: i, wert: STIL === 'spitze' ? sc : sc / Math.max(1, o.price) * 100 };
         }).sort(function (a, b) { return b.wert - a.wert; });
+        var gekauftHier = 0;
         posten.forEach(function (x) {
           var o = p.markt[x.i];
           if (o.sold) return;
@@ -266,10 +268,18 @@ function play(seed, voll) {
              frisst und die naechste Runde nichts mehr geht. */
           if (run.magicules - o.price < RESERVE) return;
           if (R.buy(run, x.i, run.team[0] && run.team[0].uid)) {
+            if (o.kind === 'unit') gekauftHier++;
             kaeufe[o.kind] = (kaeufe[o.kind] || 0) + 1;
             if (o.kind === 'unit') gekauft[o.id] = (gekauft[o.id] || 0) + 1;
           }
         });
+        /* Phase 93: keine Einheit gekauft, aber genug Luft fuer eine — neu
+           wuerfeln, hoechstens zweimal je Markt. So spielt es ein Spieler auch. */
+        if (NEUWURF && !gekauftHier && (p.wuerfe || 0) < 2 &&
+            run.magicules - R.neuwurfPreis(run) >= RESERVE + 265 && R.neuWuerfeln(run)) {
+          neuwuerfe++;
+          continue;
+        }
       }
       R.advance(run);
       continue;
@@ -295,6 +305,7 @@ function play(seed, voll) {
 var siege = 0, akte = {}, schritteSum = 0, rangSum = 0, teamSum = 0;
 var pruefGesamt = 0, pruefOk = 0;
 var bossKampf = {}, bossSieg = {};
+var neuwuerfe = 0, restGeld = 0;
 var kaeufe = {}, unbezahlbar = 0, pwahlen = 0, mitKeystone = 0, keystones = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
 var angebote = {}, gekauft = {};                  // je Einheit: im Regal / gekauft
 var ohneFront = 0, ohneStuetze = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
@@ -346,6 +357,7 @@ for (var s = 0; s < N; s++) {
     bump(proEinheit, m.id, won);
   });
   bump(proRang, R.RANK_NAME[hoechster], won);
+  restGeld += run.magicules;
   bump(proStart, run._start || '?', won, run.act === 1 ? 1 : 0);
   if (run._rangAkt2 !== null) bump(proRangAkt2, R.RANK_NAME[run._rangAkt2], won);
   /* JE KNOTEN, nicht je Run: ein gewonnener Run spielt 16 Knoten, ein
@@ -429,6 +441,7 @@ console.log('gescheitert je Akt: ' + Object.keys(akte).sort().map(function (a) {
 }).join(' · '));
 console.log('Passiv-Wahlen: ' + pwahlen + ', davon mit Keystone im Angebot ' + mitKeystone +
   ', Keystone genommen ' + keystones + ' (je Run ' + (keystones / N).toFixed(1) + ')');
+console.log('Markt neu gewuerfelt: ' + neuwuerfe + ' (je Run ' + (neuwuerfe / N).toFixed(1) + '), Ø Magicule am Run-Ende: ' + Math.round(restGeld / N));
 console.log('nicht bezahlbare Angebote: ' + unbezahlbar + ' (je Run ' + (unbezahlbar / N).toFixed(1) + ')');
 console.log('Trupps ohne Frontlinie: ' + ohneFront + ' · ohne Unterstützung: ' + ohneStuetze);
 console.log('Ø Relikte: ' + (reliktSum / N).toFixed(1) + ' · Ø angelegte Ausrüstung: ' + (itemSum / N).toFixed(1));

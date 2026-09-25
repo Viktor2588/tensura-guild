@@ -997,7 +997,18 @@
       '<p class="hinweis">Rüste den Trupp aus, bevor es weitergeht. Unten stehen ' +
       'Aufstellung, Ausrüstung und Aufstiege.</p>' +
       marktHtml(p.markt || []) +
-      '<div class="reihe"><button class="haupt" data-a="weiter">Weiterziehen</button></div>';
+      '<div class="reihe"><button class="haupt" data-a="weiter">Weiterziehen</button>' +
+      neuwurfKnopf() + '</div>';
+  }
+
+  /* Neu wuerfeln (Phase 93): der Preis steigt je Wurf im selben Markt. */
+  function neuwurfKnopf() {
+    var preis = R.neuwurfPreis(run);
+    var geht = run.magicules >= preis && !R.passivWahl(run);
+    return '<button data-a="neuwurf"' + (geht ? '' : ' disabled') +
+      tip('Markt neu würfeln', 'Ein frischer Markt derselben Stufe für ' + preis +
+        ' ✦. Jeder weitere Wurf in diesem Markt kostet mehr. Gekauftes bleibt gekauft.') +
+      '>🎲 Neu würfeln — ' + preis + ' ✦</button>';
   }
 
   function zeichneLager() {
@@ -1592,6 +1603,7 @@
       R.devour(run, d.id, ziel ? ziel.value : run.team[0].uid);
       render(); speichern();
     },
+    neuwurf: function () { R.neuWuerfeln(run); render(); speichern(); },
     'zum-markt': function () { R.zumMarkt(run); replay = null; Brett3D.loese(); render(); speichern(); },
     weiter: function () { R.advance(run); replay = null; Brett3D.loese(); render(); speichern(); },
     stufe: function (d) {

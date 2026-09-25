@@ -639,3 +639,6 @@ Rückmeldung aus dem Spieltest (2026-09-25), offen:
   Keystones und einer ★-Marke auf der Karte. Phase 91: die zehn stärksten
   Ausreißer angefasst; offen bleiben die Trupp-Keystones (Zegion −0.26,
   Shion −0.33), die der Prüfstand unterschätzt.
+- **Geld ist nicht knapp** (Phase 93): Ø 9.100 Magicule bleiben am Run-Ende
+  ungenutzt, auch mit Neuwurf. Eine echte Senke fehlt.
+- Stufe 5 wieder bei 3 % (nach Phase 93).
