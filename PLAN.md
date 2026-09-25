@@ -4565,3 +4565,7 @@ zeigt erst der nächste Spieltest.
 Werten passte das zufällig, jetzt mit einem Punkt Spielraum.
 
 `dev/sim.js` 515/515 · `dev/uitest.js` 141/141.
+
+### [~] Phase 91 (2026-09-25): Sichtprüfung im Browser, Keystone-Ausreißer (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-91-sichtpruefung`, Branch `phase-91-sichtpruefung`.
