@@ -492,6 +492,10 @@
            `allies()` mitten im Gefecht in 76 % der Faelle nur die Einheit
            selbst — als Bedingung gelesen heisst das „fast immer". */
         trupp: function () { return living(self.side); },
+        /* Das Gegenstueck: die GANZE Gegenseite, ohne Umkreis. `foes()` ist
+           raumgefiltert; Boss-Regeln wie die Sturmflut (Phase 94) meinen
+           wirklich jeden. */
+        gegner: function () { return living(other(self.side)); },
         foes: function () {
           var alle = living(other(self.side));
           if (!alle.length) return alle;

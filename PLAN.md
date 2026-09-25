@@ -998,6 +998,36 @@ Entscheidung. Der Neuwurf nimmt einen Teil auf, eine echte Senke fehlt.
 
 `dev/sim.js` 521/521 · `dev/uitest.js` 141/141.
 
-### [~] Phase 94 (2026-09-25): Jeder Boss hat eine eigene Regel (in Bearbeitung)
+### Phase 94 (2026-09-25): Jeder Boss hat eine eigene Regel
 
 Worktree `/home/viktor/tensura/worktree/phase-94-bossregeln`, Branch `phase-94-bossregeln`.
+
+Die acht Bosse ähnelten sich: drei ignorierten die Rüstung, vier trafen mit
+einer Chance alle, zwei heilten über Lebensraub. Keiner verlangte einen
+bestimmten Bau. Jetzt trägt jeder eine **Boss-Regel** (`BOSS_REGELN` in
+`enemies.js`, `regel: true`), die einen Bau bestraft und einen anderen
+belohnt, und die Vorschau nennt sie im Text — seit Phase 75 steht der Boss nach
+dem ersten Kampf fest, jetzt hat das eine Folge für den Aufbau. Tabelle in
+`GAMEGUIDE.md`.
+
+Neu im Kampfkontext: `c.gegner()`, die ganze Gegenseite ohne Umkreis — das
+Gegenstück zu `c.trupp()`. `c.foes()` ist raumgefiltert, und die Sturmflut
+meint wirklich jeden.
+
+**Ausgeglichen über den Multiplikator je Boss**, nicht über `GRUNDHAERTE`: die
+Regeln sollen Bosse unterscheidbar machen, nicht schwerer. Siegquote im Run
+(6000 Runs), vorher / nur Regel / Regel und neuer `mult`:
+
+| Boss | vorher | Regel | ausgeglichen | `mult` |
+|---|---|---|---|---|
+| Charybdis | 61 % | 46 % | 58 % | 1.97 → 1.73 |
+| Clayman | 62 % | 61 % | 61 % | — |
+| Geld | 49 % | 47 % | 47 % | — |
+| Hinata | 73 % | 61 % | 66 % | 1.93 → 1.745 |
+| Luminous | 77 % | 69 % | 74 % | 1.00 → 0.94 |
+| Milim | 48 % | 34 % | 43 % | 0.91 → 0.81 |
+| Razen | 68 % | 50 % | 63 % | 1.15 → 0.98 |
+| Roy | 85 % | 93 % | 89 % | 2.23 → 2.37 |
+| gesamt | 53 % | 46 % | 52 % | |
+
+`dev/sim.js` 523/523 · `dev/uitest.js` 141/141.

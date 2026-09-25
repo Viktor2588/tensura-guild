@@ -620,3 +620,6 @@ ul.mali li::before { content: '−'; position: absolute; left: -.9rem; opacity: 
   border: 1px solid rgba(255,255,255,.09); min-width: 8.5rem; }
 .bilanz-zeile i { font-style: normal; opacity: .8; }
 .bilanz-zeile b { font-size: .95rem; }
+
+/* Boss-Regel in der Vorschau (Phase 94). */
+.boss-regel { color: var(--rot); }

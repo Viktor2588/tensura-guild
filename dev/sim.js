@@ -2742,6 +2742,20 @@ head('Markt neu würfeln (Phase 93)');
   ok(!R.neuWuerfeln(run), 'und nur im Markt');
 })();
 
+head('Boss-Regeln (Phase 94)');
+(function () {
+  var mitRegel = EN.bosses.filter(function (b) {
+    return b.units.some(function (id) { return (EN.get(id).effects || []).some(function (e) { return e.regel; }); });
+  });
+  ok(mitRegel.length === EN.bosses.length, 'jeder Boss trägt eine Regel (' + mitRegel.length + '/' + EN.bosses.length + ')');
+  /* Die Sturmflut räumt jede vierte Runde alle Schilde ab. */
+  var m = R.member('gerudo'); m.rank = 3;
+  var held = R.resolve(m);
+  var boss = EN.build(EN.bossById('b_charybdis'), 1);
+  var log = C.simulate([held], boss, 3).log;
+  ok(log.some(function (l) { return l.source === 'Sturmflut'; }), 'Charybdis spült mit der Sturmflut');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

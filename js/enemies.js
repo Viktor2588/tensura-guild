@@ -405,15 +405,82 @@
      Zwei Pools statt fünf fester Bosse: pro Run wird je einer gezogen, also
      sieht kein Run dieselbe Paarung zweimal. */
   var bosses = [
-    { id: 'b_charybdis', pool: 1, name: 'Charybdis', units: ['charybdis'], beute: 140, mult: 1.97, hpMult: 3.92 },
+    { id: 'b_charybdis', pool: 1, name: 'Charybdis', units: ['charybdis'], beute: 140, mult: 1.73, hpMult: 3.92 },
     { id: 'b_clayman', pool: 1, name: 'Clayman', units: ['clayman'], beute: 150, mult: 2.17, hpMult: 4.16 },
-    { id: 'b_milim', pool: 1, name: 'Milim Nava', units: ['milim_boss'], beute: 170, mult: 0.91, hpMult: 1.63 },
+    { id: 'b_milim', pool: 1, name: 'Milim Nava', units: ['milim_boss'], beute: 170, mult: 0.81, hpMult: 1.63 },
     { id: 'b_orklord', pool: 1, name: 'Geld, der Orklord', units: ['orklord'], beute: 150, mult: 3.1, hpMult: 2.4 },
-    { id: 'b_hinata', pool: 2, name: 'Hinata Sakaguchi', units: ['hinata'], beute: 340, mult: 1.93, hpMult: 3.66 },
-    { id: 'b_luminous', pool: 2, name: 'Luminous Valentine', units: ['luminous'], beute: 400, mult: 1.0, hpMult: 1.79 },
-    { id: 'b_razen', pool: 2, name: 'Razen der Hofmagier', units: ['razen'], beute: 320, mult: 1.15, hpMult: 2.18 },
-    { id: 'b_roy', pool: 2, name: 'Roy Valentine', units: ['roy_valentine'], beute: 330, mult: 2.23, hpMult: 3.99 }
+    { id: 'b_hinata', pool: 2, name: 'Hinata Sakaguchi', units: ['hinata'], beute: 340, mult: 1.745, hpMult: 3.66 },
+    { id: 'b_luminous', pool: 2, name: 'Luminous Valentine', units: ['luminous'], beute: 400, mult: 0.94, hpMult: 1.79 },
+    { id: 'b_razen', pool: 2, name: 'Razen der Hofmagier', units: ['razen'], beute: 320, mult: 0.98, hpMult: 2.18 },
+    { id: 'b_roy', pool: 2, name: 'Roy Valentine', units: ['roy_valentine'], beute: 330, mult: 2.37, hpMult: 3.99 }
   ];
+
+  /* ---- Boss-Regeln (Phase 94) ---------------------------------------------
+     Die acht Bosse aehnelten sich: drei ignorierten die Ruestung, vier trafen
+     mit einer Chance alle, zwei heilten ueber Lebensraub. Keiner verlangte
+     einen bestimmten Bau. Jeder bekommt jetzt EINE Regel, die einen Bau
+     bestraft und einen anderen belohnt — und weil der Boss ab dem ersten Kampf
+     feststeht (Phase 75), hat die Vorschau damit eine Folge fuer den Aufbau.
+     `regel: true` laesst die Vorschau sie nennen. */
+  function bossRegel(hook, name, text, keywords, fn) {
+    var f = faehigkeit(hook, name, text, keywords, fn);
+    f.regel = true;
+    return f;
+  }
+  var BOSS_REGELN = {
+    charybdis: bossRegel('onTurnStart', 'Sturmflut',
+      'Jede vierte Runde spült die Flut über alle Gegner: 80 % Schaden, und jeder Schild ist weg.',
+      ['flaeche'], function (c) {
+        c.self._flut = (c.self._flut || 0) + 1;
+        if (c.self._flut % 4) return;
+        c.gegner().forEach(function (f) {
+          f.status.schild = 0;
+          c.deal(f, c.self.atk * 0.8, 'Sturmflut');
+        });
+      }),
+    clayman: bossRegel('onTurnStart', 'Puppenspieler',
+      'Zu Beginn jedes seiner Züge reißt er dem stärksten Gegner Schild, Antichaos und Schatten weg.',
+      [], function (c) {
+        var f = c.gegner().reduce(function (a, b) { return !a || b.atk > a.atk ? b : a; }, null);
+        if (!f) return;
+        f.status.schild = 0; f.status.antichaos = 0; f.status.schatten = 0;
+      }),
+    milim_boss: bossRegel('onStart', 'Drachenschuppen',
+      'Kein Treffer kostet sie mehr als 4 % ihres Lebens — viele Treffer schlagen einen großen.',
+      [], function (c) { c.self.schadensdeckel = Math.min(c.self.schadensdeckel || 1, 0.04); }),
+    orklord: bossRegel('onKill', 'Hunger',
+      'Fällt einer deiner Kämpfer, frisst er ihn: heilt 25 % seines Lebens und schlägt 15 % härter.',
+      ['heilung'], function (c) {
+        c.heal(c.self, c.self.maxHp * 0.25, 'Hunger');
+        c.self.atk = Math.round(c.self.atk * 1.15);
+      }),
+    hinata: bossRegel('onTurnStart', 'Heiliges Schwert',
+      'Zu Beginn jedes ihrer Züge fällt jede Dunkelheit, jedes Chaos, jede Verderbnis und jede Marke von ihr ab.',
+      ['licht'], function (c) {
+        ['dunkelheit', 'chaos', 'verderbnis', 'verwundbar'].forEach(function (k) { c.self.status[k] = 0; });
+      }),
+    luminous: bossRegel('onStart', 'Ewige Nacht',
+      'Solange der Kampf läuft, heilen ihre Gegner nur halb so stark.',
+      [], function (c) { c.gegner().forEach(function (f) { f.heilfaktor = (f.heilfaktor || 0) - 0.5; }); }),
+    razen: bossRegel('onTurnStart', 'Barriere',
+      'Beginnt hinter einem Schild über 40 % seines Lebens und erneuert ihn jede vierte Runde.',
+      ['schild'], function (c) {
+        c.self._barriere = (c.self._barriere || 0) + 1;
+        if (c.self._barriere % 4 !== 1) return;
+        var fehlt = c.self.maxHp * 0.4 - (c.self.status.schild || 0);
+        if (fehlt > 0) c.applyStatus(c.self, 'schild', fehlt);
+      }),
+    roy_valentine: bossRegel('onTurnStart', 'Bluttausch',
+      'Zu Beginn jedes seiner Züge entzieht er jedem Gegner 3 % seines Lebens und heilt sich um die Summe.',
+      ['heilung'], function (c) {
+        var summe = 0;
+        c.gegner().forEach(function (f) { summe += c.deal(f, f.maxHp * 0.03, 'Bluttausch', { pure: true }) || 0; });
+        if (summe) c.heal(c.self, summe, 'Bluttausch');
+      })
+  };
+  enemies.forEach(function (e) {
+    if (BOSS_REGELN[e.id]) e.effects = (e.effects || []).concat([BOSS_REGELN[e.id]]);
+  });
 
   /* ---- Ereignisse: api liefert run.js, damit die Daten dumm bleiben ------- */
 

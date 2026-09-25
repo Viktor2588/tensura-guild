@@ -179,8 +179,22 @@ weiter über alle fünf Inhaltsstufen der Handlung — sie steigen jetzt nur
 | 2 | 4–6 | Die Westliche Heilige Kirche | — |
 | 2 | 7–8 | Nacht über Ruberios | Hinata Sakaguchi · Luminous Valentine |
 
-Welcher Boss kommt, wird beim Run-Start aus seinem Pool gezogen und steht ab
-dem ersten Knoten in der Vorschau. Je vier Bosse pro Pool.
+Welcher Boss kommt, wird beim Run-Start aus seinem Pool gezogen und zeigt sich
+nach dem ersten Kampf. Je vier Bosse pro Pool.
+
+**Jeder Boss hat eine eigene Regel**, und die Vorschau nennt sie. Sie bestraft
+einen Bau und belohnt einen anderen — wer sie kennt, baut darauf hin:
+
+| Boss | Regel |
+|---|---|
+| Charybdis | **Sturmflut** — jede vierte Runde 80 % Schaden auf alle, jeder Schild ist weg |
+| Clayman | **Puppenspieler** — reißt dem stärksten Gegner Schild, Antichaos und Schatten weg |
+| Milim Nava | **Drachenschuppen** — kein Treffer kostet sie mehr als 4 % ihres Lebens |
+| Geld, der Orklord | **Hunger** — frisst Gefallene: +25 % Leben geheilt, +15 % Angriff |
+| Hinata Sakaguchi | **Heiliges Schwert** — schüttelt jede Runde Dunkelheit, Chaos, Verderbnis und Marken ab |
+| Luminous Valentine | **Ewige Nacht** — ihre Gegner heilen nur halb so stark |
+| Razen der Hofmagier | **Barriere** — Schild über 40 % seines Lebens, jede vierte Runde erneuert |
+| Roy Valentine | **Bluttausch** — entzieht jedem Gegner jede Runde 3 % Leben |
 
 **Bosse treten allein an** — kein Gefolge, das den Schaden verteilt, dafür
 deutlich mehr Leben. Und sie **eskalieren**: mit jedem eigenen Zug +6 % Angriff,

@@ -270,8 +270,16 @@
       return '<p class="hinweis">Wer am Ende von Akt ' + akt +
         ' wartet, zeigt sich nach dem ersten Kampf.</p>';
     }
+    /* Die Boss-Regel (Phase 94) steht im Text, nicht nur im Tooltip: sie ist
+       der Grund, den Boss frueh zu kennen. */
+    var regeln = [];
+    (b.units || []).forEach(function (id) {
+      ((EN.get(id) || {}).effects || []).forEach(function (e) { if (e.regel) regeln.push(e); });
+    });
     return '<p class="hinweis">Am Ende von Akt ' + akt + ' wartet <b' +
-      tip('BOSS: ' + b.name, gegnerDetails(b)) + '>' + esc(b.name) + '</b>.</p>';
+      tip('BOSS: ' + b.name, gegnerDetails(b)) + '>' + esc(b.name) + '</b>' +
+      (regeln.length ? ' — <b class="boss-regel">' + esc(regeln[0].name) + ':</b> ' + esc(regeln[0].text) : '.') +
+      '</p>';
   }
 
   function stufenHtml() {
