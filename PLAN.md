@@ -4318,3 +4318,7 @@ wirklich stark, und zwar im Kit, nicht in den Werten.
 Offen, als Entscheidung: Themen-Anteil senken (gemessen wirksam, macht Builds
 zufälliger), oder Schild-Einheiten Schaden geben statt mehr Schild; die Spitze
 über ihr Kit kürzen.
+
+### [~] Phase 84 (2026-09-25): Der Starter legt den Run nicht mehr fest (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-84-themen`, Branch `phase-84-themen`.
