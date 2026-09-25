@@ -1351,7 +1351,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
   entlädt Shion es (Passive in der Mechanik): der Gegner verliert einen Zug,
   und sein nächster Angriff trifft einen eigenen Verbündeten. Chaos wird
   verbraucht — Aufbauen zur Verwandlung gegen Entladen.
-- [ ] **Phase 114 — Meisterkoch der Wirklichkeit (D).** Keystone-artige
+- [~] **Phase 114 — Meisterkoch der Wirklichkeit (D).** (in Bearbeitung) Keystone-artige
   Passive: Chaos-Würfe gegen Gegner zweimal würfeln, das schlechtere nehmen;
   Antichaos-Würfe im Trupp das bessere.
 
