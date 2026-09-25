@@ -1048,3 +1048,7 @@ Nebenbei: der Siegbildschirm sagte immer „Milim ist bezwungen" — der letzte
 Boss kommt aus dem Pool von Akt 2. Jetzt steht dort sein Name.
 
 `dev/sim.js` 527/527 · `dev/uitest.js` 141/141.
+
+### [~] Phase 96 (2026-09-25): Der Markt sagt, was zum Bau passt (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-96-bauhinweis`, Branch `phase-96-bauhinweis`.
