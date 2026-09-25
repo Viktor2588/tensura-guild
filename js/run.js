@@ -168,7 +168,7 @@
   /* Grundhärte aller Gegner. Der Regler, mit dem neue Spielerstärke bezahlt
      wird: die Resonanz war gemessen 8 Punkte Siegquote wert, hier kommen sie
      zurück. Gemessen mit `node dev/balance.js 500`. */
-  var GRUNDHAERTE = 1.41;   // Phase 81: zurueck auf den Sollwert, gemessen 53 % (frisch, n=600)
+  var GRUNDHAERTE = 1.45;   // Phase 84: Einheiten-Markt gemischt, Spitze gekuerzt — gemessen 52 % (frisch, n=6000)
 
   /* Ein Run hat mit zwei Akten 16 Knoten statt 40, die Gegnerkurve laeuft aber
      weiter ueber alle fuenf Inhaltsstufen. Also muss jeder Knoten entsprechend
@@ -1401,8 +1401,13 @@
     /* Der Pool kennt dieselbe Obergrenze wie der Wurf — sonst stehen Arten im
        Angebot, deren Aufwertung das Fenster gar nicht hergibt. */
     var obergrenze = rangObergrenze(st);
-    var wahl = themenWahl(run, rng, unitPool(run, obergrenze), st,
-                          (regel(run, 'kriegsrecht') ? 2 : 4) + (extra || 0));
+    /* Einheiten kommen gemischt, nicht nach Thema (Phase 84). Nach Thema
+       gezogen legte die Starteinheit den ganzen Run fest: ein Schild-Starter
+       bekam Schild-Maerkte und damit einen Trupp, der nicht toetet —
+       Gruftwaechter gewann als Start 26 %, Diablo 94 %. Gemischt 58 %, und
+       Builds entstehen weiter, denn Ausruestung und Relikte folgen dem Thema. */
+    var wahl = waehle(rng, unitPool(run, obergrenze), st,
+                      (regel(run, 'kriegsrecht') ? 2 : 4) + (extra || 0));
     /* EIN Platz gehoert der Aufwertung. Solange die Art den Trupp sperrte, war
        fast jedes Angebot einer belegten Art automatisch eine Aufwertung — mit
        der Sperre fiel auch dieser Weg weg: bei 39 Einheiten trifft der Wurf die

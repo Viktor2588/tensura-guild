@@ -2664,8 +2664,8 @@
       }),
 
     passiv('diablo_mec1', 'Umnachtung', 'onStart', ['dunkelheit'], [],
-      'Hüllt zu Kampfbeginn jeden Gegner in 5 Dunkelheit — sie schlagen fühlbar schwächer zu',
-      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 5); }); }),
+      'Hüllt zu Kampfbeginn jeden Gegner in 3 Dunkelheit — sie schlagen fühlbar schwächer zu',
+      function (c) { c.foes().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 3); }); }),
     passiv('diablo_mec2', 'Schattenschritt', 'onHit', ['schatten', 'dunkelheit'], [],
       'Jeder dritte Schlag legt 3 Dunkelheit auf alle Gegner und zieht Diablo 4 Schatten',
       function (c) {
@@ -6293,21 +6293,24 @@
 
     /* --- Dämonen --- */
     aktiv('sig_diablo', 'Belial', 3, ['dunkelheit', 'schatten'],
-      '140 % Schaden und 3 Dunkelheit. Diablo tritt danach in 2 Schatten zurück; ' +
-      'ist das Ziel bereits völlig umnachtet, reißt der Griff zusätzlich 12 % seines maximalen Lebens heraus.',
+      '140 % Schaden und 2 Dunkelheit. Diablo tritt danach in 2 Schatten zurück; ' +
+      'ist das Ziel bereits völlig umnachtet, reißt der Griff zusätzlich 80 % von Diablos Angriff heraus.',
       function (c) {
         var blind = (c.target.status.dunkelheit || 0) >= 5;
         c.attack(1.4);
-        if (blind) c.deal(c.target, c.target.maxHp * 0.12, 'Belial', { pure: true });
-        c.applyStatus(c.target, 'dunkelheit', 3);
+        /* Phase 84: an Diablos Angriff statt am Leben des Ziels. 12 % des
+           maximalen Lebens waren gegen Bosse die staerkste Waffe im Spiel —
+           als Start gewann Diablo 94 %, mit dieser Fassung 78 %. */
+        if (blind) c.deal(c.target, c.self.atk * 0.8, 'Belial', { pure: true });
+        c.applyStatus(c.target, 'dunkelheit', 2);
         c.applyStatus(c.self, 'schatten', 2);
       }),
     aktiv('sig_testarossa', 'Todesstreich', 4, ['exekution'],
-      '120 % Schaden plus 15 % des maximalen Lebens. Unter 30 % Leben wird daraus die doppelte Portion.',
+      '120 % Schaden plus 8 % des maximalen Lebens. Unter 30 % Leben wird daraus die doppelte Portion.',
       function (c) {
         var schwach = c.target.hp < c.target.maxHp * 0.3;
         c.attack(schwach ? 2.4 : 1.2);
-        c.deal(c.target, c.target.maxHp * (schwach ? 0.3 : 0.15), 'Todesstreich', { pure: true });
+        c.deal(c.target, c.target.maxHp * (schwach ? 0.16 : 0.08), 'Todesstreich', { pure: true });
       }),
     aktiv('sig_ultima', 'Seelenzehrung', 3, ['gift', 'verderbnis', 'heilung'],
       '120 % Schaden, 3 Gift und 2 Verderbnis. Ultima heilt 15 Leben für jeden Zustand, den das Ziel bereits trug.',
@@ -6343,10 +6346,10 @@
         c.self.atk = Math.round(c.self.atk * 1.08);
       }),
     aktiv('sig_milim', 'Drachenfaust', 3, ['exekution'],
-      '260 % Schaden. Stirbt das Ziel, schlägt Milim sofort auf den nächsten ein — sie hört nicht auf.',
+      '200 % Schaden. Stirbt das Ziel, schlägt Milim sofort auf den nächsten ein — sie hört nicht auf.',
       function (c) {
-        c.attack(2.6);
-        if (c.target.hp <= 0) { var f = c.foes()[0]; if (f) c.attack(2.6, f); }
+        c.attack(2.0);
+        if (c.target.hp <= 0) { var f = c.foes()[0]; if (f) c.attack(2.0, f); }
       }),
     aktiv('sig_drachenwelpe', 'Glutatem', 3, ['brand'],
       '130 % Schaden und 3 Brand, gegen ein bereits brennendes Ziel 170 %. Brannte es schon, greift das Feuer mit 1 Brand auf ein zweites Ziel über.',

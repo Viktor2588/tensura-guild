@@ -624,9 +624,9 @@ Balance und Werkzeug:
   Diablo-Runs, und weder Mechanik noch Grundwerte bewegen etwas.
 - ~~**Die Rolle entscheidet mehr als das Kit.**~~ — Phase 83: Messfehler, die
   Rollen-Tabelle misst den Kaufzeitpunkt.
-- **Die Starteinheit entscheidet den Run** (Phase 83): Diablo 94 %,
-  Gruftwächter 26 %. Unten wirkt allein der Themen-Markt (abgeschaltet: 26 →
-  55 %) — Schild-Starter bekommen Schild-Märkte, und Schild-Einheiten töten
-  nicht. Oben (Diablo, Milim, Testarossa) steckt es im Kit; Grundwerte,
-  Allein-Regel und mehr Schild bewegen beides nicht. Messen mit der Tabelle
-  „Siegquote je STARTEINHEIT" in `dev/balance.js`, 6000 Runs.
+- ~~**Die Starteinheit entscheidet den Run**~~ — Phase 84: Einheiten-Markt
+  gemischt, Milim/Testarossa/Diablo gekürzt. Spanne 68 → 41 Punkte.
+- Unten bleiben Gobkyu, Drachenwelpe, Gabiru (35–36 % als Start). Oben Diablo,
+  Testarossa, Ultima (72–76 %). Weiter nur am Kit, gemessen mit „Siegquote je
+  STARTEINHEIT".
+- Stufe 5 (Sturmgott) liegt bei 2 % — prüfen, ob das noch spielbar ist.

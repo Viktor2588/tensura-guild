@@ -92,10 +92,10 @@ das der einzige Weg, tote und dominante Builds zu finden.
 800 Runs mit dem Bot aus `dev/balance.js`. Ein Trupp gilt erst als *Build*, wenn
 ein Schlüsselwort zwei Quellen und einen Verstärker hat:
 
-800 Runs, frischer Spieler, Bedrohungsstufe 0: **52 % Siege** (Phase 81,
-`GRUNDHAERTE` 1.41). Drei Viertel der Runs finden einen Build und gewinnen
-dann 69 %, **ohne Build fast nie**. Oben Schatten 93 %, Tempo 83 %, Licht 82 %;
-unten Chaos 64 %, Fläche 62 %. Mit allem Freigeschalteten 64 %.
+6000 Runs, frischer Spieler, Bedrohungsstufe 0: **51 % Siege** (Phase 84,
+`GRUNDHAERTE` 1.45). Die Starteinheit liegt zwischen 35 und 76 % Siegquote
+(„Siegquote je STARTEINHEIT" in `dev/balance.js`). Oben Schatten +14,
+Tempo und Dunkelheit +9. Mit allem Freigeschalteten 58 %.
 
 Der Bot stellt seinen Trupp sinnvoll auf (zäh nach vorn) und kauft nach Wert je
 Gold. Beides ist nötig, damit die Zahlen kompetentes Spiel abbilden: ohne
@@ -112,22 +112,22 @@ eine andere Schraube an, nicht nur die Gegnerwerte:
 
 | Stufe | Name | Was dazukommt (kumulativ) | Siegquote des Bots |
 |---|---|---|---|
-| 0 | Jura-Wald | – | 53 % |
-| 1 | Überzahl | ein Gegner mehr je Begegnung | 41 % |
-| 2 | Nachschub | normale Gegner stehen einmal mit 30 % Leben wieder auf | 28 % |
-| 3 | Kriegsrecht | Markt bietet weniger Einheiten, Aufstiege kosten mehr | 22 % |
-| 4 | Belagerung | im zweiten Akt Eliten auf jedem zweiten Kampfknoten, Lager −15 % | 18 % |
-| 5 | Sturmgott | ein Drittel weniger Magicule, 3 Leben statt 5, Bosse eskalieren doppelt | 4 % |
+| 0 | Jura-Wald | – | 51 % |
+| 1 | Überzahl | ein Gegner mehr je Begegnung | 35 % |
+| 2 | Nachschub | normale Gegner stehen einmal mit 30 % Leben wieder auf | 26 % |
+| 3 | Kriegsrecht | Markt bietet weniger Einheiten, Aufstiege kosten mehr | 17 % |
+| 4 | Belagerung | im zweiten Akt Eliten auf jedem zweiten Kampfknoten, Lager −15 % | 12 % |
+| 5 | Sturmgott | ein Drittel weniger Magicule, 3 Leben statt 5, Bosse eskalieren doppelt | 2 % |
 
-Gemessen mit `node dev/balance.js 400 --stufe N` (Stufe 0 mit 600 Runs).
+Gemessen mit `node dev/balance.js 400 --stufe N` (Stufe 0 mit 6000 Runs).
 
 Jede Stufe verlangt einen anderen Trupp, nicht nur einen stärkeren. Der Bot
 spielt zudem nur mittelmäßig — für einen Menschen liegt jede Stufe höher.
 
 ## Was fehlt
 
-- **Schatten dominiert**: +24 Punkte gegen den Schnitt der Builds (93 %, n=61).
-  Erst seit Phase 81 sichtbar — bei 83 % Siegquote trennte die Auswertung nicht.
+- Die Starteinheit wiegt noch schwer: 35 bis 76 % Siegquote je Start.
+- Stufe 5 (Sturmgott) liegt bei 2 %.
 - Der Bot in `dev/balance.js` spielt Aufstellung und Ausrüstung stur; wie viel
   ein guter Spieler mehr herausholt, misst er nicht. Eine Breitenstrategie
   (vier auf B statt eine auf S) misst er ebenfalls nicht.

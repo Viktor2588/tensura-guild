@@ -4319,6 +4319,46 @@ Offen, als Entscheidung: Themen-Anteil senken (gemessen wirksam, macht Builds
 zufälliger), oder Schild-Einheiten Schaden geben statt mehr Schild; die Spitze
 über ihr Kit kürzen.
 
-### [~] Phase 84 (2026-09-25): Der Starter legt den Run nicht mehr fest (in Bearbeitung)
+### Phase 84 (2026-09-25): Der Starter legt den Run nicht mehr fest
 
 Worktree `/home/viktor/tensura/worktree/phase-84-themen`, Branch `phase-84-themen`.
+
+Umsetzung der Diagnose aus Phase 83. Alle Zahlen 6000 Runs, frisch.
+
+**Einheiten kommen gemischt, nicht nach Thema.** `themenWahl` hat drei Aufrufer
+— Einheiten, Ausrüstung, Relikte. Einzeln abgeschaltet trägt nur der
+Einheiten-Markt den Effekt (Gruftwächter als Start 26 → 58 %, Ausrüstung und
+Relikte bewegen nichts). Der Themen-Anteil insgesamt gesenkt (65 → 35 %)
+brachte dagegen kaum etwas (26 → 30 %). Also: `waehle` statt `themenWahl` für
+Einheiten, Ausrüstung und Relikte folgen weiter dem Thema. Builds entstehen
+unverändert, eher häufiger.
+
+**Die Spitze an ihrem Werkzeug gekürzt**, nicht an den Werten (die bewegten in
+Phase 83 nichts):
+
+| Einheit | Werkzeug | vorher → nachher | als Start |
+|---|---|---|---|
+| Milim | Drachenfaust | 260 → 200 % | 81 → 67 % |
+| Testarossa | Todesstreich | +15 → +8 % des max. Lebens | 85 → 75 % |
+| Diablo | Belial, umnachtet | 12 % max. Leben → 80 % eigener Angriff | 93 → 76 % |
+| Diablo | Belial / Umnachtung | 3 → 2 / 5 → 3 Dunkelheit | kaum Wirkung |
+
+Diablos Kern war der Nebensatz: mit all seinen Dunkelheitsquellen ist jedes
+Ziel „völlig umnachtet", Belial riss damit jede Runde 12 % des maximalen
+Lebens heraus — gegen Bosse dieselbe Wucht wie Testarossa. 6 % ließen ihn noch
+bei 89 %; am eigenen Angriff statt am fremden Leben landet er bei 78 %.
+**Schaden nach maximalem Leben ist das Werkzeug, das Bosse bricht** — wer es
+wieder vergibt, sollte es klein halten.
+
+**`GRUNDHAERTE` 1.41 → 1.45**, gemessen 51 %.
+
+| | vorher | nachher |
+|---|---|---|
+| Spanne der Starter | 68 Punkte (94–26) | 41 Punkte (76–35) |
+| Schatten-Build | +24 | +14 |
+| Stufen 0–5 | 53/41/28/22/18/4 % | 51/35/26/17/12/2 % |
+| alles frei | 64 % | 58 % |
+
+Die Stufenkurve ist steiler geworden; Stufe 5 mit 2 % ist hart am Rand.
+
+`dev/sim.js` 499/499 · `dev/uitest.js` 141/141.
