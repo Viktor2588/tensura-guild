@@ -4263,6 +4263,58 @@ innerhalb einer Rolle.
 und eine Tabelle zeigt die Siegquote je Einheit im Trupp — mit dem Hinweis,
 dass sie den Kaufzeitpunkt mitmisst.
 
-### [~] Phase 83 (2026-09-25): Die Front zieht Treffer (in Bearbeitung)
+### Phase 83 (2026-09-25): Die Starteinheit entscheidet den Run — Diagnose
 
 Worktree `/home/viktor/tensura/worktree/phase-83-frontspott`, Branch `phase-83-frontspott`.
+
+Gestartet als „die Front zieht Treffer" (Grund-Spott für die Front-Rolle).
+**Kein Eingriff am Spiel** — vier Versuche ohne Wirkung, dafür die erste
+saubere Vergleichszahl zwischen Einheiten. Alle Messungen 6000 Runs, frisch.
+
+**Die Rollen-Tabelle misst den Kaufzeitpunkt, nicht die Rolle.** Grund-Spott
+0.15 bis 0.5 für jede Front-Einheit: Front bleibt bei 49–50 %, Magier bei
+72–74 %. Gleiche Reichweite für alle: der Abstand schrumpft nur von 22 auf 16
+Punkte. Billige Front ist von Anfang an im Trupp, auch in Runs, die früh
+sterben; späte Magier-Käufe gibt es nur in langen Runs.
+
+**Die Starteinheit ist der saubere Vergleich.** Der Bot wählt sie fast
+gleichverteilt (n≈154 je Einheit). Neue Tabelle in `dev/balance.js`:
+
+| Start | Sieg | Tod in Akt 1 |
+|---|---|---|
+| Diablo | 94 % | 0 % |
+| Milim | 90 % | 3 % |
+| Testarossa | 78 % | 5 % |
+| … Mitte | ~50 % | ~25 % |
+| Suphia | 30 % | 39 % |
+| Gruftwächter | 26 % | 56 % |
+
+Was NICHT wirkt (alles zurückgenommen):
+
+- **Grundwerte.** Leben und Angriff je Ausreißer um bis zu ±25 %: Diablo mit
+  75 % seiner Werte gewinnt als Start 92 %, Gruftwächter mit +16 % 27 %.
+- **Allein-Regel.** Signaturen ohne Schaden schlagen allein zusätzlich zu:
+  die schwachen Starter bleiben, die Gesamtquote sinkt 53 → 50 %, weil auch
+  allein stehende Gegner und Bosse sie bekommen.
+- **Mehr Schild.** ×1,5, mit dem Leben skaliert, beides (2–3× Schild): Gesamt
+  bis 60 %, Schild-Resonanz 36 → 46 %, aber Schild-Einheiten bleiben 12 Punkte
+  unter dem Rest und Gruftwächter bei 29 %.
+
+**Was wirkt: der Themen-Markt.** `themenWahl` zieht 65 % der Angebote nach den
+Schlüsselwörtern des Trupps. Abgeschaltet (Test, nicht übernommen):
+
+| Start | mit Themen | ohne |
+|---|---|---|
+| Gruftwächter | 26 % | 55 % |
+| Gobta | 32 % | 55 % |
+| Suphia | 30 % | 52 % |
+| gesamt | 53 % | 58 % |
+
+Die Starteinheit legt das Thema des Runs fest, und ein Schild-Thema füllt den
+Trupp mit Einheiten, die nicht töten. Die Spitze bleibt davon unberührt
+(Diablo 92 %, Milim 84 %, Testarossa 81 % auch ohne Themen) — sie ist
+wirklich stark, und zwar im Kit, nicht in den Werten.
+
+Offen, als Entscheidung: Themen-Anteil senken (gemessen wirksam, macht Builds
+zufälliger), oder Schild-Einheiten Schaden geben statt mehr Schild; die Spitze
+über ihr Kit kürzen.
