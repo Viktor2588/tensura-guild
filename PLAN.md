@@ -4448,3 +4448,7 @@ Gobwa: der Schlag gehört HINTER die Heilung. Davor konnte Gobwa am Konter
 sterben, und `c.allies()` war beim anschließenden `reduce` leer.
 
 `dev/sim.js` 506/506 · `dev/uitest.js` 141/141.
+
+### [~] Phase 88 (2026-09-25): Ein Einstieg ohne Wahl, eine Aufwertung ohne Verlust (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-88-einstieg`, Branch `phase-88-einstieg`.
