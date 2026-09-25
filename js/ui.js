@@ -9,7 +9,7 @@
   var STATUS_NAMEN = { gift: 'Gift', brand: 'Brand', erstarrung: 'Erstarrt', verderbnis: 'Verderbnis',
                        schild: 'Schild', chaos: 'Chaos', antichaos: 'Antichaos',
                        verwundbar: 'Verwundbar', blutung: 'Blutung',
-                       schatten: 'Schatten', dunkelheit: 'Dunkelheit', licht: 'Licht',
+                       schatten: 'Schatten', dunkelheit: 'Dunkelheit', licht: 'Licht', provokation: 'Provokation',
                        donner: 'Donner' };
   var KEYWORD_NAMEN = {
     gift: 'Gift', brand: 'Brand', frost: 'Frost', verderbnis: 'Verderbnis',
@@ -519,6 +519,7 @@
     var text = null, klasse = l.side === 'player' ? 'feind' : 'spieler';
     if (l.type === 'hit') text = esc(l.source) + ' → ' + esc(l.target) + ': ' + l.dmg;
     else if (l.type === 'heal') text = esc(l.source) + ' heilt ' + esc(l.target) + ' um ' + l.amount;
+    else if (l.type === 'status' && l.status === 'provokation') text = '📣 ' + esc(l.target) + ' provoziert: alle Gegner greifen an';
     else if (l.type === 'status') text = esc(l.target) + ': ' + (STATUS_NAMEN[l.status] || l.status) + ' ' + l.stacks;
     else if (l.type === 'schild') text = esc(l.target) + ': Schild fängt ' + l.amount;
     else if (l.type === 'skip') text = esc(l.unit) + ' kann sich nicht rühren';
@@ -575,7 +576,7 @@
       var ziele = Object.keys(z.ziele);
       replay.kurz[z.idx] = '<div class="' + z.klasse + '">' + z.kopf + ' → ' +
         esc(ziele.length > 2 ? ziele.length + ' Ziele' : ziele.join(', ')) + ': ' + Math.round(z.summe) + '</div>';
-    } else if (text && KURZ[l.type]) {
+    } else if (text && (KURZ[l.type] || (l.type === 'status' && l.status === 'provokation'))) {
       replay.kurz.push('<div class="' + klasse + '">' + text + '</div>');
     }
     if (replay.kurz.length > 80) { replay.kurz.shift(); if (replay.zug) replay.zug.idx--; }

@@ -346,6 +346,16 @@ Einheit antippen, dann die andere — die beiden tauschen den Platz. Die Pfeile
 ▲▼ an jeder Karte bleiben für die Feinkorrektur. Der Strich in der Zeile
 markiert, ab wo die Deckung greift.
 
+## Provokation
+
+**Provokation** ist harter Spott für eine Runde: bis zum nächsten eigenen Zug
+greifen **alle** Gegner die provozierende Einheit an, und wer sie noch nicht
+erreicht, läuft zu ihr. Das können nur Frontkämpfer — über die
+Bibliotheks-Passive **Herausforderung** (jeden dritten Zug, dazu ein Schild)
+oder über ihre eigene Passive am Ende der Defensivlinie, jede mit eigener
+Handschrift: Gobta duckt sich in Schatten, Rigurd gibt dem Trupp Rüstung,
+Shion legt allen Chaos an, der Drachenwelpe setzt alle in Brand …
+
 ## Deckung und Spott
 
 **Deckung** hängt an der Lage auf dem Hexfeld: Steht ein lebender Verbündeter

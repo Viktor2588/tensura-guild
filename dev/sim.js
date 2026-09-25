@@ -2828,6 +2828,24 @@ head('Nach dem letzten Boss ist Schluss (Phase 102)');
   ok(run.over && run.won && run.phase === 'ende', 'Weiter führt direkt zum Ende, gewonnen');
 })();
 
+head('Provokation (Phase 105)');
+(function () {
+  var fronten = GD.units.filter(function (u) { return u.tags[1] === 'front'; });
+  ok(fronten.every(function (u) {
+    return AB.linien[u.id].defensive.some(function (pid) { return /provoziert|stachelt/.test(AB.get(pid).text); });
+  }), 'jede Front-Einheit hat eine eigene Provokation in der Defensivlinie (' + fronten.length + ')');
+  ok(AB.get('herausforderung').nurRolle === 'front', 'die generische Herausforderung ist nur für die Front');
+  /* Gobta provoziert im ersten Zug: danach greift jeder Gegner nur ihn an. */
+  var g = R.member('gobta'); g.rank = 3; g.passives = ['gobta_def5'];
+  var s2 = R.member('souei'); s2.rank = 3;
+  var team = [R.resolve(g), R.resolve(s2)];
+  var log = C.simulate(team, EN.build(EN.forAct(2)[0], 0.6), 5).log;
+  var provoT = (log.find(function (l) { return l.type === 'status' && l.status === 'provokation'; }) || {}).t;
+  ok(provoT !== undefined, 'Gobta provoziert');
+  var gegnerTreffer = log.filter(function (l) { return l.type === 'hit' && l.side === 'player' && l.t === provoT + 1; });
+  ok(gegnerTreffer.every(function (l) { return l.target === 'Gobta'; }), 'in der Runde danach trifft jeder Gegner Gobta');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

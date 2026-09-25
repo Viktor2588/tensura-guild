@@ -65,7 +65,7 @@
      Gedeckelt wird stattdessen die WIRKUNG, dort wo sie sonst unsinnig würde:
      ein Angriffsfaktor unter null, eine Fehlschlagchance von 100 %. Erstarrung
      ist kein Stapel, sondern ein Schalter (ein Zug fällt aus) und bleibt bei 1. */
-  var STATUS_CAP = { erstarrung: 1 };
+  var STATUS_CAP = { erstarrung: 1, provokation: 1 };
 
   /* ---- Schatten, Dunkelheit, Licht ---------------------------------------
      Drei Elemente, die etwas tun, das es bisher nicht gab:
@@ -658,6 +658,15 @@
          Auch gueltig, wenn niemand in Reichweite steht: dann ist das hier das
          Laufziel, und ein Spott, der den Gegner ZU sich zieht, ist genau das,
          wofuer er da ist. */
+      /* Provokation (Phase 105): harter Spott fuer eine Runde. Jeder Gegner
+         zielt auf die naechste provozierende Einheit — auch wer sie noch nicht
+         erreicht, laeuft zu ihr. Spott (oben) bleibt die weiche Chance. */
+      var provo = living(other(u.side)).filter(function (f) { return f.status.provokation > 0; });
+      if (provo.length) {
+        return provo.reduce(function (a, b) {
+          return H.distanz(b.hex, u.hex) < H.distanz(a.hex, u.hex) ? b : a;
+        });
+      }
       var spotter = foes.filter(function (f) { return f.spott > 0; });
       if (spotter.length) {
         var stark = spotter.reduce(function (a, b) { return b.spott > a.spott ? b : a; });
@@ -685,6 +694,9 @@
     }
 
     function act(u) {
+      /* Provokation (Phase 105) haelt bis zum naechsten eigenen Zug: hier endet
+         sie, bevor `onTurnStart` sie neu legen kann. */
+      if (u.status.provokation) u.status.provokation = 0;
       fire(u, 'onTurnStart', ctx(u, {}));
       if (!alive(u)) return;
       /* Eskalation. Ohne sie ist ein allein stehender Boss eine Ja/Nein-Frage:

@@ -1251,6 +1251,36 @@ Klinge streute Chaos auf einen zweiten Gegner). Shion als Starterin 73 %
 
 `dev/sim.js` 546/546 · `dev/uitest.js` 141/141.
 
-### [~] Phase 105 (2026-09-26): Provokation — die Front zieht alle Gegner auf sich (in Bearbeitung)
+### Phase 105 (2026-09-26): Provokation — die Front zieht alle Gegner auf sich
 
 Worktree `/home/viktor/tensura/worktree/phase-105-spott`, Branch `phase-105-spott`.
+
+Aus dem Spieltest: „Alle Frontlinien-Charaktere sollten die Möglichkeit haben,
+alle Gegner für eine Runde auf sich zu lenken — als individuelles Kit und als
+generische Fähigkeit." Spott gab es bisher nur als Chance je Zielwahl
+(Phase 79); in Phase 83 brachte ein Grund-Spott für alle Fronten messbar
+nichts.
+
+**Neuer Zustand `provokation`**: bis zum nächsten eigenen Zug zielt jeder
+Gegner auf die nächste provozierende Einheit, auch außerhalb der Reichweite
+(er läuft hin). Gesetzt zu Beginn des eigenen Zugs, zurückgesetzt am Anfang
+des nächsten — also genau eine Runde. Im kurzen Kampflog als „📣 … provoziert".
+
+**Generisch:** Bibliotheks-Passive „Herausforderung" (Defensive, ungewöhnlich),
+jeden dritten Zug provozieren plus Schild über 12 % des Lebens. Neu:
+`nurRolle` an einer Passive — der Bibliothekstopf bietet sie nur Einheiten der
+Rolle an.
+
+**Individuell:** jede der 14 Front-Einheiten hat eine eigene Provokation am
+Ende ihrer Defensivlinie (Keystone-Platz unverändert), mit eigenem Takt und
+eigener Zugabe — Gobta, Phobio und der Sturmwolf jeden zweiten Zug mit
+Schatten, Rigurd mit Trupp-Rüstung, Shion mit Chaos auf allen, der Welpe mit
+Brand, die Dämonengarde mit Dunkelheit, der Wight-König mit Verderbnis,
+Gerudo und der Echsenfürst mit Heilung, Hakuro und Gabiru mit Schild, Zegion
+wird zäher, der Orkkrieger wütender. Hilfsfunktion `provoTakt(jede, zugabe)`.
+
+Gemessen: Siegquote 52 % (unverändert), Front als Starter 47 → 48 %. Die
+Provokation verändert, wie Kämpfe laufen — Schutz für die Hinterreihe —, nicht
+die Gesamtstärke.
+
+`dev/sim.js` 550/550 · `dev/uitest.js` 141/141.

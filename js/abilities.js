@@ -46,6 +46,21 @@
 
   /* ---- Passive Bibliothek: geteilt, jede Einheit trägt drei davon --------- */
 
+  /* ---- Provokation (Phase 105) ---------------------------------------------
+     Alle Frontkaempfer koennen alle Gegner fuer eine Runde auf sich ziehen:
+     generisch ueber die Bibliothek („Herausforderung", nur Front) und je
+     Einheit mit eigener Handschrift am Ende der Defensivlinie. `jede`: jeden
+     wievielten eigenen Zug; der erste Zug zaehlt immer. `zugabe`: was die
+     Einheit beim Provozieren zusaetzlich tut. */
+  function provoTakt(jede, zugabe) {
+    return function (c) {
+      c.self._provo = (c.self._provo || 0) + 1;
+      if ((c.self._provo - 1) % jede) return;
+      c.applyStatus(c.self, 'provokation', 1);
+      if (zugabe) zugabe(c);
+    };
+  }
+
   var passives = [
     passiv('giftbrut', 'Giftnebel', 'onHit', ['gift'], [], 'Jeder Treffer legt 1 Gift an',
       function (c) { c.applyStatus(c.target, 'gift', 1); }),
@@ -82,6 +97,58 @@
       function (c) { c.self.spd = Math.round(c.self.spd * 1.15); }),
     passiv('jagdruf', 'Jagdruf', 'onStart', ['tempo'], [], 'Gibt allen Verbündeten +10 % Tempo',
       function (c) { c.allies().forEach(function (u) { u.spd = Math.round(u.spd * 1.1); }); }),
+    /* --- Phase 105: Provokation ------------------------------------------------ */
+    passiv('herausforderung', 'Herausforderung', 'onTurnStart', ['schild'], [],
+      'Nur Frontkämpfer: jeden dritten Zug provoziert die Einheit alle Gegner bis zu ihrem nächsten Zug und legt sich Schild über 12 % ihres Lebens an',
+      provoTakt(3, function (c) { c.applyStatus(c.self, 'schild', c.self.maxHp * 0.12); })),
+    passiv('gobta_def5', 'Großmaul', 'onTurnStart', ['schatten'], [],
+      'Jeden zweiten Zug provoziert Gobta alle Gegner bis zu seinem nächsten Zug — und duckt sich dabei in 2 Schatten',
+      provoTakt(2, function (c) { c.applyStatus(c.self, 'schatten', 2); })),
+    passiv('rigurd_def5', 'Wacht des Häuptlings', 'onTurnStart', [], [],
+      'Jeden dritten Zug provoziert Rigurd alle Gegner bis zu seinem nächsten Zug — der ganze Trupp erhält dabei dauerhaft +2 Rüstung',
+      provoTakt(3, function (c) { c.trupp().forEach(function (u) { u.def += 2; }); })),
+    passiv('shion_def6', 'Herausforderung der Ogerin', 'onTurnStart', ['chaos'], [],
+      'Jeden dritten Zug provoziert Shion alle Gegner bis zu ihrem nächsten Zug — und jeder Gegner bekommt 1 Chaos',
+      provoTakt(3, function (c) { c.gegner().forEach(function (f) { c.applyStatus(f, 'chaos', 1); }); })),
+    passiv('hak_def5', 'Blick des Schwertmeisters', 'onTurnStart', ['schild'], [],
+      'Jeden dritten Zug provoziert Hakuro alle Gegner bis zu seinem nächsten Zug und hebt die Klinge: Schild über 15 % seines Lebens',
+      provoTakt(3, function (c) { c.applyStatus(c.self, 'schild', c.self.maxHp * 0.15); })),
+    passiv('sturm_def6', 'Heulen', 'onTurnStart', ['schatten', 'tempo'], [],
+      'Jeden zweiten Zug heult der Wolf: er provoziert alle Gegner bis zu seinem nächsten Zug und springt in 2 Schatten',
+      provoTakt(2, function (c) { c.applyStatus(c.self, 'schatten', 2); })),
+    passiv('gab_def5', 'Drachenreiter-Pose', 'onTurnStart', ['schild'], [],
+      'Jeden dritten Zug posiert Gabiru und provoziert alle Gegner bis zu seinem nächsten Zug — mit Schild über 20 % seines Lebens',
+      provoTakt(3, function (c) { c.applyStatus(c.self, 'schild', c.self.maxHp * 0.2); })),
+    passiv('fuerst_def5', 'Herausforderung des Fürsten', 'onTurnStart', ['heilung'], [],
+      'Jeden dritten Zug provoziert der Echsenfürst alle Gegner bis zu seinem nächsten Zug und heilt sich um 8 %',
+      provoTakt(3, function (c) { c.heal(c.self, c.self.maxHp * 0.08, 'Herausforderung des Fürsten'); })),
+    passiv('zegion_def5', 'Unbewegter Blick', 'onTurnStart', [], [],
+      'Jeden dritten Zug provoziert Zegion alle Gegner bis zu seinem nächsten Zug — beim ersten Mal wird er dauerhaft 20 % zäher',
+      provoTakt(3, function (c) { c.self.minderung = Math.max(c.self.minderung || 0, 0.2); })),
+    passiv('garde_def5', 'Schwur der Garde', 'onTurnStart', ['schild', 'dunkelheit'], [],
+      'Jeden dritten Zug provoziert die Garde alle Gegner bis zu ihrem nächsten Zug, nimmt Schild über 12 % ihres Lebens und hüllt jeden Gegner in 1 Dunkelheit',
+      provoTakt(3, function (c) {
+        c.applyStatus(c.self, 'schild', c.self.maxHp * 0.12);
+        c.gegner().forEach(function (f) { c.applyStatus(f, 'dunkelheit', 1); });
+      })),
+    passiv('welpe_def5', 'Fauchen', 'onTurnStart', ['brand'], [],
+      'Jeden dritten Zug faucht der Welpe: er provoziert alle Gegner bis zu seinem nächsten Zug und legt jedem 2 Brand an',
+      provoTakt(3, function (c) { c.gegner().forEach(function (f) { c.applyStatus(f, 'brand', 2); }); })),
+    passiv('gerudo_def5', 'Hungriger Blick', 'onTurnStart', ['heilung'], [],
+      'Jeden dritten Zug provoziert Gerudo alle Gegner bis zu seinem nächsten Zug und heilt sich um 10 %',
+      provoTakt(3, function (c) { c.heal(c.self, c.self.maxHp * 0.1, 'Hungriger Blick'); })),
+    passiv('ork_def5', 'Kriegsgebrüll', 'onTurnStart', [], [],
+      'Jeden dritten Zug brüllt der Krieger: er provoziert alle Gegner bis zu seinem nächsten Zug und schlägt dauerhaft 10 % härter',
+      provoTakt(3, function (c) { c.self.atk = Math.round(c.self.atk * 1.1); })),
+    passiv('phobio_def5', 'Frecher Sprung', 'onTurnStart', ['schatten', 'tempo'], [],
+      'Jeden zweiten Zug stachelt Phobio alle Gegner auf, bis zu seinem nächsten Zug — und weicht in 2 Schatten aus',
+      provoTakt(2, function (c) { c.applyStatus(c.self, 'schatten', 2); })),
+    passiv('wight_def5', 'Ruf aus dem Grab', 'onTurnStart', ['heilung', 'verderbnis'], [],
+      'Jeden dritten Zug provoziert der König alle Gegner bis zu seinem nächsten Zug, heilt sich um 8 % und legt jedem 1 Verderbnis an',
+      provoTakt(3, function (c) {
+        c.heal(c.self, c.self.maxHp * 0.08, 'Ruf aus dem Grab');
+        c.gegner().forEach(function (f) { c.applyStatus(f, 'verderbnis', 1); });
+      })),
     passiv('erstschlag', 'Erstschlag', 'onHit', [], [], 'Der erste Angriff verursacht +80 % Schaden',
       function (c) { if (!c.self._es) { c.self._es = 1; c.dmg *= 1.8; } }),
     passiv('scharfrichter', 'Scharfrichter', 'onHit', [], ['exekution'], 'Doppelter Schaden gegen Ziele unter 30 % Leben',
@@ -5611,7 +5678,7 @@
       mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4', 'shion_mec5',
                  'shion_unt1', 'shion_ang5', 'shion_ang6'],
       unterstuetzung: ['shion_unt6', 'shion_unt2', 'shion_unt3', 'shion_unt4', 'shion_unt5'],
-      defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4', 'shion_def5']
+      defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4', 'shion_def5', 'shion_def6']
     },
     /* Rimuru und Adalmann standen im Generator, bis ihre Kits eigene Linien
        verlangten: Rimuru liest fremde Zustände statt eigene anzulegen, und der
@@ -5620,19 +5687,19 @@
       angriff: ['gerudo_ang1', 'gerudo_ang2', 'gerudo_ang3', 'gerudo_ang4'],
       mechanik: ['gerudo_mec1', 'gerudo_mec2', 'gerudo_mec3', 'gerudo_mec4'],
       unterstuetzung: ['gerudo_unt1', 'gerudo_unt2', 'gerudo_unt3', 'gerudo_unt4'],
-      defensive: ['gerudo_def1', 'gerudo_def2', 'gerudo_def3', 'gerudo_def4']
+      defensive: ['gerudo_def1', 'gerudo_def2', 'gerudo_def3', 'gerudo_def4', 'gerudo_def5']
     },
     orkkrieger: {
       angriff: ['orkkrieger_ang1', 'orkkrieger_ang2', 'orkkrieger_ang3', 'orkkrieger_ang4'],
       mechanik: ['orkkrieger_mec1', 'orkkrieger_mec2', 'orkkrieger_mec3', 'orkkrieger_mec4'],
       unterstuetzung: ['orkkrieger_unt1', 'orkkrieger_unt2', 'orkkrieger_unt3', 'orkkrieger_unt4'],
-      defensive: ['orkkrieger_def1', 'orkkrieger_def2', 'orkkrieger_def3', 'orkkrieger_def4']
+      defensive: ['orkkrieger_def1', 'orkkrieger_def2', 'orkkrieger_def3', 'orkkrieger_def4', 'ork_def5']
     },
     phobio: {
       angriff: ['phobio_ang1', 'phobio_ang2', 'phobio_ang3', 'phobio_ang4'],
       mechanik: ['phobio_mec1', 'phobio_mec2', 'phobio_mec3', 'phobio_mec4'],
       unterstuetzung: ['phobio_unt1', 'phobio_unt2', 'phobio_unt3', 'phobio_unt4'],
-      defensive: ['phobio_def1', 'phobio_def2', 'phobio_def3', 'phobio_def4']
+      defensive: ['phobio_def1', 'phobio_def2', 'phobio_def3', 'phobio_def4', 'phobio_def5']
     },
     albis: {
       angriff: ['albis_ang1', 'albis_ang2', 'albis_ang3', 'albis_ang4'],
@@ -5650,7 +5717,7 @@
       angriff: ['zegion_ang1', 'zegion_ang2', 'zegion_ang3', 'zegion_ang4', 'zegion_ang5'],
       mechanik: ['zegion_mec1', 'zegion_mec2', 'zegion_mec3', 'zegion_mec4'],
       unterstuetzung: ['zegion_unt1', 'zegion_unt2', 'zegion_unt3', 'zegion_unt4'],
-      defensive: ['zegion_def1', 'zegion_def2', 'zegion_def3', 'zegion_def4']
+      defensive: ['zegion_def1', 'zegion_def2', 'zegion_def3', 'zegion_def4', 'zegion_def5']
     },
     apito: {
       angriff: ['apito_ang1', 'apito_ang2', 'apito_ang3', 'apito_ang4', 'apito_ang5'],
@@ -5680,19 +5747,19 @@
       angriff: ['daemonengarde_ang1', 'daemonengarde_ang2', 'daemonengarde_ang3', 'daemonengarde_ang4'],
       mechanik: ['daemonengarde_mec1', 'daemonengarde_mec2', 'daemonengarde_mec3', 'daemonengarde_mec4'],
       unterstuetzung: ['daemonengarde_unt1', 'daemonengarde_unt2', 'daemonengarde_unt3', 'daemonengarde_unt4'],
-      defensive: ['daemonengarde_def1', 'daemonengarde_def2', 'daemonengarde_def3', 'daemonengarde_def4']
+      defensive: ['daemonengarde_def1', 'daemonengarde_def2', 'daemonengarde_def3', 'daemonengarde_def4', 'garde_def5']
     },
     drachenwelpe: {
       angriff: ['drachenwelpe_ang1', 'drachenwelpe_ang2', 'drachenwelpe_ang3', 'drachenwelpe_ang4'],
       mechanik: ['drachenwelpe_mec1', 'drachenwelpe_mec2', 'drachenwelpe_mec3', 'drachenwelpe_mec4'],
       unterstuetzung: ['drachenwelpe_unt1', 'drachenwelpe_unt2', 'drachenwelpe_unt3', 'drachenwelpe_unt4'],
-      defensive: ['drachenwelpe_def1', 'drachenwelpe_def2', 'drachenwelpe_def3', 'drachenwelpe_def4']
+      defensive: ['drachenwelpe_def1', 'drachenwelpe_def2', 'drachenwelpe_def3', 'drachenwelpe_def4', 'welpe_def5']
     },
     wightkoenig: {
       angriff: ['wightkoenig_ang1', 'wightkoenig_ang2', 'wightkoenig_ang3', 'wightkoenig_ang4'],
       mechanik: ['wightkoenig_mec1', 'wightkoenig_mec2', 'wightkoenig_mec3', 'wightkoenig_mec4'],
       unterstuetzung: ['wightkoenig_unt1', 'wightkoenig_unt2', 'wightkoenig_unt3', 'wightkoenig_unt4'],
-      defensive: ['wightkoenig_def1', 'wightkoenig_def2', 'wightkoenig_def3', 'wightkoenig_def4']
+      defensive: ['wightkoenig_def1', 'wightkoenig_def2', 'wightkoenig_def3', 'wightkoenig_def4', 'wight_def5']
     },
     windrache: {
       angriff: ['wind_ang1', 'wind_ang2', 'wind_ang3', 'wind_ang4'],
@@ -5767,7 +5834,7 @@
       angriff: ['hak_ang1', 'hak_ang2', 'hak_ang3', 'hak_ang4'],
       mechanik: ['hak_mec1', 'hak_mec2', 'hak_mec3', 'hak_mec4'],
       unterstuetzung: ['hak_unt1', 'hak_unt2', 'hak_unt3', 'hak_unt4'],
-      defensive: ['hak_def1', 'hak_def2', 'hak_def3', 'hak_def4']
+      defensive: ['hak_def1', 'hak_def2', 'hak_def3', 'hak_def4', 'hak_def5']
     },
     kurobe: {
       angriff: ['kur_ang1', 'kur_ang2', 'kur_ang3', 'kur_ang4'],
@@ -5779,7 +5846,7 @@
       angriff: ['gobta_ang1', 'gobta_ang2', 'gobta_ang3', 'gobta_ang4'],
       mechanik: ['gobta_mec1', 'gobta_mec2', 'gobta_mec3', 'gobta_mec4'],
       unterstuetzung: ['gobta_unt1', 'gobta_unt2', 'gobta_unt3', 'gobta_unt4'],
-      defensive: ['gobta_def1', 'gobta_def2', 'gobta_def3', 'gobta_def4']
+      defensive: ['gobta_def1', 'gobta_def2', 'gobta_def3', 'gobta_def4', 'gobta_def5']
     },
     gobkyu: {
       angriff: ['gobkyu_ang1', 'gobkyu_ang2', 'gobkyu_ang3', 'gobkyu_ang4'],
@@ -5791,7 +5858,7 @@
       angriff: ['rigurd_ang1', 'rigurd_ang2', 'rigurd_ang3', 'rigurd_ang4'],
       mechanik: ['rigurd_mec1', 'rigurd_mec2', 'rigurd_mec3', 'rigurd_mec4'],
       unterstuetzung: ['rigurd_unt1', 'rigurd_unt2', 'rigurd_unt3', 'rigurd_unt4'],
-      defensive: ['rigurd_def1', 'rigurd_def2', 'rigurd_def3', 'rigurd_def4']
+      defensive: ['rigurd_def1', 'rigurd_def2', 'rigurd_def3', 'rigurd_def4', 'rigurd_def5']
     },
     rigur: {
       angriff: ['rigur_ang1', 'rigur_ang2', 'rigur_ang3', 'rigur_ang4'],
@@ -5815,13 +5882,13 @@
       angriff: ['sturm_ang1', 'sturm_ang2', 'sturm_ang3', 'sturm_ang4', 'sturm_ang5'],
       mechanik: ['sturm_mec1', 'sturm_mec2', 'sturm_mec3', 'sturm_mec4'],
       unterstuetzung: ['sturm_unt1', 'sturm_unt2', 'sturm_unt3', 'sturm_unt4', 'sturm_unt5'],
-      defensive: ['sturm_def1', 'sturm_def2', 'sturm_def3', 'sturm_def4', 'sturm_def5']
+      defensive: ['sturm_def1', 'sturm_def2', 'sturm_def3', 'sturm_def4', 'sturm_def5', 'sturm_def6']
     },
     gabiru: {
       angriff: ['gab_ang1', 'gab_ang2', 'gab_ang3', 'gab_ang4'],
       mechanik: ['gab_mec1', 'gab_mec2', 'gab_mec3', 'gab_mec4'],
       unterstuetzung: ['gab_unt1', 'gab_unt2', 'gab_unt3', 'gab_unt4'],
-      defensive: ['gab_def1', 'gab_def2', 'gab_def3', 'gab_def4']
+      defensive: ['gab_def1', 'gab_def2', 'gab_def3', 'gab_def4', 'gab_def5']
     },
     souka: {
       angriff: ['souka_ang1', 'souka_ang2', 'souka_ang3', 'souka_ang4'],
@@ -5833,7 +5900,7 @@
       angriff: ['fuerst_ang1', 'fuerst_ang2', 'fuerst_ang3', 'fuerst_ang4'],
       mechanik: ['fuerst_mec1', 'fuerst_mec2', 'fuerst_mec3', 'fuerst_mec4'],
       unterstuetzung: ['fuerst_unt1', 'fuerst_unt2', 'fuerst_unt3', 'fuerst_unt4'],
-      defensive: ['fuerst_def1', 'fuerst_def2', 'fuerst_def3', 'fuerst_def4']
+      defensive: ['fuerst_def1', 'fuerst_def2', 'fuerst_def3', 'fuerst_def4', 'fuerst_def5']
     },
     drachenknecht: {
       angriff: ['knecht_ang1', 'knecht_ang2', 'knecht_ang3', 'knecht_ang4'],
@@ -5857,6 +5924,7 @@
   var KATEGORIE = {
     /* Angriff: mehr Schaden, ohne Umweg über einen Zustand. */
     erstschlag: 'angriff', panzerbrecher: 'angriff', kriegsherz: 'angriff',
+    herausforderung: 'defensive',
     scharfrichter: 'angriff', henkersblick: 'angriff', blutrausch: 'angriff',
     massenschlaechter: 'angriff', schwungmeister: 'angriff', rachsucht: 'angriff',
     /* Mechanik: legt einen Zustand an oder schlägt daraus Kapital. */
@@ -6475,6 +6543,7 @@
     frostnova: 4, trutzwall: 5,
     /* Passive */
     kriegsherz: 1, windschritt: 1, erstschlag: 1, giftbrut: 1, glutkern: 1, schildwall: 1,
+    herausforderung: 2,
     lebenskraft: 3, bollwerkmeister: 3, massenschlaechter: 4, schwungmeister: 3, rachsucht: 3,
     blutrausch: 4, trophaenjaeger: 3,
     dornenhaut: 2, regenerator: 2, rachegeist: 2, henkersblick: 2, frostkern: 2,
@@ -6535,6 +6604,10 @@
     for (var i = 0; i < alle.length; i++) if (alle[i].id === id) return alle[i];
     return null;
   }
+
+  /* Die generische Provokation gibt es nur fuer Frontkaempfer (Phase 105). */
+  var herausf = byId('herausforderung');
+  if (herausf) herausf.nurRolle = 'front';
 
   root.Abilities = {
     passives: passives, pool: pool, signatures: signatures, alle: alle,

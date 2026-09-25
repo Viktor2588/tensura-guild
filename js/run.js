@@ -1247,8 +1247,9 @@
   function bibliotheksAngebot(run, m, hab, n) {
     var rng = rngOf(run);
     var kw = AB.keywords(abilities(m));
+    var rolle = (GD.unit(m.id) || { tags: [] }).tags[1];
     var frei = AB.passives.filter(function (p) {
-      return !AB.linien_ids[p.id] && hab.indexOf(p.id) < 0;
+      return !AB.linien_ids[p.id] && hab.indexOf(p.id) < 0 && (!p.nurRolle || p.nurRolle === rolle);
     });
     /* Dieselbe Regel wie im eigenen Topf: Verstärker nur, wenn der Bau sie
        speisen kann. Hier ist der Vorrat gross genug, dass eine je Kategorie
