@@ -4392,3 +4392,7 @@ Was der Bot NICHT misst: ob „wer wird S?" eine spannende Frage ist. Er kauft
 das S-Angebot, das zuerst kommt. Das zeigt erst ein Spieltest.
 
 `dev/sim.js` 506/506 · `dev/uitest.js` 141/141.
+
+### [~] Phase 86 (2026-09-25): Sturmgott bleibt schaffbar (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-86-sturmgott`, Branch `phase-86-sturmgott`.
