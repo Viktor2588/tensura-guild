@@ -4262,3 +4262,7 @@ innerhalb einer Rolle.
 **Neu in `dev/balance.js`:** `--ohne a,b` nimmt Einheiten ganz aus dem Spiel,
 und eine Tabelle zeigt die Siegquote je Einheit im Trupp — mit dem Hinweis,
 dass sie den Kaufzeitpunkt mitmisst.
+
+### [~] Phase 83 (2026-09-25): Die Front zieht Treffer (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-83-frontspott`, Branch `phase-83-frontspott`.
