@@ -1331,7 +1331,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
   Diablo+Rimuru, Gabiru+Echsenfürst, Milim+Rimuru …). Stehen beide im Trupp,
   gilt ein dritter Effekt; Anzeige unter „Fähigkeits-Synergien" und im Markt
   („bindet mit …").
-- [ ] **Phase 109 — Stapel verbrauchen.** Bibliotheks-Passiven mit
+- [~] **Phase 109 — Stapel verbrauchen.** (in Bearbeitung) Bibliotheks-Passiven mit
   „ausgeben statt anhäufen": Gift, Brand, Schild, Blutung je ein Verbraucher
   (ab N Stapeln alles verbrauchen für einen Stoß), gemessen mit
   `dev/beute.js`.
