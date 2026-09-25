@@ -1064,6 +1064,30 @@ trägt ihre eigene Zeile und keine Marke. Im Browser angesehen.
 
 `dev/sim.js` 527/527 · `dev/uitest.js` 141/141.
 
-### [~] Phase 97 (2026-09-25): Ereignisse mit echten Abwägungen (in Bearbeitung)
+### Phase 97 (2026-09-25): Ereignisse mit echten Abwägungen
 
 Worktree `/home/viktor/tensura/worktree/phase-97-ereignisse`, Branch `phase-97-ereignisse`.
+
+Alle 34 Ereignisse gegen ihren Code gelesen (Text neben Funktion). Gefunden:
+
+- **„Das Rudel vor der Höhle"** versprach „−120 Magicule, dafür +270" und gab
+  90 zurück — netto −30 statt +150. Behoben.
+- **„eine zufällige Einheit einer (noch) freien Art"** in fünf Ereignissen —
+  seit Phase 76 sperrt die Art nichts. Jetzt „die noch nicht im Trupp steht".
+- Zwei Texte mit „+180 Magicule und +60 Magicule" zusammengefasst.
+
+**Der größere Befund:** fast jedes Ereignis bot Magicule gegen etwas anderes.
+Ein Run endet aber mit rund 9.000 ungenutzten Magicule (Phase 93) — die
+Magicule-Option ist damit fast nie die richtige, und das Ereignis ist keine
+Wahl. Sechs neue Ereignisse aus der Tensura-Welt stellen stattdessen knappe
+Güter gegeneinander: Veldoras Lesestunde (Relikt gegen Trupp-Tempo), Shunas
+Küche (Trupp-Leben gegen einen starken Einzelnen), Kaijins Esse (zwei
+Ausrüstungen mit Preis gegen Trupp-Rüstung), die Prüfung des Zwergenkönigs
+(Gratisrang mit Preis gegen Relikt), Treynis Hain (Trupp-Leben mit Preis gegen
+eine neue Einheit), das Rennen der Goblinreiter (Trupp-Tempo mit Preis gegen
+Ausrüstung). 34 → 40 Ereignisse, Siegquote unverändert 53 %.
+
+Die alten Magicule-Optionen sind nicht umgeschrieben — das hängt an der
+offenen Frage, wo der Überschuss hin soll (`TODO.md`).
+
+`dev/sim.js` 527/527 · `dev/uitest.js` 141/141.

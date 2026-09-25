@@ -512,7 +512,7 @@
       text: 'Ein Sterbender bittet um ein Ende — und bietet dir seine Waffe an.',
       options: [
         { text: 'Waffe nehmen — zufällige Ausrüstung in den Beutel', fn: function (r, api) { api.grantItem(); } },
-        { text: 'Ihn heilen — eine zufällige Einheit einer noch freien Art schließt sich an', fn: function (r, api) { api.grantUnit(); } }
+        { text: 'Ihn heilen — eine zufällige Einheit, die noch nicht im Trupp steht, schließt sich an', fn: function (r, api) { api.grantUnit(); } }
       ] },
     { id: 'verlassenes_lager', name: 'Verlassenes Lager',
       text: 'Erloschene Feuerstelle, umgeworfene Kisten. Jemand ist in Eile aufgebrochen.',
@@ -533,7 +533,7 @@
     { id: 'sklavenkarawane', name: 'Karawane in Not',
       text: 'Räuber haben eine Karawane überfallen. Die Überlebenden brauchen Hilfe.',
       options: [
-        { text: 'Helfen — eine zufällige Einheit einer noch freien Art schließt sich an', fn: function (r, api) { api.grantUnit(); } },
+        { text: 'Helfen — eine zufällige Einheit, die noch nicht im Trupp steht, schließt sich an', fn: function (r, api) { api.grantUnit(); } },
         { text: 'Die Ladung nehmen: +270 Magicule', fn: function (r) { r.magicules += 270; } }
       ] },
     { id: 'sturm', name: 'Magiesturm',
@@ -563,7 +563,7 @@
     { id: 'namensgebung', act: 1, name: 'Ein Volk ohne Namen',
       text: 'Ein Goblindorf hat die Nacht überlebt. Der Älteste kniet nieder: „Gebt uns Namen, Meister."',
       options: [
-        { text: 'Namen geben: eine zufällige Einheit einer freien Art schließt sich an, kostet 60 Magicule',
+        { text: 'Namen geben: eine zufällige Einheit, die noch nicht im Trupp steht, schließt sich an, kostet 60 Magicule',
           can: function (r) { return r.magicules >= 60; },
           fn: function (r, api) { r.magicules -= 60; api.grantUnit(); } },
         { text: 'Nur Vorräte annehmen: +240 Magicule', fn: function (r) { r.magicules += 240; } }
@@ -574,7 +574,7 @@
         { text: 'Den Anführer niederstarren: eine zufällige Einheit erhält dauerhaft +5 Angriff und +3 Tempo',
           fn: function (r, api) { api.buffRandom({ atk: 5, spd: 3 }); } },
         { text: 'Fleisch opfern: −120 Magicule, dafür +270 Magicule', can: function (r) { return r.magicules >= 120; },
-          fn: function (r) { r.magicules -= 120; r.magicules += 90; } }
+          fn: function (r) { r.magicules -= 120; r.magicules += 270; } }
       ] },
     { id: 'zwergenschmied', act: 1, name: 'Ein Zwerg im Exil',
       text: 'Ein verbannter Schmied aus Dwargon hämmert an einem Wanderofen. Er mustert eure Ausrüstung mit Verachtung.',
@@ -588,7 +588,7 @@
       text: 'Echsenmenschen mit Federschmuck bringen eine Warnung: Orks marschieren nach Norden. Zehntausende.',
       options: [
         { text: 'Die Warnung ernst nehmen: +300 Magicule für Vorbereitungen', fn: function (r) { r.magicules += 300; } },
-        { text: 'Ein Bündnis schließen: eine zufällige Einheit einer freien Art schließt sich an',
+        { text: 'Ein Bündnis schließen: eine zufällige Einheit, die noch nicht im Trupp steht, schließt sich an',
           fn: function (r, api) { api.grantUnit(); } }
       ] },
     { id: 'ogerdorf', act: 1, name: 'Asche eines Ogerdorfs',
@@ -596,7 +596,7 @@
       options: [
         { text: 'Die Klinge nehmen: zufällige Ausrüstung', fn: function (r, api) { api.grantItem(); } },
         { text: 'Die Toten bestatten: +120 Magicule', fn: function (r) { r.magicules += 120; } },
-        { text: 'Der Spur folgen: +180 Magicule und +60 Magicule',
+        { text: 'Der Spur folgen: +240 Magicule',
           fn: function (r) { r.magicules += 180; r.magicules += 60; } }
       ] },
     { id: 'hornhasen_jagd', act: 1, name: 'Hornhasen-Jagd',
@@ -648,7 +648,7 @@
     { id: 'gefangener', act: 2, name: 'Ein Gefangener der Orks',
       text: 'In einem umgestürzten Käfig hockt jemand, der seit Tagen nichts getrunken hat — und trotzdem grinst.',
       options: [
-        { text: 'Befreien: eine zufällige Einheit einer freien Art schließt sich an',
+        { text: 'Befreien: eine zufällige Einheit, die noch nicht im Trupp steht, schließt sich an',
           fn: function (r, api) { api.grantUnit(); } },
         { text: 'Ausfragen und weiterziehen: +110 Magicule', fn: function (r) { r.magicules += 110; } }
       ] },
@@ -739,7 +739,7 @@
           fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { spd: 6 }); }); } },
         { text: 'Rasten, solange es geht: dauerhaft +45 Leben für den ganzen Trupp',
           fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { hp: 45 }); }); } },
-        { text: 'Sofort hinunter: +750 Magicule und +150 Magicule',
+        { text: 'Sofort hinunter: +900 Magicule',
           fn: function (r) { r.magicules += 750; r.magicules += 150; } }
       ] },
     { id: 'letztes_licht', act: 5, name: 'Das letzte Licht',
@@ -757,6 +757,51 @@
         { text: 'Einen Namen lesen: +80 Magicule', fn: function (r) { r.magicules += 80; } },
         { text: 'Einen Namen einritzen: eine zufällige Einheit dauerhaft +20 Leben und +3 Angriff',
           fn: function (r, api) { api.buffRandom({ hp: 20, atk: 3 }); } }
+      ] },
+    /* --- Phase 97: Abwaegungen ohne Magicule ---------------------------------
+       Ein Run endet mit rund 9.000 ungenutzten Magicule (Phase 93) — eine
+       Option „+X Magicule" ist darum fast nie die richtige, und viele
+       Ereignisse waren damit keine Wahl. Diese sechs stellen Gueter gegen-
+       einander, die knapp sind: Rang, Relikt, Ausruestung, Truppwerte. */
+    { id: 'veldoras_manga', name: 'Veldoras Lesestunde',
+      text: 'Der Sturmdrache hat einen Stapel Bücher aus einer anderen Welt gefunden und will unbedingt darüber reden.',
+      options: [
+        { text: 'Zuhören: ein zufälliges Relikt — er schenkt dir, was er beim Lesen nicht braucht', fn: function (r, api) { api.grantRelic(); } },
+        { text: 'Mitlesen: der ganze Trupp dauerhaft +4 Tempo', fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { spd: 4 }); }); } }
+      ] },
+    { id: 'shunas_kueche', name: 'Shunas Küche',
+      text: 'Es riecht nach Brühe und Kräutern. Shuna hat für alle gekocht — oder für einen ganz besonders.',
+      options: [
+        { text: 'Alle essen: dauerhaft +30 Leben für den ganzen Trupp', fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { hp: 30 }); }); } },
+        { text: 'Einer bekommt alles: eine zufällige Einheit dauerhaft +12 Angriff und +40 Leben', fn: function (r, api) { api.buffRandom({ atk: 12, hp: 40 }); } }
+      ] },
+    { id: 'kaijins_esse', name: 'Kaijins Esse',
+      text: 'Der Schmied hat zwei Klingen fertig und keine Zeit für eine dritte. Oder du lässt ihn an deinen Leuten arbeiten.',
+      options: [
+        { text: 'Beide Klingen: zwei zufällige Ausrüstungen, aber eine zufällige Einheit verliert dauerhaft 30 Leben beim Einschlagen',
+          fn: function (r, api) { api.grantItem(); api.grantItem(); api.buffRandom({ hp: -30 }); } },
+        { text: 'Rüstungen anpassen: der ganze Trupp dauerhaft +3 Rüstung', fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { def: 3 }); }); } }
+      ] },
+    { id: 'gazels_pruefung', name: 'Die Prüfung des Zwergenkönigs',
+      text: 'Gazel Dwargo mustert deinen Trupp. „Zeig mir, wer von euch wachsen kann."',
+      options: [
+        { text: 'Die Prüfung annehmen: die schwächste Einheit steigt gratis einen Rang auf, der ganze Trupp verliert dauerhaft 25 Leben',
+          fn: function (r, api) { api.freierRang(); r.team.forEach(function (m) { api.buffUnit(m, { hp: -25 }); }); } },
+        { text: 'Sein Geschenk annehmen: ein zufälliges Relikt', fn: function (r, api) { api.grantRelic(); } }
+      ] },
+    { id: 'treynis_hain', name: 'Treynis Hain',
+      text: 'Die Dryade bittet um Schutz für ihren Wald. Sie kann heilen — oder jemanden an ihren Wald binden.',
+      options: [
+        { text: 'Den Hain bewachen: dauerhaft +40 Leben für den ganzen Trupp, eine zufällige Einheit verliert dauerhaft 5 Angriff',
+          fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { hp: 40 }); }); api.buffRandom({ atk: -5 }); } },
+        { text: 'Eine Dryade folgt euch: eine zufällige Einheit, die noch nicht im Trupp steht, schließt sich an', fn: function (r, api) { api.grantUnit(); } }
+      ] },
+    { id: 'goblin_rennen', name: 'Das Rennen der Goblinreiter',
+      text: 'Gobta hat gewettet, dass seine Wölfe schneller sind als alles andere im Wald. Der Einsatz ist hoch.',
+      options: [
+        { text: 'Mitrennen: der ganze Trupp dauerhaft +6 Tempo, eine zufällige Einheit verliert dauerhaft 20 Leben',
+          fn: function (r, api) { r.team.forEach(function (m) { api.buffUnit(m, { spd: 6 }); }); api.buffRandom({ hp: -20 }); } },
+        { text: 'Den Wetteinsatz einstreichen: zufällige Ausrüstung', fn: function (r, api) { api.grantItem(); } }
       ] }
   ];
 

@@ -57,7 +57,7 @@ js/hex.js        Hexgeometrie (achsiale Koordinaten), rein
 js/abilities.js  44 Signaturen, 34 Pool-Aktive, 704 Passive (Linien je Einheit + Bibliothek)
 js/data.js       39 Einheiten, 52 Relikte, 32 Ausrüstungen, GLOSSAR (Tooltip-Texte)
 js/combat.js     simulate(teamA, teamB, seed, opts) — reine Funktion, kein DOM
-js/enemies.js    72 Gegner, 8 Bosse, 82 Begegnungen, 34 Ereignisse
+js/enemies.js    72 Gegner, 8 Bosse, 82 Begegnungen, 40 Ereignisse
 js/run.js        Karte, Markt, Ränge, Passiv-Wahl, Prädator, Speicherstand
 js/regie.js      macht aus dem Kampflog einen Zeitplan für die Wiedergabe
 js/brett3d.js    das Brett in three.js (ohne WebGL ein No-Op)
