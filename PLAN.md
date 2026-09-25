@@ -970,3 +970,7 @@ Keystone-Wahl beim Aufwerten, der Einstieg ohne Wahl, die Chaos-Anzeige.
 vier, und teurer werden die Einheiten.
 
 `dev/sim.js` 515/515 · `dev/uitest.js` 141/141.
+
+### [~] Phase 93 (2026-09-25): Markt neu würfeln (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-93-reroll`, Branch `phase-93-reroll`.
