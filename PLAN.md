@@ -997,3 +997,7 @@ die Würfe). Und der Überschuss selbst — 9.000 Magicule am Ende sind keine
 Entscheidung. Der Neuwurf nimmt einen Teil auf, eine echte Senke fehlt.
 
 `dev/sim.js` 521/521 · `dev/uitest.js` 141/141.
+
+### [~] Phase 94 (2026-09-25): Jeder Boss hat eine eigene Regel (in Bearbeitung)
+
+Worktree `/home/viktor/tensura/worktree/phase-94-bossregeln`, Branch `phase-94-bossregeln`.
