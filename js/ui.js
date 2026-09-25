@@ -936,6 +936,17 @@
     return 'Steht schon im Trupp — Rang zu niedrig zum Aufwerten';
   }
 
+  /* Schmelzen (Phase 99): je Seltenheit mit zwei Teilen im Beutel ein Knopf. */
+  function schmelzHtml() {
+    var stufen = R.schmelzbar(run);
+    if (!stufen.length) return '';
+    return '<div class="reihe">' + stufen.map(function (r) {
+      return '<button data-a="schmelzen" data-r="' + r + '"' +
+        tip('Schmelzen', 'Zwei ' + AB.rarName(r) + 'e Teile aus dem Beutel werden zu einem zufälligen ' +
+          AB.rarName(r + 1) + 'en.') + '>⚒ 2 × ' + esc(AB.rarName(r)) + ' → ' + esc(AB.rarName(r + 1)) + '</button>';
+    }).join('') + '</div>';
+  }
+
   /* Was ein Marktposten zum Bau beitraegt (Phase 96). Die Passiv-Wahl sagt
      seit Phase 78, woran eine Karte weiterbaut — der Markt sagte es nicht,
      obwohl dort die groesseren Entscheidungen fallen. Gezaehlt wird gegen den
@@ -1575,7 +1586,7 @@
               ? '\nAuf die Verkaufsfläche ziehen: +' + R.itemWert(id) + ' Magicule.' : '')) +
           '>' + esc(it.name) +
           ' <button data-a="anlegen" data-id="' + id + '">anlegen</button></span>';
-      }).join('') + '</div>';
+      }).join('') + '</div>' + schmelzHtml();
 
     $('reliktliste').innerHTML = !run.relics.length ? '' :
       '<h3>Relikte</h3><div class="liste">' + run.relics.map(function (id) {
@@ -1691,6 +1702,7 @@
     },
     neu: function () { neuerRun(); },
     tages: function () { tagesRun(); },
+    schmelzen: function (d) { R.schmelze(run, +d.r); render(); speichern(); },
     speichern: function () { speichern(); $('menu').close(); },
     'menu-zu': function () { $('menu').close(); }
   };

@@ -1115,6 +1115,18 @@ Endbildschirm.
 
 `dev/sim.js` 532/532 · `dev/uitest.js` 141/141.
 
-### [~] Phase 99 (2026-09-25): Ausrüstung schmelzen (in Bearbeitung)
+### Phase 99 (2026-09-25): Ausrüstung schmelzen
 
 Worktree `/home/viktor/tensura/worktree/phase-99-schmelzen`, Branch `phase-99-schmelzen`.
+
+Übrige Ausrüstung hatte nur einen Weg: der Verkauf für ein Viertel. Jetzt
+werden zwei Teile derselben Seltenheit aus dem Beutel zu einem zufälligen Teil
+der nächsten (`Run.schmelze`, `Run.schmelzbar`); legendär ist das Ende. Im
+Beutel steht je Seltenheit mit zwei Teilen ein Knopf „⚒ 2 × selten → episch".
+
+Der Bot schmilzt, was nach dem Anlegen übrig bleibt, und legt danach noch
+einmal an: 2,6-mal je Run, Siegquote 52 % mit wie ohne (`--ohne-schmelzen`).
+Kein Machtzuwachs — was im Beutel liegt, hatte keinen freien Platz. Das
+Schmelzen ist ein Werkzeug gegen tote Teile, keine neue Stärke.
+
+`dev/sim.js` 537/537 · `dev/uitest.js` 141/141.

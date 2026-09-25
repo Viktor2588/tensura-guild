@@ -2783,6 +2783,20 @@ head('Erfolge und Chronik (Phase 98)');
   ok(run.bosse.every(function (b) { return run.meta.besiegt[b]; }), 'beide Bosse gelten als besiegt');
 })();
 
+head('Schmelzen (Phase 99)');
+(function () {
+  var run = fertigerRun(99);
+  var ueblich = GD.items.filter(function (it) { return it.rarity === 1; });
+  run.bag = [ueblich[0].id, ueblich[1].id, ueblich[0].id];
+  ok(R.schmelzbar(run).join() === '1', 'drei übliche Teile: schmelzbar auf Stufe 1');
+  var neu = R.schmelze(run, 1);
+  ok(neu && GD.item(neu).rarity === 2, 'zwei übliche werden ein ungewöhnliches (' + (neu && GD.item(neu).name) + ')');
+  ok(run.bag.length === 2, 'der Beutel hat danach eins weniger (' + run.bag.length + ')');
+  ok(!R.schmelze(run, 1), 'ein einzelnes übliches Teil schmilzt nicht');
+  run.bag = GD.items.filter(function (it) { return it.rarity === 5; }).slice(0, 2).map(function (it) { return it.id; });
+  ok(!R.schmelzbar(run).length, 'legendäre Teile schmelzen nicht weiter');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {

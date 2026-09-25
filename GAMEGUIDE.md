@@ -466,6 +466,11 @@ Giftbiss macht aus einer Gift-Quelle zwei.
 
 ## Ausrüstung
 
+**Schmelzen:** Zwei Teile derselben Seltenheit im Beutel werden auf Knopfdruck
+zu einem zufälligen Teil der nächsten (üblich → ungewöhnlich → selten → episch
+→ legendär). So wird aus übriger Ausrüstung etwas Besseres statt eines
+Viertels beim Verkauf.
+
 Ausrüstung liegt im Beutel, bis du sie einer Einheit anlegst — die Slots hängen
 am Rang. Ein Teil der Ausrüstung schaut darauf, **wen** du ausrüstest: der
 Handschuh der Brutmutter wirkt nur bei einer Einheit, die selbst Gift erzeugt,

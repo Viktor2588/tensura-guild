@@ -1636,6 +1636,33 @@
     m.items.push(itemId);
     return true;
   }
+  /* ---- Schmelzen (Phase 99) -----------------------------------------------
+     Zwei Teile derselben Seltenheit aus dem Beutel werden zu einem zufaelligen
+     Teil der naechsten. Uebrige Ausruestung hatte bisher nur einen Weg — den
+     Verkauf fuer ein Viertel. Legendaeres laesst sich nicht weiter schmelzen. */
+  function schmelzbar(run) {
+    var je = {};
+    (run.bag || []).forEach(function (id) {
+      var r = (GD.item(id) || {}).rarity || 1;
+      if (r < 5) je[r] = (je[r] || 0) + 1;
+    });
+    return Object.keys(je).filter(function (r) { return je[r] >= 2; }).map(Number);
+  }
+  function schmelze(run, stufe) {
+    if (schmelzbar(run).indexOf(stufe) < 0) return null;
+    var bag = run.bag, weg = 0;
+    for (var i = bag.length - 1; i >= 0 && weg < 2; i--) {
+      if ((GD.item(bag[i]) || {}).rarity === stufe) { bag.splice(i, 1); weg++; }
+    }
+    var rng = rngOf(run);
+    var pool = GD.items.filter(function (it) { return it.rarity === stufe + 1; });
+    var neu = root.RNG.pick(rng, pool);
+    commit(run, rng);
+    bag.push(neu.id);
+    run.chronik.push('Geschmolzen: ' + neu.name);
+    return neu.id;
+  }
+
   function unequip(run, uid, itemId) {
     var m = find(run, uid);
     if (!m) return false;
@@ -2020,6 +2047,7 @@
     ersetzbar: ersetzbar,
     buildTeile: buildTeile, resonanzen: resonanzen, analyse: analyse,
     save: save, load: load, clear: clear, loadMeta: loadMeta, saveMeta: saveMeta,
+    schmelzbar: schmelzbar, schmelze: schmelze,
     createTages: createTages, tagesSeed: tagesSeed, tagesBest: tagesBest, ERFOLGE: ERFOLGE, finishTest: finish,
     serialize: serialize, deserialize: deserialize,
     TEAM_MAX: TEAM_MAX, BANK_MAX: BANK_MAX, STEPS: STEPS, RANK_NAME: RANK_NAME, AKTE: AKTE

@@ -204,6 +204,10 @@ function play(seed, voll) {
     }
     if (run.phase === 'karte') {
       haushalten();
+      /* Phase 99: was nach dem Anlegen im Beutel liegt, wird geschmolzen und
+         danach noch einmal angelegt, falls ein Platz frei ist. */
+      while (SCHMELZEN && R.schmelzbar(run).length) { R.schmelze(run, R.schmelzbar(run)[0]); geschmolzen++; }
+      haushalten();
       if (STELLEN) aufstellen();
       if (R.passivWahl(run)) continue;
       R.choose(run, route(run, rng));
@@ -305,7 +309,8 @@ function play(seed, voll) {
 var siege = 0, akte = {}, schritteSum = 0, rangSum = 0, teamSum = 0;
 var pruefGesamt = 0, pruefOk = 0;
 var bossKampf = {}, bossSieg = {};
-var neuwuerfe = 0, restGeld = 0;
+var neuwuerfe = 0, restGeld = 0, geschmolzen = 0;
+var SCHMELZEN = process.argv.indexOf('--ohne-schmelzen') < 0;
 var kaeufe = {}, unbezahlbar = 0, pwahlen = 0, mitKeystone = 0, keystones = 0, werteSum = 0, reliktSum = 0, itemSum = 0;
 var angebote = {}, gekauft = {};                  // je Einheit: im Regal / gekauft
 var ohneFront = 0, ohneStuetze = 0;                       // zeigt, ob Einheit/Ausrüstung/Rang wirklich konkurrieren
@@ -442,6 +447,7 @@ console.log('gescheitert je Akt: ' + Object.keys(akte).sort().map(function (a) {
 console.log('Passiv-Wahlen: ' + pwahlen + ', davon mit Keystone im Angebot ' + mitKeystone +
   ', Keystone genommen ' + keystones + ' (je Run ' + (keystones / N).toFixed(1) + ')');
 console.log('Markt neu gewuerfelt: ' + neuwuerfe + ' (je Run ' + (neuwuerfe / N).toFixed(1) + '), Ø Magicule am Run-Ende: ' + Math.round(restGeld / N));
+console.log('Geschmolzen: ' + geschmolzen + ' (je Run ' + (geschmolzen / N).toFixed(1) + ')');
 console.log('nicht bezahlbare Angebote: ' + unbezahlbar + ' (je Run ' + (unbezahlbar / N).toFixed(1) + ')');
 console.log('Trupps ohne Frontlinie: ' + ohneFront + ' · ohne Unterstützung: ' + ohneStuetze);
 console.log('Ø Relikte: ' + (reliktSum / N).toFixed(1) + ' · Ø angelegte Ausrüstung: ' + (itemSum / N).toFixed(1));
