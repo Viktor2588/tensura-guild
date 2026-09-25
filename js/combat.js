@@ -673,6 +673,17 @@
       /* Provokation (Phase 105): harter Spott fuer eine Runde. Jeder Gegner
          zielt auf die naechste provozierende Einheit — auch wer sie noch nicht
          erreicht, laeuft zu ihr. Spott (oben) bleibt die weiche Chance. */
+      /* Verwirrt (Phase 113, Shions Chaos-Entladung): der naechste Angriff
+         trifft einen eigenen Verbuendeten, danach ist der Kopf wieder klar. */
+      if (u.verwirrt) {
+        u.verwirrt = 0;
+        var eigene = living(u.side).filter(function (a) { return a !== u; });
+        if (eigene.length) {
+          return eigene.reduce(function (a, b) {
+            return H.distanz(b.hex, u.hex) < H.distanz(a.hex, u.hex) ? b : a;
+          });
+        }
+      }
       var provo = living(other(u.side)).filter(function (f) { return f.status.provokation > 0; });
       if (provo.length) {
         return provo.reduce(function (a, b) {

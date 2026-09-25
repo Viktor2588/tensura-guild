@@ -1347,7 +1347,7 @@ Worktree, mit Test in `dev/sim.js`, Messung mit `dev/balance.js` und bei Bedarf
 - [x] **Phase 112 — Shions Küche (B).** (erledigt, siehe unten) Passive: zu Kampfbeginn bekommt jeder
   Verbündete einen zufälligen Effekt aus einer Tabelle (gut und schlecht);
   Antichaos auf dem Verbündeten dreht schlechte ins Gute.
-- [~] **Phase 113 — Chaos-Entladung (C).** (in Bearbeitung) Ab 10 Chaos auf einem Gegner
+- [x] **Phase 113 — Chaos-Entladung (C).** (erledigt, siehe unten) Ab 10 Chaos auf einem Gegner
   entlädt Shion es (Passive in der Mechanik): der Gegner verliert einen Zug,
   und sein nächster Angriff trifft einen eigenen Verbündeten. Chaos wird
   verbraucht — Aufbauen zur Verwandlung gegen Entladen.
@@ -1435,3 +1435,14 @@ ein gutes. Eine Risiko-Mechanik im eigenen Trupp, die das Rad weiterträgt.
 Gemessen in 21 von 30 Kämpfen ein Gericht als Zustand, sonst als Wert.
 
 `dev/sim.js` 563/563 · `dev/uitest.js` 141/141.
+
+### Phase 113 (2026-09-26): Chaos-Entladung
+
+Neue Mechanik-Passive `shion_mec10` „Chaosentladung": trägt ein Gegner nach
+Shions Chaos mindestens 10 Stapel, entlädt es sich — alles Chaos weg, der
+Gegner erstarrt, und sein nächster Angriff trifft einen eigenen Verbündeten
+(neues Flag `verwirrt` in `pickTarget`, einmalig). Kampflog: „🌀 Chaos entlädt
+sich an …". Damit wird Chaos ausgegeben statt nur angehäuft — und steht gegen
+den Verdorbenen Teufel, der 12 Chaos auf den Gegnern braucht.
+
+`dev/sim.js` 564/564 · `dev/uitest.js` 141/141.

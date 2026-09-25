@@ -537,6 +537,7 @@
       text = '◈ ' + (l.side === 'player' ? 'Euer Trupp' : 'Der Gegner') + ' resoniert: ' +
         esc(kwName(l.kw)) + ' (' + l.teile + ' Teile) — ' + esc(C.RESONANZ[l.kw]);
     }
+    else if (l.type === 'chaos_entladung') text = '🌀 Chaos entlädt sich an ' + esc(l.unit) + ' (' + l.stapel + ' Stapel): erstarrt und verwirrt';
     else if (l.type === 'entladung') text = '⚡ Entladung an ' + esc(l.unit) + ': ' + l.stapel + ' Stapel schlagen in die ganze Reihe';
     /* Eine Verwandlung ist der seltenste Moment im Kampf — sie darf nicht
        stumm im Log fehlen, sonst merkt niemand, dass die Schwelle fiel. */
@@ -564,7 +565,7 @@
      Entladungen, Wut, Resonanz, Verpuffen. „Alle Details" zeigt den Rest. */
   var logDetails = false;
   try { logDetails = localStorage.getItem('tensura-logdetails') === '1'; } catch (e) {}
-  var KURZ = { death: 1, revive: 1, verwandlung: 1, kombi: 1, entladung: 1, wut: 1, resonanz: 1, fehlschlag: 1 };
+  var KURZ = { death: 1, revive: 1, verwandlung: 1, kombi: 1, entladung: 1, chaos_entladung: 1, wut: 1, resonanz: 1, fehlschlag: 1 };
   function kurzZeile(l, text, klasse) {
     if (l.type === 'aktiv') {
       replay.zug = { key: l.key, kopf: '⚡ ' + esc(l.unit) + ' · ' + esc(l.name), ziele: {}, summe: 0,

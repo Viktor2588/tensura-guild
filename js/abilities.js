@@ -758,6 +758,20 @@
           (i < gut.length ? gut[i] : schlecht[i - gut.length])(u);
         });
       }),
+    /* Phase 113: Chaos wird ausgegeben. Aufbauen bis zur Verwandlung — oder
+       vorher entladen. */
+    passiv('shion_mec10', 'Chaosentladung', 'onChaos', ['chaos', 'frost'], ['chaos'],
+      'Trägt ein Gegner nach Shions Chaos mindestens 10 Stapel, entlädt es sich: alles Chaos ist weg, der Gegner erstarrt, ' +
+      'und sein nächster Angriff trifft einen eigenen Verbündeten',
+      function (c) {
+        var z = c.ziel;
+        if (!z || (z.status.chaos || 0) < 10) return;
+        var n = Math.round(z.status.chaos);
+        z.status.chaos = 0;
+        c.applyStatus(z, 'erstarrung', 1);
+        z.verwirrt = 1;
+        c.log.push({ t: 0, type: 'chaos_entladung', key: z.key, unit: z.name, side: z.side, stapel: n });
+      }),
     passiv('shion_unt2', 'Ordnung aus Unordnung', 'onChaos', ['chaos', 'heilung'], [],
       'Jeder angelegte Stapel gibt allen Verbündeten +1 Regeneration',
       function (c) { c.allies().forEach(function (u) { u.regen += Math.max(1, Math.round(c.stapel)); }); }),
@@ -5812,7 +5826,7 @@
          bleibt in jeder Linie der Keystone. */
       angriff: ['shion_ang1', 'shion_ang2', 'shion_ang3', 'shion_ang4'],
       mechanik: ['shion_mec1', 'shion_mec2', 'shion_mec3', 'shion_mec4', 'shion_mec5',
-                 'shion_unt1', 'shion_ang5', 'shion_ang6', 'shion_mec9'],
+                 'shion_unt1', 'shion_ang5', 'shion_ang6', 'shion_mec9', 'shion_mec10'],
       unterstuetzung: ['shion_unt6', 'shion_unt2', 'shion_unt3', 'shion_unt4', 'shion_unt5', 'shion_unt7'],
       defensive: ['shion_def1', 'shion_def2', 'shion_def3', 'shion_def4', 'shion_def5', 'shion_def6']
     },

@@ -2939,6 +2939,15 @@ head('Shions Küche (Phase 112)');
   ok(gerichte > 0, 'zu Kampfbeginn werden Gerichte aufgetischt (' + gerichte + ' von 30 mit Zustand)');
 })();
 
+head('Chaos-Entladung (Phase 113)');
+(function () {
+  var m = R.member('shion'); m.rank = 3; m.passives = ['shion_mec10', 'shion_mec1', 'shion_mec3'];
+  var sack = { id: 's', name: 'Sack', tags: ['bestie', 'front'], hp: 60000, atk: 5, def: 0, spd: 8,
+    actives: [], effects: [], keywords: [] };
+  var log = C.simulate([R.resolve(m)], [sack, JSON.parse(JSON.stringify(sack))], 13).log;
+  ok(log.some(function (l) { return l.type === 'chaos_entladung'; }), 'ab 10 Chaos entlädt Shion es');
+})();
+
 head('Ein Anführer');
 /* Phase 85: hoechstens eine Einheit in Trupp und Bank auf Rang S. */
 (function () {
